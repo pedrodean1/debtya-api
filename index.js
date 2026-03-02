@@ -79,27 +79,28 @@ app.post("/plaid/create_link_token", async (req, res) => {
   }
 });
 
-// Exchange public_token -> access_token + SAVE to Supabase
+// Exchange public_token -> access_token + SAVE to Supabase (YOUR TABLE SCHEMA)
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
-    const { public_token, user_id } = req.body || {};
+    const { public_token, user_id, institution_name } = req.body || {};
     if (!public_token) return res.status(400).json({ error: "public_token is required" });
 
     const exchange = await plaidClient.itemPublicTokenExchange({ public_token });
     const access_token = exchange.data.access_token;
     const item_id = exchange.data.item_id;
 
-    // ✅ SAVE
+    // ✅ Save using YOUR columns: user_id (text), plaid_item_id, plaid_access_token, institution_name
     if (!supabase) {
       console.warn("Supabase not configured; skipping save.");
     } else {
       const { error } = await supabase.from("plaid_items").upsert(
         {
           user_id: String(user_id || "pedro-dev-1"),
-          item_id,
-          access_token,
+          plaid_item_id: item_id,
+          plaid_access_token: access_token,
+          institution_name: institution_name || null,
         },
-        { onConflict: "item_id" }
+        { onConflict: "plaid_item_id" }
       );
 
       if (error) console.error("SUPABASE ERROR (save plaid_items):", error);
@@ -167,13 +168,21 @@ app.get("/plaid/web", async (req, res) => {
         setStatus("Opening Plaid…");
         const handler = Plaid.create({
           token: "${link_token}",
-          onSuccess: async (public_token) => {
+          onSuccess: async (public_token, metadata) => {
             try {
               setStatus("Link success. Exchanging token…");
+
+              // Optional institution name from metadata
+              const inst = metadata && metadata.institution ? metadata.institution.name : null;
+
               const r = await fetch("/plaid/exchange_public_token", {
                 method: "POST",
                 headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({ public_token, user_id: "${user_id}" })
+                body: JSON.stringify({
+                  public_token,
+                  user_id: "${user_id}",
+                  institution_name: inst
+                })
               });
 
               const text = await r.text();
@@ -187,7 +196,7 @@ app.get("/plaid/web", async (req, res) => {
 
               setStatus("✅ Bank connected + saved!", "ok");
               detailsEl.style.display = "block";
-              detailsEl.textContent = "item_id: " + data.item_id + "\\n(saved to Supabase if configured)";
+              detailsEl.textContent = "plaid_item_id: " + data.item_id + "\\n(saved in Supabase)";
             } catch (e) {
               setStatus("❌ Exchange failed", "err");
               detailsEl.style.display = "block";
