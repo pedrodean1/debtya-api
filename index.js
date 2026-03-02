@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 app.use(cors());
@@ -10,7 +11,9 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
 
-// Plaid environment
+// --------------------
+// Plaid
+// --------------------
 const PLAID_ENV = (process.env.PLAID_ENV || "sandbox").toLowerCase();
 const basePath =
   PLAID_ENV === "production"
@@ -19,7 +22,6 @@ const basePath =
     ? PlaidEnvironments.development
     : PlaidEnvironments.sandbox;
 
-// Plaid client
 const plaidConfig = new Configuration({
   basePath,
   baseOptions: {
@@ -31,17 +33,33 @@ const plaidConfig = new Configuration({
 });
 const plaidClient = new PlaidApi(plaidConfig);
 
-// --- Health ---
+// --------------------
+// Supabase (server-side)
+// --------------------
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const supabase =
+  supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
+
+// --------------------
+// Routes
+// --------------------
 app.get("/health", (req, res) => {
-  res.json({ ok: true, name: "debtya-api", env: PLAID_ENV, time: new Date().toISOString() });
+  res.json({
+    ok: true,
+    name: "debtya-api",
+    env: PLAID_ENV,
+    supabase_configured: Boolean(supabase),
+    time: new Date().toISOString(),
+  });
 });
 
-// --- Redirect endpoint (must exist + must be configured in Plaid Dashboard Allowed redirect URIs) ---
+// Must be configured in Plaid Dashboard -> Developers -> API -> Allowed redirect URIs
 app.get("/plaid/redirect", (req, res) => {
   res.status(200).send("OK");
 });
 
-// --- 1) Create link_token (for mobile or general use) ---
+// Create link_token (general)
 app.post("/plaid/create_link_token", async (req, res) => {
   try {
     const user_id = req.body?.user_id || "pedro-dev-1";
@@ -52,7 +70,6 @@ app.post("/plaid/create_link_token", async (req, res) => {
       products: ["auth", "transactions"],
       country_codes: ["US"],
       language: "en",
-      // IMPORTANT: must be configured in Plaid Dashboard -> Developers -> API -> Allowed redirect URIs
       redirect_uri: "https://debtya-api.onrender.com/plaid/redirect",
     });
 
@@ -68,67 +85,41 @@ app.post("/plaid/create_link_token", async (req, res) => {
   }
 });
 
-// --- 2) Exchange public_token -> access_token ---
+// Exchange public_token -> access_token + SAVE to Supabase
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
     const { public_token, user_id } = req.body || {};
     if (!public_token) return res.status(400).json({ error: "public_token is required" });
 
     const exchange = await plaidClient.itemPublicTokenExchange({ public_token });
+    const access_token = exchange.data.access_token;
+    const item_id = exchange.data.item_id;
 
-    // ✅ Aquí es donde luego guardarías access_token en DB (Supabase) por user_id
-    // const access_token = exchange.data.access_token;
-    // const item_id = exchange.data.item_id;
+    // Save in Supabase
+    if (!supabase) {
+      console.warn("Supabase not configured; skipping save.");
+    } else {
+      const { error } = await supabase.from("plaid_items").upsert(
+        {
+          user_id: String(user_id || "pedro-dev-1"),
+          item_id,
+          access_token,
+        },
+        { onConflict: "item_id" }
+      );
 
-    return res.json({
-      ok: true,
-      access_token: exchange.data.access_token,
-      item_id: exchange.data.item_id,
-      user_id: user_id || null,
-    });
+      if (error) console.error("SUPABASE ERROR (save plaid_items):", error);
+    }
+
+    return res.json({ ok: true, access_token, item_id, user_id: user_id || null });
   } catch (err) {
     const plaidData = err?.response?.data;
     console.error("PLAID ERROR (exchange_public_token):", plaidData || err);
-    // Plaid errors often come as structured JSON
     return res.status(400).json(plaidData || { error: err?.message || "Unknown error" });
   }
 });
 
-// --- 3) Create link URL for web (simple URL) ---
-// NOTE: This only opens Plaid, it does NOT capture public_token by itself.
-// The definitive way is /plaid/web below.
-app.post("/plaid/create_link_for_web", async (req, res) => {
-  try {
-    const user_id = req.body?.user_id || "pedro-dev-1";
-
-    const response = await plaidClient.linkTokenCreate({
-      user: { client_user_id: String(user_id) },
-      client_name: "Debtya",
-      products: ["auth", "transactions"],
-      country_codes: ["US"],
-      language: "en",
-      redirect_uri: "https://debtya-api.onrender.com/plaid/redirect",
-    });
-
-    const link_url =
-      "https://cdn.plaid.com/link/v2/stable/link.html?token=" +
-      encodeURIComponent(response.data.link_token);
-
-    return res.json({
-      link_token: response.data.link_token,
-      link_url,
-      expiration: response.data.expiration,
-      request_id: response.data.request_id,
-    });
-  } catch (err) {
-    const plaidData = err?.response?.data;
-    console.error("PLAID ERROR (create_link_for_web):", plaidData || err);
-    return res.status(500).json({ error: plaidData || err?.message || "Unknown error" });
-  }
-});
-
-// --- 4) DEFINITIVE WEB FLOW: Host a page that opens Plaid Link JS and captures public_token ---
-// Open this URL from the app: https://debtya-api.onrender.com/plaid/web?user_id=pedro-dev-1
+// Definitive Web flow: page that opens Plaid Link JS and calls exchange endpoint
 app.get("/plaid/web", async (req, res) => {
   try {
     const user_id = req.query.user_id || "pedro-dev-1";
@@ -190,6 +181,7 @@ app.get("/plaid/web", async (req, res) => {
                 headers: {"Content-Type":"application/json"},
                 body: JSON.stringify({ public_token, user_id: "${user_id}" })
               });
+
               const text = await r.text();
               let data = null;
               try { data = JSON.parse(text); } catch {}
@@ -199,9 +191,9 @@ app.get("/plaid/web", async (req, res) => {
                 throw new Error(msg);
               }
 
-              setStatus("✅ Bank connected!", "ok");
+              setStatus("✅ Bank connected + saved!", "ok");
               detailsEl.style.display = "block";
-              detailsEl.textContent = "item_id: " + data.item_id + "\\n(access_token received)";
+              detailsEl.textContent = "item_id: " + data.item_id + "\\n(saved to Supabase if configured)";
             } catch (e) {
               setStatus("❌ Exchange failed", "err");
               detailsEl.style.display = "block";
@@ -233,4 +225,5 @@ app.get("/plaid/web", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Debtya API running on port ${PORT}`);
   console.log(`✅ PLAID_ENV=${PLAID_ENV}`);
+  console.log(`✅ SUPABASE configured: ${Boolean(supabase)}`);
 });
