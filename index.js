@@ -11,9 +11,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
 
-// --------------------
-// Plaid
-// --------------------
+// -------------------- Plaid --------------------
 const PLAID_ENV = (process.env.PLAID_ENV || "sandbox").toLowerCase();
 const basePath =
   PLAID_ENV === "production"
@@ -33,17 +31,13 @@ const plaidConfig = new Configuration({
 });
 const plaidClient = new PlaidApi(plaidConfig);
 
-// --------------------
-// Supabase (server-side)
-// --------------------
+// -------------------- Supabase --------------------
 const supabaseUrl = process.env.SUPABASE_URL || "";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabase =
   supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
 
-// --------------------
-// Routes
-// --------------------
+// -------------------- Routes --------------------
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
@@ -59,7 +53,7 @@ app.get("/plaid/redirect", (req, res) => {
   res.status(200).send("OK");
 });
 
-// Create link_token (general)
+// Create link_token
 app.post("/plaid/create_link_token", async (req, res) => {
   try {
     const user_id = req.body?.user_id || "pedro-dev-1";
@@ -95,7 +89,7 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
     const access_token = exchange.data.access_token;
     const item_id = exchange.data.item_id;
 
-    // Save in Supabase
+    // ✅ SAVE
     if (!supabase) {
       console.warn("Supabase not configured; skipping save.");
     } else {
@@ -119,7 +113,7 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
   }
 });
 
-// Definitive Web flow: page that opens Plaid Link JS and calls exchange endpoint
+// Definitive web flow page (captures public_token and calls exchange)
 app.get("/plaid/web", async (req, res) => {
   try {
     const user_id = req.query.user_id || "pedro-dev-1";
@@ -173,7 +167,7 @@ app.get("/plaid/web", async (req, res) => {
         setStatus("Opening Plaid…");
         const handler = Plaid.create({
           token: "${link_token}",
-          onSuccess: async (public_token, metadata) => {
+          onSuccess: async (public_token) => {
             try {
               setStatus("Link success. Exchanging token…");
               const r = await fetch("/plaid/exchange_public_token", {
@@ -200,7 +194,7 @@ app.get("/plaid/web", async (req, res) => {
               detailsEl.textContent = String(e);
             }
           },
-          onExit: (err, metadata) => {
+          onExit: (err) => {
             if (err) {
               setStatus("❌ Plaid exited with error", "err");
               detailsEl.style.display = "block";
