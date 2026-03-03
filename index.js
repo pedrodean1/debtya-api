@@ -78,6 +78,23 @@ function decryptToken(payload) {
   return dec.toString("utf8");
 }
 
+// ✅ Compatibilidad: si ya está encriptado lo desencripta; si no, lo usa como token plano
+function unwrapAccessToken(maybeEncrypted) {
+  const s = String(maybeEncrypted || "");
+  const parts = s.split(".");
+  // En nuestro formato deben ser EXACTAMENTE 3 partes base64
+  if (parts.length === 3) {
+    try {
+      return decryptToken(s);
+    } catch {
+      // Si parece encriptado pero no lo es (mal formado), caemos al error original
+      throw new Error("Token parece encriptado pero no se pudo desencriptar");
+    }
+  }
+  // Caso viejo: access-sandbox-... (texto plano)
+  return s;
+}
+
 // -------------------- Routes --------------------
 app.get("/health", (req, res) => {
   res.json({
@@ -90,12 +107,10 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Debe estar configurado en Plaid Dashboard -> Developers -> API -> Allowed redirect URIs
 app.get("/plaid/redirect", (req, res) => {
   res.status(200).send("OK");
 });
 
-// Create link_token
 app.post("/plaid/create_link_token", async (req, res) => {
   try {
     const user_id = req.body?.user_id || "pedro-dev-1";
@@ -122,7 +137,6 @@ app.post("/plaid/create_link_token", async (req, res) => {
   }
 });
 
-// Exchange public_token -> access_token + GUARDAR en Supabase (token ENCRIPTADO)
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
     const { public_token, user_id, institution_name } = req.body || {};
@@ -169,7 +183,6 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
   }
 });
 
-// Página web (captura public_token y llama a exchange)
 app.get("/plaid/web", async (req, res) => {
   try {
     const user_id = req.query.user_id || "pedro-dev-1";
@@ -281,8 +294,7 @@ app.get("/plaid/web", async (req, res) => {
   }
 });
 
-// -------------------- NUEVO: Plaid Accounts (desencripta token desde Supabase y trae cuentas) --------------------
-// body: { plaid_item_id: "..." }  o  { user_id: "..." } (usa el más reciente)
+// -------------------- Plaid Accounts --------------------
 app.post("/plaid/accounts", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -299,6 +311,7 @@ app.post("/plaid/accounts", async (req, res) => {
     if (plaid_item_id) {
       q = q.eq("plaid_item_id", String(plaid_item_id)).limit(1).maybeSingle();
     } else {
+      // si tienes filas viejas y nuevas, tomamos la más reciente por id
       q = q.eq("user_id", String(user_id)).order("id", { ascending: false }).limit(1).maybeSingle();
     }
 
@@ -311,7 +324,7 @@ app.post("/plaid/accounts", async (req, res) => {
       return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
     }
 
-    const access_token = decryptToken(row.plaid_access_token);
+    const access_token = unwrapAccessToken(row.plaid_access_token);
 
     const resp = await plaidClient.accountsGet({ access_token });
 
@@ -329,7 +342,7 @@ app.post("/plaid/accounts", async (req, res) => {
   }
 });
 
-// -------------------- Supabase Ping (insert de prueba) --------------------
+// -------------------- Supabase Ping --------------------
 app.post("/supabase/ping", async (req, res) => {
   try {
     if (!supabase) {
