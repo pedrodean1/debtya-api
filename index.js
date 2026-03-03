@@ -78,21 +78,18 @@ function decryptToken(payload) {
   return dec.toString("utf8");
 }
 
-// ✅ Compatibilidad: si ya está encriptado lo desencripta; si no, lo usa como token plano
+// ✅ Desencripta si corresponde, si no devuelve plano (compatibilidad)
 function unwrapAccessToken(maybeEncrypted) {
   const s = String(maybeEncrypted || "");
   const parts = s.split(".");
-  // En nuestro formato deben ser EXACTAMENTE 3 partes base64
   if (parts.length === 3) {
-    try {
-      return decryptToken(s);
-    } catch {
-      // Si parece encriptado pero no lo es (mal formado), caemos al error original
-      throw new Error("Token parece encriptado pero no se pudo desencriptar");
-    }
+    return decryptToken(s);
   }
-  // Caso viejo: access-sandbox-... (texto plano)
   return s;
+}
+
+function looksLikePlaidAccessToken(s) {
+  return typeof s === "string" && s.startsWith("access-");
 }
 
 // -------------------- Routes --------------------
@@ -304,28 +301,71 @@ app.post("/plaid/accounts", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
     }
 
-    let q = supabase
-      .from("plaid_items")
-      .select("plaid_item_id, plaid_access_token, institution_name, user_id, id");
+    // 1) Buscar row en Supabase
+    let row = null;
 
     if (plaid_item_id) {
-      q = q.eq("plaid_item_id", String(plaid_item_id)).limit(1).maybeSingle();
+      const { data, error } = await supabase
+        .from("plaid_items")
+        .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
+        .eq("plaid_item_id", String(plaid_item_id))
+        .limit(1)
+        .maybeSingle();
+
+      if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
+      row = data;
     } else {
-      // si tienes filas viejas y nuevas, tomamos la más reciente por id
-      q = q.eq("user_id", String(user_id)).order("id", { ascending: false }).limit(1).maybeSingle();
+      // ✅ Importante: ignorar pings y coger el más reciente REAL (no ping_item_)
+      const { data, error } = await supabase
+        .from("plaid_items")
+        .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
+        .eq("user_id", String(user_id))
+        .not("plaid_item_id", "like", "ping_item_%")
+        .order("id", { ascending: false })
+        .limit(1);
+
+      if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
+      row = Array.isArray(data) ? data[0] : null;
+
+      // Si no hay real, intentamos al menos el más reciente (aunque sea ping) para debug
+      if (!row) {
+        const fallback = await supabase
+          .from("plaid_items")
+          .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
+          .eq("user_id", String(user_id))
+          .order("id", { ascending: false })
+          .limit(1);
+
+        if (fallback.error) {
+          return res.status(500).json({ ok: false, where: "supabase_select_fallback", supabase_error: fallback.error });
+        }
+        row = Array.isArray(fallback.data) ? fallback.data[0] : null;
+      }
     }
 
-    const { data: row, error: dbErr } = await q;
-
-    if (dbErr) {
-      return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: dbErr });
-    }
     if (!row) {
       return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
     }
 
+    // 2) Obtener access_token real (desencriptando si hace falta)
     const access_token = unwrapAccessToken(row.plaid_access_token);
 
+    // 3) Validación fuerte antes de llamar a Plaid
+    if (!looksLikePlaidAccessToken(access_token)) {
+      return res.status(400).json({
+        ok: false,
+        error: "El access_token que salió NO parece un token de Plaid (no empieza con 'access-').",
+        used_row: {
+          plaid_item_id: row.plaid_item_id,
+          user_id: row.user_id,
+          institution_name: row.institution_name,
+        },
+        hint:
+          "Conecta Plaid otra vez en /plaid/web para generar un item nuevo con token encriptado válido, o llama /plaid/accounts con plaid_item_id real.",
+      });
+    }
+
+    // 4) Llamar a Plaid
     const resp = await plaidClient.accountsGet({ access_token });
 
     return res.json({
@@ -359,10 +399,7 @@ app.post("/supabase/ping", async (req, res) => {
       institution_name: `PING ${now}`,
     };
 
-    const { data, error } = await supabase
-      .from("plaid_items")
-      .insert(row)
-      .select("*");
+    const { data, error } = await supabase.from("plaid_items").insert(row).select("*");
 
     if (error) {
       console.error("SUPABASE ERROR (ping insert):", error);
