@@ -35,7 +35,9 @@ const plaidClient = new PlaidApi(plaidConfig);
 const supabaseUrl = process.env.SUPABASE_URL || "";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabase =
-  supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
+  supabaseUrl && supabaseServiceKey
+    ? createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } })
+    : null;
 
 // -------------------- Routes --------------------
 app.get("/health", (req, res) => {
@@ -48,7 +50,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Must be configured in Plaid Dashboard -> Developers -> API -> Allowed redirect URIs
+// Debe estar configurado en Plaid Dashboard -> Developers -> API -> Allowed redirect URIs
 app.get("/plaid/redirect", (req, res) => {
   res.status(200).send("OK");
 });
@@ -68,6 +70,7 @@ app.post("/plaid/create_link_token", async (req, res) => {
     });
 
     return res.json({
+      ok: true,
       link_token: response.data.link_token,
       expiration: response.data.expiration,
       request_id: response.data.request_id,
@@ -75,46 +78,62 @@ app.post("/plaid/create_link_token", async (req, res) => {
   } catch (err) {
     const plaidData = err?.response?.data;
     console.error("PLAID ERROR (create_link_token):", plaidData || err);
-    return res.status(500).json({ error: plaidData || err?.message || "Unknown error" });
+    return res.status(500).json({ ok: false, error: plaidData || err?.message || "Unknown error" });
   }
 });
 
-// Exchange public_token -> access_token + SAVE to Supabase (YOUR TABLE SCHEMA)
+// Exchange public_token -> access_token + GUARDAR en Supabase
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
     const { public_token, user_id, institution_name } = req.body || {};
-    if (!public_token) return res.status(400).json({ error: "public_token is required" });
+    if (!public_token) return res.status(400).json({ ok: false, error: "public_token is required" });
 
     const exchange = await plaidClient.itemPublicTokenExchange({ public_token });
     const access_token = exchange.data.access_token;
     const item_id = exchange.data.item_id;
 
-    // ✅ Save using YOUR columns: user_id (text), plaid_item_id, plaid_access_token, institution_name
+    // ✅ Guardar usando tus columnas: user_id, plaid_item_id, plaid_access_token, institution_name
     if (!supabase) {
-      console.warn("Supabase not configured; skipping save.");
-    } else {
-      const { error } = await supabase.from("plaid_items").upsert(
-        {
-          user_id: String(user_id || "pedro-dev-1"),
-          plaid_item_id: item_id,
-          plaid_access_token: access_token,
-          institution_name: institution_name || null,
-        },
-        { onConflict: "plaid_item_id" }
-      );
-
-      if (error) console.error("SUPABASE ERROR (save plaid_items):", error);
+      return res.status(500).json({ ok: false, error: "Supabase not configured" });
     }
 
-    return res.json({ ok: true, access_token, item_id, user_id: user_id || null });
+    const payload = {
+      user_id: String(user_id || "pedro-dev-1"),
+      plaid_item_id: item_id,
+      plaid_access_token: access_token,
+      institution_name: institution_name || null,
+    };
+
+    // ✅ IMPORTANTE: debe coincidir con tu UNIQUE constraint (plaid_item_id)
+    const { data, error } = await supabase
+      .from("plaid_items")
+      .upsert(payload, { onConflict: "plaid_item_id" })
+      .select("*");
+
+    if (error) {
+      console.error("SUPABASE ERROR (save plaid_items):", error);
+      return res.status(500).json({
+        ok: false,
+        where: "save_plaid_items",
+        supabase_error: error,
+      });
+    }
+
+    return res.json({
+      ok: true,
+      item_id,
+      user_id: payload.user_id,
+      institution_name: payload.institution_name,
+      saved: data,
+    });
   } catch (err) {
     const plaidData = err?.response?.data;
     console.error("PLAID ERROR (exchange_public_token):", plaidData || err);
-    return res.status(400).json(plaidData || { error: err?.message || "Unknown error" });
+    return res.status(400).json(plaidData || { ok: false, error: err?.message || "Unknown error" });
   }
 });
 
-// Definitive web flow page (captures public_token and calls exchange)
+// Página web (captura public_token y llama a exchange)
 app.get("/plaid/web", async (req, res) => {
   try {
     const user_id = req.query.user_id || "pedro-dev-1";
@@ -172,7 +191,6 @@ app.get("/plaid/web", async (req, res) => {
             try {
               setStatus("Link success. Exchanging token…");
 
-              // Optional institution name from metadata
               const inst = metadata && metadata.institution ? metadata.institution.name : null;
 
               const r = await fetch("/plaid/exchange_public_token", {
@@ -221,7 +239,40 @@ app.get("/plaid/web", async (req, res) => {
   } catch (err) {
     const plaidData = err?.response?.data;
     console.error("PLAID ERROR (/plaid/web):", plaidData || err);
-    return res.status(500).json({ error: plaidData || err?.message || "Unknown error" });
+    return res.status(500).json({ ok: false, error: plaidData || err?.message || "Unknown error" });
+  }
+});
+
+// -------------------- Supabase Ping (insert de prueba) --------------------
+app.post("/supabase/ping", async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({ ok: false, error: "Supabase not configured" });
+    }
+
+    const user_id = req.body?.user_id || "ping-user";
+    const now = new Date().toISOString();
+
+    const row = {
+      user_id: String(user_id),
+      plaid_item_id: `ping_item_${Date.now()}`,
+      plaid_access_token: `ping_access_${Date.now()}`,
+      institution_name: `PING ${now}`,
+    };
+
+    const { data, error } = await supabase
+      .from("plaid_items")
+      .insert(row)
+      .select("*");
+
+    if (error) {
+      console.error("SUPABASE ERROR (ping insert):", error);
+      return res.status(500).json({ ok: false, where: "supabase_ping", supabase_error: error });
+    }
+
+    return res.json({ ok: true, inserted: data });
+  } catch (err) {
+    return res.status(500).json({ ok: false, where: "supabase_ping", error: String(err) });
   }
 });
 
