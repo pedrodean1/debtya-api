@@ -48,19 +48,17 @@ function getKey() {
   if (!key || key.length < 32) {
     throw new Error("TOKEN_ENCRYPTION_KEY falta o es muy corta (mínimo 32 caracteres)");
   }
-  // Derivamos una key estable de 32 bytes
-  return crypto.createHash("sha256").update(key).digest();
+  return crypto.createHash("sha256").update(key).digest(); // 32 bytes
 }
 
 function encryptToken(plain) {
   const key = getKey();
-  const iv = crypto.randomBytes(12); // recomendado para GCM
+  const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
 
   const enc = Buffer.concat([cipher.update(String(plain), "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
 
-  // formato: iv.tag.ciphertext (base64)
   return `${iv.toString("base64")}.${tag.toString("base64")}.${enc.toString("base64")}`;
 }
 
@@ -124,7 +122,7 @@ app.post("/plaid/create_link_token", async (req, res) => {
   }
 });
 
-// Exchange public_token -> access_token + GUARDAR en Supabase (con token ENCRIPTADO)
+// Exchange public_token -> access_token + GUARDAR en Supabase (token ENCRIPTADO)
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
     const { public_token, user_id, institution_name } = req.body || {};
@@ -138,7 +136,6 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
       return res.status(500).json({ ok: false, error: "Supabase not configured" });
     }
 
-    // ✅ ENCRIPTAMOS el access_token antes de guardarlo
     const encrypted_access_token = encryptToken(access_token);
 
     const payload = {
@@ -148,7 +145,6 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
       institution_name: institution_name || null,
     };
 
-    // ✅ IMPORTANTE: debe coincidir con tu UNIQUE constraint (plaid_item_id)
     const { data, error } = await supabase
       .from("plaid_items")
       .upsert(payload, { onConflict: "plaid_item_id" })
@@ -254,7 +250,9 @@ app.get("/plaid/web", async (req, res) => {
 
               setStatus("✅ Bank connected + saved!", "ok");
               detailsEl.style.display = "block";
-              detailsEl.textContent = "plaid_item_id: " + data.item_id + "\\n(guardado en Supabase con token encriptado)";
+              detailsEl.textContent =
+                "plaid_item_id: " + data.item_id +
+                "\\n(guardado en Supabase con token encriptado)";
             } catch (e) {
               setStatus("❌ Exchange failed", "err");
               detailsEl.style.display = "block";
@@ -283,6 +281,54 @@ app.get("/plaid/web", async (req, res) => {
   }
 });
 
+// -------------------- NUEVO: Plaid Accounts (desencripta token desde Supabase y trae cuentas) --------------------
+// body: { plaid_item_id: "..." }  o  { user_id: "..." } (usa el más reciente)
+app.post("/plaid/accounts", async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
+
+    const { plaid_item_id, user_id } = req.body || {};
+    if (!plaid_item_id && !user_id) {
+      return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
+    }
+
+    let q = supabase
+      .from("plaid_items")
+      .select("plaid_item_id, plaid_access_token, institution_name, user_id, id");
+
+    if (plaid_item_id) {
+      q = q.eq("plaid_item_id", String(plaid_item_id)).limit(1).maybeSingle();
+    } else {
+      q = q.eq("user_id", String(user_id)).order("id", { ascending: false }).limit(1).maybeSingle();
+    }
+
+    const { data: row, error: dbErr } = await q;
+
+    if (dbErr) {
+      return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: dbErr });
+    }
+    if (!row) {
+      return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
+    }
+
+    const access_token = decryptToken(row.plaid_access_token);
+
+    const resp = await plaidClient.accountsGet({ access_token });
+
+    return res.json({
+      ok: true,
+      plaid_item_id: row.plaid_item_id,
+      user_id: row.user_id,
+      institution_name: row.institution_name,
+      accounts: resp.data.accounts,
+    });
+  } catch (err) {
+    const plaidData = err?.response?.data;
+    console.error("PLAID ERROR (/plaid/accounts):", plaidData || err);
+    return res.status(500).json({ ok: false, error: plaidData || String(err) });
+  }
+});
+
 // -------------------- Supabase Ping (insert de prueba) --------------------
 app.post("/supabase/ping", async (req, res) => {
   try {
@@ -296,7 +342,7 @@ app.post("/supabase/ping", async (req, res) => {
     const row = {
       user_id: String(user_id),
       plaid_item_id: `ping_item_${Date.now()}`,
-      plaid_access_token: encryptToken(`ping_access_${Date.now()}`), // también encriptado
+      plaid_access_token: encryptToken(`ping_access_${Date.now()}`),
       institution_name: `PING ${now}`,
     };
 
