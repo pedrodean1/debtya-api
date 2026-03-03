@@ -1,7 +1,10 @@
+"use strict";
+
 require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const crypto = require("crypto");
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const { createClient } = require("@supabase/supabase-js");
 
@@ -39,6 +42,44 @@ const supabase =
     ? createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } })
     : null;
 
+// -------------------- Encriptación Token (AES-256-GCM) --------------------
+function getKey() {
+  const key = process.env.TOKEN_ENCRYPTION_KEY || "";
+  if (!key || key.length < 32) {
+    throw new Error("TOKEN_ENCRYPTION_KEY falta o es muy corta (mínimo 32 caracteres)");
+  }
+  // Derivamos una key estable de 32 bytes
+  return crypto.createHash("sha256").update(key).digest();
+}
+
+function encryptToken(plain) {
+  const key = getKey();
+  const iv = crypto.randomBytes(12); // recomendado para GCM
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+
+  const enc = Buffer.concat([cipher.update(String(plain), "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+
+  // formato: iv.tag.ciphertext (base64)
+  return `${iv.toString("base64")}.${tag.toString("base64")}.${enc.toString("base64")}`;
+}
+
+function decryptToken(payload) {
+  const key = getKey();
+  const [ivB64, tagB64, dataB64] = String(payload).split(".");
+  if (!ivB64 || !tagB64 || !dataB64) throw new Error("Formato de token encriptado inválido");
+
+  const iv = Buffer.from(ivB64, "base64");
+  const tag = Buffer.from(tagB64, "base64");
+  const data = Buffer.from(dataB64, "base64");
+
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+
+  const dec = Buffer.concat([decipher.update(data), decipher.final()]);
+  return dec.toString("utf8");
+}
+
 // -------------------- Routes --------------------
 app.get("/health", (req, res) => {
   res.json({
@@ -46,6 +87,7 @@ app.get("/health", (req, res) => {
     name: "debtya-api",
     env: PLAID_ENV,
     supabase_configured: Boolean(supabase),
+    encryption_key_configured: Boolean(process.env.TOKEN_ENCRYPTION_KEY),
     time: new Date().toISOString(),
   });
 });
@@ -82,7 +124,7 @@ app.post("/plaid/create_link_token", async (req, res) => {
   }
 });
 
-// Exchange public_token -> access_token + GUARDAR en Supabase
+// Exchange public_token -> access_token + GUARDAR en Supabase (con token ENCRIPTADO)
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
     const { public_token, user_id, institution_name } = req.body || {};
@@ -92,15 +134,17 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
     const access_token = exchange.data.access_token;
     const item_id = exchange.data.item_id;
 
-    // ✅ Guardar usando tus columnas: user_id, plaid_item_id, plaid_access_token, institution_name
     if (!supabase) {
       return res.status(500).json({ ok: false, error: "Supabase not configured" });
     }
 
+    // ✅ ENCRIPTAMOS el access_token antes de guardarlo
+    const encrypted_access_token = encryptToken(access_token);
+
     const payload = {
       user_id: String(user_id || "pedro-dev-1"),
       plaid_item_id: item_id,
-      plaid_access_token: access_token,
+      plaid_access_token: encrypted_access_token,
       institution_name: institution_name || null,
     };
 
@@ -112,11 +156,7 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
 
     if (error) {
       console.error("SUPABASE ERROR (save plaid_items):", error);
-      return res.status(500).json({
-        ok: false,
-        where: "save_plaid_items",
-        supabase_error: error,
-      });
+      return res.status(500).json({ ok: false, where: "save_plaid_items", supabase_error: error });
     }
 
     return res.json({
@@ -214,7 +254,7 @@ app.get("/plaid/web", async (req, res) => {
 
               setStatus("✅ Bank connected + saved!", "ok");
               detailsEl.style.display = "block";
-              detailsEl.textContent = "plaid_item_id: " + data.item_id + "\\n(saved in Supabase)";
+              detailsEl.textContent = "plaid_item_id: " + data.item_id + "\\n(guardado en Supabase con token encriptado)";
             } catch (e) {
               setStatus("❌ Exchange failed", "err");
               detailsEl.style.display = "block";
@@ -256,7 +296,7 @@ app.post("/supabase/ping", async (req, res) => {
     const row = {
       user_id: String(user_id),
       plaid_item_id: `ping_item_${Date.now()}`,
-      plaid_access_token: `ping_access_${Date.now()}`,
+      plaid_access_token: encryptToken(`ping_access_${Date.now()}`), // también encriptado
       institution_name: `PING ${now}`,
     };
 
@@ -280,4 +320,5 @@ app.listen(PORT, () => {
   console.log(`✅ Debtya API running on port ${PORT}`);
   console.log(`✅ PLAID_ENV=${PLAID_ENV}`);
   console.log(`✅ SUPABASE configured: ${Boolean(supabase)}`);
+  console.log(`✅ TOKEN_ENCRYPTION_KEY configured: ${Boolean(process.env.TOKEN_ENCRYPTION_KEY)}`);
 });
