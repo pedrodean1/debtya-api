@@ -82,9 +82,7 @@ function decryptToken(payload) {
 function unwrapAccessToken(maybeEncrypted) {
   const s = String(maybeEncrypted || "");
   const parts = s.split(".");
-  if (parts.length === 3) {
-    return decryptToken(s);
-  }
+  if (parts.length === 3) return decryptToken(s);
   return s;
 }
 
@@ -104,10 +102,12 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Debe estar configurado en Plaid Dashboard -> Developers -> API -> Allowed redirect URIs
 app.get("/plaid/redirect", (req, res) => {
   res.status(200).send("OK");
 });
 
+// Create link_token
 app.post("/plaid/create_link_token", async (req, res) => {
   try {
     const user_id = req.body?.user_id || "pedro-dev-1";
@@ -134,6 +134,7 @@ app.post("/plaid/create_link_token", async (req, res) => {
   }
 });
 
+// Exchange public_token -> access_token + guardar en Supabase (token encriptado)
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
     const { public_token, user_id, institution_name } = req.body || {};
@@ -180,6 +181,7 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
   }
 });
 
+// Página web (captura public_token y llama a exchange)
 app.get("/plaid/web", async (req, res) => {
   try {
     const user_id = req.query.user_id || "pedro-dev-1";
@@ -301,7 +303,6 @@ app.post("/plaid/accounts", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
     }
 
-    // 1) Buscar row en Supabase
     let row = null;
 
     if (plaid_item_id) {
@@ -315,7 +316,6 @@ app.post("/plaid/accounts", async (req, res) => {
       if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
       row = data;
     } else {
-      // ✅ Importante: ignorar pings y coger el más reciente REAL (no ping_item_)
       const { data, error } = await supabase
         .from("plaid_items")
         .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
@@ -327,7 +327,6 @@ app.post("/plaid/accounts", async (req, res) => {
       if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
       row = Array.isArray(data) ? data[0] : null;
 
-      // Si no hay real, intentamos al menos el más reciente (aunque sea ping) para debug
       if (!row) {
         const fallback = await supabase
           .from("plaid_items")
@@ -347,10 +346,8 @@ app.post("/plaid/accounts", async (req, res) => {
       return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
     }
 
-    // 2) Obtener access_token real (desencriptando si hace falta)
     const access_token = unwrapAccessToken(row.plaid_access_token);
 
-    // 3) Validación fuerte antes de llamar a Plaid
     if (!looksLikePlaidAccessToken(access_token)) {
       return res.status(400).json({
         ok: false,
@@ -360,12 +357,9 @@ app.post("/plaid/accounts", async (req, res) => {
           user_id: row.user_id,
           institution_name: row.institution_name,
         },
-        hint:
-          "Conecta Plaid otra vez en /plaid/web para generar un item nuevo con token encriptado válido, o llama /plaid/accounts con plaid_item_id real.",
       });
     }
 
-    // 4) Llamar a Plaid
     const resp = await plaidClient.accountsGet({ access_token });
 
     return res.json({
@@ -378,6 +372,87 @@ app.post("/plaid/accounts", async (req, res) => {
   } catch (err) {
     const plaidData = err?.response?.data;
     console.error("PLAID ERROR (/plaid/accounts):", plaidData || err);
+    return res.status(500).json({ ok: false, error: plaidData || String(err) });
+  }
+});
+
+// -------------------- NUEVO: Plaid Transactions Sync --------------------
+// body: { user_id: "..." } o { plaid_item_id: "..." }  (opcional: cursor: "..." )
+app.post("/plaid/transactions/sync", async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
+
+    const { plaid_item_id, user_id, cursor } = req.body || {};
+    if (!plaid_item_id && !user_id) {
+      return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
+    }
+
+    // 1) Buscar row en Supabase (igual que accounts)
+    let row = null;
+
+    if (plaid_item_id) {
+      const { data, error } = await supabase
+        .from("plaid_items")
+        .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
+        .eq("plaid_item_id", String(plaid_item_id))
+        .limit(1)
+        .maybeSingle();
+
+      if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
+      row = data;
+    } else {
+      const { data, error } = await supabase
+        .from("plaid_items")
+        .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
+        .eq("user_id", String(user_id))
+        .not("plaid_item_id", "like", "ping_item_%")
+        .order("id", { ascending: false })
+        .limit(1);
+
+      if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
+      row = Array.isArray(data) ? data[0] : null;
+    }
+
+    if (!row) {
+      return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
+    }
+
+    // 2) Desencriptar token
+    const access_token = unwrapAccessToken(row.plaid_access_token);
+
+    if (!looksLikePlaidAccessToken(access_token)) {
+      return res.status(400).json({
+        ok: false,
+        error: "El access_token que salió NO parece un token de Plaid (no empieza con 'access-').",
+        used_row: {
+          plaid_item_id: row.plaid_item_id,
+          user_id: row.user_id,
+          institution_name: row.institution_name,
+        },
+      });
+    }
+
+    // 3) Llamar Plaid transactionsSync
+    const resp = await plaidClient.transactionsSync({
+      access_token,
+      cursor: cursor ? String(cursor) : undefined,
+    });
+
+    return res.json({
+      ok: true,
+      plaid_item_id: row.plaid_item_id,
+      user_id: row.user_id,
+      institution_name: row.institution_name,
+      added: resp.data.added,
+      modified: resp.data.modified,
+      removed: resp.data.removed,
+      next_cursor: resp.data.next_cursor,
+      has_more: resp.data.has_more,
+      request_id: resp.data.request_id,
+    });
+  } catch (err) {
+    const plaidData = err?.response?.data;
+    console.error("PLAID ERROR (/plaid/transactions/sync):", plaidData || err);
     return res.status(500).json({ ok: false, error: plaidData || String(err) });
   }
 });
