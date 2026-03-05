@@ -42,7 +42,7 @@ const supabase =
     ? createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } })
     : null;
 
-// -------------------- Encriptación Token (AES-256-GCM) --------------------
+// -------------------- Crypto (AES-256-GCM) --------------------
 function getKey() {
   const key = process.env.TOKEN_ENCRYPTION_KEY || "";
   if (!key || key.length < 32) throw new Error("TOKEN_ENCRYPTION_KEY falta o es muy corta (mínimo 32 caracteres)");
@@ -78,7 +78,7 @@ function looksLikePlaidAccessToken(s) {
   return typeof s === "string" && s.startsWith("access-");
 }
 
-// -------------------- Utilidades --------------------
+// -------------------- Utils --------------------
 function toNumber(x, fallback = 0) {
   const n = Number(x);
   return Number.isFinite(n) ? n : fallback;
@@ -91,6 +91,9 @@ function clampInt(x, min, max) {
 function isoDate(d) {
   return new Date(d).toISOString().slice(0, 10);
 }
+function todayISO() {
+  return isoDate(new Date());
+}
 function startOfWeekISO(dateObj = new Date()) {
   const d = new Date(dateObj);
   const day = d.getDay(); // 0 sunday
@@ -99,15 +102,28 @@ function startOfWeekISO(dateObj = new Date()) {
   d.setHours(0, 0, 0, 0);
   return isoDate(d);
 }
-function todayISO() {
-  return isoDate(new Date());
-}
 function ceilToNearest(amount, step) {
   const s = Math.max(0.01, toNumber(step, 1));
   return Math.ceil(amount / s) * s;
 }
 
-// -------------------- Supabase helpers (Plaid items) --------------------
+// -------------------- Notifications --------------------
+async function createNotification(user_id, type, title, body) {
+  try {
+    if (!supabase) return;
+    await supabase.from("notifications").insert({
+      user_id: String(user_id),
+      type: String(type),
+      title: String(title),
+      body: String(body),
+      is_read: false,
+    });
+  } catch (e) {
+    console.error("NOTIFICATION ERROR:", e);
+  }
+}
+
+// -------------------- Supabase helpers: items --------------------
 async function findLatestItemByUser(user_id) {
   const { data, error } = await supabase
     .from("plaid_items")
@@ -132,26 +148,26 @@ async function findItemById(plaid_item_id) {
   return { row: data || null, error: null };
 }
 
-// -------------------- Supabase helpers (Transactions sync/cursor) --------------------
+// -------------------- Cursor / Transactions storage --------------------
 async function getStoredCursor(plaid_item_id) {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("plaid_sync_state")
     .select("next_cursor")
     .eq("plaid_item_id", String(plaid_item_id))
     .limit(1)
     .maybeSingle();
-
-  if (error) return null;
   return data?.next_cursor || null;
 }
 async function saveCursor({ user_id, plaid_item_id, next_cursor }) {
-  const payload = {
-    user_id: String(user_id),
-    plaid_item_id: String(plaid_item_id),
-    next_cursor: String(next_cursor),
-    updated_at: new Date().toISOString(),
-  };
-  await supabase.from("plaid_sync_state").upsert(payload, { onConflict: "plaid_item_id" });
+  await supabase.from("plaid_sync_state").upsert(
+    {
+      user_id: String(user_id),
+      plaid_item_id: String(plaid_item_id),
+      next_cursor: String(next_cursor),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "plaid_item_id" }
+  );
 }
 async function deleteCursor(plaid_item_id) {
   await supabase.from("plaid_sync_state").delete().eq("plaid_item_id", String(plaid_item_id));
@@ -231,7 +247,7 @@ async function runTransactionsSyncAndSave({ row, cursorOverride = null }) {
   };
 }
 
-// -------------------- Debts (manual) --------------------
+// -------------------- Plan helpers --------------------
 function sortDebtsByStrategy(debts, strategy) {
   const s = String(strategy || "avalanche").toLowerCase();
   if (s === "snowball") return [...debts].sort((a, b) => (a.balance - b.balance) || (b.apr - a.apr));
@@ -350,27 +366,8 @@ function buildPaymentCalendar(debts, next_month_payments, baseDate = new Date())
 
 // -------------------- Micro-pagos helpers --------------------
 async function getMicroRule(user_id) {
-  const { data, error } = await supabase.from("micro_rules").select("*").eq("user_id", String(user_id)).maybeSingle();
-  if (error) return null;
+  const { data } = await supabase.from("micro_rules").select("*").eq("user_id", String(user_id)).maybeSingle();
   return data || null;
-}
-async function upsertMicroRule(rule) {
-  const payload = {
-    user_id: String(rule.user_id),
-    enabled: Boolean(rule.enabled),
-    mode: String(rule.mode || "fixed"),
-    fixed_amount: Math.max(0, toNumber(rule.fixed_amount, 1)),
-    percent: Math.max(0, toNumber(rule.percent, 2)),
-    roundup_to: Math.max(0.01, toNumber(rule.roundup_to, 1)),
-    min_purchase_amount: Math.max(0, toNumber(rule.min_purchase_amount, 1)),
-    cap_daily: rule.cap_daily === null || rule.cap_daily === undefined ? null : Math.max(0, toNumber(rule.cap_daily, 0)),
-    cap_weekly: rule.cap_weekly === null || rule.cap_weekly === undefined ? null : Math.max(0, toNumber(rule.cap_weekly, 0)),
-    target_debt_id: rule.target_debt_id || null,
-    updated_at: new Date().toISOString(),
-  };
-  const { data, error } = await supabase.from("micro_rules").upsert(payload, { onConflict: "user_id" }).select("*");
-  if (error) throw error;
-  return data?.[0] || null;
 }
 async function getLedger(user_id) {
   const { data } = await supabase.from("micro_ledger").select("*").eq("user_id", String(user_id)).maybeSingle();
@@ -383,34 +380,35 @@ async function upsertLedger(user_id, patch) {
     pending_total: patch.pending_total !== undefined ? patch.pending_total : current.pending_total,
     processed_total: patch.processed_total !== undefined ? patch.processed_total : current.processed_total,
     last_run_at: patch.last_run_at !== undefined ? patch.last_run_at : current.last_run_at,
+    last_payout_at: patch.last_payout_at !== undefined ? patch.last_payout_at : current.last_payout_at,
     updated_at: new Date().toISOString(),
   };
   await supabase.from("micro_ledger").upsert(payload, { onConflict: "user_id" });
   return payload;
 }
-async function sumContribForDay(user_id, dayISO) {
+async function sumPendingForDay(user_id, dayISO) {
   const { data } = await supabase
     .from("micro_contributions")
     .select("contribution_amount,created_at")
     .eq("user_id", String(user_id))
     .eq("status", "pending");
+
   let sum = 0;
   for (const r of data || []) {
-    const d = isoDate(r.created_at);
-    if (d === dayISO) sum += toNumber(r.contribution_amount, 0);
+    if (isoDate(r.created_at) === dayISO) sum += toNumber(r.contribution_amount, 0);
   }
   return sum;
 }
-async function sumContribForWeek(user_id, weekStartISO) {
+async function sumPendingForWeek(user_id, weekStartISO) {
   const { data } = await supabase
     .from("micro_contributions")
     .select("contribution_amount,created_at")
     .eq("user_id", String(user_id))
     .eq("status", "pending");
+
   let sum = 0;
   for (const r of data || []) {
-    const d = isoDate(r.created_at);
-    if (d >= weekStartISO) sum += toNumber(r.contribution_amount, 0);
+    if (isoDate(r.created_at) >= weekStartISO) sum += toNumber(r.contribution_amount, 0);
   }
   return sum;
 }
@@ -435,6 +433,174 @@ function calcContribution(rule, purchaseAmount) {
   return c;
 }
 
+// Motor de micro-run (reutilizable por endpoint y Auto-Run)
+async function runMicroEngine({ user_id, days_back = 120, source = "manual" }) {
+  const rule = await getMicroRule(user_id);
+  if (!rule || !rule.enabled) {
+    return { ok: true, message: "Micro-pagos desactivados o regla no existe.", created: 0, skipped: 0, created_total: 0 };
+  }
+
+  const foundItem = await findLatestItemByUser(user_id);
+  const plaid_item_id = foundItem?.row?.plaid_item_id || "unknown_item";
+
+  const since = new Date(Date.now() - days_back * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const { data: tx, error } = await supabase
+    .from("plaid_transactions")
+    .select("transaction_id,date,amount,pending,is_removed")
+    .eq("user_id", user_id)
+    .eq("is_removed", false)
+    .eq("pending", false)
+    .gte("date", since);
+
+  if (error) throw error;
+
+  const today = todayISO();
+  const weekStart = startOfWeekISO(new Date());
+
+  let dailyUsed = await sumPendingForDay(user_id, today);
+  let weeklyUsed = await sumPendingForWeek(user_id, weekStart);
+
+  const capDaily = rule.cap_daily === null || rule.cap_daily === undefined ? null : Math.max(0, toNumber(rule.cap_daily, 0));
+  const capWeekly = rule.cap_weekly === null || rule.cap_weekly === undefined ? null : Math.max(0, toNumber(rule.cap_weekly, 0));
+  const minPurchase = Math.max(0, toNumber(rule.min_purchase_amount, 1));
+
+  let created = 0;
+  let skipped = 0;
+  let createdTotal = 0;
+
+  for (const t of tx || []) {
+    const tid = String(t.transaction_id || "");
+    if (!tid) {
+      skipped += 1;
+      continue;
+    }
+
+    const purchaseAmount = Math.max(0, toNumber(t.amount, 0));
+    if (purchaseAmount < minPurchase) {
+      skipped += 1;
+      continue;
+    }
+
+    let c = calcContribution(rule, purchaseAmount);
+    if (c <= 0) {
+      skipped += 1;
+      continue;
+    }
+
+    if (capDaily !== null) {
+      const remainingDaily = capDaily - dailyUsed;
+      if (remainingDaily <= 0) {
+        skipped += 1;
+        continue;
+      }
+      c = Math.min(c, remainingDaily);
+    }
+
+    if (capWeekly !== null) {
+      const remainingWeekly = capWeekly - weeklyUsed;
+      if (remainingWeekly <= 0) {
+        skipped += 1;
+        continue;
+      }
+      c = Math.min(c, remainingWeekly);
+    }
+
+    c = Math.round(c * 100) / 100;
+    if (c <= 0) {
+      skipped += 1;
+      continue;
+    }
+
+    const row = {
+      user_id,
+      plaid_item_id,
+      transaction_id: tid,
+      transaction_date: t.date || null,
+      purchase_amount: purchaseAmount,
+      contribution_amount: c,
+      target_debt_id: rule.target_debt_id || null,
+      status: "pending",
+    };
+
+    const { error: insErr } = await supabase.from("micro_contributions").insert(row);
+    if (insErr) {
+      skipped += 1;
+      continue;
+    }
+
+    created += 1;
+    createdTotal += c;
+    dailyUsed += c;
+    weeklyUsed += c;
+  }
+
+  const ledger = (await getLedger(user_id)) || { user_id, pending_total: 0, processed_total: 0 };
+  const newPending = Math.round((toNumber(ledger.pending_total, 0) + createdTotal) * 100) / 100;
+
+  await upsertLedger(user_id, { pending_total: newPending, last_run_at: new Date().toISOString() });
+
+  if (createdTotal > 0) {
+    await createNotification(
+      user_id,
+      "micro_run",
+      "Micro-pagos acumulados",
+      `Se agregaron ${money(createdTotal)} en micro-aportes (${source}). Total pendiente: ${money(newPending)}.`
+    );
+  }
+
+  return {
+    ok: true,
+    created,
+    skipped,
+    created_total: Number(createdTotal.toFixed(2)),
+    ledger_pending_total: newPending,
+  };
+}
+
+// Payout simulado (marca pending -> processed)
+async function simulatePayout({ user_id, thresholdOverride = null }) {
+  const rule = await getMicroRule(user_id);
+  if (!rule || !rule.payout_enabled) {
+    return { ok: true, message: "Payout desactivado o regla no existe.", paid: 0 };
+  }
+
+  const ledger = (await getLedger(user_id)) || { user_id, pending_total: 0, processed_total: 0 };
+  const threshold = thresholdOverride !== null ? Math.max(0, toNumber(thresholdOverride, 0)) : Math.max(0, toNumber(rule.payout_min_threshold, 20));
+
+  const pending = Math.max(0, toNumber(ledger.pending_total, 0));
+  if (pending < threshold) {
+    return { ok: true, message: `Pendiente ${money(pending)} < umbral ${money(threshold)}. No se ejecuta payout.`, paid: 0, pending_total: pending };
+  }
+
+  // marcar todas las pending como processed
+  const now = new Date().toISOString();
+  const { error: updErr } = await supabase
+    .from("micro_contributions")
+    .update({ status: "processed", processed_at: now })
+    .eq("user_id", String(user_id))
+    .eq("status", "pending");
+
+  if (updErr) throw updErr;
+
+  const newProcessedTotal = Math.round((toNumber(ledger.processed_total, 0) + pending) * 100) / 100;
+
+  await upsertLedger(user_id, {
+    pending_total: 0,
+    processed_total: newProcessedTotal,
+    last_payout_at: now,
+  });
+
+  await createNotification(
+    user_id,
+    "payout",
+    "Payout semanal (simulado) ejecutado",
+    `Se “pagaron” ${money(pending)} hacia la deuda destino. Total procesado histórico: ${money(newProcessedTotal)}.`
+  );
+
+  return { ok: true, paid: Number(pending.toFixed(2)), pending_total: 0, processed_total: newProcessedTotal };
+}
+
 // -------------------- ROUTES --------------------
 app.get("/health", (req, res) => {
   res.json({
@@ -447,14 +613,12 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Must be allowed in Plaid Dashboard
 app.get("/plaid/redirect", (req, res) => res.status(200).send("OK"));
 
 // Create link_token
 app.post("/plaid/create_link_token", async (req, res) => {
   try {
     const user_id = req.body?.user_id || "pedro-dev-1";
-
     const response = await plaidClient.linkTokenCreate({
       user: { client_user_id: String(user_id) },
       client_name: "Debtya",
@@ -463,14 +627,13 @@ app.post("/plaid/create_link_token", async (req, res) => {
       language: "en",
       redirect_uri: "https://debtya-api.onrender.com/plaid/redirect",
     });
-
     return res.json({ ok: true, ...response.data });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err?.response?.data || String(err) });
   }
 });
 
-// Exchange public_token -> access_token + save encrypted
+// Exchange public_token -> access_token (encrypted)
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -500,11 +663,10 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
   }
 });
 
-// Web flow for Plaid Link
+// Web flow
 app.get("/plaid/web", async (req, res) => {
   try {
     const user_id = req.query.user_id || "pedro-dev-1";
-
     const linkResp = await plaidClient.linkTokenCreate({
       user: { client_user_id: String(user_id) },
       client_name: "Debtya",
@@ -573,15 +735,6 @@ app.get("/plaid/web", async (req, res) => {
               detailsEl.style.display = "block";
               detailsEl.textContent = String(e);
             }
-          },
-          onExit: (err) => {
-            if (err) {
-              setStatus("❌ Plaid exited with error", "err");
-              detailsEl.style.display = "block";
-              detailsEl.textContent = JSON.stringify(err);
-            } else {
-              setStatus("Plaid closed.");
-            }
           }
         });
         handler.open();
@@ -598,7 +751,6 @@ app.get("/plaid/web", async (req, res) => {
 app.post("/plaid/accounts", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
-
     const { plaid_item_id, user_id } = req.body || {};
     if (!plaid_item_id && !user_id) return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
 
@@ -619,7 +771,7 @@ app.post("/plaid/accounts", async (req, res) => {
   }
 });
 
-// Transactions sync/save
+// Transactions sync + AUTO-RUN micro
 app.post("/plaid/transactions/sync", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -635,11 +787,25 @@ app.post("/plaid/transactions/sync", async (req, res) => {
     if (!found.row) return res.status(404).json({ ok: false, error: "No encontré plaid_items" });
 
     const result = await runTransactionsSyncAndSave({ row: found.row, cursorOverride: cursor || null });
-    return res.json({ ok: true, plaid_item_id: found.row.plaid_item_id, user_id: found.row.user_id, institution_name: found.row.institution_name, ...result });
+
+    // AUTO-RUN micro
+    let micro_auto = null;
+    try {
+      const rule = await getMicroRule(found.row.user_id);
+      if (rule && rule.enabled && rule.auto_run) {
+        micro_auto = await runMicroEngine({ user_id: found.row.user_id, days_back: 120, source: "auto_run(sync)" });
+      }
+    } catch (e) {
+      micro_auto = { ok: false, error: String(e) };
+    }
+
+    return res.json({ ok: true, plaid_item_id: found.row.plaid_item_id, user_id: found.row.user_id, institution_name: found.row.institution_name, ...result, micro_auto });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err?.response?.data || String(err) });
   }
 });
+
+// Reset + AUTO-RUN micro
 app.post("/plaid/transactions/reset", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -656,7 +822,19 @@ app.post("/plaid/transactions/reset", async (req, res) => {
 
     await deleteCursor(found.row.plaid_item_id);
     const result = await runTransactionsSyncAndSave({ row: found.row, cursorOverride: null });
-    return res.json({ ok: true, message: "Cursor reseteado. Sync desde cero ejecutada.", plaid_item_id: found.row.plaid_item_id, user_id: found.row.user_id, institution_name: found.row.institution_name, ...result });
+
+    // AUTO-RUN micro
+    let micro_auto = null;
+    try {
+      const rule = await getMicroRule(found.row.user_id);
+      if (rule && rule.enabled && rule.auto_run) {
+        micro_auto = await runMicroEngine({ user_id: found.row.user_id, days_back: 365, source: "auto_run(reset)" });
+      }
+    } catch (e) {
+      micro_auto = { ok: false, error: String(e) };
+    }
+
+    return res.json({ ok: true, message: "Cursor reseteado. Sync desde cero ejecutada.", plaid_item_id: found.row.plaid_item_id, user_id: found.row.user_id, institution_name: found.row.institution_name, ...result, micro_auto });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err?.response?.data || String(err) });
   }
@@ -726,7 +904,7 @@ app.get("/analytics/summary", async (req, res) => {
   }
 });
 
-// Debts endpoints
+// Debts
 app.post("/debts", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -765,7 +943,7 @@ app.get("/debts", async (req, res) => {
   }
 });
 
-// Plan recommendation
+// Plan recommendation (igual)
 app.post("/plan/recommendation", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -845,17 +1023,13 @@ app.post("/plan/recommendation", async (req, res) => {
   }
 });
 
-// =========================
-// MICRO-PAGOS ENDPOINTS
-// =========================
+// -------------------- MICRO ENDPOINTS --------------------
 
 // GET /micro/rule?user_id=...
 app.get("/micro/rule", async (req, res) => {
   try {
-    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
     const user_id = String(req.query.user_id || "");
     if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
-
     const rule = await getMicroRule(user_id);
     return res.json({ ok: true, rule: rule || null });
   } catch (err) {
@@ -863,38 +1037,41 @@ app.get("/micro/rule", async (req, res) => {
   }
 });
 
-// POST /micro/rule  (upsert)
+// POST /micro/rule (upsert)
 app.post("/micro/rule", async (req, res) => {
   try {
-    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
-
     const user_id = String(req.body?.user_id || "");
     if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
 
-    const rule = {
+    const payload = {
       user_id,
       enabled: req.body?.enabled !== undefined ? Boolean(req.body.enabled) : true,
       mode: String(req.body?.mode || "fixed"),
-      fixed_amount: req.body?.fixed_amount,
-      percent: req.body?.percent,
-      roundup_to: req.body?.roundup_to,
-      min_purchase_amount: req.body?.min_purchase_amount,
-      cap_daily: req.body?.cap_daily,
-      cap_weekly: req.body?.cap_weekly,
+      fixed_amount: Math.max(0, toNumber(req.body?.fixed_amount, 1)),
+      percent: Math.max(0, toNumber(req.body?.percent, 2)),
+      roundup_to: Math.max(0.01, toNumber(req.body?.roundup_to, 1)),
+      min_purchase_amount: Math.max(0, toNumber(req.body?.min_purchase_amount, 1)),
+      cap_daily: req.body?.cap_daily === null || req.body?.cap_daily === undefined ? null : Math.max(0, toNumber(req.body?.cap_daily, 0)),
+      cap_weekly: req.body?.cap_weekly === null || req.body?.cap_weekly === undefined ? null : Math.max(0, toNumber(req.body?.cap_weekly, 0)),
       target_debt_id: req.body?.target_debt_id || null,
+      auto_run: req.body?.auto_run !== undefined ? Boolean(req.body.auto_run) : true,
+      payout_enabled: req.body?.payout_enabled !== undefined ? Boolean(req.body.payout_enabled) : true,
+      payout_min_threshold: Math.max(0, toNumber(req.body?.payout_min_threshold, 20)),
+      updated_at: new Date().toISOString(),
     };
 
-    const saved = await upsertMicroRule(rule);
-    return res.json({ ok: true, rule: saved });
+    const { data, error } = await supabase.from("micro_rules").upsert(payload, { onConflict: "user_id" }).select("*");
+    if (error) return res.status(500).json({ ok: false, supabase_error: error });
+
+    return res.json({ ok: true, rule: data?.[0] || null });
   } catch (err) {
-    return res.status(500).json({ ok: false, error: String(err?.message || err) });
+    return res.status(500).json({ ok: false, error: String(err) });
   }
 });
 
 // GET /micro/status?user_id=...
 app.get("/micro/status", async (req, res) => {
   try {
-    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
     const user_id = String(req.query.user_id || "");
     if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
 
@@ -908,12 +1085,7 @@ app.get("/micro/status", async (req, res) => {
       .order("created_at", { ascending: false })
       .limit(20);
 
-    return res.json({
-      ok: true,
-      rule: rule || null,
-      ledger: ledger || null,
-      recent: recent || [],
-    });
+    return res.json({ ok: true, rule: rule || null, ledger: ledger || null, recent: recent || [] });
   } catch (err) {
     return res.status(500).json({ ok: false, error: String(err) });
   }
@@ -922,135 +1094,68 @@ app.get("/micro/status", async (req, res) => {
 // POST /micro/run  body: { user_id, days_back? }
 app.post("/micro/run", async (req, res) => {
   try {
-    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
-
     const user_id = String(req.body?.user_id || "");
     if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
 
     const days_back = Math.min(3650, Math.max(1, Math.floor(toNumber(req.body?.days_back, 120))));
+    const out = await runMicroEngine({ user_id, days_back, source: "manual_run" });
+    return res.json(out);
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: String(err) });
+  }
+});
 
-    const rule = await getMicroRule(user_id);
-    if (!rule || !rule.enabled) return res.json({ ok: true, message: "Micro-pagos desactivados o regla no existe.", created: 0, skipped: 0 });
+// POST /micro/payout/simulate  body: { user_id, threshold? }
+app.post("/micro/payout/simulate", async (req, res) => {
+  try {
+    const user_id = String(req.body?.user_id || "");
+    if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
 
-    // Usamos el item más reciente del usuario (para guardar plaid_item_id)
-    const foundItem = await findLatestItemByUser(user_id);
-    const plaid_item_id = foundItem?.row?.plaid_item_id || "unknown_item";
+    const threshold = req.body?.threshold !== undefined ? toNumber(req.body.threshold, 0) : null;
+    const out = await simulatePayout({ user_id, thresholdOverride: threshold });
+    return res.json(out);
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: String(err) });
+  }
+});
 
-    const since = new Date(Date.now() - days_back * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+// -------------------- NOTIFICATIONS --------------------
 
-    // Traemos transacciones recientes (solo gastos reales)
-    // Reglas:
-    // - amount > 0 (gasto)
-    // - pending = false
-    // - is_removed = false
-    // - date >= since
-    const { data: tx, error } = await supabase
-      .from("plaid_transactions")
-      .select("transaction_id,date,amount,pending,is_removed")
+// GET /notifications?user_id=...&limit=20
+app.get("/notifications", async (req, res) => {
+  try {
+    const user_id = String(req.query.user_id || "");
+    const limit = Math.min(100, Math.max(1, Math.floor(toNumber(req.query.limit, 20))));
+    if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
       .eq("user_id", user_id)
-      .eq("is_removed", false)
-      .eq("pending", false)
-      .gte("date", since);
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
-    if (error) return res.status(500).json({ ok: false, where: "select_transactions_for_micro", supabase_error: error });
+    if (error) return res.status(500).json({ ok: false, supabase_error: error });
+    return res.json({ ok: true, notifications: data || [] });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: String(err) });
+  }
+});
 
-    const today = todayISO();
-    const weekStart = startOfWeekISO(new Date());
+// POST /notifications/mark_read  body: { user_id }
+app.post("/notifications/mark_read", async (req, res) => {
+  try {
+    const user_id = String(req.body?.user_id || "");
+    if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
 
-    let dailyUsed = await sumContribForDay(user_id, today);
-    let weeklyUsed = await sumContribForWeek(user_id, weekStart);
+    const { error } = await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", user_id)
+      .eq("is_read", false);
 
-    const capDaily = rule.cap_daily === null || rule.cap_daily === undefined ? null : Math.max(0, toNumber(rule.cap_daily, 0));
-    const capWeekly = rule.cap_weekly === null || rule.cap_weekly === undefined ? null : Math.max(0, toNumber(rule.cap_weekly, 0));
-    const minPurchase = Math.max(0, toNumber(rule.min_purchase_amount, 1));
-
-    let created = 0;
-    let skipped = 0;
-    let createdTotal = 0;
-
-    for (const t of tx || []) {
-      const tid = String(t.transaction_id || "");
-      if (!tid) {
-        skipped += 1;
-        continue;
-      }
-
-      const purchaseAmount = Math.max(0, toNumber(t.amount, 0));
-      if (purchaseAmount < minPurchase) {
-        skipped += 1;
-        continue;
-      }
-
-      // Calcular aporte
-      let c = calcContribution(rule, purchaseAmount);
-      if (c <= 0) {
-        skipped += 1;
-        continue;
-      }
-
-      // Aplicar caps
-      if (capDaily !== null) {
-        const remainingDaily = capDaily - dailyUsed;
-        if (remainingDaily <= 0) {
-          skipped += 1;
-          continue;
-        }
-        c = Math.min(c, remainingDaily);
-      }
-      if (capWeekly !== null) {
-        const remainingWeekly = capWeekly - weeklyUsed;
-        if (remainingWeekly <= 0) {
-          skipped += 1;
-          continue;
-        }
-        c = Math.min(c, remainingWeekly);
-      }
-
-      c = Math.round(c * 100) / 100;
-      if (c <= 0) {
-        skipped += 1;
-        continue;
-      }
-
-      // Insert (unique by transaction_id) => si existe, se ignora
-      const row = {
-        user_id,
-        plaid_item_id,
-        transaction_id: tid,
-        transaction_date: t.date || null,
-        purchase_amount: purchaseAmount,
-        contribution_amount: c,
-        target_debt_id: rule.target_debt_id || null,
-        status: "pending",
-      };
-
-      const { error: insErr } = await supabase.from("micro_contributions").insert(row);
-      if (insErr) {
-        // Si es duplicado por unique(transaction_id), lo contamos como skipped
-        skipped += 1;
-        continue;
-      }
-
-      created += 1;
-      createdTotal += c;
-      dailyUsed += c;
-      weeklyUsed += c;
-    }
-
-    // Actualizar ledger
-    const ledger = (await getLedger(user_id)) || { user_id, pending_total: 0, processed_total: 0 };
-    const newPending = Math.round((toNumber(ledger.pending_total, 0) + createdTotal) * 100) / 100;
-
-    await upsertLedger(user_id, { pending_total: newPending, last_run_at: new Date().toISOString() });
-
-    return res.json({
-      ok: true,
-      created,
-      skipped,
-      created_total: Number(createdTotal.toFixed(2)),
-      ledger_pending_total: newPending,
-      note: "Micro-aportes creados a partir de compras (amount>0). No ejecuta pago real aún; solo acumula.",
-    });
+    if (error) return res.status(500).json({ ok: false, supabase_error: error });
+    return res.json({ ok: true });
   } catch (err) {
     return res.status(500).json({ ok: false, error: String(err) });
   }
@@ -1059,24 +1164,19 @@ app.post("/micro/run", async (req, res) => {
 // Supabase ping
 app.post("/supabase/ping", async (req, res) => {
   try {
-    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
-
     const user_id = req.body?.user_id || "ping-user";
     const now = new Date().toISOString();
-
     const row = {
       user_id: String(user_id),
       plaid_item_id: `ping_item_${Date.now()}`,
       plaid_access_token: encryptToken(`ping_access_${Date.now()}`),
       institution_name: `PING ${now}`,
     };
-
     const { data, error } = await supabase.from("plaid_items").insert(row).select("*");
-    if (error) return res.status(500).json({ ok: false, where: "supabase_ping", supabase_error: error });
-
+    if (error) return res.status(500).json({ ok: false, supabase_error: error });
     return res.json({ ok: true, inserted: data });
   } catch (err) {
-    return res.status(500).json({ ok: false, where: "supabase_ping", error: String(err) });
+    return res.status(500).json({ ok: false, error: String(err) });
   }
 });
 
