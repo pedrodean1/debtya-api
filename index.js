@@ -342,6 +342,41 @@ btn.onclick=async()=>{
   }
 });
 
+app.post("/plaid/accounts", async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
+
+    const { plaid_item_id, user_id } = req.body || {};
+    if (!plaid_item_id && !user_id) return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
+
+    let found;
+    if (plaid_item_id) found = await findItemById(plaid_item_id);
+    else found = await findLatestItemByUser(user_id);
+
+    if (found.error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: found.error });
+    if (!found.row) return res.status(404).json({ ok: false, error: "No encontré plaid_items" });
+
+    const access_token = unwrapAccessToken(found.row.plaid_access_token);
+    if (!looksLikePlaidAccessToken(access_token)) {
+      return res.status(400).json({ ok: false, error: "access_token inválido (no empieza con 'access-')" });
+    }
+
+    const resp = await plaidClient.accountsGet({ access_token });
+
+    return res.json({
+      ok: true,
+      plaid_item_id: found.row.plaid_item_id,
+      user_id: found.row.user_id,
+      institution_name: found.row.institution_name,
+      accounts: resp.data.accounts,
+    });
+  } catch (err) {
+    const plaidData = err?.response?.data;
+    console.error("PLAID ERROR (/plaid/accounts):", plaidData || err);
+    return res.status(500).json({ ok: false, error: plaidData || String(err) });
+  }
+});
+
 // -------------------- SYNC + SAVE --------------------
 async function runTransactionsSyncAndSave({ row, cursorOverride = null }) {
   const access_token = unwrapAccessToken(row.plaid_access_token);
@@ -409,7 +444,6 @@ app.post("/plaid/transactions/sync", async (req, res) => {
   }
 });
 
-// ✅ NUEVO: RESET cursor (para llenar la tabla por primera vez)
 app.post("/plaid/transactions/reset", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -424,10 +458,8 @@ app.post("/plaid/transactions/reset", async (req, res) => {
     if (found.error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: found.error });
     if (!found.row) return res.status(404).json({ ok: false, error: "No encontré plaid_items" });
 
-    // 1) borrar cursor guardado
     await deleteCursor(found.row.plaid_item_id);
 
-    // 2) sync desde cero (sin cursor)
     const result = await runTransactionsSyncAndSave({ row: found.row, cursorOverride: null });
 
     return res.json({
@@ -442,6 +474,92 @@ app.post("/plaid/transactions/reset", async (req, res) => {
     const plaidData = err?.response?.data;
     console.error("PLAID ERROR (/plaid/transactions/reset):", plaidData || err);
     return res.status(500).json({ ok: false, error: plaidData || String(err) });
+  }
+});
+
+// -------------------- NUEVO: Analytics Summary --------------------
+// GET /analytics/summary?user_id=...&days=30
+app.get("/analytics/summary", async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
+
+    const user_id = String(req.query.user_id || "");
+    const days = Number(req.query.days || 30);
+
+    if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
+    if (!Number.isFinite(days) || days <= 0 || days > 3650) {
+      return res.status(400).json({ ok: false, error: "days inválido (1..3650)" });
+    }
+
+    // Traemos transacciones recientes (sin removidas)
+    // Nota: en tu data gastos = amount > 0, ingresos = amount < 0
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10); // YYYY-MM-DD
+
+    const { data: tx, error } = await supabase
+      .from("plaid_transactions")
+      .select(
+        "transaction_id,date,amount,merchant_name,name,personal_finance_primary,personal_finance_detailed,is_removed"
+      )
+      .eq("user_id", user_id)
+      .eq("is_removed", false)
+      .gte("date", since);
+
+    if (error) {
+      return res.status(500).json({ ok: false, where: "supabase_select_transactions", supabase_error: error });
+    }
+
+    const rows = Array.isArray(tx) ? tx : [];
+
+    let total_spent = 0;
+    let total_income = 0;
+
+    const merchantMap = new Map();
+    const categoryMap = new Map();
+
+    for (const t of rows) {
+      const amount = Number(t.amount || 0);
+      if (!Number.isFinite(amount) || amount === 0) continue;
+
+      if (amount > 0) total_spent += amount;
+      if (amount < 0) total_income += Math.abs(amount);
+
+      // Merchants
+      const merchant = (t.merchant_name || t.name || "Unknown").toString();
+      const keyM = merchant.trim() || "Unknown";
+      merchantMap.set(keyM, (merchantMap.get(keyM) || 0) + Math.abs(amount));
+
+      // Categories (prefer primary)
+      const cat = (t.personal_finance_primary || t.personal_finance_detailed || "Uncategorized").toString();
+      const keyC = cat.trim() || "Uncategorized";
+      categoryMap.set(keyC, (categoryMap.get(keyC) || 0) + Math.abs(amount));
+    }
+
+    const top_merchants = Array.from(merchantMap.entries())
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+
+    const top_categories = Array.from(categoryMap.entries())
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+
+    const net = total_income - total_spent;
+
+    return res.json({
+      ok: true,
+      user_id,
+      days,
+      since,
+      tx_count: rows.length,
+      total_spent,
+      total_income,
+      net,
+      top_merchants,
+      top_categories,
+    });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: String(err) });
   }
 });
 
