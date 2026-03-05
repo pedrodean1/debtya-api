@@ -89,6 +89,45 @@ function looksLikePlaidAccessToken(s) {
   return typeof s === "string" && s.startsWith("access-");
 }
 
+// -------------------- Helpers (general) --------------------
+function toNumber(x, fallback = 0) {
+  const n = Number(x);
+  return Number.isFinite(n) ? n : fallback;
+}
+function clampInt(x, min, max) {
+  const n = Math.floor(toNumber(x, NaN));
+  if (!Number.isFinite(n)) return null;
+  return Math.max(min, Math.min(max, n));
+}
+function isoDate(d) {
+  return new Date(d).toISOString().slice(0, 10);
+}
+function addMonths(dateObj, months) {
+  const d = new Date(dateObj);
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + months);
+  // Ajuste de overflow (si mes no tiene ese día)
+  if (d.getDate() < day) d.setDate(0);
+  return d;
+}
+function nextDueDateFromDay(due_day, baseDate = new Date()) {
+  const dd = clampInt(due_day, 1, 28);
+  if (!dd) return null;
+
+  const now = new Date(baseDate);
+  const y = now.getFullYear();
+  const m = now.getMonth();
+
+  const candidate = new Date(y, m, dd);
+  candidate.setHours(12, 0, 0, 0);
+
+  if (candidate >= now) return candidate;
+
+  const next = new Date(y, m + 1, dd);
+  next.setHours(12, 0, 0, 0);
+  return next;
+}
+
 // -------------------- Helpers Supabase: items / cursor / transactions --------------------
 async function findLatestItemByUser(user_id) {
   const { data, error } = await supabase
@@ -197,33 +236,31 @@ async function markRemovedTransactions({ removed = [] }) {
   if (error) console.error("SUPABASE ERROR (mark removed):", error);
 }
 
-// -------------------- Debts helpers --------------------
-function toNumber(x, fallback = 0) {
-  const n = Number(x);
-  return Number.isFinite(n) ? n : fallback;
-}
-function clampInt(x, min, max) {
-  const n = Math.floor(toNumber(x, NaN));
-  if (!Number.isFinite(n)) return null;
-  return Math.max(min, Math.min(max, n));
+// -------------------- Plan helpers (Avalanche / Snowball + calendario) --------------------
+function sortDebtsByStrategy(debts, strategy) {
+  const s = String(strategy || "avalanche").toLowerCase();
+  if (s === "snowball") {
+    // Snowball: balance asc, luego APR desc
+    return [...debts].sort((a, b) => (a.balance - b.balance) || (b.apr - a.apr));
+  }
+  // Avalanche: APR desc, luego balance desc
+  return [...debts].sort((a, b) => (b.apr - a.apr) || (b.balance - a.balance));
 }
 
-// Simulación avalanche simple (mensual)
-function simulateAvalanche(debts, monthly_extra, maxMonths = 600) {
-  // debts: [{id,name,balance,apr,min_payment}]
-  const state = debts
+function simulateStrategy(debtsInput, monthly_extra, strategy, maxMonths = 600) {
+  const state = debtsInput
     .map((d) => ({
       id: d.id,
       name: d.name,
       apr: Math.max(0, toNumber(d.apr, 0)),
       min_payment: Math.max(0, toNumber(d.min_payment, 0)),
       balance: Math.max(0, toNumber(d.balance, 0)),
+      due_day: d.due_day ?? null,
       paid_off_month: null,
     }))
     .filter((d) => d.balance > 0);
 
-  // Orden avalanche: APR desc, luego balance desc
-  const order = [...state].sort((a, b) => (b.apr - a.apr) || (b.balance - a.balance));
+  const ordered = sortDebtsByStrategy(state, strategy);
 
   const history = [];
   let month = 0;
@@ -231,30 +268,29 @@ function simulateAvalanche(debts, monthly_extra, maxMonths = 600) {
   while (month < maxMonths) {
     month += 1;
 
-    // Si todo pagado
-    const remaining = order.filter((d) => d.balance > 0);
+    const remaining = ordered.filter((d) => d.balance > 0);
     if (remaining.length === 0) break;
 
-    // Interés mensual
+    // interés mensual
     for (const d of remaining) {
       const r = (d.apr / 100) / 12;
       if (r > 0) d.balance = d.balance * (1 + r);
     }
 
-    // Presupuesto del mes: mínimos + extra
     let extra = Math.max(0, toNumber(monthly_extra, 0));
 
-    // Pagos mínimos (cap al balance)
     const payments = [];
+
+    // mínimos
     for (const d of remaining) {
       const payMin = Math.min(d.balance, d.min_payment);
       d.balance -= payMin;
       payments.push({ debt_id: d.id, name: d.name, type: "min", amount: payMin });
     }
 
-    // Extra al APR más alto con balance > 0
+    // extra al objetivo según estrategia
     while (extra > 0.0001) {
-      const target = order.find((d) => d.balance > 0);
+      const target = ordered.find((d) => d.balance > 0);
       if (!target) break;
       const pay = Math.min(target.balance, extra);
       target.balance -= pay;
@@ -262,17 +298,15 @@ function simulateAvalanche(debts, monthly_extra, maxMonths = 600) {
       payments.push({ debt_id: target.id, name: target.name, type: "extra", amount: pay });
     }
 
-    // Marcar payoff
-    for (const d of order) {
+    for (const d of ordered) {
       if (d.balance <= 0.0001 && d.paid_off_month == null) d.paid_off_month = month;
       if (d.balance < 0) d.balance = 0;
     }
 
-    // Snapshot mensual (resumen)
     history.push({
       month,
       payments,
-      remaining_balances: order.map((d) => ({
+      remaining_balances: ordered.map((d) => ({
         debt_id: d.id,
         name: d.name,
         balance: Number(d.balance.toFixed(2)),
@@ -281,7 +315,7 @@ function simulateAvalanche(debts, monthly_extra, maxMonths = 600) {
     });
   }
 
-  const payoff_months = order.map((d) => ({
+  const payoff_months = ordered.map((d) => ({
     debt_id: d.id,
     name: d.name,
     paid_off_month: d.paid_off_month,
@@ -289,18 +323,53 @@ function simulateAvalanche(debts, monthly_extra, maxMonths = 600) {
 
   const total_months = payoff_months.reduce((mx, x) => Math.max(mx, x.paid_off_month || 0), 0);
 
-  // Plan de “próximo mes” (mes 1)
   const first = history[0] || { payments: [] };
   const next_month_payments = {};
   for (const p of first.payments) {
     next_month_payments[p.name] = (next_month_payments[p.name] || 0) + p.amount;
   }
 
-  return {
-    total_months,
-    payoff_months,
-    next_month_payments,
-  };
+  return { total_months, payoff_months, next_month_payments };
+}
+
+function buildPaymentCalendar(debts, next_month_payments, baseDate = new Date()) {
+  // Genera “fechas sugeridas” por deuda usando due_day (1..28).
+  // Si no tiene due_day, lo pone al día 1 del próximo mes (placeholder).
+  const out = [];
+
+  for (const d of debts) {
+    const amount = toNumber(next_month_payments[d.name] || 0, 0);
+    if (amount <= 0) continue;
+
+    let due = nextDueDateFromDay(d.due_day, baseDate);
+    if (!due) {
+      // fallback: 1 del próximo mes
+      const nd = addMonths(baseDate, 1);
+      due = new Date(nd.getFullYear(), nd.getMonth(), 1);
+      due.setHours(12, 0, 0, 0);
+    }
+
+    // sugerimos pagar 3 días antes si se puede
+    const payDate = new Date(due);
+    payDate.setDate(payDate.getDate() - 3);
+    if (payDate < baseDate) {
+      // si ya pasó, pagar “hoy”
+      payDate.setTime(baseDate.getTime());
+    }
+
+    out.push({
+      debt_id: d.id,
+      name: d.name,
+      due_day: d.due_day,
+      suggested_pay_date: isoDate(payDate),
+      due_date: isoDate(due),
+      amount: Number(amount.toFixed(2)),
+    });
+  }
+
+  // Ordenar por fecha sugerida
+  out.sort((a, b) => (a.suggested_pay_date < b.suggested_pay_date ? -1 : 1));
+  return out;
 }
 
 // -------------------- Routes --------------------
@@ -315,10 +384,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Plaid redirect (debe estar permitido en Dashboard)
 app.get("/plaid/redirect", (req, res) => res.status(200).send("OK"));
 
-// Create link_token
 app.post("/plaid/create_link_token", async (req, res) => {
   try {
     const user_id = req.body?.user_id || "pedro-dev-1";
@@ -345,7 +412,6 @@ app.post("/plaid/create_link_token", async (req, res) => {
   }
 });
 
-// Exchange public_token -> access_token + save in Supabase (encrypted)
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -381,7 +447,6 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
   }
 });
 
-// Web flow for Plaid Link
 app.get("/plaid/web", async (req, res) => {
   try {
     const user_id = req.query.user_id || "pedro-dev-1";
@@ -400,78 +465,75 @@ app.get("/plaid/web", async (req, res) => {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.send(`<!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Debtya • Connect Bank</title>
-    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-    <style>
-      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;max-width:520px;margin:0 auto}
-      button{width:100%;padding:14px 16px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:800;font-size:16px}
-      .muted{opacity:.75;margin-top:10px}
-      .ok{color:#0a7a0a;font-weight:800}
-      .err{color:#b00020;font-weight:800}
-      pre{white-space:pre-wrap;word-break:break-word;background:#f6f6f6;padding:12px;border-radius:10px}
-    </style>
-  </head>
-  <body>
-    <h2>Debtya</h2>
-    <p class="muted">Connect your bank securely with Plaid.</p>
-    <button id="btn">Connect Bank</button>
-    <p id="status" class="muted"></p>
-    <pre id="details" style="display:none"></pre>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Debtya • Connect Bank</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;max-width:520px;margin:0 auto}
+    button{width:100%;padding:14px 16px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:800;font-size:16px}
+    .muted{opacity:.75;margin-top:10px}
+    .ok{color:#0a7a0a;font-weight:800}
+    .err{color:#b00020;font-weight:800}
+    pre{white-space:pre-wrap;word-break:break-word;background:#f6f6f6;padding:12px;border-radius:10px}
+  </style>
+</head>
+<body>
+  <h2>Debtya</h2>
+  <p class="muted">Connect your bank securely with Plaid.</p>
+  <button id="btn">Connect Bank</button>
+  <p id="status" class="muted"></p>
+  <pre id="details" style="display:none"></pre>
 
-    <script>
-      const statusEl = document.getElementById("status");
-      const detailsEl = document.getElementById("details");
-      const btn = document.getElementById("btn");
+  <script>
+    const statusEl = document.getElementById("status");
+    const detailsEl = document.getElementById("details");
+    const btn = document.getElementById("btn");
+    const setStatus = (msg, cls) => { statusEl.textContent = msg; statusEl.className = cls ? cls : "muted"; };
 
-      const setStatus = (msg, cls) => { statusEl.textContent = msg; statusEl.className = cls ? cls : "muted"; };
+    btn.onclick = async () => {
+      setStatus("Opening Plaid…");
+      const handler = Plaid.create({
+        token: "${link_token}",
+        onSuccess: async (public_token, metadata) => {
+          try {
+            setStatus("Link success. Exchanging token…");
+            const inst = metadata && metadata.institution ? metadata.institution.name : null;
 
-      btn.onclick = async () => {
-        setStatus("Opening Plaid…");
-        const handler = Plaid.create({
-          token: "${link_token}",
-          onSuccess: async (public_token, metadata) => {
-            try {
-              setStatus("Link success. Exchanging token…");
+            const r = await fetch("/plaid/exchange_public_token", {
+              method: "POST",
+              headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({ public_token, user_id: "${user_id}", institution_name: inst })
+            });
 
-              const inst = metadata && metadata.institution ? metadata.institution.name : null;
+            const text = await r.text();
+            let data = null; try { data = JSON.parse(text); } catch {}
+            if (!r.ok) throw new Error((data && (data.error?.error_message || data.error)) || text);
 
-              const r = await fetch("/plaid/exchange_public_token", {
-                method: "POST",
-                headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({ public_token, user_id: "${user_id}", institution_name: inst })
-              });
-
-              const text = await r.text();
-              let data = null; try { data = JSON.parse(text); } catch {}
-
-              if (!r.ok) throw new Error((data && (data.error?.error_message || data.error)) || text);
-
-              setStatus("✅ Bank connected + saved!", "ok");
-              detailsEl.style.display = "block";
-              detailsEl.textContent = "plaid_item_id: " + data.item_id + "\\n(saved in Supabase)";
-            } catch (e) {
-              setStatus("❌ Exchange failed", "err");
-              detailsEl.style.display = "block";
-              detailsEl.textContent = String(e);
-            }
-          },
-          onExit: (err) => {
-            if (err) {
-              setStatus("❌ Plaid exited with error", "err");
-              detailsEl.style.display = "block";
-              detailsEl.textContent = JSON.stringify(err);
-            } else {
-              setStatus("Plaid closed.");
-            }
+            setStatus("✅ Bank connected + saved!", "ok");
+            detailsEl.style.display = "block";
+            detailsEl.textContent = "plaid_item_id: " + data.item_id + "\\n(saved in Supabase)";
+          } catch (e) {
+            setStatus("❌ Exchange failed", "err");
+            detailsEl.style.display = "block";
+            detailsEl.textContent = String(e);
           }
-        });
-        handler.open();
-      };
-    </script>
-  </body>
+        },
+        onExit: (err) => {
+          if (err) {
+            setStatus("❌ Plaid exited with error", "err");
+            detailsEl.style.display = "block";
+            detailsEl.textContent = JSON.stringify(err);
+          } else {
+            setStatus("Plaid closed.");
+          }
+        }
+      });
+      handler.open();
+    };
+  </script>
+</body>
 </html>`);
   } catch (err) {
     const plaidData = err?.response?.data;
@@ -480,7 +542,6 @@ app.get("/plaid/web", async (req, res) => {
   }
 });
 
-// Accounts
 app.post("/plaid/accounts", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -547,7 +608,6 @@ async function runTransactionsSyncAndSave({ row, cursorOverride = null }) {
     next_cursor,
     has_more,
     request_id: resp.data.request_id,
-    // debug opcional:
     added,
     modified,
     removed,
@@ -693,7 +753,6 @@ app.get("/analytics/summary", async (req, res) => {
 });
 
 // -------------------- Debts --------------------
-// POST /debts
 app.post("/debts", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -705,9 +764,9 @@ app.post("/debts", async (req, res) => {
     const row = {
       user_id: String(user_id),
       name: String(name),
-      balance: toNumber(balance, 0),
-      apr: toNumber(apr, 0),
-      min_payment: toNumber(min_payment, 0),
+      balance: Math.max(0, toNumber(balance, 0)),
+      apr: Math.max(0, toNumber(apr, 0)),
+      min_payment: Math.max(0, toNumber(min_payment, 0)),
       due_day: clampInt(due_day, 1, 28),
       updated_at: new Date().toISOString(),
     };
@@ -721,7 +780,6 @@ app.post("/debts", async (req, res) => {
   }
 });
 
-// GET /debts?user_id=...
 app.get("/debts", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -743,20 +801,25 @@ app.get("/debts", async (req, res) => {
   }
 });
 
-// POST /plan/recommendation  body: { user_id, monthly_extra }
+// -------------------- Plan Recommendation (Auto-Extra + Strategy + Calendar) --------------------
+// body: { user_id, strategy, monthly_extra, auto_extra, buffer, days }
 app.post("/plan/recommendation", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
 
-    const { user_id, monthly_extra } = req.body || {};
+    const user_id = String(req.body?.user_id || "");
     if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
 
-    const extra = Math.max(0, toNumber(monthly_extra, 0));
+    const strategy = String(req.body?.strategy || "avalanche").toLowerCase() === "snowball" ? "snowball" : "avalanche";
+    const auto_extra = Boolean(req.body?.auto_extra);
+    const buffer = Math.max(0, toNumber(req.body?.buffer, 300));
+    const days = Math.min(3650, Math.max(1, Math.floor(toNumber(req.body?.days, 90))));
 
+    // 1) Deudas
     const { data, error } = await supabase
       .from("debts")
       .select("*")
-      .eq("user_id", String(user_id))
+      .eq("user_id", user_id)
       .order("created_at", { ascending: false });
 
     if (error) return res.status(500).json({ ok: false, where: "select_debts", supabase_error: error });
@@ -764,32 +827,70 @@ app.post("/plan/recommendation", async (req, res) => {
     const debts = (data || []).map((d) => ({
       id: d.id,
       name: d.name,
-      balance: toNumber(d.balance, 0),
-      apr: toNumber(d.apr, 0),
-      min_payment: toNumber(d.min_payment, 0),
-      due_day: d.due_day,
+      balance: Math.max(0, toNumber(d.balance, 0)),
+      apr: Math.max(0, toNumber(d.apr, 0)),
+      min_payment: Math.max(0, toNumber(d.min_payment, 0)),
+      due_day: d.due_day ?? null,
     }));
 
     if (!debts.length) {
       return res.json({ ok: true, message: "No hay deudas guardadas todavía.", plan: null });
     }
 
-    const plan = simulateAvalanche(debts, extra, 600);
+    // 2) Extra: manual o automático (net - buffer)
+    let suggested_extra = null;
+    let used_extra = Math.max(0, toNumber(req.body?.monthly_extra, 0));
 
-    // resumen adicional
-    const total_balance = debts.reduce((s, d) => s + Math.max(0, d.balance), 0);
-    const total_mins = debts.reduce((s, d) => s + Math.max(0, d.min_payment), 0);
+    if (auto_extra) {
+      // calcular net (income - spent) usando transacciones guardadas
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+      const { data: tx, error: txErr } = await supabase
+        .from("plaid_transactions")
+        .select("date,amount,is_removed")
+        .eq("user_id", user_id)
+        .eq("is_removed", false)
+        .gte("date", since);
+
+      if (txErr) return res.status(500).json({ ok: false, where: "select_transactions_for_auto_extra", supabase_error: txErr });
+
+      let spent = 0;
+      let income = 0;
+      for (const t of tx || []) {
+        const amt = toNumber(t.amount, 0);
+        if (amt > 0) spent += amt;
+        if (amt < 0) income += Math.abs(amt);
+      }
+      const net = income - spent;
+      suggested_extra = Math.max(0, net - buffer);
+      used_extra = suggested_extra;
+    }
+
+    // 3) Simulación (mensual)
+    const plan = simulateStrategy(debts, used_extra, strategy, 600);
+
+    // 4) Calendario por due_day (próximo ciclo)
+    const payment_calendar = buildPaymentCalendar(debts, plan.next_month_payments, new Date());
+
+    // 5) Resumen
+    const total_balance = debts.reduce((s, d) => s + d.balance, 0);
+    const total_mins = debts.reduce((s, d) => s + d.min_payment, 0);
 
     return res.json({
       ok: true,
-      user_id: String(user_id),
-      monthly_extra: extra,
+      user_id,
+      strategy,
+      auto_extra,
+      days_used_for_auto_extra: auto_extra ? days : null,
+      buffer_used: auto_extra ? buffer : null,
+      suggested_extra,
+      used_extra: Number(used_extra.toFixed(2)),
       total_balance: Number(total_balance.toFixed(2)),
       total_min_payments: Number(total_mins.toFixed(2)),
-      strategy: "avalanche",
       plan,
+      payment_calendar,
       note:
-        "Este plan es una simulación simple con interés mensual (APR/12) y pagos mensuales. No es asesoría financiera.",
+        "Simulación mensual simplificada (APR/12). Calendario: sugiere pagar 3 días antes del due_day cuando es posible. No es asesoría financiera.",
     });
   } catch (err) {
     return res.status(500).json({ ok: false, error: String(err) });
