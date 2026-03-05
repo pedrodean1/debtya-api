@@ -78,7 +78,6 @@ function decryptToken(payload) {
   return dec.toString("utf8");
 }
 
-// ✅ Desencripta si corresponde, si no devuelve plano (compatibilidad)
 function unwrapAccessToken(maybeEncrypted) {
   const s = String(maybeEncrypted || "");
   const parts = s.split(".");
@@ -116,11 +115,14 @@ async function saveCursor({ user_id, plaid_item_id, next_cursor }) {
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase
-    .from("plaid_sync_state")
-    .upsert(payload, { onConflict: "plaid_item_id" });
-
+  const { error } = await supabase.from("plaid_sync_state").upsert(payload, { onConflict: "plaid_item_id" });
   if (error) console.error("SUPABASE ERROR (save cursor):", error);
+}
+
+async function deleteCursor(plaid_item_id) {
+  if (!supabase) return;
+  const { error } = await supabase.from("plaid_sync_state").delete().eq("plaid_item_id", String(plaid_item_id));
+  if (error) console.error("SUPABASE ERROR (delete cursor):", error);
 }
 
 function mapTxRow({ tx, user_id, plaid_item_id, is_removed = false }) {
@@ -159,10 +161,7 @@ async function upsertTransactions({ user_id, plaid_item_id, added = [], modified
 
   if (!rows.length) return;
 
-  const { error } = await supabase
-    .from("plaid_transactions")
-    .upsert(rows, { onConflict: "transaction_id" });
-
+  const { error } = await supabase.from("plaid_transactions").upsert(rows, { onConflict: "transaction_id" });
   if (error) console.error("SUPABASE ERROR (upsert transactions):", error);
 }
 
@@ -181,6 +180,31 @@ async function markRemovedTransactions({ removed = [] }) {
   if (error) console.error("SUPABASE ERROR (mark removed):", error);
 }
 
+async function findLatestItemByUser(user_id) {
+  const { data, error } = await supabase
+    .from("plaid_items")
+    .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
+    .eq("user_id", String(user_id))
+    .not("plaid_item_id", "like", "ping_item_%")
+    .order("id", { ascending: false })
+    .limit(1);
+
+  if (error) return { row: null, error };
+  return { row: Array.isArray(data) ? data[0] : null, error: null };
+}
+
+async function findItemById(plaid_item_id) {
+  const { data, error } = await supabase
+    .from("plaid_items")
+    .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
+    .eq("plaid_item_id", String(plaid_item_id))
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return { row: null, error };
+  return { row: data || null, error: null };
+}
+
 // -------------------- Routes --------------------
 app.get("/health", (req, res) => {
   res.json({
@@ -193,9 +217,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get("/plaid/redirect", (req, res) => {
-  res.status(200).send("OK");
-});
+app.get("/plaid/redirect", (req, res) => res.status(200).send("OK"));
 
 app.post("/plaid/create_link_token", async (req, res) => {
   try {
@@ -248,18 +270,9 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
       .upsert(payload, { onConflict: "plaid_item_id" })
       .select("*");
 
-    if (error) {
-      console.error("SUPABASE ERROR (save plaid_items):", error);
-      return res.status(500).json({ ok: false, where: "save_plaid_items", supabase_error: error });
-    }
+    if (error) return res.status(500).json({ ok: false, where: "save_plaid_items", supabase_error: error });
 
-    return res.json({
-      ok: true,
-      item_id,
-      user_id: payload.user_id,
-      institution_name: payload.institution_name,
-      saved: data,
-    });
+    return res.json({ ok: true, item_id, user_id: payload.user_id, institution_name: payload.institution_name, saved: data });
   } catch (err) {
     const plaidData = err?.response?.data;
     console.error("PLAID ERROR (exchange_public_token):", plaidData || err);
@@ -283,241 +296,111 @@ app.get("/plaid/web", async (req, res) => {
     const link_token = linkResp.data.link_token;
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    return res.send(`<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Debtya • Connect Bank</title>
-    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-    <style>
-      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;max-width:520px;margin:0 auto}
-      button{width:100%;padding:14px 16px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:800;font-size:16px}
-      .muted{opacity:.75;margin-top:10px}
-      .ok{color:#0a7a0a;font-weight:800}
-      .err{color:#b00020;font-weight:800}
-      pre{white-space:pre-wrap;word-break:break-word;background:#f6f6f6;padding:12px;border-radius:10px}
-    </style>
-  </head>
-  <body>
-    <h2>Debtya</h2>
-    <p class="muted">Connect your bank securely with Plaid.</p>
-    <button id="btn">Connect Bank</button>
-    <p id="status" class="muted"></p>
-    <pre id="details" style="display:none"></pre>
-
-    <script>
-      const statusEl = document.getElementById("status");
-      const detailsEl = document.getElementById("details");
-      const btn = document.getElementById("btn");
-
-      const setStatus = (msg, kind) => {
-        statusEl.textContent = msg;
-        statusEl.className = kind ? kind : "muted";
-      };
-
-      btn.onclick = async () => {
-        setStatus("Opening Plaid…");
-        const handler = Plaid.create({
-          token: "${link_token}",
-          onSuccess: async (public_token, metadata) => {
-            try {
-              setStatus("Link success. Exchanging token…");
-
-              const inst = metadata && metadata.institution ? metadata.institution.name : null;
-
-              const r = await fetch("/plaid/exchange_public_token", {
-                method: "POST",
-                headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({
-                  public_token,
-                  user_id: "${user_id}",
-                  institution_name: inst
-                })
-              });
-
-              const text = await r.text();
-              let data = null;
-              try { data = JSON.parse(text); } catch {}
-
-              if (!r.ok) {
-                const msg = (data && (data.error?.error_message || data.error)) || text;
-                throw new Error(msg);
-              }
-
-              setStatus("✅ Bank connected + saved!", "ok");
-              detailsEl.style.display = "block";
-              detailsEl.textContent =
-                "plaid_item_id: " + data.item_id +
-                "\\n(guardado en Supabase con token encriptado)";
-            } catch (e) {
-              setStatus("❌ Exchange failed", "err");
-              detailsEl.style.display = "block";
-              detailsEl.textContent = String(e);
-            }
-          },
-          onExit: (err) => {
-            if (err) {
-              setStatus("❌ Plaid exited with error", "err");
-              detailsEl.style.display = "block";
-              detailsEl.textContent = JSON.stringify(err);
-            } else {
-              setStatus("Plaid closed.");
-            }
-          }
-        });
-        handler.open();
-      };
-    </script>
-  </body>
-</html>`);
+    return res.send(`<!doctype html><html><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Debtya • Connect Bank</title>
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script></head>
+<body style="font-family:system-ui;padding:24px;max-width:520px;margin:0 auto">
+<h2>Debtya</h2>
+<p style="opacity:.75">Connect your bank securely with Plaid.</p>
+<button id="btn" style="width:100%;padding:14px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:800;font-size:16px">Connect Bank</button>
+<p id="status" style="opacity:.75;margin-top:10px"></p>
+<pre id="details" style="display:none;white-space:pre-wrap;word-break:break-word;background:#f6f6f6;padding:12px;border-radius:10px"></pre>
+<script>
+const statusEl=document.getElementById("status");
+const detailsEl=document.getElementById("details");
+const btn=document.getElementById("btn");
+const setStatus=(m)=>{statusEl.textContent=m;};
+btn.onclick=async()=>{
+  setStatus("Opening Plaid…");
+  const handler=Plaid.create({
+    token:"${link_token}",
+    onSuccess:async(public_token,metadata)=>{
+      try{
+        setStatus("Exchanging token…");
+        const inst=metadata&&metadata.institution?metadata.institution.name:null;
+        const r=await fetch("/plaid/exchange_public_token",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({public_token,user_id:"${user_id}",institution_name:inst})});
+        const text=await r.text(); let data=null; try{data=JSON.parse(text);}catch{}
+        if(!r.ok) throw new Error((data&&data.error)||text);
+        setStatus("✅ Bank connected + saved!");
+        detailsEl.style.display="block";
+        detailsEl.textContent="plaid_item_id: "+data.item_id+"\\n(saved in Supabase)";
+      }catch(e){
+        setStatus("❌ Exchange failed");
+        detailsEl.style.display="block";
+        detailsEl.textContent=String(e);
+      }
+    }
+  });
+  handler.open();
+};
+</script></body></html>`);
   } catch (err) {
     const plaidData = err?.response?.data;
-    console.error("PLAID ERROR (/plaid/web):", plaidData || err);
-    return res.status(500).json({ ok: false, error: plaidData || err?.message || "Unknown error" });
-  }
-});
-
-app.post("/plaid/accounts", async (req, res) => {
-  try {
-    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
-
-    const { plaid_item_id, user_id } = req.body || {};
-    if (!plaid_item_id && !user_id) {
-      return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
-    }
-
-    let row = null;
-
-    if (plaid_item_id) {
-      const { data, error } = await supabase
-        .from("plaid_items")
-        .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
-        .eq("plaid_item_id", String(plaid_item_id))
-        .limit(1)
-        .maybeSingle();
-
-      if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
-      row = data;
-    } else {
-      const { data, error } = await supabase
-        .from("plaid_items")
-        .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
-        .eq("user_id", String(user_id))
-        .not("plaid_item_id", "like", "ping_item_%")
-        .order("id", { ascending: false })
-        .limit(1);
-
-      if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
-      row = Array.isArray(data) ? data[0] : null;
-    }
-
-    if (!row) return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
-
-    const access_token = unwrapAccessToken(row.plaid_access_token);
-    if (!looksLikePlaidAccessToken(access_token)) {
-      return res.status(400).json({ ok: false, error: "access_token inválido (no empieza con 'access-')" });
-    }
-
-    const resp = await plaidClient.accountsGet({ access_token });
-
-    return res.json({
-      ok: true,
-      plaid_item_id: row.plaid_item_id,
-      user_id: row.user_id,
-      institution_name: row.institution_name,
-      accounts: resp.data.accounts,
-    });
-  } catch (err) {
-    const plaidData = err?.response?.data;
-    console.error("PLAID ERROR (/plaid/accounts):", plaidData || err);
     return res.status(500).json({ ok: false, error: plaidData || String(err) });
   }
 });
 
-// -------------------- TRANSACTIONS SYNC + SAVE --------------------
+// -------------------- SYNC + SAVE --------------------
+async function runTransactionsSyncAndSave({ row, cursorOverride = null }) {
+  const access_token = unwrapAccessToken(row.plaid_access_token);
+  if (!looksLikePlaidAccessToken(access_token)) throw new Error("access_token inválido (no empieza con 'access-')");
+
+  let useCursor = cursorOverride ? String(cursorOverride) : null;
+  if (!useCursor) useCursor = await getStoredCursor(row.plaid_item_id);
+
+  const resp = await plaidClient.transactionsSync({
+    access_token,
+    cursor: useCursor || undefined,
+  });
+
+  const added = resp.data.added || [];
+  const modified = resp.data.modified || [];
+  const removed = resp.data.removed || [];
+  const next_cursor = resp.data.next_cursor;
+  const has_more = resp.data.has_more;
+
+  await upsertTransactions({ user_id: row.user_id, plaid_item_id: row.plaid_item_id, added, modified });
+  await markRemovedTransactions({ removed });
+  await saveCursor({ user_id: row.user_id, plaid_item_id: row.plaid_item_id, next_cursor });
+
+  return {
+    used_cursor: useCursor || null,
+    added_count: added.length,
+    modified_count: modified.length,
+    removed_count: removed.length,
+    next_cursor,
+    has_more,
+    request_id: resp.data.request_id,
+    added,
+    modified,
+    removed,
+  };
+}
+
 app.post("/plaid/transactions/sync", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
 
     const { plaid_item_id, user_id, cursor } = req.body || {};
-    if (!plaid_item_id && !user_id) {
-      return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
-    }
+    if (!plaid_item_id && !user_id) return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
 
-    // 1) Buscar item
-    let row = null;
+    let found;
+    if (plaid_item_id) found = await findItemById(plaid_item_id);
+    else found = await findLatestItemByUser(user_id);
 
-    if (plaid_item_id) {
-      const { data, error } = await supabase
-        .from("plaid_items")
-        .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
-        .eq("plaid_item_id", String(plaid_item_id))
-        .limit(1)
-        .maybeSingle();
+    if (found.error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: found.error });
+    if (!found.row) return res.status(404).json({ ok: false, error: "No encontré plaid_items" });
 
-      if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
-      row = data;
-    } else {
-      const { data, error } = await supabase
-        .from("plaid_items")
-        .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
-        .eq("user_id", String(user_id))
-        .not("plaid_item_id", "like", "ping_item_%")
-        .order("id", { ascending: false })
-        .limit(1);
-
-      if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
-      row = Array.isArray(data) ? data[0] : null;
-    }
-
-    if (!row) return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
-
-    // 2) Token real
-    const access_token = unwrapAccessToken(row.plaid_access_token);
-    if (!looksLikePlaidAccessToken(access_token)) {
-      return res.status(400).json({ ok: false, error: "access_token inválido (no empieza con 'access-')" });
-    }
-
-    // 3) Cursor: usa el body.cursor si viene; si no, usa el guardado
-    let useCursor = cursor ? String(cursor) : null;
-    if (!useCursor) {
-      useCursor = await getStoredCursor(row.plaid_item_id);
-    }
-
-    // 4) Llamar Plaid
-    const resp = await plaidClient.transactionsSync({
-      access_token,
-      cursor: useCursor || undefined,
-    });
-
-    const added = resp.data.added || [];
-    const modified = resp.data.modified || [];
-    const removed = resp.data.removed || [];
-    const next_cursor = resp.data.next_cursor;
-    const has_more = resp.data.has_more;
-
-    // 5) Guardar en Supabase
-    await upsertTransactions({ user_id: row.user_id, plaid_item_id: row.plaid_item_id, added, modified });
-    await markRemovedTransactions({ removed });
-    await saveCursor({ user_id: row.user_id, plaid_item_id: row.plaid_item_id, next_cursor });
+    const result = await runTransactionsSyncAndSave({ row: found.row, cursorOverride: cursor || null });
 
     return res.json({
       ok: true,
-      plaid_item_id: row.plaid_item_id,
-      user_id: row.user_id,
-      institution_name: row.institution_name,
-      used_cursor: useCursor || null,
-      added_count: added.length,
-      modified_count: modified.length,
-      removed_count: removed.length,
-      next_cursor,
-      has_more,
-      // para debug: puedes quitar esto después si quieres
-      added,
-      modified,
-      removed,
-      request_id: resp.data.request_id,
+      plaid_item_id: found.row.plaid_item_id,
+      user_id: found.row.user_id,
+      institution_name: found.row.institution_name,
+      ...result,
     });
   } catch (err) {
     const plaidData = err?.response?.data;
@@ -526,7 +409,42 @@ app.post("/plaid/transactions/sync", async (req, res) => {
   }
 });
 
-// -------------------- Supabase Ping --------------------
+// ✅ NUEVO: RESET cursor (para llenar la tabla por primera vez)
+app.post("/plaid/transactions/reset", async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
+
+    const { plaid_item_id, user_id } = req.body || {};
+    if (!plaid_item_id && !user_id) return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
+
+    let found;
+    if (plaid_item_id) found = await findItemById(plaid_item_id);
+    else found = await findLatestItemByUser(user_id);
+
+    if (found.error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: found.error });
+    if (!found.row) return res.status(404).json({ ok: false, error: "No encontré plaid_items" });
+
+    // 1) borrar cursor guardado
+    await deleteCursor(found.row.plaid_item_id);
+
+    // 2) sync desde cero (sin cursor)
+    const result = await runTransactionsSyncAndSave({ row: found.row, cursorOverride: null });
+
+    return res.json({
+      ok: true,
+      message: "Cursor reseteado. Sync desde cero ejecutada y guardada en Supabase.",
+      plaid_item_id: found.row.plaid_item_id,
+      user_id: found.row.user_id,
+      institution_name: found.row.institution_name,
+      ...result,
+    });
+  } catch (err) {
+    const plaidData = err?.response?.data;
+    console.error("PLAID ERROR (/plaid/transactions/reset):", plaidData || err);
+    return res.status(500).json({ ok: false, error: plaidData || String(err) });
+  }
+});
+
 app.post("/supabase/ping", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
