@@ -90,6 +90,97 @@ function looksLikePlaidAccessToken(s) {
   return typeof s === "string" && s.startsWith("access-");
 }
 
+// -------------------- Helpers Supabase: cursor + transactions --------------------
+async function getStoredCursor(plaid_item_id) {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("plaid_sync_state")
+    .select("next_cursor")
+    .eq("plaid_item_id", String(plaid_item_id))
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("SUPABASE ERROR (get cursor):", error);
+    return null;
+  }
+  return data?.next_cursor || null;
+}
+
+async function saveCursor({ user_id, plaid_item_id, next_cursor }) {
+  if (!supabase) return;
+  const payload = {
+    user_id: String(user_id),
+    plaid_item_id: String(plaid_item_id),
+    next_cursor: String(next_cursor),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from("plaid_sync_state")
+    .upsert(payload, { onConflict: "plaid_item_id" });
+
+  if (error) console.error("SUPABASE ERROR (save cursor):", error);
+}
+
+function mapTxRow({ tx, user_id, plaid_item_id, is_removed = false }) {
+  const pfc = tx?.personal_finance_category || {};
+  return {
+    transaction_id: String(tx.transaction_id),
+    user_id: String(user_id),
+    plaid_item_id: String(plaid_item_id),
+    account_id: String(tx.account_id),
+    date: tx.date || null,
+    authorized_date: tx.authorized_date || null,
+    name: tx.name || null,
+    merchant_name: tx.merchant_name || null,
+    amount: typeof tx.amount === "number" ? tx.amount : tx.amount ?? null,
+    iso_currency_code: tx.iso_currency_code || null,
+    unofficial_currency_code: tx.unofficial_currency_code || null,
+    payment_channel: tx.payment_channel || null,
+    pending: typeof tx.pending === "boolean" ? tx.pending : null,
+    personal_finance_primary: pfc?.primary || null,
+    personal_finance_detailed: pfc?.detailed || null,
+    raw: tx || null,
+    is_removed: Boolean(is_removed),
+    removed_at: is_removed ? new Date().toISOString() : null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+async function upsertTransactions({ user_id, plaid_item_id, added = [], modified = [] }) {
+  if (!supabase) return;
+
+  const rows = []
+    .concat(added || [])
+    .concat(modified || [])
+    .filter((t) => t && t.transaction_id)
+    .map((tx) => mapTxRow({ tx, user_id, plaid_item_id, is_removed: false }));
+
+  if (!rows.length) return;
+
+  const { error } = await supabase
+    .from("plaid_transactions")
+    .upsert(rows, { onConflict: "transaction_id" });
+
+  if (error) console.error("SUPABASE ERROR (upsert transactions):", error);
+}
+
+async function markRemovedTransactions({ removed = [] }) {
+  if (!supabase) return;
+  if (!Array.isArray(removed) || removed.length === 0) return;
+
+  const ids = removed.map((r) => r?.transaction_id).filter(Boolean);
+  if (!ids.length) return;
+
+  const { error } = await supabase
+    .from("plaid_transactions")
+    .update({ is_removed: true, removed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .in("transaction_id", ids);
+
+  if (error) console.error("SUPABASE ERROR (mark removed):", error);
+}
+
 // -------------------- Routes --------------------
 app.get("/health", (req, res) => {
   res.json({
@@ -102,12 +193,10 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Debe estar configurado en Plaid Dashboard -> Developers -> API -> Allowed redirect URIs
 app.get("/plaid/redirect", (req, res) => {
   res.status(200).send("OK");
 });
 
-// Create link_token
 app.post("/plaid/create_link_token", async (req, res) => {
   try {
     const user_id = req.body?.user_id || "pedro-dev-1";
@@ -134,7 +223,6 @@ app.post("/plaid/create_link_token", async (req, res) => {
   }
 });
 
-// Exchange public_token -> access_token + guardar en Supabase (token encriptado)
 app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
     const { public_token, user_id, institution_name } = req.body || {};
@@ -144,9 +232,7 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
     const access_token = exchange.data.access_token;
     const item_id = exchange.data.item_id;
 
-    if (!supabase) {
-      return res.status(500).json({ ok: false, error: "Supabase not configured" });
-    }
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
 
     const encrypted_access_token = encryptToken(access_token);
 
@@ -181,7 +267,6 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
   }
 });
 
-// Página web (captura public_token y llama a exchange)
 app.get("/plaid/web", async (req, res) => {
   try {
     const user_id = req.query.user_id || "pedro-dev-1";
@@ -293,7 +378,6 @@ app.get("/plaid/web", async (req, res) => {
   }
 });
 
-// -------------------- Plaid Accounts --------------------
 app.post("/plaid/accounts", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -326,38 +410,13 @@ app.post("/plaid/accounts", async (req, res) => {
 
       if (error) return res.status(500).json({ ok: false, where: "supabase_select", supabase_error: error });
       row = Array.isArray(data) ? data[0] : null;
-
-      if (!row) {
-        const fallback = await supabase
-          .from("plaid_items")
-          .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
-          .eq("user_id", String(user_id))
-          .order("id", { ascending: false })
-          .limit(1);
-
-        if (fallback.error) {
-          return res.status(500).json({ ok: false, where: "supabase_select_fallback", supabase_error: fallback.error });
-        }
-        row = Array.isArray(fallback.data) ? fallback.data[0] : null;
-      }
     }
 
-    if (!row) {
-      return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
-    }
+    if (!row) return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
 
     const access_token = unwrapAccessToken(row.plaid_access_token);
-
     if (!looksLikePlaidAccessToken(access_token)) {
-      return res.status(400).json({
-        ok: false,
-        error: "El access_token que salió NO parece un token de Plaid (no empieza con 'access-').",
-        used_row: {
-          plaid_item_id: row.plaid_item_id,
-          user_id: row.user_id,
-          institution_name: row.institution_name,
-        },
-      });
+      return res.status(400).json({ ok: false, error: "access_token inválido (no empieza con 'access-')" });
     }
 
     const resp = await plaidClient.accountsGet({ access_token });
@@ -376,8 +435,7 @@ app.post("/plaid/accounts", async (req, res) => {
   }
 });
 
-// -------------------- NUEVO: Plaid Transactions Sync --------------------
-// body: { user_id: "..." } o { plaid_item_id: "..." }  (opcional: cursor: "..." )
+// -------------------- TRANSACTIONS SYNC + SAVE --------------------
 app.post("/plaid/transactions/sync", async (req, res) => {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
@@ -387,7 +445,7 @@ app.post("/plaid/transactions/sync", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Envía plaid_item_id o user_id" });
     }
 
-    // 1) Buscar row en Supabase (igual que accounts)
+    // 1) Buscar item
     let row = null;
 
     if (plaid_item_id) {
@@ -413,41 +471,52 @@ app.post("/plaid/transactions/sync", async (req, res) => {
       row = Array.isArray(data) ? data[0] : null;
     }
 
-    if (!row) {
-      return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
-    }
+    if (!row) return res.status(404).json({ ok: false, error: "No encontré plaid_items para ese plaid_item_id/user_id" });
 
-    // 2) Desencriptar token
+    // 2) Token real
     const access_token = unwrapAccessToken(row.plaid_access_token);
-
     if (!looksLikePlaidAccessToken(access_token)) {
-      return res.status(400).json({
-        ok: false,
-        error: "El access_token que salió NO parece un token de Plaid (no empieza con 'access-').",
-        used_row: {
-          plaid_item_id: row.plaid_item_id,
-          user_id: row.user_id,
-          institution_name: row.institution_name,
-        },
-      });
+      return res.status(400).json({ ok: false, error: "access_token inválido (no empieza con 'access-')" });
     }
 
-    // 3) Llamar Plaid transactionsSync
+    // 3) Cursor: usa el body.cursor si viene; si no, usa el guardado
+    let useCursor = cursor ? String(cursor) : null;
+    if (!useCursor) {
+      useCursor = await getStoredCursor(row.plaid_item_id);
+    }
+
+    // 4) Llamar Plaid
     const resp = await plaidClient.transactionsSync({
       access_token,
-      cursor: cursor ? String(cursor) : undefined,
+      cursor: useCursor || undefined,
     });
+
+    const added = resp.data.added || [];
+    const modified = resp.data.modified || [];
+    const removed = resp.data.removed || [];
+    const next_cursor = resp.data.next_cursor;
+    const has_more = resp.data.has_more;
+
+    // 5) Guardar en Supabase
+    await upsertTransactions({ user_id: row.user_id, plaid_item_id: row.plaid_item_id, added, modified });
+    await markRemovedTransactions({ removed });
+    await saveCursor({ user_id: row.user_id, plaid_item_id: row.plaid_item_id, next_cursor });
 
     return res.json({
       ok: true,
       plaid_item_id: row.plaid_item_id,
       user_id: row.user_id,
       institution_name: row.institution_name,
-      added: resp.data.added,
-      modified: resp.data.modified,
-      removed: resp.data.removed,
-      next_cursor: resp.data.next_cursor,
-      has_more: resp.data.has_more,
+      used_cursor: useCursor || null,
+      added_count: added.length,
+      modified_count: modified.length,
+      removed_count: removed.length,
+      next_cursor,
+      has_more,
+      // para debug: puedes quitar esto después si quieres
+      added,
+      modified,
+      removed,
       request_id: resp.data.request_id,
     });
   } catch (err) {
@@ -460,9 +529,7 @@ app.post("/plaid/transactions/sync", async (req, res) => {
 // -------------------- Supabase Ping --------------------
 app.post("/supabase/ping", async (req, res) => {
   try {
-    if (!supabase) {
-      return res.status(500).json({ ok: false, error: "Supabase not configured" });
-    }
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase not configured" });
 
     const user_id = req.body?.user_id || "ping-user";
     const now = new Date().toISOString();
@@ -475,11 +542,7 @@ app.post("/supabase/ping", async (req, res) => {
     };
 
     const { data, error } = await supabase.from("plaid_items").insert(row).select("*");
-
-    if (error) {
-      console.error("SUPABASE ERROR (ping insert):", error);
-      return res.status(500).json({ ok: false, where: "supabase_ping", supabase_error: error });
-    }
+    if (error) return res.status(500).json({ ok: false, where: "supabase_ping", supabase_error: error });
 
     return res.json({ ok: true, inserted: data });
   } catch (err) {
