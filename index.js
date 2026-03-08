@@ -824,3 +824,131 @@ app.get("/plaid/web", async (req, res) => {
 app.get("/plaid/redirect", (req, res) => {
   res.status(200).send("OK");
 });
+// ===================== PLAID TRANSACTIONS RESET (AUTH) =====================
+// Este endpoint llena la tabla public.plaid_transactions y guarda cursor en public.plaid_sync_state
+// Requiere JWT de Supabase (Authorization: Bearer <jwt>)
+
+app.post("/plaid/transactions/reset", requireAuth, async (req, res) => {
+  try {
+    const user_id = req.user.id;
+
+    // Busca el plaid_item más reciente de este usuario
+    const { data: rows, error: selErr } = await supabase
+      .from("plaid_items")
+      .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
+      .eq("user_id", String(user_id))
+      .not("plaid_item_id", "like", "ping_item_%")
+      .order("id", { ascending: false })
+      .limit(1);
+
+    if (selErr) return res.status(500).json({ ok: false, supabase_error: selErr });
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) return res.status(404).json({ ok: false, error: "No encontré plaid_items para este usuario" });
+
+    // Borra cursor (si existe)
+    await supabase.from("plaid_sync_state").delete().eq("plaid_item_id", String(row.plaid_item_id));
+
+    // Desencripta token si aplica (formato iv.tag.data)
+    let access_token = String(row.plaid_access_token || "");
+    try {
+      if (access_token.split(".").length === 3 && typeof decryptToken === "function") {
+        access_token = decryptToken(access_token);
+      }
+    } catch (e) {
+      // si falla, seguimos con el token original
+    }
+
+    // Validación básica
+    if (!String(access_token).startsWith("access-")) {
+      return res.status(400).json({ ok: false, error: "access_token inválido" });
+    }
+
+    // Sync desde cero (cursor vacío)
+    const resp = await plaidClient.transactionsSync({
+      access_token,
+      cursor: undefined,
+    });
+
+    const added = resp.data.added || [];
+    const modified = resp.data.modified || [];
+    const removed = resp.data.removed || [];
+    const next_cursor = resp.data.next_cursor;
+    const has_more = resp.data.has_more;
+
+    // Upsert added + modified en public.plaid_transactions
+    const upRows = []
+      .concat(added)
+      .concat(modified)
+      .filter((t) => t && t.transaction_id)
+      .map((tx) => {
+        const pfc = tx?.personal_finance_category || {};
+        return {
+          transaction_id: String(tx.transaction_id),
+          user_id: String(user_id),
+          plaid_item_id: String(row.plaid_item_id),
+          account_id: String(tx.account_id),
+          date: tx.date || null,
+          authorized_date: tx.authorized_date || null,
+          name: tx.name || null,
+          merchant_name: tx.merchant_name || null,
+          amount: tx.amount ?? null,
+          iso_currency_code: tx.iso_currency_code || null,
+          unofficial_currency_code: tx.unofficial_currency_code || null,
+          payment_channel: tx.payment_channel || null,
+          pending: typeof tx.pending === "boolean" ? tx.pending : null,
+          personal_finance_primary: pfc?.primary || null,
+          personal_finance_detailed: pfc?.detailed || null,
+          raw: tx || null,
+          is_removed: false,
+          removed_at: null,
+          updated_at: new Date().toISOString(),
+        };
+      });
+
+    if (upRows.length) {
+      const { error: upErr } = await supabase.from("plaid_transactions").upsert(upRows, { onConflict: "transaction_id" });
+      if (upErr) return res.status(500).json({ ok: false, supabase_error: upErr });
+    }
+
+    // Marcar removed
+    const removedIds = removed.map((r) => r?.transaction_id).filter(Boolean);
+    if (removedIds.length) {
+      const { error: rmErr } = await supabase
+        .from("plaid_transactions")
+        .update({ is_removed: true, removed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .in("transaction_id", removedIds);
+
+      if (rmErr) return res.status(500).json({ ok: false, supabase_error: rmErr });
+    }
+
+    // Guardar cursor en public.plaid_sync_state
+    const { error: curErr } = await supabase.from("plaid_sync_state").upsert(
+      {
+        user_id: String(user_id),
+        plaid_item_id: String(row.plaid_item_id),
+        next_cursor: String(next_cursor),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "plaid_item_id" }
+    );
+
+    if (curErr) return res.status(500).json({ ok: false, supabase_error: curErr });
+
+    return res.json({
+      ok: true,
+      message: "Cursor reseteado. Sync desde cero ejecutada.",
+      plaid_item_id: row.plaid_item_id,
+      user_id,
+      institution_name: row.institution_name,
+      added_count: added.length,
+      modified_count: modified.length,
+      removed_count: removed.length,
+      next_cursor,
+      has_more,
+      request_id: resp.data.request_id,
+    });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+// =================== END PLAID TRANSACTIONS RESET (AUTH) ===================
