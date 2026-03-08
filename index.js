@@ -768,3 +768,56 @@ app.listen(PORT, () => {
   console.log(`✅ PLAID_ENV=${PLAID_ENV}`);
   console.log(`✅ SUPABASE configured: ${Boolean(supabase)}`);
 });
+app.get("/plaid/web", async (req, res) => {
+  try {
+    const user_id = req.query.user_id || "";
+    if (!user_id) return res.status(400).send("Missing user_id");
+
+    const linkResp = await plaidClient.linkTokenCreate({
+      user: { client_user_id: String(user_id) },
+      client_name: "Debtya",
+      products: ["auth", "transactions"],
+      country_codes: ["US"],
+      language: "en",
+      redirect_uri: `${API_BASE_URL}/plaid/redirect`,
+    });
+
+    const link_token = linkResp.data.link_token;
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Debtya • Connect Bank</title>
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  </head>
+  <body>
+    <h2>Debtya</h2>
+    <button id="btn">Connect Bank</button>
+    <pre id="out"></pre>
+    <script>
+      const out = document.getElementById("out");
+      document.getElementById("btn").onclick = () => {
+        const handler = Plaid.create({
+          token: "${link_token}",
+          onSuccess: async (public_token, metadata) => {
+            const inst = metadata && metadata.institution ? metadata.institution.name : null;
+            const r = await fetch("/plaid/exchange_public_token", {
+              method: "POST",
+              headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({ public_token, user_id: "${String(user_id)}", institution_name: inst })
+            });
+            out.textContent = await r.text();
+          }
+        });
+        handler.open();
+      };
+    </script>
+  </body>
+</html>`);
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: String(err?.response?.data || err) });
+  }
+});
