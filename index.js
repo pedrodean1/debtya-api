@@ -821,3 +821,6 @@ app.get("/plaid/web", async (req, res) => {
     return res.status(500).json({ ok: false, error: String(err?.response?.data || err) });
   }
 });
+app.get("/plaid/redirect", (req, res) => {
+  res.status(200).send("OK");
+});
