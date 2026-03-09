@@ -5,7 +5,6 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
-
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const { createClient } = require("@supabase/supabase-js");
 
@@ -14,19 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
-
 const API_BASE_URL = process.env.API_BASE_URL || "https://debtya-api.onrender.com";
-const CRON_SECRET = process.env.CRON_SECRET || "";
-
-// -------------------- Supabase --------------------
-const supabaseUrl = process.env.SUPABASE_URL || "";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || ""; // para el cliente (opcional), backend usa service_role
-
-const supabase =
-  supabaseUrl && supabaseServiceKey
-    ? createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } })
-    : null;
 
 // -------------------- Plaid --------------------
 const PLAID_ENV = (process.env.PLAID_ENV || "sandbox").toLowerCase();
@@ -48,14 +35,29 @@ const plaidConfig = new Configuration({
 });
 const plaidClient = new PlaidApi(plaidConfig);
 
-// -------------------- Crypto token encryption (AES-256-GCM) --------------------
-function getKey() {
-  const key = process.env.TOKEN_ENCRYPTION_KEY || "";
-  if (!key || key.length < 32) throw new Error("TOKEN_ENCRYPTION_KEY falta o es muy corta (mínimo 32 caracteres)");
-  return crypto.createHash("sha256").update(key).digest();
+// -------------------- Supabase --------------------
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const supabase =
+  supabaseUrl && supabaseServiceKey
+    ? createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } })
+    : null;
+
+// -------------------- Token Encryption (AES-256-GCM) --------------------
+// Si existe TOKEN_ENCRYPTION_KEY, encriptamos el access_token de Plaid antes de guardarlo en Supabase.
+// Si NO existe, guardamos en texto plano (NO recomendado para producción).
+function hasEncryptionKey() {
+  const k = String(process.env.TOKEN_ENCRYPTION_KEY || "");
+  return k.length >= 16;
+}
+function getKey32() {
+  const key = String(process.env.TOKEN_ENCRYPTION_KEY || "");
+  if (!key) throw new Error("TOKEN_ENCRYPTION_KEY falta");
+  return crypto.createHash("sha256").update(key).digest(); // 32 bytes
 }
 function encryptToken(plain) {
-  const key = getKey();
+  if (!hasEncryptionKey()) return String(plain);
+  const key = getKey32();
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
   const enc = Buffer.concat([cipher.update(String(plain), "utf8"), cipher.final()]);
@@ -63,25 +65,28 @@ function encryptToken(plain) {
   return `${iv.toString("base64")}.${tag.toString("base64")}.${enc.toString("base64")}`;
 }
 function decryptToken(payload) {
-  const key = getKey();
-  const [ivB64, tagB64, dataB64] = String(payload).split(".");
-  if (!ivB64 || !tagB64 || !dataB64) throw new Error("Formato de token encriptado inválido");
-  const iv = Buffer.from(ivB64, "base64");
-  const tag = Buffer.from(tagB64, "base64");
-  const data = Buffer.from(dataB64, "base64");
+  if (!hasEncryptionKey()) return String(payload);
+  const key = getKey32();
+  const parts = String(payload || "").split(".");
+  if (parts.length !== 3) throw new Error("Formato de token encriptado inválido");
+  const iv = Buffer.from(parts[0], "base64");
+  const tag = Buffer.from(parts[1], "base64");
+  const data = Buffer.from(parts[2], "base64");
   const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
   decipher.setAuthTag(tag);
   const dec = Buffer.concat([decipher.update(data), decipher.final()]);
   return dec.toString("utf8");
 }
-function unwrapAccessToken(maybeEncrypted) {
+function unwrapPlaidAccessToken(maybeEncrypted) {
   const s = String(maybeEncrypted || "");
-  const parts = s.split(".");
-  if (parts.length === 3) return decryptToken(s);
+  if (s.split(".").length === 3) {
+    try {
+      return decryptToken(s);
+    } catch {
+      return s; // si falla, devolvemos como está
+    }
+  }
   return s;
-}
-function looksLikePlaidAccessToken(s) {
-  return typeof s === "string" && s.startsWith("access-");
 }
 
 // -------------------- Utils --------------------
@@ -89,447 +94,42 @@ function toNumber(x, fallback = 0) {
   const n = Number(x);
   return Number.isFinite(n) ? n : fallback;
 }
-function clampInt(x, min, max) {
-  const n = Math.floor(toNumber(x, NaN));
-  if (!Number.isFinite(n)) return null;
-  return Math.max(min, Math.min(max, n));
-}
-function isoDate(d) {
-  return new Date(d).toISOString().slice(0, 10);
-}
-function todayISO() {
-  return isoDate(new Date());
-}
-function startOfWeekISO(dateObj = new Date()) {
-  const d = new Date(dateObj);
-  const day = d.getDay();
-  const diff = (day === 0 ? -6 : 1) - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return isoDate(d);
-}
-function ceilToNearest(amount, step) {
-  const s = Math.max(0.01, toNumber(step, 1));
-  return Math.ceil(amount / s) * s;
-}
-function money(n) {
-  const x = Number(n || 0);
-  return `$${x.toFixed(2)}`;
-}
 
 // =========================
-// AUTH MIDDLEWARE (Supabase JWT)
+// AUTH MIDDLEWARE (Supabase JWT) - FALLBACK DEFINITIVO
+// Acepta JWT por:
+// 1) Authorization: Bearer <jwt>
+// 2) x-debtya-jwt: <jwt>
+// 3) ?jwt=<jwt>   (fallback para Expo si headers fallan)
+// 4) body.jwt
 // =========================
 async function requireAuth(req, res, next) {
   try {
     if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no configurado" });
 
-    const auth = req.headers.authorization || "";
-    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    const auth = String(req.headers.authorization || "");
+    let token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+
+    if (!token) token = String(req.headers["x-debtya-jwt"] || "").trim();
+    if (!token) token = String(req.query?.jwt || "").trim();
+    if (!token) token = String(req.body?.jwt || "").trim();
+
     if (!token) return res.status(401).json({ ok: false, error: "Falta Authorization Bearer token" });
 
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data?.user) return res.status(401).json({ ok: false, error: "Token inválido" });
 
-    req.user = data.user; // { id: uuid, email, ... }
+    req.user = data.user;
     req.jwt = token;
-    next();
+    return next();
   } catch (e) {
+    console.error("AUTH ERROR:", e);
     return res.status(401).json({ ok: false, error: "Auth error" });
   }
 }
 
-function requireCron(req, res, next) {
-  const secret = req.headers["x-cron-secret"] || "";
-  if (!CRON_SECRET || String(secret) !== String(CRON_SECRET)) {
-    return res.status(401).json({ ok: false, error: "Cron no autorizado" });
-  }
-  next();
-}
-
 // =========================
-// NOTIFICATIONS + PUSH
-// =========================
-async function createNotification(user_id, type, title, body) {
-  try {
-    await supabase.from("notifications").insert({
-      user_id,
-      type: String(type),
-      title: String(title),
-      body: String(body),
-      is_read: false,
-    });
-  } catch (e) {
-    console.error("NOTIF INSERT ERROR:", e);
-  }
-}
-
-async function getUserPushTokens(user_id) {
-  const { data } = await supabase
-    .from("push_tokens")
-    .select("expo_push_token,enabled")
-    .eq("user_id", user_id)
-    .eq("enabled", true);
-
-  return (data || []).map((x) => x.expo_push_token).filter(Boolean);
-}
-
-async function sendExpoPush(tokens, title, body) {
-  try {
-    if (!Array.isArray(tokens) || tokens.length === 0) return;
-
-    // Expo push endpoint
-    const messages = tokens.map((to) => ({
-      to,
-      sound: "default",
-      title: String(title),
-      body: String(body),
-      data: { source: "debtya" },
-    }));
-
-    // node fetch (Node 18+ trae fetch)
-    const r = await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(messages),
-    });
-
-    await r.text(); // no necesitamos parsear
-  } catch (e) {
-    console.error("PUSH ERROR:", e);
-  }
-}
-
-async function notifyAndPush(user_id, type, title, body) {
-  await createNotification(user_id, type, title, body);
-  const tokens = await getUserPushTokens(user_id);
-  await sendExpoPush(tokens, title, body);
-}
-
-// =========================
-// PLAID ITEMS HELPERS
-// =========================
-async function findLatestItemByUser(user_id) {
-  const { data, error } = await supabase
-    .from("plaid_items")
-    .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
-    .eq("user_id", String(user_id))
-    .not("plaid_item_id", "like", "ping_item_%")
-    .order("id", { ascending: false })
-    .limit(1);
-
-  if (error) return { row: null, error };
-  return { row: Array.isArray(data) ? data[0] : null, error: null };
-}
-
-async function findItemById(plaid_item_id) {
-  const { data, error } = await supabase
-    .from("plaid_items")
-    .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
-    .eq("plaid_item_id", String(plaid_item_id))
-    .limit(1)
-    .maybeSingle();
-
-  if (error) return { row: null, error };
-  return { row: data || null, error: null };
-}
-
-// =========================
-// CURSOR + TRANSACTIONS (ya lo tienes, lo dejamos compatible)
-// =========================
-async function getStoredCursor(plaid_item_id) {
-  const { data } = await supabase
-    .from("plaid_sync_state")
-    .select("next_cursor")
-    .eq("plaid_item_id", String(plaid_item_id))
-    .limit(1)
-    .maybeSingle();
-  return data?.next_cursor || null;
-}
-
-async function saveCursor({ user_id, plaid_item_id, next_cursor }) {
-  await supabase.from("plaid_sync_state").upsert(
-    {
-      user_id: String(user_id),
-      plaid_item_id: String(plaid_item_id),
-      next_cursor: String(next_cursor),
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "plaid_item_id" }
-  );
-}
-
-async function deleteCursor(plaid_item_id) {
-  await supabase.from("plaid_sync_state").delete().eq("plaid_item_id", String(plaid_item_id));
-}
-
-async function upsertTransactions({ user_id, plaid_item_id, added = [], modified = [] }) {
-  const rows = []
-    .concat(added || [])
-    .concat(modified || [])
-    .filter((t) => t && t.transaction_id)
-    .map((tx) => {
-      const pfc = tx?.personal_finance_category || {};
-      return {
-        transaction_id: String(tx.transaction_id),
-        user_id: String(user_id),
-        plaid_item_id: String(plaid_item_id),
-        account_id: String(tx.account_id),
-        date: tx.date || null,
-        authorized_date: tx.authorized_date || null,
-        name: tx.name || null,
-        merchant_name: tx.merchant_name || null,
-        amount: typeof tx.amount === "number" ? tx.amount : tx.amount ?? null,
-        iso_currency_code: tx.iso_currency_code || null,
-        unofficial_currency_code: tx.unofficial_currency_code || null,
-        payment_channel: tx.payment_channel || null,
-        pending: typeof tx.pending === "boolean" ? tx.pending : null,
-        personal_finance_primary: pfc?.primary || null,
-        personal_finance_detailed: pfc?.detailed || null,
-        raw: tx || null,
-        is_removed: false,
-        removed_at: null,
-        updated_at: new Date().toISOString(),
-      };
-    });
-
-  if (!rows.length) return;
-  await supabase.from("plaid_transactions").upsert(rows, { onConflict: "transaction_id" });
-}
-
-async function markRemovedTransactions({ removed = [] }) {
-  if (!Array.isArray(removed) || removed.length === 0) return;
-  const ids = removed.map((r) => r?.transaction_id).filter(Boolean);
-  if (!ids.length) return;
-  await supabase
-    .from("plaid_transactions")
-    .update({ is_removed: true, removed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    .in("transaction_id", ids);
-}
-
-async function runTransactionsSyncAndSave({ row, cursorOverride = null }) {
-  const access_token = unwrapAccessToken(row.plaid_access_token);
-  if (!looksLikePlaidAccessToken(access_token)) throw new Error("access_token inválido");
-
-  let useCursor = cursorOverride ? String(cursorOverride) : null;
-  if (!useCursor) useCursor = await getStoredCursor(row.plaid_item_id);
-
-  const resp = await plaidClient.transactionsSync({
-    access_token,
-    cursor: useCursor || undefined,
-  });
-
-  const added = resp.data.added || [];
-  const modified = resp.data.modified || [];
-  const removed = resp.data.removed || [];
-  const next_cursor = resp.data.next_cursor;
-  const has_more = resp.data.has_more;
-
-  await upsertTransactions({ user_id: row.user_id, plaid_item_id: row.plaid_item_id, added, modified });
-  await markRemovedTransactions({ removed });
-  await saveCursor({ user_id: row.user_id, plaid_item_id: row.plaid_item_id, next_cursor });
-
-  return {
-    used_cursor: useCursor || null,
-    added_count: added.length,
-    modified_count: modified.length,
-    removed_count: removed.length,
-    next_cursor,
-    has_more,
-    request_id: resp.data.request_id,
-  };
-}
-
-// =========================
-// MICRO ENGINE v2
-// =========================
-async function getMicroRuleV2(user_id) {
-  const { data } = await supabase.from("micro_rules_v2").select("*").eq("user_id", user_id).maybeSingle();
-  return data || null;
-}
-async function getLedgerV2(user_id) {
-  const { data } = await supabase.from("micro_ledger_v2").select("*").eq("user_id", user_id).maybeSingle();
-  return data || null;
-}
-async function upsertLedgerV2(user_id, patch) {
-  const current = (await getLedgerV2(user_id)) || { user_id, pending_total: 0, processed_total: 0 };
-  const payload = {
-    user_id,
-    pending_total: patch.pending_total !== undefined ? patch.pending_total : current.pending_total,
-    processed_total: patch.processed_total !== undefined ? patch.processed_total : current.processed_total,
-    last_run_at: patch.last_run_at !== undefined ? patch.last_run_at : current.last_run_at,
-    last_payout_at: patch.last_payout_at !== undefined ? patch.last_payout_at : current.last_payout_at,
-    updated_at: new Date().toISOString(),
-  };
-  await supabase.from("micro_ledger_v2").upsert(payload, { onConflict: "user_id" });
-  return payload;
-}
-async function sumPendingForDayV2(user_id, dayISO) {
-  const { data } = await supabase
-    .from("micro_contributions_v2")
-    .select("contribution_amount,created_at")
-    .eq("user_id", user_id)
-    .eq("status", "pending");
-
-  let sum = 0;
-  for (const r of data || []) if (isoDate(r.created_at) === dayISO) sum += toNumber(r.contribution_amount, 0);
-  return sum;
-}
-async function sumPendingForWeekV2(user_id, weekStartISO) {
-  const { data } = await supabase
-    .from("micro_contributions_v2")
-    .select("contribution_amount,created_at")
-    .eq("user_id", user_id)
-    .eq("status", "pending");
-
-  let sum = 0;
-  for (const r of data || []) if (isoDate(r.created_at) >= weekStartISO) sum += toNumber(r.contribution_amount, 0);
-  return sum;
-}
-function calcContribution(rule, purchaseAmount) {
-  const amt = Math.max(0, toNumber(purchaseAmount, 0));
-  if (amt <= 0) return 0;
-
-  const mode = String(rule.mode || "fixed").toLowerCase();
-  let c = 0;
-
-  if (mode === "percent") c = amt * (Math.max(0, toNumber(rule.percent, 2)) / 100);
-  else if (mode === "roundup") {
-    const step = Math.max(0.01, toNumber(rule.roundup_to, 1));
-    const rounded = ceilToNearest(amt, step);
-    c = Math.max(0, rounded - amt);
-  } else c = Math.max(0, toNumber(rule.fixed_amount, 1));
-
-  return Math.round(c * 100) / 100;
-}
-
-async function runMicroEngineV2({ user_id, days_back = 120, source = "manual" }) {
-  const rule = await getMicroRuleV2(user_id);
-  if (!rule || !rule.enabled) return { ok: true, created: 0, skipped: 0, created_total: 0, message: "Micro desactivado" };
-
-  const foundItem = await findLatestItemByUser(user_id);
-  const plaid_item_id = foundItem?.row?.plaid_item_id || "unknown_item";
-
-  const since = new Date(Date.now() - days_back * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
-  const { data: tx, error } = await supabase
-    .from("plaid_transactions")
-    .select("transaction_id,date,amount,pending,is_removed")
-    .eq("user_id", String(user_id))
-    .eq("is_removed", false)
-    .eq("pending", false)
-    .gte("date", since);
-
-  if (error) throw error;
-
-  const today = todayISO();
-  const weekStart = startOfWeekISO(new Date());
-
-  let dailyUsed = await sumPendingForDayV2(user_id, today);
-  let weeklyUsed = await sumPendingForWeekV2(user_id, weekStart);
-
-  const capDaily = rule.cap_daily === null || rule.cap_daily === undefined ? null : Math.max(0, toNumber(rule.cap_daily, 0));
-  const capWeekly = rule.cap_weekly === null || rule.cap_weekly === undefined ? null : Math.max(0, toNumber(rule.cap_weekly, 0));
-  const minPurchase = Math.max(0, toNumber(rule.min_purchase_amount, 1));
-
-  let created = 0;
-  let skipped = 0;
-  let createdTotal = 0;
-
-  for (const t of tx || []) {
-    const tid = String(t.transaction_id || "");
-    if (!tid) { skipped++; continue; }
-
-    const purchaseAmount = Math.max(0, toNumber(t.amount, 0));
-    if (purchaseAmount < minPurchase) { skipped++; continue; }
-
-    let c = calcContribution(rule, purchaseAmount);
-    if (c <= 0) { skipped++; continue; }
-
-    if (capDaily !== null) {
-      const rem = capDaily - dailyUsed;
-      if (rem <= 0) { skipped++; continue; }
-      c = Math.min(c, rem);
-    }
-    if (capWeekly !== null) {
-      const rem = capWeekly - weeklyUsed;
-      if (rem <= 0) { skipped++; continue; }
-      c = Math.min(c, rem);
-    }
-
-    c = Math.round(c * 100) / 100;
-    if (c <= 0) { skipped++; continue; }
-
-    const row = {
-      user_id,
-      plaid_item_id,
-      transaction_id: tid,
-      transaction_date: t.date || null,
-      purchase_amount: purchaseAmount,
-      contribution_amount: c,
-      target_debt_id: rule.target_debt_id || null,
-      status: "pending",
-    };
-
-    const { error: insErr } = await supabase.from("micro_contributions_v2").insert(row);
-    if (insErr) { skipped++; continue; }
-
-    created++;
-    createdTotal += c;
-    dailyUsed += c;
-    weeklyUsed += c;
-  }
-
-  const ledger = (await getLedgerV2(user_id)) || { user_id, pending_total: 0, processed_total: 0 };
-  const newPending = Math.round((toNumber(ledger.pending_total, 0) + createdTotal) * 100) / 100;
-  await upsertLedgerV2(user_id, { pending_total: newPending, last_run_at: new Date().toISOString() });
-
-  if (createdTotal > 0) {
-    await notifyAndPush(
-      user_id,
-      "micro_run",
-      "Micro-pagos acumulados",
-      `Se agregaron ${money(createdTotal)} (${source}). Total pendiente: ${money(newPending)}.`
-    );
-  }
-
-  return { ok: true, created, skipped, created_total: Number(createdTotal.toFixed(2)), pending_total: newPending };
-}
-
-async function simulatePayoutV2({ user_id, thresholdOverride = null }) {
-  const rule = await getMicroRuleV2(user_id);
-  if (!rule || !rule.payout_enabled) return { ok: true, paid: 0, message: "Payout desactivado" };
-
-  const ledger = (await getLedgerV2(user_id)) || { user_id, pending_total: 0, processed_total: 0 };
-  const threshold = thresholdOverride !== null ? Math.max(0, toNumber(thresholdOverride, 0)) : Math.max(0, toNumber(rule.payout_min_threshold, 20));
-
-  const pending = Math.max(0, toNumber(ledger.pending_total, 0));
-  if (pending < threshold) return { ok: true, paid: 0, pending_total: pending, message: `Pendiente ${money(pending)} < umbral ${money(threshold)}` };
-
-  const now = new Date().toISOString();
-  const { error: updErr } = await supabase
-    .from("micro_contributions_v2")
-    .update({ status: "processed", processed_at: now })
-    .eq("user_id", user_id)
-    .eq("status", "pending");
-
-  if (updErr) throw updErr;
-
-  const newProcessed = Math.round((toNumber(ledger.processed_total, 0) + pending) * 100) / 100;
-  await upsertLedgerV2(user_id, { pending_total: 0, processed_total: newProcessed, last_payout_at: now });
-
-  await notifyAndPush(
-    user_id,
-    "payout",
-    "Payout semanal (simulado)",
-    `Se “pagaron” ${money(pending)}. Total procesado: ${money(newProcessed)}.`
-  );
-
-  return { ok: true, paid: Number(pending.toFixed(2)), pending_total: 0, processed_total: newProcessed };
-}
-
-// =========================
-// ROUTES
+// Health + Me
 // =========================
 app.get("/health", (req, res) => {
   res.json({
@@ -537,237 +137,59 @@ app.get("/health", (req, res) => {
     name: "debtya-api",
     env: PLAID_ENV,
     supabase_configured: Boolean(supabase),
+    encryption_configured: hasEncryptionKey(),
     time: new Date().toISOString(),
   });
 });
 
-// -------- AUTH TEST (para confirmar login) --------
 app.get("/me", requireAuth, async (req, res) => {
-  res.json({ ok: true, user: { id: req.user.id, email: req.user.email } });
+  return res.json({ ok: true, user: { id: req.user.id, email: req.user.email } });
 });
 
-// -------- PUSH REGISTER --------
-app.post("/push/register", requireAuth, async (req, res) => {
+// =========================
+// PLAID WEB (PUBLIC) - WebView
+// =========================
+app.get("/plaid/redirect", (req, res) => res.status(200).send("OK"));
+
+app.post("/plaid/exchange_public_token", async (req, res) => {
   try {
-    const user_id = req.user.id;
-    const { expo_push_token, platform, device_name } = req.body || {};
-    if (!expo_push_token) return res.status(400).json({ ok: false, error: "expo_push_token requerido" });
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no configurado" });
 
-    const payload = {
-      user_id,
-      expo_push_token: String(expo_push_token),
-      platform: platform ? String(platform) : null,
-      device_name: device_name ? String(device_name) : null,
-      enabled: true,
-      updated_at: new Date().toISOString(),
-    };
+    const { public_token, user_id, institution_name } = req.body || {};
+    if (!public_token) return res.status(400).json({ ok: false, error: "public_token es requerido" });
+    if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
 
-    const { error } = await supabase.from("push_tokens").upsert(payload, { onConflict: "expo_push_token" });
-    if (error) return res.status(500).json({ ok: false, supabase_error: error });
+    const exchange = await plaidClient.itemPublicTokenExchange({ public_token });
+    const access_token = exchange.data.access_token;
+    const item_id = exchange.data.item_id;
 
-    return res.json({ ok: true });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: String(e) });
-  }
-});
+    const token_to_store = encryptToken(access_token);
 
-// -------- NOTIFICATIONS --------
-app.get("/notifications", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-  const limit = Math.min(100, Math.max(1, Math.floor(toNumber(req.query.limit, 30))));
-  const { data, error } = await supabase
-    .from("notifications")
-    .select("*")
-    .eq("user_id", user_id)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) return res.status(500).json({ ok: false, supabase_error: error });
-  return res.json({ ok: true, notifications: data || [] });
-});
-
-app.post("/notifications/mark_read", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-  const { error } = await supabase.from("notifications").update({ is_read: true }).eq("user_id", user_id).eq("is_read", false);
-  if (error) return res.status(500).json({ ok: false, supabase_error: error });
-  return res.json({ ok: true });
-});
-
-// -------- DEBTS v2 CRUD --------
-app.get("/debts", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-  const { data, error } = await supabase.from("debts_v2").select("*").eq("user_id", user_id).order("created_at", { ascending: false });
-  if (error) return res.status(500).json({ ok: false, supabase_error: error });
-  return res.json({ ok: true, debts: data || [] });
-});
-
-app.post("/debts", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-  const { name, balance, apr, min_payment, due_day } = req.body || {};
-  if (!name) return res.status(400).json({ ok: false, error: "name requerido" });
-
-  const row = {
-    user_id,
-    name: String(name),
-    balance: Math.max(0, toNumber(balance, 0)),
-    apr: Math.max(0, toNumber(apr, 0)),
-    min_payment: Math.max(0, toNumber(min_payment, 0)),
-    due_day: clampInt(due_day, 1, 28),
-    updated_at: new Date().toISOString(),
-  };
-
-  const { data, error } = await supabase.from("debts_v2").insert(row).select("*");
-  if (error) return res.status(500).json({ ok: false, supabase_error: error });
-  return res.json({ ok: true, debt: data?.[0] || null });
-});
-
-app.put("/debts/:id", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-  const id = String(req.params.id || "");
-  const { name, balance, apr, min_payment, due_day } = req.body || {};
-
-  const patch = {
-    ...(name !== undefined ? { name: String(name) } : {}),
-    ...(balance !== undefined ? { balance: Math.max(0, toNumber(balance, 0)) } : {}),
-    ...(apr !== undefined ? { apr: Math.max(0, toNumber(apr, 0)) } : {}),
-    ...(min_payment !== undefined ? { min_payment: Math.max(0, toNumber(min_payment, 0)) } : {}),
-    ...(due_day !== undefined ? { due_day: clampInt(due_day, 1, 28) } : {}),
-    updated_at: new Date().toISOString(),
-  };
-
-  const { data, error } = await supabase.from("debts_v2").update(patch).eq("id", id).eq("user_id", user_id).select("*");
-  if (error) return res.status(500).json({ ok: false, supabase_error: error });
-  if (!data || data.length === 0) return res.status(404).json({ ok: false, error: "No encontrado" });
-  return res.json({ ok: true, debt: data[0] });
-});
-
-app.delete("/debts/:id", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-  const id = String(req.params.id || "");
-  const { error } = await supabase.from("debts_v2").delete().eq("id", id).eq("user_id", user_id);
-  if (error) return res.status(500).json({ ok: false, supabase_error: error });
-  return res.json({ ok: true });
-});
-
-// -------- MICRO v2 --------
-app.get("/micro/status", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-  const rule = await getMicroRuleV2(user_id);
-  const ledger = await getLedgerV2(user_id);
-
-  const { data: recent } = await supabase
-    .from("micro_contributions_v2")
-    .select("*")
-    .eq("user_id", user_id)
-    .order("created_at", { ascending: false })
-    .limit(20);
-
-  return res.json({ ok: true, rule: rule || null, ledger: ledger || null, recent: recent || [] });
-});
-
-app.post("/micro/rule", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-
-  const payload = {
-    user_id,
-    enabled: req.body?.enabled !== undefined ? Boolean(req.body.enabled) : true,
-    auto_run: req.body?.auto_run !== undefined ? Boolean(req.body.auto_run) : true,
-    payout_enabled: req.body?.payout_enabled !== undefined ? Boolean(req.body.payout_enabled) : true,
-    payout_min_threshold: Math.max(0, toNumber(req.body?.payout_min_threshold, 20)),
-
-    mode: String(req.body?.mode || "fixed"),
-    fixed_amount: Math.max(0, toNumber(req.body?.fixed_amount, 1)),
-    percent: Math.max(0, toNumber(req.body?.percent, 2)),
-    roundup_to: Math.max(0.01, toNumber(req.body?.roundup_to, 1)),
-    min_purchase_amount: Math.max(0, toNumber(req.body?.min_purchase_amount, 1)),
-    cap_daily: req.body?.cap_daily === null || req.body?.cap_daily === undefined ? null : Math.max(0, toNumber(req.body?.cap_daily, 0)),
-    cap_weekly: req.body?.cap_weekly === null || req.body?.cap_weekly === undefined ? null : Math.max(0, toNumber(req.body?.cap_weekly, 0)),
-    target_debt_id: req.body?.target_debt_id || null,
-    updated_at: new Date().toISOString(),
-  };
-
-  const { data, error } = await supabase.from("micro_rules_v2").upsert(payload, { onConflict: "user_id" }).select("*");
-  if (error) return res.status(500).json({ ok: false, supabase_error: error });
-
-  return res.json({ ok: true, rule: data?.[0] || null });
-});
-
-app.post("/micro/run", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-  const days_back = Math.min(3650, Math.max(1, Math.floor(toNumber(req.body?.days_back, 120))));
-  const out = await runMicroEngineV2({ user_id, days_back, source: "manual_run" });
-  return res.json(out);
-});
-
-app.post("/micro/payout/simulate", requireAuth, async (req, res) => {
-  const user_id = req.user.id;
-  const threshold = req.body?.threshold !== undefined ? toNumber(req.body.threshold, 0) : null;
-  const out = await simulatePayoutV2({ user_id, thresholdOverride: threshold });
-  return res.json(out);
-});
-
-// -------- JOBS (CRON) --------
-// Diario: sync + micro-run (para TODOS los usuarios que tengan auto_run enabled)
-// Semanal: payout simulado si supera umbral
-
-app.post("/jobs/daily", requireCron, async (req, res) => {
-  try {
-    // 1) buscar reglas activas y auto_run
-    const { data: rules } = await supabase
-      .from("micro_rules_v2")
-      .select("user_id")
-      .eq("enabled", true)
-      .eq("auto_run", true);
-
-    let ran = 0;
-    for (const r of rules || []) {
-      // solo micro-run (lo de sync Plaid depende de que el usuario haya linkeado, lo hacemos si existe item)
-      try {
-        await runMicroEngineV2({ user_id: r.user_id, days_back: 7, source: "cron(daily)" });
-        ran++;
-      } catch {}
-    }
-
-    await createNotification(
-      (rules && rules[0] && rules[0].user_id) ? rules[0].user_id : crypto.randomUUID(),
-      "info",
-      "Job diario ejecutado",
-      `Se ejecutó cron diario. Usuarios procesados: ${ran}.`
+    const { error } = await supabase.from("plaid_items").upsert(
+      {
+        user_id: String(user_id),
+        plaid_item_id: item_id,
+        plaid_access_token: token_to_store,
+        institution_name: institution_name || null,
+      },
+      { onConflict: "plaid_item_id" }
     );
 
-    return res.json({ ok: true, ran });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: String(e) });
+    if (error) return res.status(500).json({ ok: false, supabase_error: error });
+
+    return res.json({
+      ok: true,
+      plaid_item_id: item_id,
+      user_id: String(user_id),
+      institution_name: institution_name || null,
+    });
+  } catch (err) {
+    const plaidData = err?.response?.data;
+    console.error("PLAID ERROR (exchange_public_token):", plaidData || err);
+    return res.status(400).json({ ok: false, error: plaidData || err?.message || "Unknown error" });
   }
 });
 
-app.post("/jobs/weekly", requireCron, async (req, res) => {
-  try {
-    const { data: rules } = await supabase
-      .from("micro_rules_v2")
-      .select("user_id,payout_min_threshold")
-      .eq("enabled", true)
-      .eq("payout_enabled", true);
-
-    let paid = 0;
-    for (const r of rules || []) {
-      try {
-        const out = await simulatePayoutV2({ user_id: r.user_id, thresholdOverride: r.payout_min_threshold });
-        if (out?.paid > 0) paid++;
-      } catch {}
-    }
-
-    return res.json({ ok: true, paid });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`✅ Debtya API running on port ${PORT}`);
-  console.log(`✅ PLAID_ENV=${PLAID_ENV}`);
-  console.log(`✅ SUPABASE configured: ${Boolean(supabase)}`);
-});
 app.get("/plaid/web", async (req, res) => {
   try {
     const user_id = req.query.user_id || "";
@@ -792,24 +214,68 @@ app.get("/plaid/web", async (req, res) => {
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Debtya • Connect Bank</title>
     <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+    <style>
+      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;max-width:520px;margin:0 auto}
+      button{width:100%;padding:14px 16px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:800;font-size:16px}
+      .muted{opacity:.75;margin-top:10px}
+      .ok{color:#0a7a0a;font-weight:800}
+      .err{color:#b00020;font-weight:800}
+      pre{white-space:pre-wrap;word-break:break-word;background:#f6f6f6;padding:12px;border-radius:10px}
+    </style>
   </head>
   <body>
     <h2>Debtya</h2>
+    <p class="muted">Connect your bank securely with Plaid.</p>
     <button id="btn">Connect Bank</button>
-    <pre id="out"></pre>
+    <p id="status" class="muted"></p>
+    <pre id="details" style="display:none"></pre>
+
     <script>
-      const out = document.getElementById("out");
-      document.getElementById("btn").onclick = () => {
+      const statusEl = document.getElementById("status");
+      const detailsEl = document.getElementById("details");
+      const btn = document.getElementById("btn");
+
+      const setStatus = (msg, kind) => {
+        statusEl.textContent = msg;
+        statusEl.className = kind ? kind : "muted";
+      };
+
+      btn.onclick = async () => {
+        setStatus("Opening Plaid…");
         const handler = Plaid.create({
           token: "${link_token}",
           onSuccess: async (public_token, metadata) => {
-            const inst = metadata && metadata.institution ? metadata.institution.name : null;
-            const r = await fetch("/plaid/exchange_public_token", {
-              method: "POST",
-              headers: {"Content-Type":"application/json"},
-              body: JSON.stringify({ public_token, user_id: "${String(user_id)}", institution_name: inst })
-            });
-            out.textContent = await r.text();
+            try {
+              setStatus("Link success. Exchanging token…");
+              const inst = metadata && metadata.institution ? metadata.institution.name : null;
+
+              const r = await fetch("/plaid/exchange_public_token", {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({ public_token, user_id: "${String(user_id)}", institution_name: inst })
+              });
+
+              const text = await r.text();
+              let data = null; try { data = JSON.parse(text); } catch {}
+              if (!r.ok) throw new Error((data && (data.error?.error_message || data.error)) || text);
+
+              setStatus("✅ Bank connected + saved!", "ok");
+              detailsEl.style.display = "block";
+              detailsEl.textContent = "plaid_item_id: " + data.plaid_item_id + "\\n(saved in Supabase)";
+            } catch (e) {
+              setStatus("❌ Exchange failed", "err");
+              detailsEl.style.display = "block";
+              detailsEl.textContent = String(e);
+            }
+          },
+          onExit: (err) => {
+            if (err) {
+              setStatus("❌ Plaid exited with error", "err");
+              detailsEl.style.display = "block";
+              detailsEl.textContent = JSON.stringify(err);
+            } else {
+              setStatus("Plaid closed.");
+            }
           }
         });
         handler.open();
@@ -818,21 +284,21 @@ app.get("/plaid/web", async (req, res) => {
   </body>
 </html>`);
   } catch (err) {
-    return res.status(500).json({ ok: false, error: String(err?.response?.data || err) });
+    const plaidData = err?.response?.data;
+    console.error("PLAID ERROR (/plaid/web):", plaidData || err);
+    return res.status(500).json({ ok: false, error: plaidData || err?.message || "Unknown error" });
   }
 });
-app.get("/plaid/redirect", (req, res) => {
-  res.status(200).send("OK");
-});
-// ===================== PLAID TRANSACTIONS RESET (AUTH) =====================
-// Este endpoint llena la tabla public.plaid_transactions y guarda cursor en public.plaid_sync_state
-// Requiere JWT de Supabase (Authorization: Bearer <jwt>)
 
+// =========================
+// PLAID TRANSACTIONS RESET (AUTH) -> guarda en plaid_transactions + plaid_sync_state
+// =========================
 app.post("/plaid/transactions/reset", requireAuth, async (req, res) => {
   try {
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no configurado" });
+
     const user_id = req.user.id;
 
-    // Busca el plaid_item más reciente de este usuario
     const { data: rows, error: selErr } = await supabase
       .from("plaid_items")
       .select("plaid_item_id, plaid_access_token, institution_name, user_id, id")
@@ -845,25 +311,17 @@ app.post("/plaid/transactions/reset", requireAuth, async (req, res) => {
     const row = Array.isArray(rows) ? rows[0] : null;
     if (!row) return res.status(404).json({ ok: false, error: "No encontré plaid_items para este usuario" });
 
-    // Borra cursor (si existe)
+    // Borrar cursor
     await supabase.from("plaid_sync_state").delete().eq("plaid_item_id", String(row.plaid_item_id));
 
-    // Desencripta token si aplica (formato iv.tag.data)
-    let access_token = String(row.plaid_access_token || "");
-    try {
-      if (access_token.split(".").length === 3 && typeof decryptToken === "function") {
-        access_token = decryptToken(access_token);
-      }
-    } catch (e) {
-      // si falla, seguimos con el token original
-    }
+    // Token real
+    const access_token = unwrapPlaidAccessToken(row.plaid_access_token);
 
-    // Validación básica
     if (!String(access_token).startsWith("access-")) {
       return res.status(400).json({ ok: false, error: "access_token inválido" });
     }
 
-    // Sync desde cero (cursor vacío)
+    // Sync desde cero
     const resp = await plaidClient.transactionsSync({
       access_token,
       cursor: undefined,
@@ -875,7 +333,7 @@ app.post("/plaid/transactions/reset", requireAuth, async (req, res) => {
     const next_cursor = resp.data.next_cursor;
     const has_more = resp.data.has_more;
 
-    // Upsert added + modified en public.plaid_transactions
+    // upsert tx
     const upRows = []
       .concat(added)
       .concat(modified)
@@ -910,7 +368,6 @@ app.post("/plaid/transactions/reset", requireAuth, async (req, res) => {
       if (upErr) return res.status(500).json({ ok: false, supabase_error: upErr });
     }
 
-    // Marcar removed
     const removedIds = removed.map((r) => r?.transaction_id).filter(Boolean);
     if (removedIds.length) {
       const { error: rmErr } = await supabase
@@ -921,7 +378,7 @@ app.post("/plaid/transactions/reset", requireAuth, async (req, res) => {
       if (rmErr) return res.status(500).json({ ok: false, supabase_error: rmErr });
     }
 
-    // Guardar cursor en public.plaid_sync_state
+    // guardar cursor
     const { error: curErr } = await supabase.from("plaid_sync_state").upsert(
       {
         user_id: String(user_id),
@@ -931,7 +388,6 @@ app.post("/plaid/transactions/reset", requireAuth, async (req, res) => {
       },
       { onConflict: "plaid_item_id" }
     );
-
     if (curErr) return res.status(500).json({ ok: false, supabase_error: curErr });
 
     return res.json({
@@ -951,46 +407,199 @@ app.post("/plaid/transactions/reset", requireAuth, async (req, res) => {
     return res.status(500).json({ ok: false, error: String(e) });
   }
 });
-// =================== END PLAID TRANSACTIONS RESET (AUTH) ===================
-app.get("/plaid/redirect", (req, res) => {
-  res.status(200).send("OK");
+
+// =========================
+// MICRO v2 (AUTH) - mínimo para probar: status / run / payout
+// Tablas esperadas:
+// - micro_rules_v2 (user_id unique)
+// - micro_ledger_v2 (user_id unique)
+// - micro_contributions_v2
+// - plaid_transactions
+// =========================
+async function getMicroRule(user_id) {
+  const { data } = await supabase.from("micro_rules_v2").select("*").eq("user_id", String(user_id)).maybeSingle();
+  return data || null;
+}
+async function getLedger(user_id) {
+  const { data } = await supabase.from("micro_ledger_v2").select("*").eq("user_id", String(user_id)).maybeSingle();
+  return data || null;
+}
+async function upsertLedger(user_id, patch) {
+  const current = (await getLedger(user_id)) || { user_id: String(user_id), pending_total: 0, processed_total: 0 };
+  const payload = {
+    user_id: String(user_id),
+    pending_total: patch.pending_total !== undefined ? patch.pending_total : current.pending_total,
+    processed_total: patch.processed_total !== undefined ? patch.processed_total : current.processed_total,
+    last_run_at: patch.last_run_at !== undefined ? patch.last_run_at : current.last_run_at,
+    last_payout_at: patch.last_payout_at !== undefined ? patch.last_payout_at : current.last_payout_at,
+    updated_at: new Date().toISOString(),
+  };
+  await supabase.from("micro_ledger_v2").upsert(payload, { onConflict: "user_id" });
+  return payload;
+}
+function calcContributionFixed(rule, purchaseAmount) {
+  const min = Math.max(0, toNumber(rule?.min_purchase_amount, 1));
+  const amt = Math.max(0, toNumber(purchaseAmount, 0));
+  if (amt < min) return 0;
+  const c = Math.max(0, toNumber(rule?.fixed_amount, 1));
+  return Math.round(c * 100) / 100;
+}
+
+app.get("/micro/status", requireAuth, async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const rule = await getMicroRule(user_id);
+    const ledger = await getLedger(user_id);
+
+    const { data: recent } = await supabase
+      .from("micro_contributions_v2")
+      .select("*")
+      .eq("user_id", String(user_id))
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    return res.json({ ok: true, rule: rule || null, ledger: ledger || null, recent: recent || [] });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: String(e) });
+  }
 });
 
-app.post("/plaid/exchange_public_token", async (req, res) => {
+app.post("/micro/rule", requireAuth, async (req, res) => {
   try {
-    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no configurado" });
+    const user_id = req.user.id;
+    const payload = {
+      user_id: String(user_id),
+      enabled: req.body?.enabled !== undefined ? Boolean(req.body.enabled) : true,
+      auto_run: req.body?.auto_run !== undefined ? Boolean(req.body.auto_run) : true,
+      payout_enabled: req.body?.payout_enabled !== undefined ? Boolean(req.body.payout_enabled) : true,
+      payout_min_threshold: Math.max(0, toNumber(req.body?.payout_min_threshold, 20)),
+      mode: String(req.body?.mode || "fixed"),
+      fixed_amount: Math.max(0, toNumber(req.body?.fixed_amount, 1)),
+      min_purchase_amount: Math.max(0, toNumber(req.body?.min_purchase_amount, 1)),
+      updated_at: new Date().toISOString(),
+    };
 
-    const { public_token, user_id, institution_name } = req.body || {};
-    if (!public_token) return res.status(400).json({ ok: false, error: "public_token es requerido" });
-    if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
+    const { data, error } = await supabase.from("micro_rules_v2").upsert(payload, { onConflict: "user_id" }).select("*");
+    if (error) return res.status(500).json({ ok: false, supabase_error: error });
+    return res.json({ ok: true, rule: data?.[0] || null });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: String(e) });
+  }
+});
 
-    const exchange = await plaidClient.itemPublicTokenExchange({ public_token });
-    const access_token = exchange.data.access_token;
-    const item_id = exchange.data.item_id;
+app.post("/micro/run", requireAuth, async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const days_back = Math.min(3650, Math.max(1, Math.floor(toNumber(req.body?.days_back, 120))));
 
-    const token_to_store = typeof encryptToken === "function" ? encryptToken(access_token) : access_token;
+    const rule = await getMicroRule(user_id);
+    if (!rule || !rule.enabled) {
+      return res.json({ ok: true, message: "Micro-pagos desactivados o regla no existe.", created: 0, created_total: 0 });
+    }
 
-    const { error } = await supabase.from("plaid_items").upsert(
-      {
-        user_id: String(user_id),
-        plaid_item_id: item_id,
-        plaid_access_token: token_to_store,
-        institution_name: institution_name || null,
-      },
-      { onConflict: "plaid_item_id" }
-    );
+    const since = new Date(Date.now() - days_back * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    const { data: tx, error } = await supabase
+      .from("plaid_transactions")
+      .select("transaction_id,date,amount,pending,is_removed")
+      .eq("user_id", String(user_id))
+      .eq("is_removed", false)
+      .eq("pending", false)
+      .gte("date", since);
 
     if (error) return res.status(500).json({ ok: false, supabase_error: error });
 
-    return res.json({
-      ok: true,
-      plaid_item_id: item_id,
-      user_id: String(user_id),
-      institution_name: institution_name || null,
-    });
-  } catch (err) {
-    const plaidData = err?.response?.data;
-    console.error("PLAID ERROR (exchange_public_token):", plaidData || err);
-    return res.status(400).json({ ok: false, error: plaidData || err?.message || "Unknown error" });
+    let created = 0;
+    let created_total = 0;
+
+    for (const t of tx || []) {
+      const tid = String(t.transaction_id || "");
+      if (!tid) continue;
+
+      // evita duplicar contribuciones por la misma tx
+      const { data: already } = await supabase
+        .from("micro_contributions_v2")
+        .select("id")
+        .eq("user_id", String(user_id))
+        .eq("transaction_id", tid)
+        .limit(1);
+
+      if (Array.isArray(already) && already.length > 0) continue;
+
+      const purchaseAmount = Math.max(0, toNumber(t.amount, 0));
+      const c = calcContributionFixed(rule, purchaseAmount);
+      if (c <= 0) continue;
+
+      const row = {
+        user_id: String(user_id),
+        plaid_item_id: null,
+        transaction_id: tid,
+        transaction_date: t.date || null,
+        purchase_amount: purchaseAmount,
+        contribution_amount: c,
+        target_debt_id: rule.target_debt_id || null,
+        status: "pending",
+      };
+
+      const { error: insErr } = await supabase.from("micro_contributions_v2").insert(row);
+      if (insErr) continue;
+
+      created += 1;
+      created_total += c;
+    }
+
+    const ledger = (await getLedger(user_id)) || { user_id, pending_total: 0, processed_total: 0 };
+    const newPending = Math.round((toNumber(ledger.pending_total, 0) + created_total) * 100) / 100;
+
+    await upsertLedger(user_id, { pending_total: newPending, last_run_at: new Date().toISOString() });
+
+    return res.json({ ok: true, created, created_total: Number(created_total.toFixed(2)), pending_total: newPending });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: String(e) });
   }
+});
+
+app.post("/micro/payout/simulate", requireAuth, async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const threshold = req.body?.threshold !== undefined ? Math.max(0, toNumber(req.body.threshold, 0)) : null;
+
+    const rule = await getMicroRule(user_id);
+    if (!rule || !rule.payout_enabled) {
+      return res.json({ ok: true, message: "Payout desactivado o regla no existe.", paid: 0 });
+    }
+
+    const ledger = (await getLedger(user_id)) || { user_id, pending_total: 0, processed_total: 0 };
+    const min = threshold !== null ? threshold : Math.max(0, toNumber(rule.payout_min_threshold, 20));
+    const pending = Math.max(0, toNumber(ledger.pending_total, 0));
+
+    if (pending < min) {
+      return res.json({ ok: true, message: `Pendiente ${pending} < umbral ${min}. No payout.`, paid: 0, pending_total: pending });
+    }
+
+    const now = new Date().toISOString();
+
+    const { error: updErr } = await supabase
+      .from("micro_contributions_v2")
+      .update({ status: "processed", processed_at: now })
+      .eq("user_id", String(user_id))
+      .eq("status", "pending");
+    if (updErr) return res.status(500).json({ ok: false, supabase_error: updErr });
+
+    const newProcessed = Math.round((toNumber(ledger.processed_total, 0) + pending) * 100) / 100;
+
+    await upsertLedger(user_id, { pending_total: 0, processed_total: newProcessed, last_payout_at: now });
+
+    return res.json({ ok: true, paid: Number(pending.toFixed(2)), pending_total: 0, processed_total: newProcessed });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// -------------------- Start --------------------
+app.listen(PORT, () => {
+  console.log(`✅ Debtya API running on port ${PORT}`);
+  console.log(`✅ PLAID_ENV=${PLAID_ENV}`);
+  console.log(`✅ SUPABASE configured: ${Boolean(supabase)}`);
+  console.log(`✅ TOKEN_ENCRYPTION_KEY configured: ${hasEncryptionKey()}`);
 });
