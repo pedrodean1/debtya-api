@@ -952,3 +952,45 @@ app.post("/plaid/transactions/reset", requireAuth, async (req, res) => {
   }
 });
 // =================== END PLAID TRANSACTIONS RESET (AUTH) ===================
+app.get("/plaid/redirect", (req, res) => {
+  res.status(200).send("OK");
+});
+
+app.post("/plaid/exchange_public_token", async (req, res) => {
+  try {
+    if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no configurado" });
+
+    const { public_token, user_id, institution_name } = req.body || {};
+    if (!public_token) return res.status(400).json({ ok: false, error: "public_token es requerido" });
+    if (!user_id) return res.status(400).json({ ok: false, error: "user_id es requerido" });
+
+    const exchange = await plaidClient.itemPublicTokenExchange({ public_token });
+    const access_token = exchange.data.access_token;
+    const item_id = exchange.data.item_id;
+
+    const token_to_store = typeof encryptToken === "function" ? encryptToken(access_token) : access_token;
+
+    const { error } = await supabase.from("plaid_items").upsert(
+      {
+        user_id: String(user_id),
+        plaid_item_id: item_id,
+        plaid_access_token: token_to_store,
+        institution_name: institution_name || null,
+      },
+      { onConflict: "plaid_item_id" }
+    );
+
+    if (error) return res.status(500).json({ ok: false, supabase_error: error });
+
+    return res.json({
+      ok: true,
+      plaid_item_id: item_id,
+      user_id: String(user_id),
+      institution_name: institution_name || null,
+    });
+  } catch (err) {
+    const plaidData = err?.response?.data;
+    console.error("PLAID ERROR (exchange_public_token):", plaidData || err);
+    return res.status(400).json({ ok: false, error: plaidData || err?.message || "Unknown error" });
+  }
+});
