@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const path = require("path");
+const crypto = require("crypto");
 
 const app = express();
 app.use(cors());
@@ -719,6 +720,14 @@ async function runFullAutoInternal(req, userId) {
   };
 }
 
+function normalizeSecret(value) {
+  return String(value ?? "")
+    .replace(/^["']|["']$/g, "")
+    .replace(/\r/g, "")
+    .replace(/\n/g, "")
+    .trim();
+}
+
 function getCronSecretFromRequest(req) {
   const headerSecret =
     req.headers["x-cron-secret"] ||
@@ -726,14 +735,32 @@ function getCronSecretFromRequest(req) {
     req.headers["x-api-key"] ||
     null;
 
+  const authHeader = req.headers.authorization || "";
+  const bearerSecret = authHeader.toLowerCase().startsWith("bearer ")
+    ? authHeader.slice(7)
+    : null;
+
   const querySecret = req.query?.secret || null;
   const bodySecret = req.body?.secret || null;
 
-  return headerSecret || querySecret || bodySecret || null;
+  return normalizeSecret(
+    headerSecret || bearerSecret || querySecret || bodySecret || ""
+  );
+}
+
+function safeSecretEqual(a, b) {
+  const left = Buffer.from(normalizeSecret(a));
+  const right = Buffer.from(normalizeSecret(b));
+
+  if (!left.length || !right.length) return false;
+  if (left.length !== right.length) return false;
+
+  return crypto.timingSafeEqual(left, right);
 }
 
 function requireCronSecret(req) {
-  const expected = process.env.CRON_SECRET || "";
+  const expected = normalizeSecret(process.env.CRON_SECRET || "");
+
   if (!expected) {
     const error = new Error("CRON_SECRET no está configurado en Render.");
     error.status = 500;
@@ -741,7 +768,8 @@ function requireCronSecret(req) {
   }
 
   const received = getCronSecretFromRequest(req);
-  if (!received || received !== expected) {
+
+  if (!received || !safeSecretEqual(received, expected)) {
     const error = new Error("Cron secret inválido.");
     error.status = 401;
     throw error;
