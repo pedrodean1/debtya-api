@@ -12,10 +12,48 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 
+function getSupabaseAnonKey() {
+  return (
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    ""
+  ).trim();
+}
+
+function getSupabaseServiceRoleKey() {
+  return (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.SERVICE_ROLE_KEY ||
+    ""
+  ).trim();
+}
+
 function supabaseHeaders(extra = {}) {
+  const anonKey = getSupabaseAnonKey();
+
   return {
-    apikey: process.env.SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+    apikey: anonKey,
+    Authorization: `Bearer ${anonKey}`,
+    ...extra,
+  };
+}
+
+function supabaseAdminHeaders(extra = {}) {
+  const serviceKey = getSupabaseServiceRoleKey();
+
+  if (!serviceKey) {
+    const error = new Error(
+      "Falta la service role key de Supabase en el servidor. Define una de estas variables: SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SECRET_KEY, SUPABASE_SERVICE_KEY o SERVICE_ROLE_KEY."
+    );
+    error.status = 500;
+    throw error;
+  }
+
+  return {
+    apikey: serviceKey,
+    Authorization: `Bearer ${serviceKey}`,
     ...extra,
   };
 }
@@ -57,7 +95,7 @@ async function getUserFromToken(req) {
 
   const response = await axios.get(`${process.env.SUPABASE_URL}/auth/v1/user`, {
     headers: {
-      apikey: process.env.SUPABASE_ANON_KEY,
+      apikey: getSupabaseAnonKey(),
       Authorization: `Bearer ${token}`,
     },
   });
@@ -90,10 +128,7 @@ async function supabaseSelectAdmin(table, query) {
   const response = await axios.get(
     `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`,
     {
-      headers: {
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      },
+      headers: supabaseAdminHeaders(),
     }
   );
 
@@ -755,15 +790,13 @@ function getCronSecretFromRequest(req) {
 }
 
 function getAcceptedCronSecrets() {
-  const accepted = [
+  return [
     process.env.CRON_SECRET,
     process.env.CRON_SECRET_FALLBACK,
     "499d00ff9f129c7aee2102040b2db6ff",
   ]
     .map(normalizeSecret)
     .filter(Boolean);
-
-  return [...new Set(accepted)];
 }
 
 function requireCronSecret(req) {
@@ -827,11 +860,9 @@ async function runCronFullAutoSweep() {
         `${process.env.SUPABASE_URL}/rest/v1/rpc/auto_sweep_v2`,
         { p_user_id: userId },
         {
-          headers: {
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          headers: supabaseAdminHeaders({
             "Content-Type": "application/json",
-          },
+          }),
         }
       );
 
@@ -874,6 +905,11 @@ async function runCronFullAutoSweep() {
     intents_executed: totalExecuted,
     total_executed_amount: moneyNumber(totalExecutedAmount),
     results,
+    env_debug: {
+      has_supabase_url: !!process.env.SUPABASE_URL,
+      has_anon_key: !!getSupabaseAnonKey(),
+      has_service_role_key: !!getSupabaseServiceRoleKey(),
+    },
   };
 }
 
@@ -886,6 +922,11 @@ app.get("/health", async (req, res) => {
     ok: true,
     message: "DebtYa API funcionando",
     now: toIsoNow(),
+    env_debug: {
+      has_supabase_url: !!process.env.SUPABASE_URL,
+      has_anon_key: !!getSupabaseAnonKey(),
+      has_service_role_key: !!getSupabaseServiceRoleKey(),
+    },
   });
 });
 
