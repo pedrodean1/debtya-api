@@ -12,6 +12,10 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 
+function getSupabaseUrl() {
+  return String(process.env.SUPABASE_URL || "").trim();
+}
+
 function getSupabaseAnonKey() {
   return (
     process.env.SUPABASE_ANON_KEY ||
@@ -26,9 +30,26 @@ function getSupabaseServiceRoleKey() {
     process.env.SUPABASE_SECRET_KEY ||
     process.env.SUPABASE_SERVICE_KEY ||
     process.env.SERVICE_ROLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjEzODcwMCwiZXhwIjoyMDg3NzE0NzAwfQ.TDzxZsC3eAbDHA5WCfuNBrB-hG0eW3ttKVcLNAwBip0"
+    ""
   ).trim();
 }
+
+function assertServerConfig() {
+  const missing = [];
+
+  if (!getSupabaseUrl()) missing.push("SUPABASE_URL");
+  if (!getSupabaseAnonKey()) missing.push("SUPABASE_ANON_KEY");
+  if (!getSupabaseServiceRoleKey()) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!String(process.env.CRON_SECRET || "").trim()) missing.push("CRON_SECRET");
+
+  if (missing.length) {
+    console.warn(
+      `[DebtYa] Faltan variables de entorno críticas: ${missing.join(", ")}`
+    );
+  }
+}
+
+assertServerConfig();
 
 function supabaseHeaders(extra = {}) {
   const anonKey = getSupabaseAnonKey();
@@ -93,7 +114,7 @@ async function getUserFromToken(req) {
     throw error;
   }
 
-  const response = await axios.get(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+  const response = await axios.get(`${getSupabaseUrl()}/auth/v1/user`, {
     headers: {
       apikey: getSupabaseAnonKey(),
       Authorization: `Bearer ${token}`,
@@ -112,25 +133,19 @@ async function getUserFromToken(req) {
 async function supabaseSelect(table, query, req) {
   await getUserFromToken(req);
 
-  const response = await axios.get(
-    `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`,
-    {
-      headers: supabaseHeaders({
-        Authorization: `Bearer ${getAuthToken(req)}`,
-      }),
-    }
-  );
+  const response = await axios.get(`${getSupabaseUrl()}/rest/v1/${table}?${query}`, {
+    headers: supabaseHeaders({
+      Authorization: `Bearer ${getAuthToken(req)}`,
+    }),
+  });
 
   return response.data || [];
 }
 
 async function supabaseSelectAdmin(table, query) {
-  const response = await axios.get(
-    `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`,
-    {
-      headers: supabaseAdminHeaders(),
-    }
-  );
+  const response = await axios.get(`${getSupabaseUrl()}/rest/v1/${table}?${query}`, {
+    headers: supabaseAdminHeaders(),
+  });
 
   return response.data || [];
 }
@@ -139,7 +154,7 @@ async function supabaseInsert(table, payload, req) {
   await getUserFromToken(req);
 
   const response = await axios.post(
-    `${process.env.SUPABASE_URL}/rest/v1/${table}`,
+    `${getSupabaseUrl()}/rest/v1/${table}`,
     payload,
     {
       headers: supabaseHeaders({
@@ -157,7 +172,7 @@ async function supabasePatch(table, query, payload, req) {
   await getUserFromToken(req);
 
   const response = await axios.patch(
-    `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`,
+    `${getSupabaseUrl()}/rest/v1/${table}?${query}`,
     payload,
     {
       headers: supabaseHeaders({
@@ -175,7 +190,7 @@ async function supabaseDelete(table, query, req) {
   await getUserFromToken(req);
 
   const response = await axios.delete(
-    `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`,
+    `${getSupabaseUrl()}/rest/v1/${table}?${query}`,
     {
       headers: supabaseHeaders({
         Authorization: `Bearer ${getAuthToken(req)}`,
@@ -191,7 +206,7 @@ async function supabaseRpc(functionName, payload, req) {
   await getUserFromToken(req);
 
   const response = await axios.post(
-    `${process.env.SUPABASE_URL}/rest/v1/rpc/${functionName}`,
+    `${getSupabaseUrl()}/rest/v1/rpc/${functionName}`,
     payload,
     {
       headers: supabaseHeaders({
@@ -505,9 +520,11 @@ function normalizePlaidTransaction(tx, userId, plaidItemRow) {
     authorized_date: tx.authorized_date || null,
     merchant_name: tx.merchant_name || tx.name || null,
     description: tx.name || null,
-    category: tx.personal_finance_category?.detailed ||
+    category:
+      tx.personal_finance_category?.detailed ||
       (Array.isArray(tx.category) ? tx.category[0] : tx.category || null),
-    subcategory: tx.personal_finance_category?.primary ||
+    subcategory:
+      tx.personal_finance_category?.primary ||
       (Array.isArray(tx.category) ? tx.category[1] || null : null),
     amount: moneyNumber(tx.amount || 0),
     iso_currency_code: tx.iso_currency_code || "USD",
@@ -793,7 +810,6 @@ function getAcceptedCronSecrets() {
   return [
     process.env.CRON_SECRET,
     process.env.CRON_SECRET_FALLBACK,
-    "499d00ff9f129c7aee2102040b2db6ff",
   ]
     .map(normalizeSecret)
     .filter(Boolean);
@@ -857,7 +873,7 @@ async function runCronFullAutoSweep() {
 
     try {
       const response = await axios.post(
-        `${process.env.SUPABASE_URL}/rest/v1/rpc/auto_sweep_v2`,
+        `${getSupabaseUrl()}/rest/v1/rpc/auto_sweep_v2`,
         { p_user_id: userId },
         {
           headers: supabaseAdminHeaders({
@@ -906,9 +922,10 @@ async function runCronFullAutoSweep() {
     total_executed_amount: moneyNumber(totalExecutedAmount),
     results,
     env_debug: {
-      has_supabase_url: !!process.env.SUPABASE_URL,
+      has_supabase_url: !!getSupabaseUrl(),
       has_anon_key: !!getSupabaseAnonKey(),
       has_service_role_key: !!getSupabaseServiceRoleKey(),
+      has_cron_secret: !!normalizeSecret(process.env.CRON_SECRET),
     },
   };
 }
@@ -923,9 +940,10 @@ app.get("/health", async (req, res) => {
     message: "DebtYa API funcionando",
     now: toIsoNow(),
     env_debug: {
-      has_supabase_url: !!process.env.SUPABASE_URL,
+      has_supabase_url: !!getSupabaseUrl(),
       has_anon_key: !!getSupabaseAnonKey(),
       has_service_role_key: !!getSupabaseServiceRoleKey(),
+      has_cron_secret: !!normalizeSecret(process.env.CRON_SECRET),
     },
   });
 });
@@ -1176,11 +1194,17 @@ app.post("/automation-rules", async (req, res) => {
       apply_to_transaction_type: req.body.apply_to_transaction_type || "debit_only",
       min_transaction_amount: moneyNumber(req.body.min_transaction_amount || 0),
       max_per_transaction:
-        req.body.max_per_transaction === undefined || req.body.max_per_transaction === "" ? null : moneyNumber(req.body.max_per_transaction),
+        req.body.max_per_transaction === undefined || req.body.max_per_transaction === ""
+          ? null
+          : moneyNumber(req.body.max_per_transaction),
       max_per_day:
-        req.body.max_per_day === undefined || req.body.max_per_day === "" ? null : moneyNumber(req.body.max_per_day),
+        req.body.max_per_day === undefined || req.body.max_per_day === ""
+          ? null
+          : moneyNumber(req.body.max_per_day),
       max_per_month:
-        req.body.max_per_month === undefined || req.body.max_per_month === "" ? null : moneyNumber(req.body.max_per_month),
+        req.body.max_per_month === undefined || req.body.max_per_month === ""
+          ? null
+          : moneyNumber(req.body.max_per_month),
       require_user_confirmation:
         req.body.require_user_confirmation === undefined ? true : !!req.body.require_user_confirmation,
       allow_partial_execution:
@@ -1214,11 +1238,17 @@ app.post("/rules", async (req, res) => {
       apply_to_transaction_type: req.body.apply_to_transaction_type || "debit_only",
       min_transaction_amount: moneyNumber(req.body.min_transaction_amount || 0),
       max_per_transaction:
-        req.body.max_per_transaction === undefined || req.body.max_per_transaction === "" ? null : moneyNumber(req.body.max_per_transaction),
+        req.body.max_per_transaction === undefined || req.body.max_per_transaction === ""
+          ? null
+          : moneyNumber(req.body.max_per_transaction),
       max_per_day:
-        req.body.max_per_day === undefined || req.body.max_per_day === "" ? null : moneyNumber(req.body.max_per_day),
+        req.body.max_per_day === undefined || req.body.max_per_day === ""
+          ? null
+          : moneyNumber(req.body.max_per_day),
       max_per_month:
-        req.body.max_per_month === undefined || req.body.max_per_month === "" ? null : moneyNumber(req.body.max_per_month),
+        req.body.max_per_month === undefined || req.body.max_per_month === ""
+          ? null
+          : moneyNumber(req.body.max_per_month),
       require_user_confirmation:
         req.body.require_user_confirmation === undefined ? true : !!req.body.require_user_confirmation,
       allow_partial_execution:
@@ -1528,8 +1558,8 @@ app.post("/plaid/create_link_token", async (req, res) => {
       process.env.PLAID_ENV === "production"
         ? "https://production.plaid.com"
         : process.env.PLAID_ENV === "development"
-        ? "https://development.plaid.com"
-        : "https://sandbox.plaid.com";
+          ? "https://development.plaid.com"
+          : "https://sandbox.plaid.com";
 
     const response = await axios.post(
       `${plaidBase}/link/token/create`,
@@ -1563,8 +1593,8 @@ app.get("/plaid/web", async (req, res) => {
       process.env.PLAID_ENV === "production"
         ? "https://production.plaid.com"
         : process.env.PLAID_ENV === "development"
-        ? "https://development.plaid.com"
-        : "https://sandbox.plaid.com";
+          ? "https://development.plaid.com"
+          : "https://sandbox.plaid.com";
 
     const response = await axios.post(
       `${plaidBase}/link/token/create`,
@@ -1603,8 +1633,8 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
       process.env.PLAID_ENV === "production"
         ? "https://production.plaid.com"
         : process.env.PLAID_ENV === "development"
-        ? "https://development.plaid.com"
-        : "https://sandbox.plaid.com";
+          ? "https://development.plaid.com"
+          : "https://sandbox.plaid.com";
 
     const response = await axios.post(
       `${plaidBase}/item/public_token/exchange`,
@@ -1620,7 +1650,8 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
       user_id: user.id,
       plaid_item_id: response.data?.item_id,
       plaid_access_token: response.data?.access_token,
-      institution_name: institution_name || req.body?.metadata?.institution?.name || "Banco conectado",
+      institution_name:
+        institution_name || req.body?.metadata?.institution?.name || "Banco conectado",
       updated_at: toIsoNow(),
     };
 
@@ -1679,8 +1710,8 @@ app.post("/plaid/accounts/import-last", async (req, res) => {
       process.env.PLAID_ENV === "production"
         ? "https://production.plaid.com"
         : process.env.PLAID_ENV === "development"
-        ? "https://development.plaid.com"
-        : "https://sandbox.plaid.com";
+          ? "https://development.plaid.com"
+          : "https://sandbox.plaid.com";
 
     const response = await axios.post(
       `${plaidBase}/accounts/get`,
@@ -1752,8 +1783,8 @@ app.post("/plaid/accounts/import", async (req, res) => {
       process.env.PLAID_ENV === "production"
         ? "https://production.plaid.com"
         : process.env.PLAID_ENV === "development"
-        ? "https://development.plaid.com"
-        : "https://sandbox.plaid.com";
+          ? "https://development.plaid.com"
+          : "https://sandbox.plaid.com";
 
     const response = await axios.post(
       `${plaidBase}/accounts/get`,
@@ -1825,10 +1856,12 @@ app.post("/plaid/transactions/import-last", async (req, res) => {
       process.env.PLAID_ENV === "production"
         ? "https://production.plaid.com"
         : process.env.PLAID_ENV === "development"
-        ? "https://development.plaid.com"
-        : "https://sandbox.plaid.com";
+          ? "https://development.plaid.com"
+          : "https://sandbox.plaid.com";
 
-    const startDate = req.body?.start_date || new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 10);
+    const startDate =
+      req.body?.start_date ||
+      new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 10);
     const endDate = req.body?.end_date || new Date().toISOString().slice(0, 10);
 
     const response = await axios.post(
@@ -1870,8 +1903,8 @@ app.post("/plaid/transactions/sync", async (req, res) => {
       process.env.PLAID_ENV === "production"
         ? "https://production.plaid.com"
         : process.env.PLAID_ENV === "development"
-        ? "https://development.plaid.com"
-        : "https://sandbox.plaid.com";
+          ? "https://development.plaid.com"
+          : "https://sandbox.plaid.com";
 
     let hasMore = true;
     let cursor = plaidItem.transactions_cursor || null;
