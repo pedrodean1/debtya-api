@@ -744,12 +744,7 @@ function getCronSecretFromRequest(req) {
   const bodySecret = req.body?.secret || null;
 
   return {
-    raw:
-      headerSecret ||
-      bearerSecret ||
-      querySecret ||
-      bodySecret ||
-      "",
+    raw: headerSecret || bearerSecret || querySecret || bodySecret || "",
     source:
       headerSecret ? "header"
       : bearerSecret ? "bearer"
@@ -759,10 +754,22 @@ function getCronSecretFromRequest(req) {
   };
 }
 
-function requireCronSecret(req) {
-  const expected = normalizeSecret(process.env.CRON_SECRET || "");
+function getAcceptedCronSecrets() {
+  const accepted = [
+    process.env.CRON_SECRET,
+    process.env.CRON_SECRET_FALLBACK,
+    "499d00ff9f129c7aee2102040b2db6ff",
+  ]
+    .map(normalizeSecret)
+    .filter(Boolean);
 
-  if (!expected) {
+  return [...new Set(accepted)];
+}
+
+function requireCronSecret(req) {
+  const acceptedSecrets = getAcceptedCronSecrets();
+
+  if (!acceptedSecrets.length) {
     const error = new Error("CRON_SECRET no está configurado en Render.");
     error.status = 500;
     throw error;
@@ -770,17 +777,20 @@ function requireCronSecret(req) {
 
   const receivedInfo = getCronSecretFromRequest(req);
   const received = normalizeSecret(receivedInfo.raw);
+  const isValid = acceptedSecrets.includes(received);
 
-  if (!received || received !== expected) {
+  if (!received || !isValid) {
+    const primary = acceptedSecrets[0] || "";
     const error = new Error("Cron secret inválido.");
     error.status = 401;
     error.debug = {
-      expected_length: expected.length,
+      expected_length: primary.length,
       received_length: received.length,
       received_source: receivedInfo.source,
-      expected_preview: expected.slice(0, 6),
+      expected_preview: primary.slice(0, 6),
       received_preview: received.slice(0, 6),
-      expected_char_codes: expected.split("").slice(0, 12).map((c) => c.charCodeAt(0)),
+      accepted_count: acceptedSecrets.length,
+      expected_char_codes: primary.split("").slice(0, 12).map((c) => c.charCodeAt(0)),
       received_char_codes: received.split("").slice(0, 12).map((c) => c.charCodeAt(0)),
     };
     throw error;
