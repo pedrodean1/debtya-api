@@ -3,7 +3,6 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const path = require("path");
-const crypto = require("crypto");
 
 const app = express();
 app.use(cors());
@@ -43,6 +42,7 @@ function sendError(res, error, fallbackStatus = 500) {
   res.status(error.status || fallbackStatus).json({
     ok: false,
     error: normalizeError(error),
+    debug: error.debug || null,
   });
 }
 
@@ -743,19 +743,20 @@ function getCronSecretFromRequest(req) {
   const querySecret = req.query?.secret || null;
   const bodySecret = req.body?.secret || null;
 
-  return normalizeSecret(
-    headerSecret || bearerSecret || querySecret || bodySecret || ""
-  );
-}
-
-function safeSecretEqual(a, b) {
-  const left = Buffer.from(normalizeSecret(a));
-  const right = Buffer.from(normalizeSecret(b));
-
-  if (!left.length || !right.length) return false;
-  if (left.length !== right.length) return false;
-
-  return crypto.timingSafeEqual(left, right);
+  return {
+    raw:
+      headerSecret ||
+      bearerSecret ||
+      querySecret ||
+      bodySecret ||
+      "",
+    source:
+      headerSecret ? "header"
+      : bearerSecret ? "bearer"
+      : querySecret ? "query"
+      : bodySecret ? "body"
+      : "missing",
+  };
 }
 
 function requireCronSecret(req) {
@@ -767,11 +768,21 @@ function requireCronSecret(req) {
     throw error;
   }
 
-  const received = getCronSecretFromRequest(req);
+  const receivedInfo = getCronSecretFromRequest(req);
+  const received = normalizeSecret(receivedInfo.raw);
 
-  if (!received || !safeSecretEqual(received, expected)) {
+  if (!received || received !== expected) {
     const error = new Error("Cron secret inválido.");
     error.status = 401;
+    error.debug = {
+      expected_length: expected.length,
+      received_length: received.length,
+      received_source: receivedInfo.source,
+      expected_preview: expected.slice(0, 6),
+      received_preview: received.slice(0, 6),
+      expected_char_codes: expected.split("").slice(0, 12).map((c) => c.charCodeAt(0)),
+      received_char_codes: received.split("").slice(0, 12).map((c) => c.charCodeAt(0)),
+    };
     throw error;
   }
 }
