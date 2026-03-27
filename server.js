@@ -26,7 +26,7 @@ function getSupabaseServiceRoleKey() {
     process.env.SUPABASE_SECRET_KEY ||
     process.env.SUPABASE_SERVICE_KEY ||
     process.env.SERVICE_ROLE_KEY ||
-    ""
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjEzODcwMCwiZXhwIjoyMDg3NzE0NzAwfQ.TDzxZsC3eAbDHA5WCfuNBrB-hG0eW3ttKVcLNAwBip0"
   ).trim();
 }
 
@@ -45,7 +45,7 @@ function supabaseAdminHeaders(extra = {}) {
 
   if (!serviceKey) {
     const error = new Error(
-      "Falta la service role key de Supabase en el servidor. Define una de estas variables: SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SECRET_KEY, SUPABASE_SERVICE_KEY o SERVICE_ROLE_KEY."
+      "Falta la service role key de Supabase en el servidor."
     );
     error.status = 500;
     throw error;
