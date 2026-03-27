@@ -7,6 +7,7 @@ const path = require("path");
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
@@ -84,6 +85,20 @@ async function supabaseSelect(table, query, req) {
   return response.data || [];
 }
 
+async function supabaseSelectAdmin(table, query) {
+  const response = await axios.get(
+    `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`,
+    {
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    }
+  );
+
+  return response.data || [];
+}
+
 async function supabaseInsert(table, payload, req) {
   await getUserFromToken(req);
 
@@ -96,6 +111,23 @@ async function supabaseInsert(table, payload, req) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       }),
+    }
+  );
+
+  return response.data || [];
+}
+
+async function supabaseInsertAdmin(table, payload) {
+  const response = await axios.post(
+    `${process.env.SUPABASE_URL}/rest/v1/${table}`,
+    payload,
+    {
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
     }
   );
 
@@ -120,6 +152,23 @@ async function supabasePatch(table, query, payload, req) {
   return response.data || [];
 }
 
+async function supabasePatchAdmin(table, query, payload) {
+  const response = await axios.patch(
+    `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`,
+    payload,
+    {
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+    }
+  );
+
+  return response.data || [];
+}
+
 async function supabaseDelete(table, query, req) {
   await getUserFromToken(req);
 
@@ -134,6 +183,23 @@ async function supabaseDelete(table, query, req) {
   );
 
   return response.data || [];
+}
+
+async function supabaseRpc(functionName, payload, req) {
+  await getUserFromToken(req);
+
+  const response = await axios.post(
+    `${process.env.SUPABASE_URL}/rest/v1/rpc/${functionName}`,
+    payload,
+    {
+      headers: supabaseHeaders({
+        Authorization: `Bearer ${getAuthToken(req)}`,
+        "Content-Type": "application/json",
+      }),
+    }
+  );
+
+  return response.data;
 }
 
 function normalizeDebt(debt) {
@@ -507,11 +573,10 @@ function normalizePlaidTransaction(tx, userId, plaidItemRow) {
     authorized_date: tx.authorized_date || null,
     merchant_name: tx.merchant_name || tx.name || null,
     description: tx.name || null,
-    category: Array.isArray(tx.personal_finance_category?.detailed)
-      ? tx.personal_finance_category?.detailed?.join(" / ")
-      : tx.personal_finance_category?.detailed ||
-        (Array.isArray(tx.category) ? tx.category[0] : tx.category || null),
-    subcategory: tx.personal_finance_category?.primary || (Array.isArray(tx.category) ? tx.category[1] || null : null),
+    category: tx.personal_finance_category?.detailed ||
+      (Array.isArray(tx.category) ? tx.category[0] : tx.category || null),
+    subcategory: tx.personal_finance_category?.primary ||
+      (Array.isArray(tx.category) ? tx.category[1] || null : null),
     amount: moneyNumber(tx.amount || 0),
     iso_currency_code: tx.iso_currency_code || "USD",
     direction: Number(tx.amount || 0) >= 0 ? "debit" : "credit",
@@ -633,219 +698,237 @@ async function buildDashboardSummary(req, user) {
 }
 
 async function runRulesInternal(req, userId) {
-  const rules = await getRulesForUser(req, userId, true);
-  const transactions = await getTransactionsForUser(req, userId);
-  const createdAllocations = [];
-
-  for (const rule of rules) {
-    for (const tx of transactions) {
-      if (rule.source_account_id && tx.account_id !== rule.source_account_id) continue;
-      if (tx.direction !== "debit" && rule.apply_to_transaction_type === "debit_only") continue;
-      if (Number(tx.amount || 0) < Number(rule.min_transaction_amount || 0)) continue;
-
-      const calculated = calculateAllocationAmount(rule, tx.amount);
-      if (calculated <= 0) continue;
-
-      const existing = await supabaseSelect(
-        "transaction_allocations",
-        `select=*&transaction_id=eq.${tx.id}&rule_id=eq.${rule.id}&user_id=eq.${userId}`,
-        req
-      );
-
-      if ((existing || []).length > 0) continue;
-
-      const status =
-        rule.execution_mode === "full_auto" && rule.require_user_confirmation === false
-          ? "queued"
-          : "pending";
-
-      const inserted = await supabaseInsert(
-        "transaction_allocations",
-        {
-          user_id: userId,
-          transaction_id: tx.id,
-          rule_id: rule.id,
-          debt_id: rule.target_debt_id,
-          source_account_id: rule.source_account_id,
-          allocation_type: rule.rule_type,
-          base_transaction_amount: moneyNumber(tx.amount),
-          calculated_amount: calculated,
-          capped_amount: calculated,
-          status,
-          status_reason:
-            status === "queued"
-              ? "Asignación creada y lista para ejecución automática."
-              : "Asignación creada pendiente de revisión.",
-          updated_at: toIsoNow(),
-        },
-        req
-      );
-
-      if (inserted[0]) createdAllocations.push(inserted[0]);
-    }
-  }
-
-  return createdAllocations;
-}
-
-async function buildPaymentIntentsInternal(req, userId, executionMode = "safe", debtId = null) {
-  let query = `select=*&user_id=eq.${userId}&status=in.(pending,queued)&order=created_at.asc`;
-  if (debtId) {
-    query = `select=*&user_id=eq.${userId}&status=in.(pending,queued)&debt_id=eq.${debtId}&order=created_at.asc`;
-  }
-
-  const allocations = await supabaseSelect("transaction_allocations", query, req);
-  if (!allocations.length) return [];
-
-  const grouped = allocations.reduce((acc, item) => {
-    const key = `${item.debt_id}__${item.source_account_id || "no_account"}`;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(item);
-    return acc;
-  }, {});
-
-  const createdIntents = [];
-
-  for (const key of Object.keys(grouped)) {
-    const items = grouped[key];
-    const first = items[0];
-    const totalAmount = moneyNumber(items.reduce((sum, item) => sum + Number(item.capped_amount || 0), 0));
-    const approvalRequired = executionMode === "safe";
-
-    const insertedIntent = await supabaseInsert(
-      "payment_intents",
-      {
-        user_id: userId,
-        debt_id: first.debt_id,
-        source_account_id: first.source_account_id,
-        execution_mode: executionMode,
-        execution_frequency: "daily",
-        scheduled_for: toIsoNow(),
-        total_amount: totalAmount,
-        status: approvalRequired ? "pending_review" : "queued",
-        approval_required: approvalRequired,
-        metadata: {
-          grouped_from_allocations: items.map((x) => x.id),
-        },
-        updated_at: toIsoNow(),
-      },
-      req
-    );
-
-    const intent = insertedIntent[0];
-    if (!intent) continue;
-
-    for (const item of items) {
-      await supabaseInsert(
-        "payment_intent_allocations",
-        {
-          payment_intent_id: intent.id,
-          allocation_id: item.id,
-          amount: moneyNumber(item.capped_amount || 0),
-        },
-        req
-      );
-
-      await supabasePatch(
-        "transaction_allocations",
-        `id=eq.${item.id}&user_id=eq.${userId}`,
-        {
-          status: "converted_to_payment",
-          status_reason: "Asignación agregada a payment_intent.",
-          updated_at: toIsoNow(),
-        },
-        req
-      );
-    }
-
-    createdIntents.push(intent);
-  }
-
-  return createdIntents;
-}
-
-async function executePaymentIntentInternal(req, userId, intentId) {
-  const intents = await supabaseSelect(
-    "payment_intents",
-    `select=*&id=eq.${intentId}&user_id=eq.${userId}`,
-    req
-  );
-
-  const intent = intents[0];
-  if (!intent) {
-    const error = new Error("Payment intent no encontrado");
-    error.status = 404;
-    throw error;
-  }
-
-  const debts = await supabaseSelect(
-    "debts",
-    `select=*&id=eq.${intent.debt_id}&user_id=eq.${userId}`,
-    req
-  );
-
-  const debt = debts[0];
-  if (!debt) {
-    const error = new Error("Deuda no encontrada");
-    error.status = 404;
-    throw error;
-  }
-
-  const currentBalance = moneyNumber(debt.balance || 0);
-  const executionAmount = moneyNumber(intent.total_amount || 0);
-  const appliedAmount = moneyNumber(Math.min(executionAmount, currentBalance));
-  const newBalance = moneyNumber(Math.max(currentBalance - appliedAmount, 0));
-  const shouldDeactivate = newBalance <= 0;
-
-  const insertedExecution = await supabaseInsert(
-    "payment_executions",
+  const result = await supabaseRpc(
+    "apply_rules_v2",
     {
-      payment_intent_id: intent.id,
-      user_id: userId,
-      debt_id: intent.debt_id,
-      source_account_id: intent.source_account_id,
-      provider: "manual",
-      execution_amount: appliedAmount,
-      status: "submitted",
-      submitted_at: toIsoNow(),
-      raw_response: {
-        note: "Ejecución simulada manual para DebtYa Fase 3.",
-        previous_balance: currentBalance,
-        new_balance: newBalance,
-      },
-      updated_at: toIsoNow(),
+      p_user_id: userId,
+      p_mode: null,
+      p_limit: 1000,
     },
     req
   );
 
-  await supabasePatch(
-    "payment_intents",
-    `id=eq.${intent.id}&user_id=eq.${userId}`,
-    {
-      status: "executed",
-      executed_at: toIsoNow(),
-      updated_at: toIsoNow(),
-    },
-    req
-  );
-
-  const updatedDebt = await supabasePatch(
-    "debts",
-    `id=eq.${intent.debt_id}&user_id=eq.${userId}`,
-    {
-      balance: newBalance,
-      is_active: shouldDeactivate ? false : debt.is_active !== false,
-      updated_at: toIsoNow(),
-    },
+  const allocations = await supabaseSelect(
+    "transaction_allocations",
+    `select=*&user_id=eq.${userId}&order=created_at.desc&limit=200`,
     req
   );
 
   return {
-    execution: insertedExecution[0] || null,
-    updated_debt: updatedDebt[0] || null,
-    message: shouldDeactivate
-      ? "Payment intent ejecutado y deuda pagada por completo."
-      : "Payment intent ejecutado y balance de la deuda actualizado.",
+    summary: Array.isArray(result) ? result[0] || {} : result || {},
+    allocations,
+  };
+}
+
+async function buildPaymentIntentsInternal(req, userId, executionMode = "safe", debtId = null) {
+  const payload = {
+    p_user_id: userId,
+    p_mode: executionMode || null,
+    p_frequency: null,
+    p_auto_approve: String(executionMode || "").toLowerCase() === "full_auto",
+  };
+
+  const result = await supabaseRpc("build_intents_v2", payload, req);
+
+  let query = `select=*&user_id=eq.${userId}&execution_mode=eq.${executionMode}&order=created_at.desc&limit=100`;
+  if (debtId) {
+    query = `select=*&user_id=eq.${userId}&execution_mode=eq.${executionMode}&debt_id=eq.${debtId}&order=created_at.desc&limit=100`;
+  }
+
+  const intents = await supabaseSelect("payment_intents", query, req);
+
+  return {
+    summary: Array.isArray(result) ? result[0] || {} : result || {},
+    intents,
+  };
+}
+
+async function approvePaymentIntentInternal(req, userId, intentId) {
+  const result = await supabaseRpc(
+    "approve_intent_v2",
+    {
+      p_intent_id: intentId,
+      p_user_id: userId,
+    },
+    req
+  );
+
+  const intent = await supabaseSelect(
+    "payment_intents",
+    `select=*&id=eq.${intentId}&user_id=eq.${userId}&limit=1`,
+    req
+  );
+
+  return {
+    summary: Array.isArray(result) ? result[0] || {} : result || {},
+    intent: intent[0] || null,
+  };
+}
+
+async function executePaymentIntentInternal(req, userId, intentId) {
+  const result = await supabaseRpc(
+    "execute_intent_v2",
+    {
+      p_intent_id: intentId,
+      p_user_id: userId,
+      p_provider: "manual",
+    },
+    req
+  );
+
+  const intent = await supabaseSelect(
+    "payment_intents",
+    `select=*&id=eq.${intentId}&user_id=eq.${userId}&limit=1`,
+    req
+  );
+
+  const execution = await supabaseSelect(
+    "payment_executions",
+    `select=*&payment_intent_id=eq.${intentId}&user_id=eq.${userId}&order=created_at.desc&limit=1`,
+    req
+  );
+
+  return {
+    summary: Array.isArray(result) ? result[0] || {} : result || {},
+    intent: intent[0] || null,
+    execution: execution[0] || null,
+  };
+}
+
+async function runFullAutoInternal(req, userId) {
+  const result = await supabaseRpc(
+    "auto_sweep_v2",
+    {
+      p_user_id: userId,
+    },
+    req
+  );
+
+  const latestIntents = await supabaseSelect(
+    "payment_intents",
+    `select=*&user_id=eq.${userId}&execution_mode=eq.full_auto&order=created_at.desc&limit=50`,
+    req
+  );
+
+  const latestExecutions = await supabaseSelect(
+    "payment_executions",
+    `select=*&user_id=eq.${userId}&order=created_at.desc&limit=50`,
+    req
+  );
+
+  return {
+    summary: Array.isArray(result) ? result[0] || {} : result || {},
+    intents: latestIntents,
+    executions: latestExecutions,
+  };
+}
+
+function getCronSecretFromRequest(req) {
+  const headerSecret =
+    req.headers["x-cron-secret"] ||
+    req.headers["x-debtya-cron-secret"] ||
+    req.headers["x-api-key"] ||
+    null;
+
+  const querySecret = req.query?.secret || null;
+  const bodySecret = req.body?.secret || null;
+
+  return headerSecret || querySecret || bodySecret || null;
+}
+
+function requireCronSecret(req) {
+  const expected = process.env.CRON_SECRET || "";
+  if (!expected) {
+    const error = new Error("CRON_SECRET no está configurado en Render.");
+    error.status = 500;
+    throw error;
+  }
+
+  const received = getCronSecretFromRequest(req);
+  if (!received || received !== expected) {
+    const error = new Error("Cron secret inválido.");
+    error.status = 401;
+    throw error;
+  }
+}
+
+async function getFullAutoUsersAdmin() {
+  const rules = await supabaseSelectAdmin(
+    "automation_rules",
+    "select=user_id,execution_mode,active&execution_mode=eq.full_auto&active=eq.true"
+  );
+
+  const uniqueUserIds = [...new Set((rules || []).map((r) => r.user_id).filter(Boolean))];
+  return uniqueUserIds;
+}
+
+async function runCronFullAutoSweep() {
+  const userIds = await getFullAutoUsersAdmin();
+
+  const results = [];
+  let totalUsers = 0;
+  let successUsers = 0;
+  let failedUsers = 0;
+  let totalAllocations = 0;
+  let totalIntents = 0;
+  let totalExecuted = 0;
+  let totalExecutedAmount = 0;
+
+  for (const userId of userIds) {
+    totalUsers += 1;
+
+    try {
+      const response = await axios.post(
+        `${process.env.SUPABASE_URL}/rest/v1/rpc/auto_sweep_v2`,
+        { p_user_id: userId },
+        {
+          headers: {
+            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const raw = response.data;
+      const summary = Array.isArray(raw) ? raw[0] || {} : raw || {};
+
+      const row = {
+        user_id: userId,
+        ok: true,
+        allocations_created: Number(summary.allocations_created || 0),
+        intents_created: Number(summary.intents_created || 0),
+        intents_executed: Number(summary.intents_executed || 0),
+        total_executed: moneyNumber(summary.total_executed || 0),
+      };
+
+      totalAllocations += row.allocations_created;
+      totalIntents += row.intents_created;
+      totalExecuted += row.intents_executed;
+      totalExecutedAmount = moneyNumber(totalExecutedAmount + row.total_executed);
+      successUsers += 1;
+      results.push(row);
+    } catch (error) {
+      failedUsers += 1;
+      results.push({
+        user_id: userId,
+        ok: false,
+        error: normalizeError(error),
+      });
+    }
+  }
+
+  return {
+    ok: true,
+    ran_at: toIsoNow(),
+    total_users: totalUsers,
+    success_users: successUsers,
+    failed_users: failedUsers,
+    allocations_created: totalAllocations,
+    intents_created: totalIntents,
+    intents_executed: totalExecuted,
+    total_executed_amount: moneyNumber(totalExecutedAmount),
+    results,
   };
 }
 
@@ -997,509 +1080,11 @@ app.get("/goals/preview", async (req, res) => {
   }
 });
 
-app.post("/automation/full-auto/run", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-
-    const createdAllocations = await runRulesInternal(req, user.id);
-    const createdIntents = await buildPaymentIntentsInternal(req, user.id, "full_auto", null);
-
-    const autoExecuted = [];
-    for (const intent of createdIntents) {
-      if (String(intent.execution_mode || "").toLowerCase() === "full_auto") {
-        const executed = await executePaymentIntentInternal(req, user.id, intent.id);
-        autoExecuted.push({
-          intent_id: intent.id,
-          ...executed,
-        });
-      }
-    }
-
-    res.json({
-      ok: true,
-      message: "Ciclo full auto ejecutado.",
-      created_allocations_count: createdAllocations.length,
-      created_intents_count: createdIntents.length,
-      auto_executed_count: autoExecuted.length,
-      data: {
-        created_allocations: createdAllocations,
-        created_intents: createdIntents,
-        auto_executed: autoExecuted,
-      },
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/plaid/create_link_token", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-
-    const response = await axios.post(
-      "https://sandbox.plaid.com/link/token/create",
-      {
-        client_id: process.env.PLAID_CLIENT_ID,
-        secret: process.env.PLAID_SECRET,
-        client_name: "DebtYa",
-        language: "en",
-        country_codes: ["US"],
-        user: { client_user_id: user.id },
-        products: ["auth", "transactions"],
-      },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-
-    res.json({
-      ok: true,
-      data: response.data,
-      link_token: response.data?.link_token || null,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.get("/plaid/web", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-
-    const response = await axios.post(
-      "https://sandbox.plaid.com/link/token/create",
-      {
-        client_id: process.env.PLAID_CLIENT_ID,
-        secret: process.env.PLAID_SECRET,
-        client_name: "DebtYa",
-        language: "en",
-        country_codes: ["US"],
-        user: { client_user_id: user.id },
-        products: ["auth", "transactions"],
-      },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-
-    res.json({
-      ok: true,
-      data: response.data,
-      link_token: response.data?.link_token || null,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/plaid/exchange_public_token", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { public_token, institution_name } = req.body;
-
-    if (!public_token) {
-      return res.status(400).json({ ok: false, error: "Falta public_token" });
-    }
-
-    const plaidResponse = await axios.post(
-      "https://sandbox.plaid.com/item/public_token/exchange",
-      {
-        client_id: process.env.PLAID_CLIENT_ID,
-        secret: process.env.PLAID_SECRET,
-        public_token,
-      },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-
-    const item_id = plaidResponse.data.item_id;
-    const access_token = plaidResponse.data.access_token;
-
-    const saved = await supabaseInsert(
-      "plaid_items",
-      {
-        user_id: user.id,
-        plaid_item_id: item_id,
-        plaid_access_token: access_token,
-        institution_name: institution_name || "Plaid Sandbox",
-      },
-      req
-    );
-
-    res.json({
-      ok: true,
-      message: "public_token cambiado y guardado en Supabase",
-      plaid: plaidResponse.data,
-      saved,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.get("/plaid/items", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const data = await supabaseSelect(
-      "plaid_items",
-      `select=id,user_id,plaid_item_id,institution_name,created_at&user_id=eq.${user.id}&order=created_at.desc`,
-      req
-    );
-
-    res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/plaid/accounts/import-last", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const lastItem = await getLatestPlaidItemForUser(req, user.id);
-
-    if (!lastItem) {
-      return res.status(404).json({
-        ok: false,
-        error: "No hay plaid_items guardados para este usuario",
-      });
-    }
-
-    const accessToken = lastItem.plaid_access_token;
-
-    const plaidAccountsResponse = await axios.post(
-      "https://sandbox.plaid.com/accounts/get",
-      {
-        client_id: process.env.PLAID_CLIENT_ID,
-        secret: process.env.PLAID_SECRET,
-        access_token: accessToken,
-      },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-
-    const accounts = plaidAccountsResponse.data.accounts || [];
-    const savedAccounts = [];
-
-    for (const account of accounts) {
-      const existing = await supabaseSelect(
-        "accounts",
-        `select=*&user_id=eq.${user.id}&account_id=eq.${encodeURIComponent(account.account_id)}&plaid_item_id=eq.${encodeURIComponent(lastItem.plaid_item_id)}`,
-        req
-      );
-
-      const payload = {
-        user_id: user.id,
-        plaid_item_id: lastItem.plaid_item_id,
-        account_id: account.account_id,
-        name: account.name,
-        type: account.type,
-        subtype: account.subtype,
-        balance_current: account.balances?.current,
-        balance_available: account.balances?.available,
-        mask: account.mask,
-      };
-
-      if (existing.length > 0) {
-        const updated = await supabasePatch(
-          "accounts",
-          `id=eq.${existing[0].id}&user_id=eq.${user.id}`,
-          payload,
-          req
-        );
-        savedAccounts.push(updated[0]);
-      } else {
-        const inserted = await supabaseInsert("accounts", payload, req);
-        savedAccounts.push(inserted[0]);
-      }
-    }
-
-    res.json({
-      ok: true,
-      imported_count: accounts.length,
-      saved_accounts: savedAccounts,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/plaid/transactions/import-last", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const lastItem = await getLatestPlaidItemForUser(req, user.id);
-
-    if (!lastItem) {
-      return res.status(404).json({
-        ok: false,
-        error: "No hay plaid_items guardados para este usuario",
-      });
-    }
-
-    const accessToken = lastItem.plaid_access_token;
-    let hasMore = true;
-    let cursor = null;
-    let added = [];
-    let modified = [];
-    let removed = [];
-
-    while (hasMore) {
-      const plaidResponse = await axios.post(
-        "https://sandbox.plaid.com/transactions/sync",
-        {
-          client_id: process.env.PLAID_CLIENT_ID,
-          secret: process.env.PLAID_SECRET,
-          access_token: accessToken,
-          cursor,
-          count: 100,
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      const data = plaidResponse.data;
-      added = added.concat(data.added || []);
-      modified = modified.concat(data.modified || []);
-      removed = removed.concat(data.removed || []);
-      hasMore = data.has_more;
-      cursor = data.next_cursor;
-    }
-
-    const saved = [];
-
-    for (const tx of added) {
-      const payload = normalizePlaidTransaction(tx, user.id, lastItem);
-      const row = await upsertTransactionByExternalId(req, payload);
-      if (row) saved.push(row);
-    }
-
-    for (const tx of modified) {
-      const payload = normalizePlaidTransaction(tx, user.id, lastItem);
-      const row = await upsertTransactionByExternalId(req, payload);
-      if (row) saved.push(row);
-    }
-
-    for (const tx of removed) {
-      const existing = await supabaseSelect(
-        "transactions_raw",
-        `select=*&user_id=eq.${user.id}&external_transaction_id=eq.${encodeURIComponent(tx.transaction_id)}`,
-        req
-      );
-
-      if (existing.length > 0) {
-        await supabaseDelete(
-          "transactions_raw",
-          `id=eq.${existing[0].id}&user_id=eq.${user.id}`,
-          req
-        );
-      }
-    }
-
-    res.json({
-      ok: true,
-      imported_added_count: added.length,
-      imported_modified_count: modified.length,
-      imported_removed_count: removed.length,
-      saved_count: saved.length,
-      next_cursor: cursor,
-      message: "Transacciones reales importadas desde Plaid a transactions_raw.",
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
 app.get("/debts", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
-    const onlyActive = req.query.active === "true";
-
-    const query = onlyActive
-      ? `select=*&user_id=eq.${user.id}&is_active=eq.true&order=created_at.desc`
-      : `select=*&user_id=eq.${user.id}&order=created_at.desc`;
-
-    const data = await supabaseSelect("debts", query, req);
+    const data = await getAllDebtsForUser(req, user.id);
     res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/debts", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { name, balance, apr, minimum_payment, due_day, type } = req.body;
-
-    const data = await supabaseInsert(
-      "debts",
-      {
-        user_id: user.id,
-        name,
-        balance,
-        apr,
-        minimum_payment,
-        due_day,
-        type,
-        is_active: true,
-        updated_at: toIsoNow(),
-      },
-      req
-    );
-
-    res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.patch("/debts/:id", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { id } = req.params;
-    const { name, balance, apr, minimum_payment, due_day, type, is_active } = req.body;
-
-    const payload = { updated_at: toIsoNow() };
-    if (name !== undefined) payload.name = name;
-    if (balance !== undefined) payload.balance = balance;
-    if (apr !== undefined) payload.apr = apr;
-    if (minimum_payment !== undefined) payload.minimum_payment = minimum_payment;
-    if (due_day !== undefined) payload.due_day = due_day;
-    if (type !== undefined) payload.type = type;
-    if (is_active !== undefined) payload.is_active = is_active;
-
-    const data = await supabasePatch(
-      "debts",
-      `id=eq.${id}&user_id=eq.${user.id}`,
-      payload,
-      req
-    );
-
-    res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/debts/:id/deactivate", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { id } = req.params;
-
-    const data = await supabasePatch(
-      "debts",
-      `id=eq.${id}&user_id=eq.${user.id}`,
-      { is_active: false, updated_at: toIsoNow() },
-      req
-    );
-
-    res.json({ ok: true, message: "Deuda desactivada", data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/debts/:id/activate", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { id } = req.params;
-
-    const data = await supabasePatch(
-      "debts",
-      `id=eq.${id}&user_id=eq.${user.id}`,
-      { is_active: true, updated_at: toIsoNow() },
-      req
-    );
-
-    res.json({ ok: true, message: "Deuda reactivada", data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/debts/:id/apply-payment", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { id } = req.params;
-    const amount = moneyNumber(req.body.amount || 0);
-
-    if (amount <= 0) {
-      return res.status(400).json({
-        ok: false,
-        error: "El monto debe ser mayor que cero",
-      });
-    }
-
-    const debts = await supabaseSelect(
-      "debts",
-      `select=*&id=eq.${id}&user_id=eq.${user.id}`,
-      req
-    );
-
-    const debt = debts[0];
-    if (!debt) {
-      return res.status(404).json({ ok: false, error: "Deuda no encontrada" });
-    }
-
-    const currentBalance = moneyNumber(debt.balance || 0);
-    const appliedAmount = moneyNumber(Math.min(amount, currentBalance));
-    const newBalance = moneyNumber(Math.max(currentBalance - appliedAmount, 0));
-    const shouldDeactivate = newBalance <= 0;
-
-    const updatedDebt = await supabasePatch(
-      "debts",
-      `id=eq.${id}&user_id=eq.${user.id}`,
-      {
-        balance: newBalance,
-        is_active: shouldDeactivate ? false : debt.is_active !== false,
-        updated_at: toIsoNow(),
-      },
-      req
-    );
-
-    const execution = await supabaseInsert(
-      "payment_executions",
-      {
-        payment_intent_id: null,
-        user_id: user.id,
-        debt_id: id,
-        source_account_id: null,
-        provider: "manual_adjustment",
-        execution_amount: appliedAmount,
-        status: "submitted",
-        submitted_at: toIsoNow(),
-        raw_response: {
-          note: "Ajuste manual de balance desde fase 3.",
-          previous_balance: currentBalance,
-          new_balance: newBalance,
-        },
-        updated_at: toIsoNow(),
-      },
-      req
-    );
-
-    res.json({
-      ok: true,
-      message: shouldDeactivate
-        ? "Pago manual aplicado y deuda pagada por completo."
-        : "Pago manual aplicado y balance actualizado.",
-      applied_amount: appliedAmount,
-      updated_debt: updatedDebt[0] || null,
-      execution: execution[0] || null,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.delete("/debts/:id", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { id } = req.params;
-
-    await supabaseDelete("debts", `id=eq.${id}&user_id=eq.${user.id}`, req);
-    res.json({ ok: true, message: "Deuda eliminada" });
   } catch (error) {
     sendError(res, error);
   }
@@ -1513,301 +1098,28 @@ app.get("/accounts", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.get("/preferences", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const data = await supabaseSelect(
-      "profiles",
-      `select=*&id=eq.${user.id}`,
-      req
-    );
-
-    res.json({ ok: true, data: data[0] || null });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/preferences", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const {
-      preferred_strategy = "avalanche",
-      default_extra_payment = 200,
-      default_monthly_budget = 430,
-      full_name = null,
-    } = req.body;
-
-    const data = await supabasePatch(
-      "profiles",
-      `id=eq.${user.id}`,
-      {
-        email: user.email,
-        full_name,
-        preferred_strategy,
-        default_extra_payment,
-        default_monthly_budget,
-        updated_at: toIsoNow(),
-      },
-      req
-    );
-
-    res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/automation/settings", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const {
-      auto_mode = "safe",
-      reminder_days = "none",
-      purchase_sweep_percent = 0,
-      purchase_sweep_fixed = 0,
-    } = req.body;
-
-    const data = await supabasePatch(
-      "profiles",
-      `id=eq.${user.id}`,
-      {
-        updated_at: toIsoNow(),
-        auto_mode,
-        reminder_days,
-        purchase_sweep_percent,
-        purchase_sweep_fixed,
-      },
-      req
-    );
-
-    res.json({
-      ok: true,
-      message: "Configuración de automatización guardada.",
-      data,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.get("/payment-plans", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const data = await supabaseSelect(
-      "payment_plans",
-      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
-      req
-    );
-
-    res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/payment-plans/save", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const {
-      strategy = "avalanche",
-      extra_payment = 0,
-      monthly_budget = 0,
-    } = req.body;
-
-    const debts = await getActiveDebtsForUser(req, user.id);
-    const result = simulateStrategy(debts, strategy, extra_payment);
-
-    const data = await supabaseInsert(
-      "payment_plans",
-      {
-        user_id: user.id,
-        strategy,
-        monthly_budget,
-        payload_json: result,
-      },
-      req
-    );
-
-    res.json({
-      ok: true,
-      saved: data,
-      plan: result,
-      data: result,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/strategy/compare", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { extra_payment = 0 } = req.body;
-    const debts = await getActiveDebtsForUser(req, user.id);
-
-    const avalanche = simulateStrategy(debts, "avalanche", extra_payment);
-    const snowball = simulateStrategy(debts, "snowball", extra_payment);
-    const comparison = compareStrategies(avalanche, snowball);
-
-    res.json({
-      ok: true,
-      data: {
-        strategy: comparison.recommended_strategy,
-        extra_payment: moneyNumber(extra_payment),
-        avalanche,
-        snowball,
-        recommended_strategy: comparison.recommended_strategy,
-        reason: comparison.reason,
-        comparison,
-      },
-      avalanche,
-      snowball,
-      comparison,
-      recommended_strategy: comparison.recommended_strategy,
-      reason: comparison.reason,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/strategy/:strategy", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { strategy } = req.params;
-    const { extra_payment = 0 } = req.body;
-
-    const debts = await getActiveDebtsForUser(req, user.id);
-    const result = simulateStrategy(debts, strategy, extra_payment);
-
-    res.json({
-      ok: true,
-      data: result,
-      ...result,
-    });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.get("/automation-rules", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const data = await supabaseSelect(
-      "automation_rules",
-      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
-      req
-    );
-
-    res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/automation-rules", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const {
-      source_account_id = null,
-      target_debt_id,
-      rule_name,
-      rule_type,
-      rule_value = 0,
-      execution_mode = "safe",
-      execution_frequency = "daily",
-      apply_to_transaction_type = "debit_only",
-      min_transaction_amount = 0,
-      max_per_transaction = null,
-      max_per_day = null,
-      max_per_month = null,
-      require_user_confirmation = true,
-      allow_partial_execution = true,
-      active = true,
-      starts_at = null,
-      ends_at = null,
-    } = req.body;
-
-    const data = await supabaseInsert(
-      "automation_rules",
-      {
-        user_id: user.id,
-        source_account_id,
-        target_debt_id,
-        rule_name,
-        rule_type,
-        rule_value,
-        execution_mode,
-        execution_frequency,
-        apply_to_transaction_type,
-        min_transaction_amount,
-        max_per_transaction,
-        max_per_day,
-        max_per_month,
-        require_user_confirmation,
-        allow_partial_execution,
-        active,
-        starts_at,
-        ends_at,
-        updated_at: toIsoNow(),
-      },
-      req
-    );
-
-    res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.patch("/automation-rules/:id", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { id } = req.params;
-    const payload = {
-      ...req.body,
-      updated_at: toIsoNow(),
-    };
-
-    const data = await supabasePatch(
-      "automation_rules",
-      `id=eq.${id}&user_id=eq.${user.id}`,
-      payload,
-      req
-    );
-
-    res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.delete("/automation-rules/:id", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const { id } = req.params;
-
-    await supabaseDelete(
-      "automation_rules",
-      `id=eq.${id}&user_id=eq.${user.id}`,
-      req
-    );
-
-    res.json({ ok: true, message: "Regla eliminada" });
   } catch (error) {
     sendError(res, error);
   }
 });
 
 app.get("/transactions-raw", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const data = await supabaseSelect(
+      "transactions_raw",
+      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
+      req
+    );
+
+    res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/transactions", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
     const data = await supabaseSelect(
@@ -1856,15 +1168,193 @@ app.post("/transactions-raw", async (req, res) => {
   }
 });
 
-app.post("/automation-rules/run", async (req, res) => {
+app.get("/automation-rules", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
-    const createdAllocations = await runRulesInternal(req, user.id);
+    const data = await supabaseSelect(
+      "automation_rules",
+      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
+      req
+    );
+
+    res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/rules", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const data = await supabaseSelect(
+      "automation_rules",
+      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
+      req
+    );
+
+    res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/automation/rules", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const data = await supabaseSelect(
+      "automation_rules",
+      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
+      req
+    );
+
+    res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/automation-rules", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+
+    const payload = {
+      user_id: user.id,
+      source_account_id: req.body.source_account_id || null,
+      target_debt_id: req.body.target_debt_id,
+      rule_name: req.body.rule_name || "Regla automática",
+      rule_type: req.body.rule_type || "fixed_amount",
+      rule_value: moneyNumber(req.body.rule_value || 0),
+      execution_mode: req.body.execution_mode || "safe",
+      execution_frequency: req.body.execution_frequency || "daily",
+      apply_to_transaction_type: req.body.apply_to_transaction_type || "debit_only",
+      min_transaction_amount: moneyNumber(req.body.min_transaction_amount || 0),
+      max_per_transaction:
+        req.body.max_per_transaction === undefined || req.body.max_per_transaction === "" ? null : moneyNumber(req.body.max_per_transaction),
+      max_per_day:
+        req.body.max_per_day === undefined || req.body.max_per_day === "" ? null : moneyNumber(req.body.max_per_day),
+      max_per_month:
+        req.body.max_per_month === undefined || req.body.max_per_month === "" ? null : moneyNumber(req.body.max_per_month),
+      require_user_confirmation:
+        req.body.require_user_confirmation === undefined ? true : !!req.body.require_user_confirmation,
+      allow_partial_execution:
+        req.body.allow_partial_execution === undefined ? true : !!req.body.allow_partial_execution,
+      active: req.body.active === undefined ? true : !!req.body.active,
+      starts_at: req.body.starts_at || null,
+      ends_at: req.body.ends_at || null,
+      updated_at: toIsoNow(),
+    };
+
+    const data = await supabaseInsert("automation_rules", payload, req);
 
     res.json({
       ok: true,
-      created_count: createdAllocations.length,
-      data: createdAllocations,
+      inserted_count: data.length,
+      data,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/rules", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+
+    const payload = {
+      user_id: user.id,
+      source_account_id: req.body.source_account_id || null,
+      target_debt_id: req.body.target_debt_id,
+      rule_name: req.body.rule_name || "Regla automática",
+      rule_type: req.body.rule_type || "fixed_amount",
+      rule_value: moneyNumber(req.body.rule_value || 0),
+      execution_mode: req.body.execution_mode || "safe",
+      execution_frequency: req.body.execution_frequency || "daily",
+      apply_to_transaction_type: req.body.apply_to_transaction_type || "debit_only",
+      min_transaction_amount: moneyNumber(req.body.min_transaction_amount || 0),
+      max_per_transaction:
+        req.body.max_per_transaction === undefined || req.body.max_per_transaction === "" ? null : moneyNumber(req.body.max_per_transaction),
+      max_per_day:
+        req.body.max_per_day === undefined || req.body.max_per_day === "" ? null : moneyNumber(req.body.max_per_day),
+      max_per_month:
+        req.body.max_per_month === undefined || req.body.max_per_month === "" ? null : moneyNumber(req.body.max_per_month),
+      require_user_confirmation:
+        req.body.require_user_confirmation === undefined ? true : !!req.body.require_user_confirmation,
+      allow_partial_execution:
+        req.body.allow_partial_execution === undefined ? true : !!req.body.allow_partial_execution,
+      active: req.body.active === undefined ? true : !!req.body.active,
+      starts_at: req.body.starts_at || null,
+      ends_at: req.body.ends_at || null,
+      updated_at: toIsoNow(),
+    };
+
+    const data = await supabaseInsert("automation_rules", payload, req);
+
+    res.json({
+      ok: true,
+      inserted_count: data.length,
+      data,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/automation-rules/run", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const result = await runRulesInternal(req, user.id);
+
+    res.json({
+      ok: true,
+      created_count: Number(result.summary?.allocations_created || 0),
+      summary: result.summary,
+      data: result.allocations,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/automation/apply", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+
+    const result = await supabaseRpc(
+      "apply_rules_v2",
+      {
+        p_user_id: user.id,
+        p_mode: req.body.mode || null,
+        p_limit: Number(req.body.limit || 1000),
+      },
+      req
+    );
+
+    res.json({
+      ok: true,
+      data: Array.isArray(result) ? result[0] || {} : result || {},
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/rules/apply", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+
+    const result = await supabaseRpc(
+      "apply_rules_v2",
+      {
+        p_user_id: user.id,
+        p_mode: req.body.mode || null,
+        p_limit: Number(req.body.limit || 1000),
+      },
+      req
+    );
+
+    res.json({
+      ok: true,
+      data: Array.isArray(result) ? result[0] || {} : result || {},
     });
   } catch (error) {
     sendError(res, error);
@@ -1872,6 +1362,21 @@ app.post("/automation-rules/run", async (req, res) => {
 });
 
 app.get("/transaction-allocations", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const data = await supabaseSelect(
+      "transaction_allocations",
+      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
+      req
+    );
+
+    res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/allocations", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
     const data = await supabaseSelect(
@@ -1894,21 +1399,23 @@ app.post("/payment-intents/build", async (req, res) => {
       debt_id = null,
     } = req.body;
 
-    const createdIntents = await buildPaymentIntentsInternal(req, user.id, execution_mode, debt_id);
+    const result = await buildPaymentIntentsInternal(req, user.id, execution_mode, debt_id);
 
-    if (!createdIntents.length) {
+    if (!result.intents.length) {
       return res.json({
         ok: true,
         message: "No hay asignaciones pendientes para convertir.",
+        summary: result.summary,
         data: [],
       });
     }
 
     res.json({
       ok: true,
-      created_count: createdIntents.length,
-      data: createdIntents,
-      message: `Payment intents creados: ${createdIntents.length}`,
+      created_count: Number(result.summary?.intents_created || 0),
+      summary: result.summary,
+      data: result.intents,
+      message: `Payment intents creados: ${Number(result.summary?.intents_created || 0)}`,
     });
   } catch (error) {
     sendError(res, error);
@@ -1930,21 +1437,23 @@ app.post("/payment-intents/build-single", async (req, res) => {
       });
     }
 
-    const createdIntents = await buildPaymentIntentsInternal(req, user.id, execution_mode, debt_id);
+    const result = await buildPaymentIntentsInternal(req, user.id, execution_mode, debt_id);
 
-    if (!createdIntents.length) {
+    if (!result.intents.length) {
       return res.json({
         ok: true,
         message: "No hay asignaciones pendientes para esa deuda.",
+        summary: result.summary,
         data: [],
       });
     }
 
     res.json({
       ok: true,
-      created_count: createdIntents.length,
-      data: createdIntents,
-      message: `Payment intents individuales creados: ${createdIntents.length}`,
+      created_count: Number(result.summary?.intents_created || 0),
+      summary: result.summary,
+      data: result.intents,
+      message: `Payment intents individuales creados: ${Number(result.summary?.intents_created || 0)}`,
     });
   } catch (error) {
     sendError(res, error);
@@ -1971,18 +1480,14 @@ app.post("/payment-intents/:id/approve", async (req, res) => {
     const user = await getUserFromToken(req);
     const { id } = req.params;
 
-    const data = await supabasePatch(
-      "payment_intents",
-      `id=eq.${id}&user_id=eq.${user.id}`,
-      {
-        status: "queued",
-        approved_at: toIsoNow(),
-        updated_at: toIsoNow(),
-      },
-      req
-    );
+    const result = await approvePaymentIntentInternal(req, user.id, id);
 
-    res.json({ ok: true, data });
+    res.json({
+      ok: true,
+      data: result.intent,
+      summary: result.summary,
+      message: "Payment intent aprobado.",
+    });
   } catch (error) {
     sendError(res, error);
   }
@@ -1992,11 +1497,13 @@ app.post("/payment-intents/:id/execute", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
     const { id } = req.params;
+
     const result = await executePaymentIntentInternal(req, user.id, id);
 
     res.json({
       ok: true,
-      ...result,
+      data: result,
+      message: "Payment intent ejecutado.",
     });
   } catch (error) {
     sendError(res, error);
@@ -2018,7 +1525,7 @@ app.get("/payment-executions", async (req, res) => {
   }
 });
 
-app.get("/executions", async (req, res) => {
+app.get("/history", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
     const data = await supabaseSelect(
@@ -2033,6 +1540,545 @@ app.get("/executions", async (req, res) => {
   }
 });
 
+app.get("/trace", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const data = await supabaseSelect(
+      "v_payment_trace",
+      `select=*&user_id=eq.${user.id}&order=transaction_date.desc`,
+      req
+    );
+
+    res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/automation/full-auto/run", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+
+    const result = await runFullAutoInternal(req, user.id);
+
+    res.json({
+      ok: true,
+      message: "Ciclo full auto ejecutado.",
+      summary: result.summary,
+      created_allocations_count: Number(result.summary?.allocations_created || 0),
+      created_intents_count: Number(result.summary?.intents_created || 0),
+      auto_executed_count: Number(result.summary?.intents_executed || 0),
+      data: {
+        created_intents: result.intents,
+        auto_executed: result.executions,
+      },
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/auto-sweep", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const result = await runFullAutoInternal(req, user.id);
+
+    res.json({
+      ok: true,
+      summary: result.summary,
+      data: result,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/plaid/item", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const data = await supabaseSelect(
+      "plaid_items",
+      `select=*&user_id=eq.${user.id}&order=created_at.desc&limit=1`,
+      req
+    );
+
+    res.json({ ok: true, data: data[0] || null });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/plaid/create_link_token", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+
+    const plaidBase =
+      process.env.PLAID_ENV === "production"
+        ? "https://production.plaid.com"
+        : process.env.PLAID_ENV === "development"
+        ? "https://development.plaid.com"
+        : "https://sandbox.plaid.com";
+
+    const response = await axios.post(
+      `${plaidBase}/link/token/create`,
+      {
+        client_id: process.env.PLAID_CLIENT_ID,
+        secret: process.env.PLAID_SECRET,
+        client_name: "DebtYa",
+        language: "en",
+        country_codes: ["US"],
+        user: { client_user_id: user.id },
+        products: ["auth", "transactions"],
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    res.json({
+      ok: true,
+      data: response.data,
+      link_token: response.data?.link_token || null,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/plaid/web", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+
+    const plaidBase =
+      process.env.PLAID_ENV === "production"
+        ? "https://production.plaid.com"
+        : process.env.PLAID_ENV === "development"
+        ? "https://development.plaid.com"
+        : "https://sandbox.plaid.com";
+
+    const response = await axios.post(
+      `${plaidBase}/link/token/create`,
+      {
+        client_id: process.env.PLAID_CLIENT_ID,
+        secret: process.env.PLAID_SECRET,
+        client_name: "DebtYa",
+        language: "en",
+        country_codes: ["US"],
+        user: { client_user_id: user.id },
+        products: ["auth", "transactions"],
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    res.json({
+      ok: true,
+      data: response.data,
+      link_token: response.data?.link_token || null,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/plaid/exchange_public_token", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const { public_token, institution_name } = req.body;
+
+    if (!public_token) {
+      return res.status(400).json({ ok: false, error: "Falta public_token" });
+    }
+
+    const plaidBase =
+      process.env.PLAID_ENV === "production"
+        ? "https://production.plaid.com"
+        : process.env.PLAID_ENV === "development"
+        ? "https://development.plaid.com"
+        : "https://sandbox.plaid.com";
+
+    const response = await axios.post(
+      `${plaidBase}/item/public_token/exchange`,
+      {
+        client_id: process.env.PLAID_CLIENT_ID,
+        secret: process.env.PLAID_SECRET,
+        public_token,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const payload = {
+      user_id: user.id,
+      plaid_item_id: response.data?.item_id,
+      plaid_access_token: response.data?.access_token,
+      institution_name: institution_name || req.body?.metadata?.institution?.name || "Banco conectado",
+      updated_at: toIsoNow(),
+    };
+
+    const existing = await supabaseSelect(
+      "plaid_items",
+      `select=*&plaid_item_id=eq.${response.data?.item_id}&user_id=eq.${user.id}`,
+      req
+    );
+
+    let data;
+    if (existing.length) {
+      data = await supabasePatch(
+        "plaid_items",
+        `id=eq.${existing[0].id}&user_id=eq.${user.id}`,
+        payload,
+        req
+      );
+    } else {
+      data = await supabaseInsert("plaid_items", payload, req);
+    }
+
+    res.json({
+      ok: true,
+      data: data[0] || null,
+      item_id: response.data?.item_id || null,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/plaid/items", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const data = await supabaseSelect(
+      "plaid_items",
+      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
+      req
+    );
+
+    res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/plaid/accounts/import-last", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const plaidItem = await getLatestPlaidItemForUser(req, user.id);
+
+    if (!plaidItem?.plaid_access_token) {
+      return res.status(400).json({ ok: false, error: "No hay access_token de Plaid guardado." });
+    }
+
+    const plaidBase =
+      process.env.PLAID_ENV === "production"
+        ? "https://production.plaid.com"
+        : process.env.PLAID_ENV === "development"
+        ? "https://development.plaid.com"
+        : "https://sandbox.plaid.com";
+
+    const response = await axios.post(
+      `${plaidBase}/accounts/get`,
+      {
+        client_id: process.env.PLAID_CLIENT_ID,
+        secret: process.env.PLAID_SECRET,
+        access_token: plaidItem.plaid_access_token,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const rows = [];
+    for (const account of response.data?.accounts || []) {
+      const payload = {
+        user_id: user.id,
+        plaid_item_id: plaidItem.id,
+        plaid_account_id: account.account_id,
+        name: account.name || account.official_name || "Cuenta",
+        official_name: account.official_name || null,
+        mask: account.mask || null,
+        subtype: account.subtype || null,
+        type: account.type || null,
+        balance_current: moneyNumber(account.balances?.current || 0),
+        balance_available:
+          account.balances?.available === null || account.balances?.available === undefined
+            ? null
+            : moneyNumber(account.balances.available),
+        iso_currency_code: account.balances?.iso_currency_code || "USD",
+        updated_at: toIsoNow(),
+      };
+
+      const existing = await supabaseSelect(
+        "accounts",
+        `select=*&user_id=eq.${user.id}&plaid_account_id=eq.${account.account_id}`,
+        req
+      );
+
+      let saved;
+      if (existing.length) {
+        saved = await supabasePatch(
+          "accounts",
+          `id=eq.${existing[0].id}&user_id=eq.${user.id}`,
+          payload,
+          req
+        );
+      } else {
+        saved = await supabaseInsert("accounts", payload, req);
+      }
+
+      if (saved[0]) rows.push(saved[0]);
+    }
+
+    res.json({
+      ok: true,
+      imported_count: rows.length,
+      data: rows,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/plaid/accounts/import", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const plaidItem = await getLatestPlaidItemForUser(req, user.id);
+
+    if (!plaidItem?.plaid_access_token) {
+      return res.status(400).json({ ok: false, error: "No hay access_token de Plaid guardado." });
+    }
+
+    const plaidBase =
+      process.env.PLAID_ENV === "production"
+        ? "https://production.plaid.com"
+        : process.env.PLAID_ENV === "development"
+        ? "https://development.plaid.com"
+        : "https://sandbox.plaid.com";
+
+    const response = await axios.post(
+      `${plaidBase}/accounts/get`,
+      {
+        client_id: process.env.PLAID_CLIENT_ID,
+        secret: process.env.PLAID_SECRET,
+        access_token: plaidItem.plaid_access_token,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const rows = [];
+    for (const account of response.data?.accounts || []) {
+      const payload = {
+        user_id: user.id,
+        plaid_item_id: plaidItem.id,
+        plaid_account_id: account.account_id,
+        name: account.name || account.official_name || "Cuenta",
+        official_name: account.official_name || null,
+        mask: account.mask || null,
+        subtype: account.subtype || null,
+        type: account.type || null,
+        balance_current: moneyNumber(account.balances?.current || 0),
+        balance_available:
+          account.balances?.available === null || account.balances?.available === undefined
+            ? null
+            : moneyNumber(account.balances.available),
+        iso_currency_code: account.balances?.iso_currency_code || "USD",
+        updated_at: toIsoNow(),
+      };
+
+      const existing = await supabaseSelect(
+        "accounts",
+        `select=*&user_id=eq.${user.id}&plaid_account_id=eq.${account.account_id}`,
+        req
+      );
+
+      let saved;
+      if (existing.length) {
+        saved = await supabasePatch(
+          "accounts",
+          `id=eq.${existing[0].id}&user_id=eq.${user.id}`,
+          payload,
+          req
+        );
+      } else {
+        saved = await supabaseInsert("accounts", payload, req);
+      }
+
+      if (saved[0]) rows.push(saved[0]);
+    }
+
+    res.json({
+      ok: true,
+      imported_count: rows.length,
+      data: rows,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/plaid/transactions/import-last", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const plaidItem = await getLatestPlaidItemForUser(req, user.id);
+
+    if (!plaidItem?.plaid_access_token) {
+      return res.status(400).json({ ok: false, error: "No hay access_token de Plaid guardado." });
+    }
+
+    const plaidBase =
+      process.env.PLAID_ENV === "production"
+        ? "https://production.plaid.com"
+        : process.env.PLAID_ENV === "development"
+        ? "https://development.plaid.com"
+        : "https://sandbox.plaid.com";
+
+    const startDate = req.body?.start_date || new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 10);
+    const endDate = req.body?.end_date || new Date().toISOString().slice(0, 10);
+
+    const response = await axios.post(
+      `${plaidBase}/transactions/get`,
+      {
+        client_id: process.env.PLAID_CLIENT_ID,
+        secret: process.env.PLAID_SECRET,
+        access_token: plaidItem.plaid_access_token,
+        start_date: startDate,
+        end_date: endDate,
+        options: { count: 500, offset: 0 },
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    const savedRows = [];
+    for (const tx of response.data?.transactions || []) {
+      const payload = normalizePlaidTransaction(tx, user.id, plaidItem);
+      const saved = await upsertTransactionByExternalId(req, payload);
+      if (saved) savedRows.push(saved);
+    }
+
+    res.json({
+      ok: true,
+      imported_count: savedRows.length,
+      data: savedRows,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/plaid/transactions/sync", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const plaidItem = await getLatestPlaidItemForUser(req, user.id);
+
+    if (!plaidItem?.plaid_access_token) {
+      return res.status(400).json({ ok: false, error: "No hay access_token de Plaid guardado." });
+    }
+
+    const plaidBase =
+      process.env.PLAID_ENV === "production"
+        ? "https://production.plaid.com"
+        : process.env.PLAID_ENV === "development"
+        ? "https://development.plaid.com"
+        : "https://sandbox.plaid.com";
+
+    let hasMore = true;
+    let cursor = plaidItem.transactions_cursor || null;
+    let importedCount = 0;
+    let modifiedCount = 0;
+    let removedCount = 0;
+
+    while (hasMore) {
+      const response = await axios.post(
+        `${plaidBase}/transactions/sync`,
+        {
+          client_id: process.env.PLAID_CLIENT_ID,
+          secret: process.env.PLAID_SECRET,
+          access_token: plaidItem.plaid_access_token,
+          cursor,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      const data = response.data || {};
+      const added = data.added || [];
+      const modified = data.modified || [];
+      const removed = data.removed || [];
+
+      for (const tx of [...added, ...modified]) {
+        const payload = normalizePlaidTransaction(tx, user.id, plaidItem);
+        await upsertTransactionByExternalId(req, payload);
+      }
+
+      for (const tx of removed) {
+        if (tx.transaction_id) {
+          await supabaseDelete(
+            "transactions_raw",
+            `user_id=eq.${user.id}&external_transaction_id=eq.${encodeURIComponent(tx.transaction_id)}`,
+            req
+          );
+        }
+      }
+
+      importedCount += added.length;
+      modifiedCount += modified.length;
+      removedCount += removed.length;
+      hasMore = !!data.has_more;
+      cursor = data.next_cursor || cursor;
+    }
+
+    await supabasePatch(
+      "plaid_items",
+      `id=eq.${plaidItem.id}&user_id=eq.${user.id}`,
+      {
+        transactions_cursor: cursor,
+        updated_at: toIsoNow(),
+      },
+      req
+    );
+
+    res.json({
+      ok: true,
+      imported_count: importedCount,
+      modified_count: modifiedCount,
+      removed_count: removedCount,
+      next_cursor: cursor,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/cron/full-auto", async (req, res) => {
+  try {
+    requireCronSecret(req);
+    const data = await runCronFullAutoSweep();
+    res.json(data);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/cron/full-auto", async (req, res) => {
+  try {
+    requireCronSecret(req);
+    const data = await runCronFullAutoSweep();
+    res.json(data);
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`DebtYa API running on port ${PORT}`);
 });
