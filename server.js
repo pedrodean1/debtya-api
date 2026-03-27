@@ -117,23 +117,6 @@ async function supabaseInsert(table, payload, req) {
   return response.data || [];
 }
 
-async function supabaseInsertAdmin(table, payload) {
-  const response = await axios.post(
-    `${process.env.SUPABASE_URL}/rest/v1/${table}`,
-    payload,
-    {
-      headers: {
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-    }
-  );
-
-  return response.data || [];
-}
-
 async function supabasePatch(table, query, payload, req) {
   await getUserFromToken(req);
 
@@ -146,23 +129,6 @@ async function supabasePatch(table, query, payload, req) {
         "Content-Type": "application/json",
         Prefer: "return=representation",
       }),
-    }
-  );
-
-  return response.data || [];
-}
-
-async function supabasePatchAdmin(table, query, payload) {
-  const response = await axios.patch(
-    `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`,
-    payload,
-    {
-      headers: {
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
     }
   );
 
@@ -420,63 +386,6 @@ function simulateStrategy(debts, strategy, extraPayment) {
   };
 }
 
-function compareStrategies(avalanche, snowball) {
-  const interestSavedWithAvalanche = moneyNumber(
-    (snowball?.total_interest_paid || 0) - (avalanche?.total_interest_paid || 0)
-  );
-
-  const monthsSavedWithAvalanche =
-    Number(snowball?.estimated_months_to_payoff || 0) -
-    Number(avalanche?.estimated_months_to_payoff || 0);
-
-  let recommended = "empate";
-  let reason = "Ambas estrategias dieron el mismo resultado.";
-
-  if ((avalanche?.estimated_months_to_payoff ?? 0) < (snowball?.estimated_months_to_payoff ?? 0)) {
-    recommended = "avalanche";
-    reason = "Avalanche termina en menos meses.";
-  } else if ((snowball?.estimated_months_to_payoff ?? 0) < (avalanche?.estimated_months_to_payoff ?? 0)) {
-    recommended = "snowball";
-    reason = "Snowball termina en menos meses.";
-  } else if ((avalanche?.total_interest_paid ?? 0) < (snowball?.total_interest_paid ?? 0)) {
-    recommended = "avalanche";
-    reason = "Empatan en meses, pero Avalanche paga menos intereses.";
-  } else if ((snowball?.total_interest_paid ?? 0) < (avalanche?.total_interest_paid ?? 0)) {
-    recommended = "snowball";
-    reason = "Empatan en meses, pero Snowball paga menos intereses.";
-  }
-
-  return {
-    recommended_strategy: recommended,
-    reason,
-    interest_saved_with_avalanche: interestSavedWithAvalanche,
-    months_saved_with_avalanche: monthsSavedWithAvalanche,
-  };
-}
-
-function calculateAllocationAmount(rule, transactionAmount) {
-  const ruleType = rule.rule_type;
-  const ruleValue = Number(rule.rule_value || 0);
-  let calculated = 0;
-
-  if (ruleType === "percentage") {
-    calculated = Number(transactionAmount || 0) * (ruleValue / 100);
-  } else if (ruleType === "fixed_amount") {
-    calculated = ruleValue;
-  } else if (ruleType === "round_up") {
-    const absolute = Math.abs(Number(transactionAmount || 0));
-    calculated = Math.ceil(absolute) - absolute;
-  }
-
-  if (rule.max_per_transaction !== null && rule.max_per_transaction !== undefined) {
-    calculated = Math.min(calculated, Number(rule.max_per_transaction || 0));
-  }
-
-  if (calculated < 0) calculated = 0;
-
-  return moneyNumber(calculated);
-}
-
 function inferTransactionCategory(tx) {
   const merchant = String(tx.merchant_name || "").toLowerCase();
   const description = String(tx.description || tx.name || "").toLowerCase();
@@ -520,7 +429,6 @@ async function getActiveDebtsForUser(req, userId) {
     `select=*&user_id=eq.${userId}&is_active=eq.true&order=created_at.desc`,
     req
   );
-
   return data.map(normalizeDebt);
 }
 
@@ -530,17 +438,7 @@ async function getAllDebtsForUser(req, userId) {
     `select=*&user_id=eq.${userId}&order=created_at.desc`,
     req
   );
-
   return data.map(normalizeDebt);
-}
-
-async function getRulesForUser(req, userId, onlyActive = true) {
-  const query = onlyActive
-    ? `select=*&user_id=eq.${userId}&active=eq.true&order=created_at.desc`
-    : `select=*&user_id=eq.${userId}&order=created_at.desc`;
-
-  const data = await supabaseSelect("automation_rules", query, req);
-  return data || [];
 }
 
 async function getTransactionsForUser(req, userId) {
@@ -549,7 +447,6 @@ async function getTransactionsForUser(req, userId) {
     `select=*&user_id=eq.${userId}&order=created_at.desc`,
     req
   );
-
   return data || [];
 }
 
@@ -559,7 +456,6 @@ async function getLatestPlaidItemForUser(req, userId) {
     `select=*&user_id=eq.${userId}&order=created_at.desc&limit=1`,
     req
   );
-
   return items[0] || null;
 }
 
@@ -1112,7 +1008,6 @@ app.get("/transactions-raw", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1127,42 +1022,7 @@ app.get("/transactions", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
-  } catch (error) {
-    sendError(res, error);
-  }
-});
-
-app.post("/transactions-raw", async (req, res) => {
-  try {
-    const user = await getUserFromToken(req);
-    const transactions = Array.isArray(req.body.transactions) ? req.body.transactions : [req.body];
-
-    const payload = transactions.map((tx) => ({
-      user_id: user.id,
-      plaid_item_id: tx.plaid_item_id || null,
-      account_id: tx.account_id || null,
-      external_transaction_id: tx.external_transaction_id,
-      transaction_date: tx.transaction_date || null,
-      authorized_date: tx.authorized_date || null,
-      merchant_name: tx.merchant_name || null,
-      description: tx.description || null,
-      category: tx.category || null,
-      subcategory: tx.subcategory || null,
-      amount: moneyNumber(tx.amount || 0),
-      iso_currency_code: tx.iso_currency_code || "USD",
-      direction: tx.direction || "debit",
-      raw_payload: tx.raw_payload || {},
-    }));
-
-    const data = await supabaseInsert("transactions_raw", payload, req);
-
-    res.json({
-      ok: true,
-      inserted_count: data.length,
-      data,
-    });
   } catch (error) {
     sendError(res, error);
   }
@@ -1176,7 +1036,6 @@ app.get("/automation-rules", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1191,7 +1050,6 @@ app.get("/rules", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1206,7 +1064,6 @@ app.get("/automation/rules", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1245,12 +1102,7 @@ app.post("/automation-rules", async (req, res) => {
     };
 
     const data = await supabaseInsert("automation_rules", payload, req);
-
-    res.json({
-      ok: true,
-      inserted_count: data.length,
-      data,
-    });
+    res.json({ ok: true, inserted_count: data.length, data });
   } catch (error) {
     sendError(res, error);
   }
@@ -1288,12 +1140,7 @@ app.post("/rules", async (req, res) => {
     };
 
     const data = await supabaseInsert("automation_rules", payload, req);
-
-    res.json({
-      ok: true,
-      inserted_count: data.length,
-      data,
-    });
+    res.json({ ok: true, inserted_count: data.length, data });
   } catch (error) {
     sendError(res, error);
   }
@@ -1318,7 +1165,6 @@ app.post("/automation-rules/run", async (req, res) => {
 app.post("/automation/apply", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
-
     const result = await supabaseRpc(
       "apply_rules_v2",
       {
@@ -1329,10 +1175,7 @@ app.post("/automation/apply", async (req, res) => {
       req
     );
 
-    res.json({
-      ok: true,
-      data: Array.isArray(result) ? result[0] || {} : result || {},
-    });
+    res.json({ ok: true, data: Array.isArray(result) ? result[0] || {} : result || {} });
   } catch (error) {
     sendError(res, error);
   }
@@ -1341,7 +1184,6 @@ app.post("/automation/apply", async (req, res) => {
 app.post("/rules/apply", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
-
     const result = await supabaseRpc(
       "apply_rules_v2",
       {
@@ -1352,10 +1194,7 @@ app.post("/rules/apply", async (req, res) => {
       req
     );
 
-    res.json({
-      ok: true,
-      data: Array.isArray(result) ? result[0] || {} : result || {},
-    });
+    res.json({ ok: true, data: Array.isArray(result) ? result[0] || {} : result || {} });
   } catch (error) {
     sendError(res, error);
   }
@@ -1369,7 +1208,6 @@ app.get("/transaction-allocations", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1384,7 +1222,6 @@ app.get("/allocations", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1394,10 +1231,7 @@ app.get("/allocations", async (req, res) => {
 app.post("/payment-intents/build", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
-    const {
-      execution_mode = "safe",
-      debt_id = null,
-    } = req.body;
+    const { execution_mode = "safe", debt_id = null } = req.body;
 
     const result = await buildPaymentIntentsInternal(req, user.id, execution_mode, debt_id);
 
@@ -1425,16 +1259,10 @@ app.post("/payment-intents/build", async (req, res) => {
 app.post("/payment-intents/build-single", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
-    const {
-      execution_mode = "safe",
-      debt_id = null,
-    } = req.body;
+    const { execution_mode = "safe", debt_id = null } = req.body;
 
     if (!debt_id) {
-      return res.status(400).json({
-        ok: false,
-        error: "Falta debt_id",
-      });
+      return res.status(400).json({ ok: false, error: "Falta debt_id" });
     }
 
     const result = await buildPaymentIntentsInternal(req, user.id, execution_mode, debt_id);
@@ -1468,7 +1296,6 @@ app.get("/payment-intents", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1518,7 +1345,6 @@ app.get("/payment-executions", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1533,7 +1359,6 @@ app.get("/history", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1548,7 +1373,6 @@ app.get("/trace", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=transaction_date.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1558,7 +1382,6 @@ app.get("/trace", async (req, res) => {
 app.post("/automation/full-auto/run", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
-
     const result = await runFullAutoInternal(req, user.id);
 
     res.json({
@@ -1601,7 +1424,6 @@ app.get("/plaid/item", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc&limit=1`,
       req
     );
-
     res.json({ ok: true, data: data[0] || null });
   } catch (error) {
     sendError(res, error);
@@ -1630,9 +1452,7 @@ app.post("/plaid/create_link_token", async (req, res) => {
         user: { client_user_id: user.id },
         products: ["auth", "transactions"],
       },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+      { headers: { "Content-Type": "application/json" } }
     );
 
     res.json({
@@ -1667,9 +1487,7 @@ app.get("/plaid/web", async (req, res) => {
         user: { client_user_id: user.id },
         products: ["auth", "transactions"],
       },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+      { headers: { "Content-Type": "application/json" } }
     );
 
     res.json({
@@ -1705,9 +1523,7 @@ app.post("/plaid/exchange_public_token", async (req, res) => {
         secret: process.env.PLAID_SECRET,
         public_token,
       },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+      { headers: { "Content-Type": "application/json" } }
     );
 
     const payload = {
@@ -1754,7 +1570,6 @@ app.get("/plaid/items", async (req, res) => {
       `select=*&user_id=eq.${user.id}&order=created_at.desc`,
       req
     );
-
     res.json({ ok: true, data });
   } catch (error) {
     sendError(res, error);
@@ -1784,9 +1599,7 @@ app.post("/plaid/accounts/import-last", async (req, res) => {
         secret: process.env.PLAID_SECRET,
         access_token: plaidItem.plaid_access_token,
       },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+      { headers: { "Content-Type": "application/json" } }
     );
 
     const rows = [];
@@ -1830,11 +1643,7 @@ app.post("/plaid/accounts/import-last", async (req, res) => {
       if (saved[0]) rows.push(saved[0]);
     }
 
-    res.json({
-      ok: true,
-      imported_count: rows.length,
-      data: rows,
-    });
+    res.json({ ok: true, imported_count: rows.length, data: rows });
   } catch (error) {
     sendError(res, error);
   }
@@ -1863,9 +1672,7 @@ app.post("/plaid/accounts/import", async (req, res) => {
         secret: process.env.PLAID_SECRET,
         access_token: plaidItem.plaid_access_token,
       },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+      { headers: { "Content-Type": "application/json" } }
     );
 
     const rows = [];
@@ -1909,11 +1716,7 @@ app.post("/plaid/accounts/import", async (req, res) => {
       if (saved[0]) rows.push(saved[0]);
     }
 
-    res.json({
-      ok: true,
-      imported_count: rows.length,
-      data: rows,
-    });
+    res.json({ ok: true, imported_count: rows.length, data: rows });
   } catch (error) {
     sendError(res, error);
   }
@@ -1948,9 +1751,7 @@ app.post("/plaid/transactions/import-last", async (req, res) => {
         end_date: endDate,
         options: { count: 500, offset: 0 },
       },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+      { headers: { "Content-Type": "application/json" } }
     );
 
     const savedRows = [];
@@ -1960,11 +1761,7 @@ app.post("/plaid/transactions/import-last", async (req, res) => {
       if (saved) savedRows.push(saved);
     }
 
-    res.json({
-      ok: true,
-      imported_count: savedRows.length,
-      data: savedRows,
-    });
+    res.json({ ok: true, imported_count: savedRows.length, data: savedRows });
   } catch (error) {
     sendError(res, error);
   }
@@ -2001,9 +1798,7 @@ app.post("/plaid/transactions/sync", async (req, res) => {
           access_token: plaidItem.plaid_access_token,
           cursor,
         },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
 
       const data = response.data || {};
@@ -2075,7 +1870,7 @@ app.get("/cron/full-auto", async (req, res) => {
   }
 });
 
-app.get("*", (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
