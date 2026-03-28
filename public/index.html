@@ -21,7 +21,6 @@
       --ok:#22a06b;
       --warn:#f3b33d;
       --danger:#e25b5b;
-      --info:#61b5ff;
       --shadow:0 10px 30px rgba(63, 105, 163, .10);
       --radius:20px;
     }
@@ -146,15 +145,15 @@
     }
 
     .span-12{ grid-column:span 12; }
-    .span-8{ grid-column:span 8; }
     .span-7{ grid-column:span 7; }
     .span-6{ grid-column:span 6; }
     .span-5{ grid-column:span 5; }
     .span-4{ grid-column:span 4; }
     .span-3{ grid-column:span 3; }
+    .span-2{ grid-column:span 2; }
 
     @media (max-width:1100px){
-      .span-8,.span-7,.span-6,.span-5,.span-4,.span-3{ grid-column:span 12; }
+      .span-7,.span-6,.span-5,.span-4,.span-3,.span-2{ grid-column:span 12; }
     }
 
     h2,h3,h4{
@@ -678,7 +677,6 @@
         <div class="chip">Modo <strong id="modeLabel">safe</strong></div>
       </div>
     </div>
-    </div>
 
     <div class="stack">
       <div class="hero">
@@ -883,6 +881,12 @@
                   <label for="ruleValue">Valor de la regla</label>
                   <input id="ruleValue" type="number" step="0.01" placeholder="Ej: 10 para 10%, 25 para $25, 1 para round up" />
                 </div>
+              </div>
+
+              <div class="sub" style="margin:4px 0 0 0;">
+                Si eliges <strong>Porcentaje</strong>, aquí va el %.<br>
+                Si eliges <strong>Monto fijo</strong>, aquí va la cantidad en dólares.<br>
+                Si eliges <strong>Round up</strong>, normalmente déjalo en <strong>1</strong>.
               </div>
 
               <div class="row">
@@ -1354,7 +1358,13 @@
     let lastPayoffPayload = null;
 
     const els = {
-      
+      userEmailLabel: document.getElementById("userEmailLabel"),
+      modeLabel: document.getElementById("modeLabel"),
+      email: document.getElementById("email"),
+      password: document.getElementById("password"),
+      loginBtn: document.getElementById("loginBtn"),
+      signupBtn: document.getElementById("signupBtn"),
+      logoutBtn: document.getElementById("logoutBtn"),
       bootStatus: document.getElementById("bootStatus"),
       okBox: document.getElementById("okBox"),
       errBox: document.getElementById("errBox"),
@@ -1455,11 +1465,6 @@
 
     function getApiBase(){
       return "https://www.debtya.com";
-    }
-
-    function setApiBase(value){
-      const clean = String(value || "https://www.debtya.com").trim().replace(/\/+$/,'');
-      return clean;
     }
 
     function authHeaders(extra = {}){
@@ -1563,7 +1568,6 @@
 
     function updateAuthUI(){
       const loggedIn = !!session?.access_token && !!currentUser;
-
       els.userEmailLabel.textContent = loggedIn ? (currentUser.email || "sesión activa") : "sin sesión";
 
       if (loggedIn) {
@@ -1972,7 +1976,6 @@
       els.email.value = "";
       els.password.value = "";
       updateAuthUI();
-      els.userEmailLabel.textContent = "sin sesión";
       showToast("Sesión cerrada.", false);
     }
 
@@ -2575,9 +2578,11 @@
         loadDashboard(),
         loadNotifications()
       ]);
+
       if (els.payoffStrategy.value) {
         await Promise.allSettled([loadPayoff()]);
       }
+
       setLoading(els.refreshAllBtn, false);
     }
 
@@ -2591,8 +2596,6 @@
       els.loginBtn.onclick = login;
       els.signupBtn.onclick = signup;
       els.logoutBtn.onclick = logout;
-
-      
 
       els.connectBankBtn.onclick = connectBank;
 
@@ -2720,7 +2723,6 @@
       els.loadNotificationsBtn.onclick = loadNotifications;
       els.simulateGoalBtn.onclick = simulateGoal;
       els.analyzeCategoriesBtn.onclick = analyzeCategories;
-
       els.compareStrategiesBtn.onclick = compareStrategies;
       els.savePlanBtn.onclick = savePlan;
       els.savePreferencesBtn.onclick = savePreferences;
@@ -2757,7 +2759,6 @@
     }
 
     async function bootstrap(){
-      setApiBase(getApiBase());
       applyVisualMode("safe");
       bindTabs();
       bindEvents();
