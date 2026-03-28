@@ -198,6 +198,8 @@
       color:var(--muted);
     }
 
+    form{ margin:0; }
+
     input,select,button,textarea{
       box-sizing:border-box;
       min-height:46px;
@@ -228,6 +230,9 @@
       cursor:pointer;
       font-weight:700;
       letter-spacing:.1px;
+      -webkit-appearance:none;
+      appearance:none;
+      touch-action:manipulation;
     }
 
     button:hover{
@@ -539,7 +544,6 @@
       overflow:auto;
       border:1px solid var(--border);
       border-radius:16px;
-      background:#fff;
     }
 
     table{
@@ -674,10 +678,10 @@
       </div>
 
       <div class="chips">
+        <div class="chip">API <strong id="apiBaseLabel">https://www.debtya.com</strong></div>
         <div class="chip">Usuario <strong id="userEmailLabel">sin sesión</strong></div>
         <div class="chip">Modo <strong id="modeLabel">safe</strong></div>
       </div>
-    </div>
     </div>
 
     <div class="stack">
@@ -793,22 +797,24 @@
           <h2 id="authCardTitle">Entrar</h2>
           <div class="sub" id="authCardSub">Inicia sesión para usar DebtYa.</div>
 
-          <div id="authGuestBox">
-            <div class="field">
-              <label for="email">Correo</label>
-              <input id="email" type="email" placeholder="Correo" />
-            </div>
+          <form id="loginForm">
+            <div id="authGuestBox">
+              <div class="field">
+                <label for="email">Correo</label>
+                <input id="email" type="email" placeholder="Correo" autocomplete="email" inputmode="email" />
+              </div>
 
-            <div class="field">
-              <label for="password">Contraseña</label>
-              <input id="password" type="password" placeholder="Contraseña" />
-            </div>
+              <div class="field">
+                <label for="password">Contraseña</label>
+                <input id="password" type="password" placeholder="Contraseña" autocomplete="current-password" />
+              </div>
 
-            <div class="row">
-              <button id="loginBtn" type="button" class="grow">Iniciar sesión</button>
-              <button id="signupBtn" type="button" class="secondary grow">Crear cuenta</button>
+              <div class="row">
+                <button id="loginBtn" type="submit" class="grow">Iniciar sesión</button>
+                <button id="signupBtn" type="button" class="secondary grow">Crear cuenta</button>
+              </div>
             </div>
-          </div>
+          </form>
 
           <div id="authLoggedBox" class="hidden">
             <div class="soft-card">
@@ -818,6 +824,16 @@
               <div class="row">
                 <button id="logoutBtn" type="button" class="secondary full">Salir</button>
               </div>
+            </div>
+          </div>
+
+          <div class="soft-card" style="margin-top:14px;">
+            <div class="field">
+              <label for="apiBaseInput">API base</label>
+              <input id="apiBaseInput" type="text" placeholder="https://www.debtya.com" />
+            </div>
+            <div class="row">
+              <button id="saveApiBaseBtn" type="button" class="secondary full">Guardar API base</button>
             </div>
           </div>
 
@@ -883,6 +899,12 @@
                   <label for="ruleValue">Valor de la regla</label>
                   <input id="ruleValue" type="number" step="0.01" placeholder="Ej: 10 para 10%, 25 para $25, 1 para round up" />
                 </div>
+              </div>
+
+              <div class="sub" style="margin:4px 0 0 0;">
+                Si eliges <strong>Porcentaje</strong>, aquí va el %.<br>
+                Si eliges <strong>Monto fijo</strong>, aquí va la cantidad en dólares.<br>
+                Si eliges <strong>Round up</strong>, normalmente déjalo en <strong>1</strong>.
               </div>
 
               <div class="row">
@@ -1354,7 +1376,17 @@
     let lastPayoffPayload = null;
 
     const els = {
-      
+      loginForm: document.getElementById("loginForm"),
+      apiBaseLabel: document.getElementById("apiBaseLabel"),
+      userEmailLabel: document.getElementById("userEmailLabel"),
+      modeLabel: document.getElementById("modeLabel"),
+      email: document.getElementById("email"),
+      password: document.getElementById("password"),
+      loginBtn: document.getElementById("loginBtn"),
+      signupBtn: document.getElementById("signupBtn"),
+      logoutBtn: document.getElementById("logoutBtn"),
+      apiBaseInput: document.getElementById("apiBaseInput"),
+      saveApiBaseBtn: document.getElementById("saveApiBaseBtn"),
       bootStatus: document.getElementById("bootStatus"),
       okBox: document.getElementById("okBox"),
       errBox: document.getElementById("errBox"),
@@ -1454,12 +1486,14 @@
     };
 
     function getApiBase(){
-      return "https://www.debtya.com";
+      return localStorage.getItem("DEBTYA_API_BASE") || "https://www.debtya.com";
     }
 
     function setApiBase(value){
-      const clean = String(value || "https://www.debtya.com").trim().replace(/\/+$/,'');
-      return clean;
+      const clean = value.trim().replace(/\/+$/,"");
+      localStorage.setItem("DEBTYA_API_BASE", clean);
+      els.apiBaseLabel.textContent = clean;
+      els.apiBaseInput.value = clean;
     }
 
     function authHeaders(extra = {}){
@@ -2588,11 +2622,28 @@
     }
 
     function bindEvents(){
-      els.loginBtn.onclick = login;
+      els.loginForm.onsubmit = async (e) => {
+        e.preventDefault();
+        await login();
+      };
+
+      els.loginBtn.onclick = async (e) => {
+        e.preventDefault();
+        await login();
+      };
+
       els.signupBtn.onclick = signup;
       els.logoutBtn.onclick = logout;
 
-      
+      els.saveApiBaseBtn.onclick = () => {
+        const value = els.apiBaseInput.value.trim();
+        if (!value) {
+          showToast("Pon una API base válida.", true);
+          return;
+        }
+        setApiBase(value);
+        showToast("API base guardada.", false);
+      };
 
       els.connectBankBtn.onclick = connectBank;
 
@@ -2748,11 +2799,17 @@
       };
 
       els.email.onkeydown = e => {
-        if (e.key === "Enter") login();
+        if (e.key === "Enter") {
+          e.preventDefault();
+          login();
+        }
       };
 
       els.password.onkeydown = e => {
-        if (e.key === "Enter") login();
+        if (e.key === "Enter") {
+          e.preventDefault();
+          login();
+        }
       };
     }
 
