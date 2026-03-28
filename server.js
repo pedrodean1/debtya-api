@@ -43,9 +43,7 @@ function assertServerConfig() {
   if (!String(process.env.CRON_SECRET || "").trim()) missing.push("CRON_SECRET");
 
   if (missing.length) {
-    console.warn(
-      `[DebtYa] Faltan variables de entorno críticas: ${missing.join(", ")}`
-    );
+    console.warn(`[DebtYa] Faltan variables de entorno críticas: ${missing.join(", ")}`);
   }
 }
 
@@ -53,7 +51,6 @@ assertServerConfig();
 
 function supabaseHeaders(extra = {}) {
   const anonKey = getSupabaseAnonKey();
-
   return {
     apikey: anonKey,
     Authorization: `Bearer ${anonKey}`,
@@ -65,9 +62,7 @@ function supabaseAdminHeaders(extra = {}) {
   const serviceKey = getSupabaseServiceRoleKey();
 
   if (!serviceKey) {
-    const error = new Error(
-      "Falta la service role key de Supabase en el servidor."
-    );
+    const error = new Error("Falta la service role key de Supabase en el servidor.");
     error.status = 500;
     throw error;
   }
@@ -217,6 +212,29 @@ async function supabaseRpc(functionName, payload, req) {
   );
 
   return response.data;
+}
+
+async function ensureUserProfile(req, user) {
+  const existing = await supabaseSelect(
+    "profiles",
+    `select=*&id=eq.${user.id}&limit=1`,
+    req
+  );
+
+  if (existing.length) return existing[0];
+
+  const inserted = await supabaseInsert(
+    "profiles",
+    {
+      id: user.id,
+      email: user.email || null,
+      created_at: toIsoNow(),
+      updated_at: toIsoNow(),
+    },
+    req
+  );
+
+  return inserted[0] || null;
 }
 
 function normalizeDebt(debt) {
@@ -437,6 +455,35 @@ function simulateStrategy(debts, strategy, extraPayment) {
   };
 }
 
+function compareStrategiesLocally(debts, extraPayment) {
+  const avalanche = simulateStrategy(debts, "avalanche", extraPayment);
+  const snowball = simulateStrategy(debts, "snowball", extraPayment);
+
+  let recommended_strategy = "avalanche";
+  let reason = "Avalanche minimiza interés total.";
+
+  const avalancheInterest = Number(avalanche.total_interest_paid || 0);
+  const snowballInterest = Number(snowball.total_interest_paid || 0);
+  const avalancheMonths = Number(avalanche.estimated_months_to_payoff || 0);
+  const snowballMonths = Number(snowball.estimated_months_to_payoff || 0);
+
+  if (snowballInterest < avalancheInterest) {
+    recommended_strategy = "snowball";
+    reason = "Snowball sale mejor en interés total con tus datos actuales.";
+  } else if (snowballMonths && avalancheMonths && snowballMonths < avalancheMonths) {
+    recommended_strategy = "snowball";
+    reason = "Snowball termina antes con tus datos actuales.";
+  }
+
+  return {
+    recommended_strategy,
+    reason,
+    extra_payment: moneyNumber(extraPayment),
+    avalanche,
+    snowball,
+  };
+}
+
 function inferTransactionCategory(tx) {
   const merchant = String(tx.merchant_name || "").toLowerCase();
   const description = String(tx.description || tx.name || "").toLowerCase();
@@ -530,6 +577,7 @@ function normalizePlaidTransaction(tx, userId, plaidItemRow) {
     iso_currency_code: tx.iso_currency_code || "USD",
     direction: Number(tx.amount || 0) >= 0 ? "debit" : "credit",
     raw_payload: tx,
+    updated_at: toIsoNow(),
   };
 }
 
@@ -605,8 +653,8 @@ async function buildDashboardSummary(req, user) {
     .reduce((sum, t) => sum + Math.abs(Number(t.amount || 0)), 0);
 
   const availableToAttackDebt = moneyNumber(Math.max(totalAvailableBalance, income - expenses, 0));
-
   const latestPlan = plans[0]?.payload_json || null;
+
   const nextDueDebts = activeDebts
     .map((d) => ({
       id: d.id,
@@ -619,8 +667,8 @@ async function buildDashboardSummary(req, user) {
         daysUntilDue(d.due_day) !== null && daysUntilDue(d.due_day) <= 3
           ? "alta"
           : daysUntilDue(d.due_day) !== null && daysUntilDue(d.due_day) <= 7
-          ? "media"
-          : "baja",
+            ? "media"
+            : "baja",
     }))
     .filter((d) => d.days_until_due !== null)
     .sort((a, b) => a.days_until_due - b.days_until_due)
@@ -1027,8 +1075,8 @@ app.get("/notifications/preview", async (req, res) => {
           daysUntilDue(debt.due_day) !== null && daysUntilDue(debt.due_day) <= 3
             ? "alta"
             : daysUntilDue(debt.due_day) !== null && daysUntilDue(debt.due_day) <= 7
-            ? "media"
-            : "baja",
+              ? "media"
+              : "baja",
       }))
       .filter((x) => x.days_until_due !== null)
       .sort((a, b) => a.days_until_due - b.days_until_due);
@@ -1084,6 +1132,18 @@ app.get("/goals/preview", async (req, res) => {
   }
 });
 
+app.post("/strategy/compare", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const extraPayment = Number(req.body.extra_payment || 0);
+    const debts = await getActiveDebtsForUser(req, user.id);
+    const result = compareStrategiesLocally(debts, extraPayment);
+    res.json({ ok: true, data: result });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
 app.get("/debts", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
@@ -1131,6 +1191,48 @@ app.get("/transactions", async (req, res) => {
       req
     );
     res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/preferences", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const profile = await ensureUserProfile(req, user);
+    res.json({
+      ok: true,
+      data: {
+        full_name: profile?.full_name || "",
+        preferred_strategy: profile?.preferred_strategy || "avalanche",
+        default_extra_payment: Number(profile?.default_extra_payment || 0),
+        default_monthly_budget: Number(profile?.default_monthly_budget || 0),
+      },
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/preferences", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    await ensureUserProfile(req, user);
+
+    const updated = await supabasePatch(
+      "profiles",
+      `id=eq.${user.id}`,
+      {
+        full_name: req.body.full_name || null,
+        preferred_strategy: req.body.preferred_strategy || "avalanche",
+        default_extra_payment: moneyNumber(req.body.default_extra_payment || 0),
+        default_monthly_budget: moneyNumber(req.body.default_monthly_budget || 0),
+        updated_at: toIsoNow(),
+      },
+      req
+    );
+
+    res.json({ ok: true, data: updated[0] || null });
   } catch (error) {
     sendError(res, error);
   }
@@ -1194,17 +1296,11 @@ app.post("/automation-rules", async (req, res) => {
       apply_to_transaction_type: req.body.apply_to_transaction_type || "debit_only",
       min_transaction_amount: moneyNumber(req.body.min_transaction_amount || 0),
       max_per_transaction:
-        req.body.max_per_transaction === undefined || req.body.max_per_transaction === ""
-          ? null
-          : moneyNumber(req.body.max_per_transaction),
+        req.body.max_per_transaction === undefined || req.body.max_per_transaction === "" ? null : moneyNumber(req.body.max_per_transaction),
       max_per_day:
-        req.body.max_per_day === undefined || req.body.max_per_day === ""
-          ? null
-          : moneyNumber(req.body.max_per_day),
+        req.body.max_per_day === undefined || req.body.max_per_day === "" ? null : moneyNumber(req.body.max_per_day),
       max_per_month:
-        req.body.max_per_month === undefined || req.body.max_per_month === ""
-          ? null
-          : moneyNumber(req.body.max_per_month),
+        req.body.max_per_month === undefined || req.body.max_per_month === "" ? null : moneyNumber(req.body.max_per_month),
       require_user_confirmation:
         req.body.require_user_confirmation === undefined ? true : !!req.body.require_user_confirmation,
       allow_partial_execution:
@@ -1217,6 +1313,91 @@ app.post("/automation-rules", async (req, res) => {
 
     const data = await supabaseInsert("automation_rules", payload, req);
     res.json({ ok: true, inserted_count: data.length, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.patch("/automation-rules/:id", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const { id } = req.params;
+
+    const existing = await supabaseSelect(
+      "automation_rules",
+      `select=*&id=eq.${id}&user_id=eq.${user.id}&limit=1`,
+      req
+    );
+
+    if (!existing.length) {
+      return res.status(404).json({ ok: false, error: "Regla no encontrada" });
+    }
+
+    const current = existing[0];
+    const payload = {
+      rule_name: req.body.rule_name !== undefined ? req.body.rule_name : current.rule_name,
+      rule_type: req.body.rule_type !== undefined ? req.body.rule_type : current.rule_type,
+      rule_value: req.body.rule_value !== undefined ? moneyNumber(req.body.rule_value) : current.rule_value,
+      execution_mode: req.body.execution_mode !== undefined ? req.body.execution_mode : current.execution_mode,
+      execution_frequency: req.body.execution_frequency !== undefined ? req.body.execution_frequency : current.execution_frequency,
+      apply_to_transaction_type:
+        req.body.apply_to_transaction_type !== undefined ? req.body.apply_to_transaction_type : current.apply_to_transaction_type,
+      min_transaction_amount:
+        req.body.min_transaction_amount !== undefined ? moneyNumber(req.body.min_transaction_amount) : current.min_transaction_amount,
+      max_per_transaction:
+        req.body.max_per_transaction !== undefined
+          ? (req.body.max_per_transaction === "" || req.body.max_per_transaction === null ? null : moneyNumber(req.body.max_per_transaction))
+          : current.max_per_transaction,
+      max_per_day:
+        req.body.max_per_day !== undefined
+          ? (req.body.max_per_day === "" || req.body.max_per_day === null ? null : moneyNumber(req.body.max_per_day))
+          : current.max_per_day,
+      max_per_month:
+        req.body.max_per_month !== undefined
+          ? (req.body.max_per_month === "" || req.body.max_per_month === null ? null : moneyNumber(req.body.max_per_month))
+          : current.max_per_month,
+      require_user_confirmation:
+        req.body.require_user_confirmation !== undefined ? !!req.body.require_user_confirmation : current.require_user_confirmation,
+      allow_partial_execution:
+        req.body.allow_partial_execution !== undefined ? !!req.body.allow_partial_execution : current.allow_partial_execution,
+      active:
+        req.body.active !== undefined ? !!req.body.active : current.active,
+      target_debt_id:
+        req.body.target_debt_id !== undefined ? req.body.target_debt_id : current.target_debt_id,
+      source_account_id:
+        req.body.source_account_id !== undefined ? req.body.source_account_id : current.source_account_id,
+      starts_at:
+        req.body.starts_at !== undefined ? req.body.starts_at : current.starts_at,
+      ends_at:
+        req.body.ends_at !== undefined ? req.body.ends_at : current.ends_at,
+      updated_at: toIsoNow(),
+    };
+
+    const data = await supabasePatch(
+      "automation_rules",
+      `id=eq.${id}&user_id=eq.${user.id}`,
+      payload,
+      req
+    );
+
+    res.json({ ok: true, data: data[0] || null });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.delete("/automation-rules/:id", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const { id } = req.params;
+
+    const data = await supabaseDelete(
+      "automation_rules",
+      `id=eq.${id}&user_id=eq.${user.id}`,
+      req
+    );
+
+    res.json({ ok: true, deleted_count: data.length, data });
   } catch (error) {
     sendError(res, error);
   }
@@ -1238,17 +1419,11 @@ app.post("/rules", async (req, res) => {
       apply_to_transaction_type: req.body.apply_to_transaction_type || "debit_only",
       min_transaction_amount: moneyNumber(req.body.min_transaction_amount || 0),
       max_per_transaction:
-        req.body.max_per_transaction === undefined || req.body.max_per_transaction === ""
-          ? null
-          : moneyNumber(req.body.max_per_transaction),
+        req.body.max_per_transaction === undefined || req.body.max_per_transaction === "" ? null : moneyNumber(req.body.max_per_transaction),
       max_per_day:
-        req.body.max_per_day === undefined || req.body.max_per_day === ""
-          ? null
-          : moneyNumber(req.body.max_per_day),
+        req.body.max_per_day === undefined || req.body.max_per_day === "" ? null : moneyNumber(req.body.max_per_day),
       max_per_month:
-        req.body.max_per_month === undefined || req.body.max_per_month === ""
-          ? null
-          : moneyNumber(req.body.max_per_month),
+        req.body.max_per_month === undefined || req.body.max_per_month === "" ? null : moneyNumber(req.body.max_per_month),
       require_user_confirmation:
         req.body.require_user_confirmation === undefined ? true : !!req.body.require_user_confirmation,
       allow_partial_execution:
@@ -1471,6 +1646,20 @@ app.get("/payment-executions", async (req, res) => {
   }
 });
 
+app.get("/executions", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const data = await supabaseSelect(
+      "payment_executions",
+      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
+      req
+    );
+    res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
 app.get("/history", async (req, res) => {
   try {
     const user = await getUserFromToken(req);
@@ -1494,6 +1683,49 @@ app.get("/trace", async (req, res) => {
       req
     );
     res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.get("/payment-plans", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const data = await supabaseSelect(
+      "payment_plans",
+      `select=*&user_id=eq.${user.id}&order=created_at.desc`,
+      req
+    );
+    res.json({ ok: true, data });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
+
+app.post("/payment-plans/save", async (req, res) => {
+  try {
+    const user = await getUserFromToken(req);
+    const strategy = String(req.body.strategy || "avalanche").toLowerCase();
+    const extraPayment = Number(req.body.extra_payment || 0);
+    const monthlyBudget = moneyNumber(req.body.monthly_budget || 0);
+    const debts = await getActiveDebtsForUser(req, user.id);
+    const payloadJson = simulateStrategy(debts, strategy, extraPayment);
+
+    const data = await supabaseInsert(
+      "payment_plans",
+      {
+        user_id: user.id,
+        strategy,
+        extra_payment: moneyNumber(extraPayment),
+        monthly_budget: monthlyBudget,
+        payload_json: payloadJson,
+        created_at: toIsoNow(),
+        updated_at: toIsoNow(),
+      },
+      req
+    );
+
+    res.json({ ok: true, data: data[0] || null });
   } catch (error) {
     sendError(res, error);
   }
