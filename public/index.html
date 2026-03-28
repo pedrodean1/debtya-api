@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DebtYa</title>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-
   <style>
     :root{
       --bg:#f6f9ff;
@@ -21,648 +20,164 @@
       --ok:#22a06b;
       --warn:#f3b33d;
       --danger:#e25b5b;
-      --info:#61b5ff;
-      --shadow:0 10px 30px rgba(63, 105, 163, .10);
+      --shadow:0 10px 30px rgba(63,105,163,.10);
       --radius:20px;
     }
-
-    *{ box-sizing:border-box; }
-
+    *{box-sizing:border-box}
     html,body{
-      margin:0;
-      padding:0;
-      scroll-behavior:smooth;
+      margin:0;padding:0;
+      font-family:Inter,Arial,sans-serif;
+      color:var(--text);
       background:
         radial-gradient(circle at top left, rgba(97,181,255,.12), transparent 28%),
         radial-gradient(circle at top right, rgba(79,141,247,.10), transparent 22%),
         linear-gradient(180deg,var(--bg),var(--bg2));
-      color:var(--text);
-      font-family:Inter, Arial, sans-serif;
     }
-
-    body{ padding:18px; }
-    .wrap{ max-width:1360px; margin:0 auto; }
-
+    body{padding:18px}
+    .wrap{max-width:1360px;margin:0 auto}
     .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:14px;
-      flex-wrap:wrap;
-      margin-bottom:18px;
-      position:sticky;
-      top:10px;
-      z-index:20;
-      padding:14px;
-      border:1px solid var(--border);
-      border-radius:22px;
-      background:rgba(255,255,255,.86);
-      backdrop-filter:blur(10px);
-      box-shadow:var(--shadow);
+      display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+      margin-bottom:18px;padding:14px;border:1px solid var(--border);border-radius:22px;
+      background:rgba(255,255,255,.88);backdrop-filter:blur(10px);box-shadow:var(--shadow)
     }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:14px;
-    }
-
+    .brand{display:flex;align-items:center;gap:14px}
     .logo{
-      width:54px;
-      height:54px;
-      border-radius:16px;
+      width:54px;height:54px;border-radius:16px;
       background:linear-gradient(135deg,#6fb6ff,#4f8df7);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:800;
-      font-size:24px;
-      color:#fff;
-      box-shadow:0 10px 24px rgba(79,141,247,.22);
-      flex:0 0 auto;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:24px;color:#fff
     }
-
-    .brand h1{
-      margin:0;
-      font-size:28px;
-      letter-spacing:.2px;
-    }
-
-    .brand p{
-      margin:4px 0 0 0;
-      color:var(--muted);
-      font-size:13px;
-    }
-
-    .chips{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
+    .brand h1{margin:0;font-size:28px}
+    .brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .chips{display:flex;gap:10px;flex-wrap:wrap}
     .chip{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      border:1px solid var(--border);
-      background:#f8fbff;
-      color:var(--muted);
-      border-radius:999px;
-      padding:10px 14px;
-      font-size:13px;
-      min-height:42px;
+      display:inline-flex;align-items:center;gap:8px;
+      border:1px solid var(--border);background:#f8fbff;color:var(--muted);
+      border-radius:999px;padding:10px 14px;font-size:13px;min-height:42px
     }
-
-    .chip strong{
-      color:var(--text);
-      max-width:280px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-
+    .chip strong{color:var(--text)}
+    .stack{display:grid;gap:16px}
+    .hero{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+    @media (max-width:1100px){.hero{grid-template-columns:1fr}}
+    .hero-main{display:grid;gap:16px}
     .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      padding:18px;
-      box-shadow:var(--shadow);
+      background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+      padding:18px;box-shadow:var(--shadow)
     }
-
     .soft-card{
-      background:var(--card3);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:14px;
+      background:var(--card3);border:1px solid var(--border);border-radius:18px;padding:14px
     }
-
-    .stack{ display:grid; gap:16px; }
-
-    .grid{
-      display:grid;
-      grid-template-columns:repeat(12,1fr);
-      gap:16px;
-    }
-
-    .span-12{ grid-column:span 12; }
-    .span-8{ grid-column:span 8; }
-    .span-7{ grid-column:span 7; }
-    .span-6{ grid-column:span 6; }
-    .span-5{ grid-column:span 5; }
-    .span-4{ grid-column:span 4; }
-    .span-3{ grid-column:span 3; }
-
-    @media (max-width:1100px){
-      .span-8,.span-7,.span-6,.span-5,.span-4,.span-3{ grid-column:span 12; }
-    }
-
-    h2,h3,h4{
-      margin:0 0 10px 0;
-      line-height:1.15;
-    }
-
-    .sub{
-      color:var(--muted);
-      font-size:13px;
-      margin-bottom:14px;
-      line-height:1.45;
-    }
-
     .eyebrow{
-      color:#4f8df7;
-      text-transform:uppercase;
-      letter-spacing:.55px;
-      font-size:11px;
-      font-weight:700;
-      margin-bottom:8px;
+      color:#4f8df7;text-transform:uppercase;letter-spacing:.55px;font-size:11px;font-weight:700;margin-bottom:8px
     }
-
-    .row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin-top:10px;
-    }
-
-    .field{
-      display:grid;
-      gap:6px;
-      flex:1 1 220px;
-      min-width:0;
-    }
-
-    .field label{
-      font-size:12px;
-      color:var(--muted);
-    }
-
-    form{ margin:0; }
-
-    input,select,button,textarea{
-      box-sizing:border-box;
-      min-height:46px;
-      padding:12px 14px;
-      border-radius:14px;
-      font-size:15px;
-      transition:.16s ease;
-      font-family:inherit;
-    }
-
-    input,select,textarea{
-      border:1px solid var(--border);
-      background:var(--card2);
-      color:var(--text);
-      width:100%;
-      outline:none;
-    }
-
-    input:focus,select:focus,textarea:focus{
-      border-color:#7fb3ff;
-      box-shadow:0 0 0 3px rgba(79,141,247,.14);
-    }
-
-    button{
-      border:none;
-      background:var(--primary);
-      color:#fff;
-      cursor:pointer;
-      font-weight:700;
-      letter-spacing:.1px;
-      -webkit-appearance:none;
-      appearance:none;
-      touch-action:manipulation;
-    }
-
-    button:hover{
-      background:var(--primary2);
-      transform:translateY(-1px);
-    }
-
-    button:disabled{
-      opacity:.62;
-      cursor:not-allowed;
-      transform:none;
-    }
-
-    button.secondary{
-      background:#ffffff;
-      border:1px solid var(--border);
-      color:var(--text);
-    }
-
-    button.secondary:hover{ background:#f5f9ff; }
-    button.success{ background:var(--ok); }
-    button.success:hover{ background:#1b8b5d; }
-    button.warn{ background:var(--warn); color:#4a3720; }
-    button.danger{ background:var(--danger); }
-
-    .grow{ flex:1; min-width:220px; }
-    .full{ width:100%; }
-
-    .hero{
-      display:grid;
-      grid-template-columns:1.25fr .75fr;
-      gap:16px;
-    }
-
-    @media (max-width:1100px){
-      .hero{ grid-template-columns:1fr; }
-    }
-
-    .hero-main{
-      display:grid;
-      gap:16px;
-    }
-
-    .summary-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-      gap:12px;
-    }
-
-    .stat{
-      border:1px solid var(--border);
-      border-radius:18px;
-      background:#fbfdff;
-      padding:14px;
-      min-width:0;
-    }
-
-    .stat .label{
-      color:var(--muted);
-      font-size:12px;
-      text-transform:uppercase;
-      letter-spacing:.4px;
-      overflow-wrap:anywhere;
-      word-break:break-word;
-    }
-
-    .stat .value{
-      margin-top:8px;
-      font-size:clamp(24px, 2.4vw, 30px);
-      font-weight:800;
-      line-height:1.15;
-      overflow-wrap:anywhere;
-      word-break:break-word;
-    }
-
-    .stat .hint{
-      margin-top:8px;
-      color:var(--muted);
-      font-size:12px;
-      overflow-wrap:anywhere;
-      word-break:break-word;
-    }
-
-    .mode-boxes{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-    }
-
-    @media (max-width:700px){
-      .mode-boxes{ grid-template-columns:1fr; }
-    }
-
-    .mode-box{
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:14px;
-      background:#fbfdff;
-    }
-
-    .mode-title{
-      font-weight:800;
-      margin-bottom:8px;
-    }
-
-    .mode-box p{
-      margin:0;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.45;
-    }
-
-    .step-grid{
-      display:grid;
-      grid-template-columns:repeat(5,1fr);
-      gap:12px;
-    }
-
-    @media (max-width:1200px){
-      .step-grid{ grid-template-columns:repeat(2,1fr); }
-    }
-
-    @media (max-width:650px){
-      .step-grid{ grid-template-columns:1fr; }
-    }
-
-    .step{
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:16px;
-      background:#fbfdff;
-      position:relative;
-      overflow:hidden;
-    }
-
-    .step::after{
-      content:"";
-      position:absolute;
-      inset:auto -30px -30px auto;
-      width:90px;
-      height:90px;
-      border-radius:999px;
-      background:radial-gradient(circle, rgba(97,181,255,.18), transparent 70%);
-      pointer-events:none;
-    }
-
-    .step-number{
-      width:34px;
-      height:34px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:800;
-      background:#7eb5ff;
-      color:#fff;
-      margin-bottom:10px;
-    }
-
-    .step h4{
-      margin:0 0 8px 0;
-      font-size:17px;
-    }
-
-    .step p{
-      margin:0;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.45;
-      min-height:56px;
-    }
-
-    .step .actions{
-      margin-top:14px;
-      display:grid;
-      gap:8px;
-    }
-
-    .tabs{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-
-    .tab-btn.active{
-      background:#7eb5ff;
-      color:#fff;
-      border-color:#7eb5ff;
-    }
-
-    .panel{ display:none; }
-    .panel.active{ display:block; }
-
-    .status{
-      margin-top:12px;
-      padding:12px 14px;
-      border-radius:14px;
-      background:#f6faff;
-      border:1px solid var(--border);
-      white-space:pre-wrap;
-      color:var(--text);
-      font-size:14px;
-      line-height:1.45;
-    }
-
-    .ok{
-      margin-top:12px;
-      padding:12px 14px;
-      border-radius:14px;
-      background:rgba(34,160,107,.10);
-      border:1px solid rgba(34,160,107,.26);
-      color:#1b7a55;
-      white-space:pre-wrap;
-      display:none;
-      font-size:14px;
-      line-height:1.45;
-    }
-
-    .err{
-      margin-top:12px;
-      padding:12px 14px;
-      border-radius:14px;
-      background:rgba(226,91,91,.10);
-      border:1px solid rgba(226,91,91,.28);
-      color:#b03f3f;
-      white-space:pre-wrap;
-      display:none;
-      font-size:14px;
-      line-height:1.45;
-    }
-
-    .highlight{
-      margin-top:10px;
-      padding:12px 14px;
-      border-radius:14px;
-      background:rgba(97,181,255,.10);
-      border:1px solid rgba(97,181,255,.28);
-      color:var(--text);
-      font-size:14px;
-      line-height:1.45;
-      display:none;
-    }
-
-    .quick-actions{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:10px;
-      margin-top:8px;
-    }
-
-    .list-grid{
-      display:grid;
-      gap:10px;
-    }
-
-    .list-item{
-      border:1px solid var(--border);
-      border-radius:16px;
-      background:#fbfdff;
-      padding:12px;
-    }
-
-    .list-item .title{
-      font-weight:700;
-      margin-bottom:6px;
-    }
-
-    .list-item .meta{
-      font-size:13px;
-      color:var(--muted);
-      line-height:1.45;
-    }
-
-    .pill{
-      display:inline-block;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:700;
-      white-space:nowrap;
-    }
-
-    .pill-ok{
-      background:rgba(34,160,107,.10);
-      border:1px solid rgba(34,160,107,.26);
-      color:#1b7a55;
-    }
-
-    .pill-warn{
-      background:rgba(243,179,61,.12);
-      border:1px solid rgba(243,179,61,.28);
-      color:#8d6515;
-    }
-
-    .pill-neutral{
-      background:rgba(79,141,247,.08);
-      border:1px solid rgba(79,141,247,.18);
-      color:#44678f;
-    }
-
-    .pill-danger{
-      background:rgba(226,91,91,.10);
-      border:1px solid rgba(226,91,91,.26);
-      color:#b03f3f;
-    }
-
-    .table-wrap{
-      overflow:auto;
-      border:1px solid var(--border);
-      border-radius:16px;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:760px;
-    }
-
-    th,td{
-      padding:11px 10px;
-      border-bottom:1px solid var(--border);
-      text-align:left;
-      vertical-align:top;
-      font-size:14px;
-    }
-
-    th{
-      background:#f8fbff;
-      color:var(--text);
-      position:sticky;
-      top:0;
-      z-index:1;
-    }
-
-    tr:hover td{ background:rgba(97,181,255,.04); }
-
-    .progress-list{
-      display:grid;
-      gap:12px;
-    }
-
-    .progress-item{
-      border:1px solid var(--border);
-      background:#fbfdff;
-      border-radius:16px;
-      padding:12px;
-    }
-
-    .progress-top{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:center;
-      flex-wrap:wrap;
-      margin-bottom:8px;
-    }
-
-    .progress-name{ font-weight:700; }
-    .progress-meta{ color:var(--muted); font-size:12px; }
-
-    .bar{
-      width:100%;
-      height:12px;
-      border-radius:999px;
-      background:#edf4ff;
-      border:1px solid var(--border);
-      overflow:hidden;
-    }
-
-    .bar-fill{
-      height:100%;
-      background:linear-gradient(90deg,#7eb5ff,#4f8df7);
-      width:0%;
-    }
-
-    .empty-box{
-      padding:16px;
-      border:1px dashed var(--border);
-      border-radius:16px;
-      color:var(--muted);
-      text-align:center;
-      background:#fbfdff;
-    }
-
+    h2,h3,h4{margin:0 0 10px;line-height:1.15}
+    .sub{color:var(--muted);font-size:13px;margin-bottom:14px;line-height:1.45}
     .section-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom:12px;
+      display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px
     }
-
-    .section-header .right{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
+    .right{display:flex;gap:10px;flex-wrap:wrap}
+    .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+    .stat{
+      border:1px solid var(--border);border-radius:18px;background:#fbfdff;padding:14px
     }
-
+    .stat .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+    .stat .value{margin-top:8px;font-size:clamp(24px,2.4vw,30px);font-weight:800}
+    .stat .hint{margin-top:8px;color:var(--muted);font-size:12px}
+    .step-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+    @media (max-width:1200px){.step-grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:650px){.step-grid{grid-template-columns:1fr}}
+    .step{
+      border:1px solid var(--border);border-radius:18px;padding:16px;background:#fbfdff
+    }
+    .step-number{
+      width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+      font-weight:800;background:#7eb5ff;color:#fff;margin-bottom:10px
+    }
+    .step p{margin:0;color:var(--muted);font-size:13px;line-height:1.45;min-height:56px}
+    .actions{margin-top:14px;display:grid;gap:8px}
+    .tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .tab-btn.active{background:#7eb5ff;color:#fff;border-color:#7eb5ff}
+    .panel{display:none}
+    .panel.active{display:block}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .span-12{grid-column:span 12}
+    .span-7{grid-column:span 7}
+    .span-6{grid-column:span 6}
+    .span-5{grid-column:span 5}
+    .span-4{grid-column:span 4}
+    .span-3{grid-column:span 3}
+    .span-2{grid-column:span 2}
+    @media (max-width:1100px){
+      .span-7,.span-6,.span-5,.span-4,.span-3,.span-2{grid-column:span 12}
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    .field{display:grid;gap:6px;flex:1 1 220px;min-width:0}
+    .field label{font-size:12px;color:var(--muted)}
+    form{margin:0}
+    input,select,button,textarea{
+      min-height:46px;padding:12px 14px;border-radius:14px;font-size:15px;transition:.16s ease;font-family:inherit
+    }
+    input,select,textarea{
+      width:100%;border:1px solid var(--border);background:var(--card2);color:var(--text);outline:none
+    }
+    input:focus,select:focus,textarea:focus{border-color:#7fb3ff;box-shadow:0 0 0 3px rgba(79,141,247,.14)}
+    button{
+      border:none;background:var(--primary);color:#fff;cursor:pointer;font-weight:700;letter-spacing:.1px;
+      -webkit-appearance:none;appearance:none;touch-action:manipulation
+    }
+    button:hover{background:var(--primary2);transform:translateY(-1px)}
+    button:disabled{opacity:.62;cursor:not-allowed;transform:none}
+    button.secondary{background:#fff;border:1px solid var(--border);color:var(--text)}
+    button.secondary:hover{background:#f5f9ff}
+    button.success{background:var(--ok)}
+    button.danger{background:var(--danger)}
+    .grow{flex:1;min-width:220px}
+    .full{width:100%}
+    .status,.ok,.err,.highlight{
+      margin-top:12px;padding:12px 14px;border-radius:14px;white-space:pre-wrap;font-size:14px;line-height:1.45
+    }
+    .status{background:#f6faff;border:1px solid var(--border);color:var(--text)}
+    .ok{background:rgba(34,160,107,.10);border:1px solid rgba(34,160,107,.26);color:#1b7a55;display:none}
+    .err{background:rgba(226,91,91,.10);border:1px solid rgba(226,91,91,.28);color:#b03f3f;display:none}
+    .highlight{background:rgba(97,181,255,.10);border:1px solid rgba(97,181,255,.28);color:var(--text);display:none}
+    .quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:8px}
+    .list-grid{display:grid;gap:10px}
+    .list-item{border:1px solid var(--border);border-radius:16px;background:#fbfdff;padding:12px}
+    .list-item .title{font-weight:700;margin-bottom:6px}
+    .list-item .meta{font-size:13px;color:var(--muted);line-height:1.45}
+    .pill{
+      display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap
+    }
+    .pill-ok{background:rgba(34,160,107,.10);border:1px solid rgba(34,160,107,.26);color:#1b7a55}
+    .pill-warn{background:rgba(243,179,61,.12);border:1px solid rgba(243,179,61,.28);color:#8d6515}
+    .pill-neutral{background:rgba(79,141,247,.08);border:1px solid rgba(79,141,247,.18);color:#44678f}
+    .pill-danger{background:rgba(226,91,91,.10);border:1px solid rgba(226,91,91,.26);color:#b03f3f}
+    .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:16px;background:#fff}
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th,td{padding:11px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:14px}
+    th{background:#f8fbff;color:var(--text);position:sticky;top:0;z-index:1}
+    .progress-list{display:grid;gap:12px}
+    .progress-item{border:1px solid var(--border);background:#fbfdff;border-radius:16px;padding:12px}
+    .progress-top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+    .progress-name{font-weight:700}
+    .progress-meta{color:var(--muted);font-size:12px}
+    .bar{width:100%;height:12px;border-radius:999px;background:#edf4ff;border:1px solid var(--border);overflow:hidden}
+    .bar-fill{height:100%;background:linear-gradient(90deg,#7eb5ff,#4f8df7);width:0%}
+    .empty-box{padding:16px;border:1px dashed var(--border);border-radius:16px;color:var(--muted);text-align:center;background:#fbfdff}
     .toast{
-      position:fixed;
-      right:18px;
-      bottom:18px;
-      max-width:460px;
-      background:#ffffff;
-      color:var(--text);
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:12px 14px;
-      display:none;
-      z-index:99999;
-      white-space:pre-wrap;
-      box-shadow:var(--shadow);
-      line-height:1.45;
+      position:fixed;right:18px;bottom:18px;max-width:460px;background:#fff;color:var(--text);
+      border:1px solid var(--border);border-radius:16px;padding:12px 14px;display:none;z-index:99999;
+      white-space:pre-wrap;box-shadow:var(--shadow);line-height:1.45
     }
-
-    .hidden{ display:none !important; }
-
+    .hidden{display:none !important}
     @media (max-width:760px){
-      body{ padding:12px; }
-      .topbar{ padding:12px; }
-      .brand h1{ font-size:24px; }
-      .chip strong{ max-width:160px; }
-      .summary-grid{ grid-template-columns:1fr 1fr; }
+      body{padding:12px}
+      .topbar{padding:12px}
+      .brand h1{font-size:24px}
+      .summary-grid{grid-template-columns:1fr 1fr}
     }
-
     @media (max-width:560px){
-      .summary-grid{ grid-template-columns:1fr; }
+      .summary-grid{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -678,7 +193,6 @@
       </div>
 
       <div class="chips">
-        <div class="chip">API <strong id="apiBaseLabel">https://www.debtya.com</strong></div>
         <div class="chip">Usuario <strong id="userEmailLabel">sin sesión</strong></div>
         <div class="chip">Modo <strong id="modeLabel">safe</strong></div>
       </div>
@@ -695,8 +209,8 @@
                 <div class="sub">Lo importante arriba para entrar y trabajar rápido.</div>
               </div>
               <div class="right">
-                <button id="loadDashboardBtn" type="button">Refrescar</button>
-                <button id="refreshAllBtn" type="button" class="secondary">Refrescar todo</button>
+                <button id="loadDashboardBtn" type="button">Actualizar resumen</button>
+                <button id="refreshAllBtn" type="button" class="secondary">Actualizar todo</button>
               </div>
             </div>
 
@@ -706,19 +220,16 @@
                 <div class="value" id="statDebtBalance">$0</div>
                 <div class="hint">Balance activo total</div>
               </div>
-
               <div class="stat">
                 <div class="label">Pago mínimo total</div>
                 <div class="value" id="statMinimumBalance">$0</div>
                 <div class="hint">Carga mínima mensual</div>
               </div>
-
               <div class="stat">
                 <div class="label">Disponible para deuda</div>
                 <div class="value" id="statAvailableToDebt">$0</div>
                 <div class="hint">Capacidad para atacar deuda</div>
               </div>
-
               <div class="stat">
                 <div class="label">Intents pendientes</div>
                 <div class="value" id="statPendingIntents">0</div>
@@ -824,16 +335,6 @@
               <div class="row">
                 <button id="logoutBtn" type="button" class="secondary full">Salir</button>
               </div>
-            </div>
-          </div>
-
-          <div class="soft-card" style="margin-top:14px;">
-            <div class="field">
-              <label for="apiBaseInput">API base</label>
-              <input id="apiBaseInput" type="text" placeholder="https://www.debtya.com" />
-            </div>
-            <div class="row">
-              <button id="saveApiBaseBtn" type="button" class="secondary full">Guardar API base</button>
             </div>
           </div>
 
@@ -958,7 +459,7 @@
                 <button id="loadExecutionsBtn" type="button" class="secondary">Ver historial</button>
               </div>
 
-              <div class="highlight" id="executionHint" style="display:block;">
+              <div id="executionHint" class="highlight" style="display:block;">
                 En <strong>safe</strong> revisas primero. En <strong>full_auto</strong> reduces pasos.
               </div>
             </div>
@@ -1099,11 +600,11 @@
                 </div>
               </div>
 
-              <div id="debtProgressList" class="progress-list" style="margin-bottom:16px;">
+              <div id="debtProgressList" class="progress-list">
                 <div class="empty-box">No hay deudas cargadas.</div>
               </div>
 
-              <div class="table-wrap">
+              <div class="table-wrap" style="margin-top:16px;">
                 <table>
                   <thead>
                     <tr>
@@ -1159,7 +660,7 @@
                 <button id="clearTxBtn" type="button" class="secondary">Limpiar</button>
               </div>
 
-              <div class="table-wrap">
+              <div class="table-wrap" style="margin-top:10px;">
                 <table>
                   <thead>
                     <tr>
@@ -1302,7 +803,7 @@
             <div class="eyebrow">Preferencias</div>
             <h3>Defaults del usuario</h3>
             <div class="sub">Valores base para ahorrar pasos.</div>
-            <div class="highlight" style="display:block; margin-top:10px;">
+            <div class="highlight" style="display:block;margin-top:10px;">
               <strong>Avalanche:</strong> pagas primero la deuda con interés más alto para ahorrar más dinero.<br>
               <strong>Snowball:</strong> pagas primero la deuda más pequeña para ganar impulso más rápido.
             </div>
@@ -1316,7 +817,6 @@
               <input id="prefFullName" type="text" placeholder="Nombre completo" />
             </div>
           </div>
-
           <div class="span-3">
             <div class="field">
               <label for="prefStrategy">Estrategia preferida</label>
@@ -1326,14 +826,12 @@
               </select>
             </div>
           </div>
-
           <div class="span-3">
             <div class="field">
               <label for="prefExtraPayment">Extra payment default</label>
               <input id="prefExtraPayment" type="number" step="0.01" placeholder="Extra payment default" />
             </div>
           </div>
-
           <div class="span-2">
             <div class="field">
               <label for="prefMonthlyBudget">Budget</label>
@@ -1357,6 +855,13 @@
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
     const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmVs...".replace("...","oiJzdXBhYmVs"); // se reescribe debajo
+  </script>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1367,218 +872,206 @@
     let transactionsCache = [];
     let rulesCache = [];
     let intentsCache = [];
-    let plaidItemsCache = [];
-    let executionsCache = [];
     let allocationsCache = [];
+    let executionsCache = [];
     let plansCache = [];
-    let lastComparisonPayload = null;
+    let plaidItemsCache = [];
     let lastDashboardPayload = null;
     let lastPayoffPayload = null;
+    let lastComparisonPayload = null;
+
+    const $ = (id) => document.getElementById(id);
 
     const els = {
-      loginForm: document.getElementById("loginForm"),
-      apiBaseLabel: document.getElementById("apiBaseLabel"),
-      userEmailLabel: document.getElementById("userEmailLabel"),
-      modeLabel: document.getElementById("modeLabel"),
-      email: document.getElementById("email"),
-      password: document.getElementById("password"),
-      loginBtn: document.getElementById("loginBtn"),
-      signupBtn: document.getElementById("signupBtn"),
-      logoutBtn: document.getElementById("logoutBtn"),
-      apiBaseInput: document.getElementById("apiBaseInput"),
-      saveApiBaseBtn: document.getElementById("saveApiBaseBtn"),
-      bootStatus: document.getElementById("bootStatus"),
-      okBox: document.getElementById("okBox"),
-      errBox: document.getElementById("errBox"),
-      toast: document.getElementById("toast"),
-
-      authGuestBox: document.getElementById("authGuestBox"),
-      authLoggedBox: document.getElementById("authLoggedBox"),
-      authCardTitle: document.getElementById("authCardTitle"),
-      authCardSub: document.getElementById("authCardSub"),
-      loggedUserEmail: document.getElementById("loggedUserEmail"),
-
-      connectBankBtn: document.getElementById("connectBankBtn"),
-      loadPlaidItemsBtn: document.getElementById("loadPlaidItemsBtn"),
-      importAccountsBtn: document.getElementById("importAccountsBtn"),
-      loadAccountsBtn: document.getElementById("loadAccountsBtn"),
-      importTransactionsBtn: document.getElementById("importTransactionsBtn"),
-      loadTransactionsBtn: document.getElementById("loadTransactionsBtn"),
-      plaidStatus: document.getElementById("plaidStatus"),
-
-      ruleName: document.getElementById("ruleName"),
-      ruleType: document.getElementById("ruleType"),
-      ruleValue: document.getElementById("ruleValue"),
-      ruleExecutionMode: document.getElementById("ruleExecutionMode"),
-      ruleMinAmount: document.getElementById("ruleMinAmount"),
-      ruleTargetDebt: document.getElementById("ruleTargetDebt"),
-      createRuleBtn: document.getElementById("createRuleBtn"),
-      loadRulesBtn: document.getElementById("loadRulesBtn"),
-      runRulesBtn: document.getElementById("runRulesBtn"),
-
-      buildExecutionMode: document.getElementById("buildExecutionMode"),
-      buildIntentsBtn: document.getElementById("buildIntentsBtn"),
-      loadIntentsBtn: document.getElementById("loadIntentsBtn"),
-      refreshAllBtn: document.getElementById("refreshAllBtn"),
-
-      compareExtraPayment: document.getElementById("compareExtraPayment"),
-      compareStrategiesBtn: document.getElementById("compareStrategiesBtn"),
-      savePlanBtn: document.getElementById("savePlanBtn"),
-      comparisonStatus: document.getElementById("comparisonStatus"),
-      comparisonHighlight: document.getElementById("comparisonHighlight"),
-
-      prefFullName: document.getElementById("prefFullName"),
-      prefStrategy: document.getElementById("prefStrategy"),
-      prefExtraPayment: document.getElementById("prefExtraPayment"),
-      prefMonthlyBudget: document.getElementById("prefMonthlyBudget"),
-      savePreferencesBtn: document.getElementById("savePreferencesBtn"),
-      preferencesStatus: document.getElementById("preferencesStatus"),
-      globalExecutionMode: document.getElementById("globalExecutionMode"),
-      applyModeBtn: document.getElementById("applyModeBtn"),
-
-      debtProgressList: document.getElementById("debtProgressList"),
-
-      debtsTableBody: document.getElementById("debtsTableBody"),
-      accountsTableBody: document.getElementById("accountsTableBody"),
-      transactionsTableBody: document.getElementById("transactionsTableBody"),
-      allocationsTableBody: document.getElementById("allocationsTableBody"),
-      rulesTableBody: document.getElementById("rulesTableBody"),
-      intentsTableBody: document.getElementById("intentsTableBody"),
-      plansTableBody: document.getElementById("plansTableBody"),
-      executionsTableBody: document.getElementById("executionsTableBody"),
-
-      txSearch: document.getElementById("txSearch"),
-      filterTxBtn: document.getElementById("filterTxBtn"),
-      clearTxBtn: document.getElementById("clearTxBtn"),
-
-      loadAllocationsBtn: document.getElementById("loadAllocationsBtn"),
-      loadPlansBtn: document.getElementById("loadPlansBtn"),
-      loadExecutionsBtn: document.getElementById("loadExecutionsBtn"),
-
-      loadDashboardBtn: document.getElementById("loadDashboardBtn"),
-      dashboardStatus: document.getElementById("dashboardStatus"),
-      statDebtBalance: document.getElementById("statDebtBalance"),
-      statMinimumBalance: document.getElementById("statMinimumBalance"),
-      statAvailableToDebt: document.getElementById("statAvailableToDebt"),
-      statPendingIntents: document.getElementById("statPendingIntents"),
-
-      payoffStrategy: document.getElementById("payoffStrategy"),
-      payoffExtraPayment: document.getElementById("payoffExtraPayment"),
-      loadPayoffBtn: document.getElementById("loadPayoffBtn"),
-      payoffMonths: document.getElementById("payoffMonths"),
-      payoffInterest: document.getElementById("payoffInterest"),
-      payoffTotalPaid: document.getElementById("payoffTotalPaid"),
-      payoffTargetDebt: document.getElementById("payoffTargetDebt"),
-      payoffHighlight: document.getElementById("payoffHighlight"),
-      goalAmount: document.getElementById("goalAmount"),
-      goalMonths: document.getElementById("goalMonths"),
-      simulateGoalBtn: document.getElementById("simulateGoalBtn"),
-      goalStatus: document.getElementById("goalStatus"),
-
-      loadNotificationsBtn: document.getElementById("loadNotificationsBtn"),
-      notificationsList: document.getElementById("notificationsList"),
-
-      analyzeCategoriesBtn: document.getElementById("analyzeCategoriesBtn"),
-      categorySummary: document.getElementById("categorySummary"),
-
-      goRulesBtn: document.getElementById("goRulesBtn"),
-      goIntentsBtn: document.getElementById("goIntentsBtn")
+      loginForm: $("loginForm"),
+      userEmailLabel: $("userEmailLabel"),
+      modeLabel: $("modeLabel"),
+      email: $("email"),
+      password: $("password"),
+      loginBtn: $("loginBtn"),
+      signupBtn: $("signupBtn"),
+      logoutBtn: $("logoutBtn"),
+      bootStatus: $("bootStatus"),
+      okBox: $("okBox"),
+      errBox: $("errBox"),
+      toast: $("toast"),
+      authGuestBox: $("authGuestBox"),
+      authLoggedBox: $("authLoggedBox"),
+      authCardTitle: $("authCardTitle"),
+      authCardSub: $("authCardSub"),
+      loggedUserEmail: $("loggedUserEmail"),
+      connectBankBtn: $("connectBankBtn"),
+      loadPlaidItemsBtn: $("loadPlaidItemsBtn"),
+      importAccountsBtn: $("importAccountsBtn"),
+      loadAccountsBtn: $("loadAccountsBtn"),
+      importTransactionsBtn: $("importTransactionsBtn"),
+      loadTransactionsBtn: $("loadTransactionsBtn"),
+      plaidStatus: $("plaidStatus"),
+      ruleName: $("ruleName"),
+      ruleType: $("ruleType"),
+      ruleValue: $("ruleValue"),
+      ruleExecutionMode: $("ruleExecutionMode"),
+      ruleMinAmount: $("ruleMinAmount"),
+      ruleTargetDebt: $("ruleTargetDebt"),
+      createRuleBtn: $("createRuleBtn"),
+      loadRulesBtn: $("loadRulesBtn"),
+      runRulesBtn: $("runRulesBtn"),
+      buildExecutionMode: $("buildExecutionMode"),
+      buildIntentsBtn: $("buildIntentsBtn"),
+      loadIntentsBtn: $("loadIntentsBtn"),
+      refreshAllBtn: $("refreshAllBtn"),
+      compareExtraPayment: $("compareExtraPayment"),
+      compareStrategiesBtn: $("compareStrategiesBtn"),
+      savePlanBtn: $("savePlanBtn"),
+      comparisonStatus: $("comparisonStatus"),
+      comparisonHighlight: $("comparisonHighlight"),
+      prefFullName: $("prefFullName"),
+      prefStrategy: $("prefStrategy"),
+      prefExtraPayment: $("prefExtraPayment"),
+      prefMonthlyBudget: $("prefMonthlyBudget"),
+      savePreferencesBtn: $("savePreferencesBtn"),
+      preferencesStatus: $("preferencesStatus"),
+      globalExecutionMode: $("globalExecutionMode"),
+      applyModeBtn: $("applyModeBtn"),
+      debtProgressList: $("debtProgressList"),
+      debtsTableBody: $("debtsTableBody"),
+      accountsTableBody: $("accountsTableBody"),
+      transactionsTableBody: $("transactionsTableBody"),
+      allocationsTableBody: $("allocationsTableBody"),
+      rulesTableBody: $("rulesTableBody"),
+      intentsTableBody: $("intentsTableBody"),
+      plansTableBody: $("plansTableBody"),
+      executionsTableBody: $("executionsTableBody"),
+      txSearch: $("txSearch"),
+      filterTxBtn: $("filterTxBtn"),
+      clearTxBtn: $("clearTxBtn"),
+      loadAllocationsBtn: $("loadAllocationsBtn"),
+      loadPlansBtn: $("loadPlansBtn"),
+      loadExecutionsBtn: $("loadExecutionsBtn"),
+      loadDashboardBtn: $("loadDashboardBtn"),
+      dashboardStatus: $("dashboardStatus"),
+      statDebtBalance: $("statDebtBalance"),
+      statMinimumBalance: $("statMinimumBalance"),
+      statAvailableToDebt: $("statAvailableToDebt"),
+      statPendingIntents: $("statPendingIntents"),
+      payoffStrategy: $("payoffStrategy"),
+      payoffExtraPayment: $("payoffExtraPayment"),
+      loadPayoffBtn: $("loadPayoffBtn"),
+      payoffMonths: $("payoffMonths"),
+      payoffInterest: $("payoffInterest"),
+      payoffTotalPaid: $("payoffTotalPaid"),
+      payoffTargetDebt: $("payoffTargetDebt"),
+      payoffHighlight: $("payoffHighlight"),
+      goalAmount: $("goalAmount"),
+      goalMonths: $("goalMonths"),
+      simulateGoalBtn: $("simulateGoalBtn"),
+      goalStatus: $("goalStatus"),
+      loadNotificationsBtn: $("loadNotificationsBtn"),
+      notificationsList: $("notificationsList"),
+      analyzeCategoriesBtn: $("analyzeCategoriesBtn"),
+      categorySummary: $("categorySummary"),
+      goRulesBtn: $("goRulesBtn"),
+      goIntentsBtn: $("goIntentsBtn")
     };
 
-    function getApiBase(){
-      return localStorage.getItem("DEBTYA_API_BASE") || "https://www.debtya.com";
+    function getApiBase() {
+      return "https://www.debtya.com";
     }
 
-    function setApiBase(value){
-      const clean = value.trim().replace(/\/+$/,"");
-      localStorage.setItem("DEBTYA_API_BASE", clean);
-      els.apiBaseLabel.textContent = clean;
-      els.apiBaseInput.value = clean;
+    function setText(el, value) {
+      if (el) el.textContent = value;
     }
 
-    function authHeaders(extra = {}){
+    function setHtml(el, value) {
+      if (el) el.innerHTML = value;
+    }
+
+    function authHeaders(extra = {}) {
       const h = { "Content-Type": "application/json" };
       if (session?.access_token) h.Authorization = `Bearer ${session.access_token}`;
       return { ...h, ...extra };
     }
 
-    async function api(path, options = {}){
-      const base = getApiBase();
-      const res = await fetch(base + path, options);
+    async function api(path, options = {}) {
+      const res = await fetch(getApiBase() + path, options);
       let json = null;
-      try { json = await res.json(); } catch { json = null; }
+      try { json = await res.json(); } catch {}
       if (!res.ok) {
         const msg = json?.error || json?.message || json?.details || `HTTP ${res.status}`;
         throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
       }
-      return json ?? {};
+      return json || {};
     }
 
-    function safeText(v){
+    function safeText(v) {
       return String(v ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#39;");
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
     }
 
-    function formatMoney(v){
+    function formatMoney(v) {
       const n = Number(v || 0);
-      return n.toLocaleString("en-US", { style:"currency", currency:"USD" });
+      return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
     }
 
-    function safeDate(v){
+    function safeDate(v) {
       if (!v) return "-";
       const d = new Date(v);
       if (Number.isNaN(d.getTime())) return String(v);
       return d.toLocaleString();
     }
 
-    function showOk(msg){
+    function showOk(msg) {
+      if (!els.okBox) return;
       els.okBox.style.display = "block";
       els.okBox.textContent = msg;
-      setTimeout(() => { els.okBox.style.display = "none"; }, 5000);
+      setTimeout(() => { if (els.okBox) els.okBox.style.display = "none"; }, 5000);
     }
 
-    function showErr(msg){
+    function showErr(msg) {
+      if (!els.errBox) return;
       els.errBox.style.display = "block";
       els.errBox.textContent = msg;
     }
 
-    function clearErr(){
+    function clearErr() {
+      if (!els.errBox) return;
       els.errBox.style.display = "none";
       els.errBox.textContent = "";
     }
 
-    function showToast(msg, isError = false){
+    function showToast(msg, isError = false) {
+      if (!els.toast) return;
       els.toast.style.display = "block";
       els.toast.textContent = msg;
       els.toast.style.borderColor = isError ? "rgba(226,91,91,.28)" : "rgba(79,141,247,.22)";
       els.toast.style.color = isError ? "#b03f3f" : "var(--text)";
       clearTimeout(showToast._t);
       showToast._t = setTimeout(() => {
-        els.toast.style.display = "none";
+        if (els.toast) els.toast.style.display = "none";
       }, 4200);
     }
 
-    function setBoot(msg){
-      els.bootStatus.textContent = msg;
+    function setBoot(msg) {
+      setText(els.bootStatus, msg);
     }
 
-    function setLoading(btn, loading, text = "Cargando..."){
+    function setLoading(btn, loading, text = "Cargando...") {
       if (!btn) return;
       if (!btn.dataset.originalText) btn.dataset.originalText = btn.textContent;
       btn.disabled = loading;
       btn.textContent = loading ? text : btn.dataset.originalText;
     }
 
-    function scrollToElement(elm){
+    function scrollToElement(elm) {
       if (!elm) return;
-      elm.scrollIntoView({ behavior:"smooth", block:"start" });
+      elm.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    function activateTab(id){
+    function activateTab(id) {
       document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.tab === id);
       });
@@ -1587,73 +1080,72 @@
       });
     }
 
-    function applyVisualMode(mode){
+    function applyVisualMode(mode) {
       const clean = String(mode || "safe").toLowerCase() === "full_auto" ? "full_auto" : "safe";
-      els.modeLabel.textContent = clean;
-      els.globalExecutionMode.value = clean;
-      els.ruleExecutionMode.value = clean;
-      els.buildExecutionMode.value = clean;
+      setText(els.modeLabel, clean);
+      if (els.globalExecutionMode) els.globalExecutionMode.value = clean;
+      if (els.ruleExecutionMode) els.ruleExecutionMode.value = clean;
+      if (els.buildExecutionMode) els.buildExecutionMode.value = clean;
     }
 
-    function updateAuthUI(){
+    function updateAuthUI() {
       const loggedIn = !!session?.access_token && !!currentUser;
-
-      els.userEmailLabel.textContent = loggedIn ? (currentUser.email || "sesión activa") : "sin sesión";
+      setText(els.userEmailLabel, loggedIn ? (currentUser.email || "sesión activa") : "sin sesión");
 
       if (loggedIn) {
-        els.authGuestBox.classList.add("hidden");
-        els.authLoggedBox.classList.remove("hidden");
-        els.authCardTitle.textContent = "Sesión activa";
-        els.authCardSub.textContent = "Ya estás dentro.";
-        els.loggedUserEmail.textContent = currentUser.email || "-";
+        els.authGuestBox?.classList.add("hidden");
+        els.authLoggedBox?.classList.remove("hidden");
+        setText(els.authCardTitle, "Sesión activa");
+        setText(els.authCardSub, "Ya estás dentro.");
+        setText(els.loggedUserEmail, currentUser.email || "-");
       } else {
-        els.authGuestBox.classList.remove("hidden");
-        els.authLoggedBox.classList.add("hidden");
-        els.authCardTitle.textContent = "Entrar";
-        els.authCardSub.textContent = "Inicia sesión para usar DebtYa.";
-        els.loggedUserEmail.textContent = "-";
+        els.authGuestBox?.classList.remove("hidden");
+        els.authLoggedBox?.classList.add("hidden");
+        setText(els.authCardTitle, "Entrar");
+        setText(els.authCardSub, "Inicia sesión para usar DebtYa.");
+        setText(els.loggedUserEmail, "-");
       }
     }
 
-    function fillDebtSelect(){
+    function fillDebtSelect() {
+      if (!els.ruleTargetDebt) return;
       const currentValue = els.ruleTargetDebt.value;
       let html = '<option value="">Selecciona deuda destino</option>';
       for (const d of debtsCache) {
-        html += '<option value="' + safeText(d.id) + '">' + safeText(d.name) + '</option>';
+        html += `<option value="${safeText(d.id)}">${safeText(d.name)}</option>`;
       }
       els.ruleTargetDebt.innerHTML = html;
       if (currentValue) els.ruleTargetDebt.value = currentValue;
     }
 
-    function debtNameById(id){
+    function debtNameById(id) {
       for (const d of debtsCache) {
         if (String(d.id) === String(id)) return d.name || id;
       }
       return id || "-";
     }
 
-    function syncStatsFallback(){
+    function syncStatsFallback() {
       const debtBalance = debtsCache.reduce((a,d) => a + Number(d.balance || 0), 0);
       const pendingIntents = intentsCache.filter(i => {
         const s = String(i.status || "").toLowerCase();
         return s.includes("pending") || s.includes("review") || s.includes("queued");
       }).length;
-      els.statDebtBalance.textContent = formatMoney(debtBalance);
-      els.statPendingIntents.textContent = String(pendingIntents);
+      setText(els.statDebtBalance, formatMoney(debtBalance));
+      setText(els.statPendingIntents, String(pendingIntents));
       if (!lastDashboardPayload) {
-        els.statMinimumBalance.textContent = formatMoney(debtsCache.reduce((a,d) => a + Number(d.minimum_payment || 0), 0));
+        setText(els.statMinimumBalance, formatMoney(debtsCache.reduce((a,d) => a + Number(d.minimum_payment || 0), 0)));
       }
     }
 
-    function renderDebtProgress(){
+    function renderDebtProgress() {
+      if (!els.debtProgressList) return;
       if (!debtsCache.length) {
-        els.debtProgressList.innerHTML = '<div class="empty-box">No hay deudas cargadas.</div>';
+        setHtml(els.debtProgressList, '<div class="empty-box">No hay deudas cargadas.</div>');
         return;
       }
-
       const total = debtsCache.reduce((a,d) => a + Number(d.balance || 0), 0);
       let html = "";
-
       for (const d of debtsCache) {
         const bal = Number(d.balance || 0);
         const pct = total > 0 ? (bal / total) * 100 : 0;
@@ -1670,124 +1162,122 @@
           </div>
         `;
       }
-
-      els.debtProgressList.innerHTML = html;
+      setHtml(els.debtProgressList, html);
     }
 
-    function renderDebts(){
+    function renderDebts() {
+      if (!els.debtsTableBody) return;
       if (!debtsCache.length) {
-        els.debtsTableBody.innerHTML = '<tr><td colspan="6">No hay deudas cargadas.</td></tr>';
+        setHtml(els.debtsTableBody, '<tr><td colspan="6">No hay deudas cargadas.</td></tr>');
         return;
       }
-
       let html = "";
       for (const d of debtsCache) {
-        html += '<tr>' +
-          '<td>' + safeText(d.name || "-") + '</td>' +
-          '<td>' + safeText(d.apr ?? "-") + '</td>' +
-          '<td>' + formatMoney(d.balance) + '</td>' +
-          '<td>' + formatMoney(d.minimum_payment) + '</td>' +
-          '<td>' + safeText(d.due_day ?? "-") + '</td>' +
-          '<td><span class="pill ' + (d.is_active ? 'pill-ok' : 'pill-danger') + '">' + (d.is_active ? 'Activa' : 'Inactiva') + '</span></td>' +
-          '</tr>';
+        html += `<tr>
+          <td>${safeText(d.name || "-")}</td>
+          <td>${safeText(d.apr ?? "-")}</td>
+          <td>${formatMoney(d.balance)}</td>
+          <td>${formatMoney(d.minimum_payment)}</td>
+          <td>${safeText(d.due_day ?? "-")}</td>
+          <td><span class="pill ${d.is_active ? "pill-ok" : "pill-danger"}">${d.is_active ? "Activa" : "Inactiva"}</span></td>
+        </tr>`;
       }
-      els.debtsTableBody.innerHTML = html;
+      setHtml(els.debtsTableBody, html);
     }
 
-    function renderAccounts(){
+    function renderAccounts() {
+      if (!els.accountsTableBody) return;
       if (!accountsCache.length) {
-        els.accountsTableBody.innerHTML = '<tr><td colspan="6">No hay cuentas cargadas.</td></tr>';
+        setHtml(els.accountsTableBody, '<tr><td colspan="6">No hay cuentas cargadas.</td></tr>');
         return;
       }
-
       let html = "";
       for (const a of accountsCache) {
-        html += '<tr>' +
-          '<td>' + safeText(a.name || a.account_name || "-") + '</td>' +
-          '<td>' + safeText(a.type || "-") + '</td>' +
-          '<td>' + safeText(a.subtype || "-") + '</td>' +
-          '<td>' + safeText(a.mask || "-") + '</td>' +
-          '<td>' + formatMoney(a.current_balance ?? a.balance_current ?? 0) + '</td>' +
-          '<td>' + formatMoney(a.available_balance ?? a.balance_available ?? 0) + '</td>' +
-          '</tr>';
+        html += `<tr>
+          <td>${safeText(a.name || a.account_name || "-")}</td>
+          <td>${safeText(a.type || "-")}</td>
+          <td>${safeText(a.subtype || "-")}</td>
+          <td>${safeText(a.mask || "-")}</td>
+          <td>${formatMoney(a.current_balance ?? a.balance_current ?? 0)}</td>
+          <td>${formatMoney(a.available_balance ?? a.balance_available ?? 0)}</td>
+        </tr>`;
       }
-      els.accountsTableBody.innerHTML = html;
+      setHtml(els.accountsTableBody, html);
     }
 
-    function renderTransactions(list){
+    function renderTransactions(list) {
+      if (!els.transactionsTableBody) return;
       const rows = Array.isArray(list) ? list : transactionsCache;
-
       if (!rows.length) {
-        els.transactionsTableBody.innerHTML = '<tr><td colspan="6">No hay transacciones cargadas.</td></tr>';
+        setHtml(els.transactionsTableBody, '<tr><td colspan="6">No hay transacciones cargadas.</td></tr>');
         return;
       }
-
       let html = "";
       for (const t of rows) {
-        html += '<tr>' +
-          '<td>' + safeText(safeDate(t.transaction_date || t.date || t.authorized_date)) + '</td>' +
-          '<td>' + safeText(t.merchant_name || "-") + '</td>' +
-          '<td>' + safeText(t.description || t.name || "-") + '</td>' +
-          '<td>' + safeText(t.category || "-") + '</td>' +
-          '<td>' + safeText(t.direction || "-") + '</td>' +
-          '<td>' + formatMoney(t.amount || 0) + '</td>' +
-          '</tr>';
+        html += `<tr>
+          <td>${safeText(safeDate(t.transaction_date || t.date || t.authorized_date))}</td>
+          <td>${safeText(t.merchant_name || "-")}</td>
+          <td>${safeText(t.description || t.name || "-")}</td>
+          <td>${safeText(t.category || "-")}</td>
+          <td>${safeText(t.direction || "-")}</td>
+          <td>${formatMoney(t.amount || 0)}</td>
+        </tr>`;
       }
-      els.transactionsTableBody.innerHTML = html;
+      setHtml(els.transactionsTableBody, html);
     }
 
-    function renderAllocations(){
+    function renderAllocations() {
+      if (!els.allocationsTableBody) return;
       if (!allocationsCache.length) {
-        els.allocationsTableBody.innerHTML = '<tr><td colspan="7">No hay allocations cargadas.</td></tr>';
+        setHtml(els.allocationsTableBody, '<tr><td colspan="7">No hay allocations cargadas.</td></tr>');
         return;
       }
-
       let html = "";
       for (const a of allocationsCache) {
-        html += '<tr>' +
-          '<td>' + safeText(safeDate(a.created_at)) + '</td>' +
-          '<td>' + safeText(debtNameById(a.debt_id || a.target_debt_id)) + '</td>' +
-          '<td>' + safeText(a.allocation_type || "-") + '</td>' +
-          '<td>' + formatMoney(a.base_transaction_amount || 0) + '</td>' +
-          '<td>' + formatMoney(a.calculated_amount || a.capped_amount || 0) + '</td>' +
-          '<td><span class="pill ' + (a.status === "applied" ? 'pill-ok' : 'pill-neutral') + '">' + safeText(a.status || "-") + '</span></td>' +
-          '<td>' + safeText(a.status_reason || a.reason || "-") + '</td>' +
-          '</tr>';
+        html += `<tr>
+          <td>${safeText(safeDate(a.created_at))}</td>
+          <td>${safeText(debtNameById(a.debt_id || a.target_debt_id))}</td>
+          <td>${safeText(a.allocation_type || "-")}</td>
+          <td>${formatMoney(a.base_transaction_amount || 0)}</td>
+          <td>${formatMoney(a.calculated_amount || a.capped_amount || 0)}</td>
+          <td><span class="pill ${a.status === "applied" ? "pill-ok" : "pill-neutral"}">${safeText(a.status || "-")}</span></td>
+          <td>${safeText(a.status_reason || a.reason || "-")}</td>
+        </tr>`;
       }
-      els.allocationsTableBody.innerHTML = html;
+      setHtml(els.allocationsTableBody, html);
     }
 
-    function renderRules(){
+    function renderRules() {
+      if (!els.rulesTableBody) return;
       if (!rulesCache.length) {
-        els.rulesTableBody.innerHTML = '<tr><td colspan="7">No hay reglas cargadas.</td></tr>';
+        setHtml(els.rulesTableBody, '<tr><td colspan="7">No hay reglas cargadas.</td></tr>');
         return;
       }
-
       let html = "";
       for (const r of rulesCache) {
-        html += '<tr>' +
-          '<td>' + safeText(r.rule_name || "-") + '</td>' +
-          '<td>' + safeText(r.rule_type || "-") + '</td>' +
-          '<td>' + safeText(r.rule_value ?? "-") + '</td>' +
-          '<td>' + safeText(r.execution_mode || "-") + '</td>' +
-          '<td>' + safeText(debtNameById(r.target_debt_id)) + '</td>' +
-          '<td><span class="pill ' + (r.active ? 'pill-ok' : 'pill-danger') + '">' + (r.active ? 'Activa' : 'Inactiva') + '</span></td>' +
-          '<td>' +
-            `<button type="button" class="secondary" onclick="window.toggleRule('${safeText(r.id)}', ${!!r.active}, this)">On/Off</button> ` +
-            `<button type="button" class="secondary" onclick="window.editRule('${safeText(r.id)}', this)">Editar</button> ` +
-            `<button type="button" class="danger" onclick="window.deleteRule('${safeText(r.id)}', this)">Eliminar</button>` +
-          '</td>' +
-          '</tr>';
+        html += `<tr>
+          <td>${safeText(r.rule_name || "-")}</td>
+          <td>${safeText(r.rule_type || "-")}</td>
+          <td>${safeText(r.rule_value ?? "-")}</td>
+          <td>${safeText(r.execution_mode || "-")}</td>
+          <td>${safeText(debtNameById(r.target_debt_id))}</td>
+          <td><span class="pill ${r.active ? "pill-ok" : "pill-danger"}">${r.active ? "Activa" : "Inactiva"}</span></td>
+          <td>
+            <button type="button" class="secondary" onclick="window.toggleRule('${safeText(r.id)}', ${!!r.active}, this)">On/Off</button>
+            <button type="button" class="secondary" onclick="window.editRule('${safeText(r.id)}', this)">Editar</button>
+            <button type="button" class="danger" onclick="window.deleteRule('${safeText(r.id)}', this)">Eliminar</button>
+          </td>
+        </tr>`;
       }
-      els.rulesTableBody.innerHTML = html;
+      setHtml(els.rulesTableBody, html);
     }
 
-    function renderIntents(){
+    function renderIntents() {
+      if (!els.intentsTableBody) return;
       if (!intentsCache.length) {
-        els.intentsTableBody.innerHTML = '<tr><td colspan="6">No hay payment intents cargados.</td></tr>';
+        setHtml(els.intentsTableBody, '<tr><td colspan="6">No hay payment intents cargados.</td></tr>');
         return;
       }
-
       let html = "";
       for (const i of intentsCache) {
         const status = String(i.status || "-").toLowerCase();
@@ -1795,49 +1285,48 @@
         if (status.includes("executed") || status.includes("success")) pill = "pill-ok";
         else if (status.includes("failed") || status.includes("error")) pill = "pill-danger";
         else if (status.includes("pending") || status.includes("review")) pill = "pill-warn";
-
-        html += '<tr>' +
-          '<td>' + safeText(safeDate(i.created_at)) + '</td>' +
-          '<td>' + safeText(debtNameById(i.debt_id || i.target_debt_id)) + '</td>' +
-          '<td>' + formatMoney(i.total_amount || i.amount || 0) + '</td>' +
-          '<td>' + safeText(i.execution_mode || "-") + '</td>' +
-          '<td><span class="pill ' + pill + '">' + safeText(i.status || "-") + '</span></td>' +
-          '<td>' +
-            `<button type="button" class="secondary" onclick="window.approveIntent('${safeText(i.id)}', this)">Aprobar</button> ` +
-            `<button type="button" class="success" onclick="window.executeIntent('${safeText(i.id)}', this)">Ejecutar</button>` +
-          '</td>' +
-          '</tr>';
+        html += `<tr>
+          <td>${safeText(safeDate(i.created_at))}</td>
+          <td>${safeText(debtNameById(i.debt_id || i.target_debt_id))}</td>
+          <td>${formatMoney(i.total_amount || i.amount || 0)}</td>
+          <td>${safeText(i.execution_mode || "-")}</td>
+          <td><span class="pill ${pill}">${safeText(i.status || "-")}</span></td>
+          <td>
+            <button type="button" class="secondary" onclick="window.approveIntent('${safeText(i.id)}', this)">Aprobar</button>
+            <button type="button" class="success" onclick="window.executeIntent('${safeText(i.id)}', this)">Ejecutar</button>
+          </td>
+        </tr>`;
       }
-      els.intentsTableBody.innerHTML = html;
+      setHtml(els.intentsTableBody, html);
     }
 
-    function renderPlans(){
+    function renderPlans() {
+      if (!els.plansTableBody) return;
       if (!plansCache.length) {
-        els.plansTableBody.innerHTML = '<tr><td colspan="6">No hay planes cargados.</td></tr>';
+        setHtml(els.plansTableBody, '<tr><td colspan="6">No hay planes cargados.</td></tr>');
         return;
       }
-
       let html = "";
       for (const p of plansCache) {
         const payload = p.payload_json || {};
-        html += '<tr>' +
-          '<td>' + safeText(safeDate(p.created_at)) + '</td>' +
-          '<td>' + safeText(p.strategy || "-") + '</td>' +
-          '<td>' + formatMoney(p.monthly_budget || 0) + '</td>' +
-          '<td>' + formatMoney(payload.total_debt || 0) + '</td>' +
-          '<td>' + safeText(payload.estimated_months_to_payoff ?? "-") + '</td>' +
-          '<td>' + formatMoney(payload.total_interest_paid || 0) + '</td>' +
-          '</tr>';
+        html += `<tr>
+          <td>${safeText(safeDate(p.created_at))}</td>
+          <td>${safeText(p.strategy || "-")}</td>
+          <td>${formatMoney(p.monthly_budget || 0)}</td>
+          <td>${formatMoney(payload.total_debt || 0)}</td>
+          <td>${safeText(payload.estimated_months_to_payoff ?? "-")}</td>
+          <td>${formatMoney(payload.total_interest_paid || 0)}</td>
+        </tr>`;
       }
-      els.plansTableBody.innerHTML = html;
+      setHtml(els.plansTableBody, html);
     }
 
-    function renderExecutions(){
+    function renderExecutions() {
+      if (!els.executionsTableBody) return;
       if (!executionsCache.length) {
-        els.executionsTableBody.innerHTML = '<tr><td colspan="6">No hay ejecuciones cargadas.</td></tr>';
+        setHtml(els.executionsTableBody, '<tr><td colspan="6">No hay ejecuciones cargadas.</td></tr>');
         return;
       }
-
       let html = "";
       for (const e of executionsCache) {
         const status = String(e.status || "-").toLowerCase();
@@ -1845,46 +1334,39 @@
         if (status.includes("success") || status.includes("executed") || status.includes("completed") || status.includes("submitted")) pill = "pill-ok";
         else if (status.includes("failed") || status.includes("error")) pill = "pill-danger";
         else if (status.includes("pending")) pill = "pill-warn";
-
-        html += '<tr>' +
-          '<td>' + safeText(safeDate(e.created_at)) + '</td>' +
-          '<td>' + safeText(debtNameById(e.debt_id)) + '</td>' +
-          '<td>' + formatMoney(e.execution_amount || e.amount || 0) + '</td>' +
-          '<td>' + safeText(e.provider || "-") + '</td>' +
-          '<td><span class="pill ' + pill + '">' + safeText(e.status || "-") + '</span></td>' +
-          '<td>' + safeText(e.payment_intent_id || "-") + '</td>' +
-          '</tr>';
+        html += `<tr>
+          <td>${safeText(safeDate(e.created_at))}</td>
+          <td>${safeText(debtNameById(e.debt_id))}</td>
+          <td>${formatMoney(e.execution_amount || e.amount || 0)}</td>
+          <td>${safeText(e.provider || "-")}</td>
+          <td><span class="pill ${pill}">${safeText(e.status || "-")}</span></td>
+          <td>${safeText(e.payment_intent_id || "-")}</td>
+        </tr>`;
       }
-      els.executionsTableBody.innerHTML = html;
+      setHtml(els.executionsTableBody, html);
     }
 
-    function renderNotifications(items){
+    function renderNotifications(items) {
+      if (!els.notificationsList) return;
       if (!items?.length) {
-        els.notificationsList.innerHTML = '<div class="empty-box">No hay recordatorios cargados.</div>';
+        setHtml(els.notificationsList, '<div class="empty-box">No hay recordatorios cargados.</div>');
         return;
       }
-
       let html = "";
       for (const item of items) {
         const pillClass = item.priority === "alta" ? "pill-danger" : item.priority === "media" ? "pill-warn" : "pill-neutral";
-        html += `
-          <div class="list-item">
-            <div class="title">${safeText(item.debt_name || "-")}</div>
-            <div class="meta">Vence en ${safeText(item.days_until_due)} días · mínimo ${formatMoney(item.minimum_payment || 0)} · balance ${formatMoney(item.balance || 0)}</div>
-            <div style="margin-top:8px;"><span class="pill ${pillClass}">${safeText(item.priority || "normal")}</span></div>
-          </div>
-        `;
+        html += `<div class="list-item">
+          <div class="title">${safeText(item.debt_name || "-")}</div>
+          <div class="meta">Vence en ${safeText(item.days_until_due)} días · mínimo ${formatMoney(item.minimum_payment || 0)} · balance ${formatMoney(item.balance || 0)}</div>
+          <div style="margin-top:8px;"><span class="pill ${pillClass}">${safeText(item.priority || "normal")}</span></div>
+        </div>`;
       }
-      els.notificationsList.innerHTML = html;
+      setHtml(els.notificationsList, html);
     }
 
-    function filterTransactions(){
-      const q = els.txSearch.value.trim().toLowerCase();
-      if (!q) {
-        renderTransactions(transactionsCache);
-        return;
-      }
-
+    function filterTransactions() {
+      const q = (els.txSearch?.value || "").trim().toLowerCase();
+      if (!q) return renderTransactions(transactionsCache);
       const filtered = transactionsCache.filter(t => {
         const haystack = [
           t.merchant_name || "",
@@ -1892,19 +1374,16 @@
           t.category || "",
           t.direction || ""
         ].join(" ").toLowerCase();
-
         return haystack.includes(q);
       });
-
       renderTransactions(filtered);
     }
 
-    function inferCategory(tx){
+    function inferCategory(tx) {
       const merchant = String(tx.merchant_name || "").toLowerCase();
       const desc = String(tx.description || tx.name || "").toLowerCase();
       const cat = String(tx.category || "").toLowerCase();
       const text = `${merchant} ${desc} ${cat}`;
-
       if (String(tx.direction || "").toLowerCase() === "credit") return "ingreso";
       if (text.includes("loan") || text.includes("credit card") || text.includes("payment")) return "deuda";
       if (text.includes("rent") || text.includes("insurance") || text.includes("phone") || text.includes("utility")) return "gasto fijo";
@@ -1913,12 +1392,12 @@
       return "otros";
     }
 
-    function analyzeCategories(){
+    function analyzeCategories() {
+      if (!els.categorySummary) return;
       if (!transactionsCache.length) {
         els.categorySummary.textContent = "No hay transacciones cargadas para categorizar.";
         return;
       }
-
       const buckets = {};
       for (const tx of transactionsCache) {
         const bucket = inferCategory(tx);
@@ -1926,33 +1405,27 @@
         buckets[bucket].count += 1;
         buckets[bucket].amount += Math.abs(Number(tx.amount || 0));
       }
-
       const lines = Object.keys(buckets)
         .sort((a,b) => buckets[b].amount - buckets[a].amount)
         .map(name => `${name}: ${buckets[name].count} transacciones · ${formatMoney(buckets[name].amount)}`);
-
-      els.categorySummary.textContent =
-        "Resumen visual de categorías:\n\n" + lines.join("\n");
+      els.categorySummary.textContent = "Resumen visual de categorías:\n\n" + lines.join("\n");
     }
 
-    function simulateGoal(){
-      const goalAmount = Number(els.goalAmount.value || 0);
-      const goalMonths = Number(els.goalMonths.value || 0);
-
+    function simulateGoal() {
+      if (!els.goalStatus) return;
+      const goalAmount = Number(els.goalAmount?.value || 0);
+      const goalMonths = Number(els.goalMonths?.value || 0);
       if (!lastPayoffPayload) {
         els.goalStatus.textContent = "Primero calcula el payoff.";
         return;
       }
-
       if (!goalAmount || !goalMonths) {
         els.goalStatus.textContent = "Pon monto meta y meses meta.";
         return;
       }
-
       const currentDebt = Number(lastPayoffPayload.total_debt || 0);
       const reductionNeeded = Math.max(currentDebt - goalAmount, 0);
       const monthlyNeeded = goalMonths > 0 ? reductionNeeded / goalMonths : reductionNeeded;
-
       els.goalStatus.textContent =
         "Meta simulada:\n" +
         "Deuda actual: " + formatMoney(currentDebt) + "\n" +
@@ -1961,13 +1434,13 @@
         "Ritmo mensual aproximado requerido: " + formatMoney(monthlyNeeded);
     }
 
-    async function login(){
+    async function login() {
       clearErr();
       try {
         setLoading(els.loginBtn, true, "Entrando...");
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: els.email.value.trim(),
-          password: els.password.value
+          email: (els.email?.value || "").trim(),
+          password: els.password?.value || ""
         });
         if (error) throw error;
         session = data.session;
@@ -1982,13 +1455,13 @@
       }
     }
 
-    async function signup(){
+    async function signup() {
       clearErr();
       try {
         setLoading(els.signupBtn, true, "Creando...");
         const { error } = await supabase.auth.signUp({
-          email: els.email.value.trim(),
-          password: els.password.value
+          email: (els.email?.value || "").trim(),
+          password: els.password?.value || ""
         });
         if (error) throw error;
         showOk("Cuenta creada. Si aplica, confirma en tu correo.");
@@ -1999,18 +1472,17 @@
       }
     }
 
-    async function logout(){
+    async function logout() {
       try { await supabase.auth.signOut(); } catch {}
       session = null;
       currentUser = null;
-      els.email.value = "";
-      els.password.value = "";
+      if (els.email) els.email.value = "";
+      if (els.password) els.password.value = "";
       updateAuthUI();
-      els.userEmailLabel.textContent = "sin sesión";
       showToast("Sesión cerrada.", false);
     }
 
-    async function loadDebts(){
+    async function loadDebts() {
       const json = await api("/debts", { method: "GET", headers: authHeaders() });
       debtsCache = Array.isArray(json.data) ? json.data : [];
       renderDebts();
@@ -2019,86 +1491,85 @@
       syncStatsFallback();
     }
 
-    async function loadAccounts(){
+    async function loadAccounts() {
       const json = await api("/accounts", { method: "GET", headers: authHeaders() });
       accountsCache = Array.isArray(json.data) ? json.data : [];
       renderAccounts();
     }
 
-    async function loadTransactions(){
+    async function loadTransactions() {
       const json = await api("/transactions-raw", { method: "GET", headers: authHeaders() });
       transactionsCache = Array.isArray(json.data) ? json.data : [];
       renderTransactions(transactionsCache);
       analyzeCategories();
     }
 
-    async function loadRules(){
+    async function loadRules() {
       const json = await api("/automation-rules", { method: "GET", headers: authHeaders() });
       rulesCache = Array.isArray(json.data) ? json.data : [];
       renderRules();
     }
 
-    async function loadAllocations(){
+    async function loadAllocations() {
       const json = await api("/transaction-allocations", { method: "GET", headers: authHeaders() });
       allocationsCache = Array.isArray(json.data) ? json.data : [];
       renderAllocations();
     }
 
-    async function loadIntents(){
+    async function loadIntents() {
       const json = await api("/payment-intents", { method: "GET", headers: authHeaders() });
       intentsCache = Array.isArray(json.data) ? json.data : [];
       renderIntents();
       syncStatsFallback();
     }
 
-    async function loadPlans(){
+    async function loadPlans() {
       const json = await api("/payment-plans", { method: "GET", headers: authHeaders() });
       plansCache = Array.isArray(json.data) ? json.data : [];
       renderPlans();
     }
 
-    async function loadExecutions(){
+    async function loadExecutions() {
       const json = await api("/executions", { method: "GET", headers: authHeaders() });
       executionsCache = Array.isArray(json.data) ? json.data : [];
       renderExecutions();
     }
 
-    async function loadPreferences(){
+    async function loadPreferences() {
       const json = await api("/preferences", { method: "GET", headers: authHeaders() });
       const profile = json.data || null;
-
       if (!profile) {
-        els.preferencesStatus.textContent = "No hay preferencias guardadas todavía.";
+        setText(els.preferencesStatus, "No hay preferencias guardadas todavía.");
         return;
       }
+      if (els.prefFullName) els.prefFullName.value = profile.full_name || "";
+      if (els.prefStrategy) els.prefStrategy.value = profile.preferred_strategy || "avalanche";
+      if (els.prefExtraPayment) els.prefExtraPayment.value = profile.default_extra_payment ?? 200;
+      if (els.prefMonthlyBudget) els.prefMonthlyBudget.value = profile.default_monthly_budget ?? 430;
+      if (els.payoffStrategy) els.payoffStrategy.value = profile.preferred_strategy || "avalanche";
 
-      els.prefFullName.value = profile.full_name || "";
-      els.prefStrategy.value = profile.preferred_strategy || "avalanche";
-      els.prefExtraPayment.value = profile.default_extra_payment ?? 200;
-      els.prefMonthlyBudget.value = profile.default_monthly_budget ?? 430;
-      els.payoffStrategy.value = profile.preferred_strategy || "avalanche";
-
-      els.preferencesStatus.textContent =
+      setText(
+        els.preferencesStatus,
         "Preferencias cargadas.\n" +
         "Estrategia: " + (profile.preferred_strategy || "avalanche") + "\n" +
         "Extra payment: " + (profile.default_extra_payment ?? 200) + "\n" +
-        "Monthly budget: " + (profile.default_monthly_budget ?? 430);
+        "Monthly budget: " + (profile.default_monthly_budget ?? 430)
+      );
     }
 
-    async function savePreferences(){
+    async function savePreferences() {
       try {
         setLoading(els.savePreferencesBtn, true, "Guardando...");
         await api("/preferences", {
           method: "POST",
           headers: authHeaders(),
           body: JSON.stringify({
-            full_name: els.prefFullName.value.trim() || null,
-            preferred_strategy: els.prefStrategy.value,
-            default_extra_payment: Number(els.prefExtraPayment.value || 0),
-            default_monthly_budget: Number(els.prefMonthlyBudget.value || 0)
+            full_name: els.prefFullName?.value?.trim() || null,
+            preferred_strategy: els.prefStrategy?.value || "avalanche",
+            default_extra_payment: Number(els.prefExtraPayment?.value || 0),
+            default_monthly_budget: Number(els.prefMonthlyBudget?.value || 0)
           })
         });
-
         showToast("Preferencias guardadas.", false);
         await loadPreferences();
       } catch (e) {
@@ -2108,24 +1579,24 @@
       }
     }
 
-    async function loadDashboard(){
+    async function loadDashboard() {
       try {
         setLoading(els.loadDashboardBtn, true, "Cargando...");
         const json = await api("/dashboard/summary", { method: "GET", headers: authHeaders() });
         const data = json.data || {};
         lastDashboardPayload = data;
 
-        els.statDebtBalance.textContent = formatMoney(data.total_debt_balance || 0);
-        els.statMinimumBalance.textContent = formatMoney(data.total_minimum_payment || 0);
-        els.statAvailableToDebt.textContent = formatMoney(data.available_to_attack_debt || 0);
-        els.statPendingIntents.textContent = String(data.pending_intents_count || 0);
-
-        els.dashboardStatus.textContent =
+        setText(els.statDebtBalance, formatMoney(data.total_debt_balance || 0));
+        setText(els.statMinimumBalance, formatMoney(data.total_minimum_payment || 0));
+        setText(els.statAvailableToDebt, formatMoney(data.available_to_attack_debt || 0));
+        setText(els.statPendingIntents, String(data.pending_intents_count || 0));
+        setText(
+          els.dashboardStatus,
           "Dashboard cargado.\n" +
           "Deudas activas: " + String(data.active_debt_count || 0) + "\n" +
           "Cuentas: " + String(data.accounts_count || 0) + "\n" +
-          "Transacciones: " + String(data.transactions_count || 0);
-
+          "Transacciones: " + String(data.transactions_count || 0)
+        );
         showToast("Dashboard cargado.", false);
       } catch (e) {
         showToast("Error cargando dashboard:\n" + (e.message || String(e)), true);
@@ -2134,35 +1605,37 @@
       }
     }
 
-    async function loadPayoff(){
+    async function loadPayoff() {
       try {
         setLoading(els.loadPayoffBtn, true, "Calculando...");
-        const strategy = els.payoffStrategy.value;
-        const extra = Number(els.payoffExtraPayment.value || 0);
-
+        const strategy = els.payoffStrategy?.value || "avalanche";
+        const extra = Number(els.payoffExtraPayment?.value || 0);
         const json = await api("/dashboard/payoff?strategy=" + encodeURIComponent(strategy) + "&extra_payment=" + encodeURIComponent(extra), {
           method: "GET",
           headers: authHeaders()
         });
-
         const data = json.data || json || {};
         lastPayoffPayload = data;
 
-        els.payoffMonths.textContent = String(data.estimated_months_to_payoff ?? 0);
-        els.payoffInterest.textContent = formatMoney(data.total_interest_paid || 0);
-        els.payoffTotalPaid.textContent = formatMoney(data.total_paid || 0);
-        els.payoffTargetDebt.textContent = data.target_debt?.name || "-";
+        setText(els.payoffMonths, String(data.estimated_months_to_payoff ?? 0));
+        setText(els.payoffInterest, formatMoney(data.total_interest_paid || 0));
+        setText(els.payoffTotalPaid, formatMoney(data.total_paid || 0));
+        setText(els.payoffTargetDebt, data.target_debt?.name || "-");
 
-        els.payoffHighlight.style.display = "block";
-        els.payoffHighlight.textContent =
-          "Foco actual: " + (data.target_debt?.name || "-") +
-          " · estrategia: " + safeText(strategy) +
-          " · extra payment: " + formatMoney(extra);
+        if (els.payoffHighlight) {
+          els.payoffHighlight.style.display = "block";
+          els.payoffHighlight.textContent =
+            "Foco actual: " + (data.target_debt?.name || "-") +
+            " · estrategia: " + strategy +
+            " · extra payment: " + formatMoney(extra);
+        }
 
-        els.goalStatus.textContent =
+        setText(
+          els.goalStatus,
           "Payoff calculado.\n" +
           "Meses estimados: " + String(data.estimated_months_to_payoff ?? 0) + "\n" +
-          "Interés estimado: " + formatMoney(data.total_interest_paid || 0);
+          "Interés estimado: " + formatMoney(data.total_interest_paid || 0)
+        );
 
         showToast("Payoff calculado.", false);
       } catch (e) {
@@ -2172,7 +1645,7 @@
       }
     }
 
-    async function loadNotifications(){
+    async function loadNotifications() {
       try {
         setLoading(els.loadNotificationsBtn, true, "Cargando...");
         const json = await api("/notifications/preview", {
@@ -2188,40 +1661,42 @@
       }
     }
 
-    async function compareStrategies(){
+    async function compareStrategies() {
       try {
         setLoading(els.compareStrategiesBtn, true, "Comparando...");
-        const extra_payment = Number(els.compareExtraPayment.value || els.prefExtraPayment.value || 0);
-
+        const extra_payment = Number(els.compareExtraPayment?.value || els.prefExtraPayment?.value || 0);
         const json = await api("/strategy/compare", {
           method: "POST",
           headers: authHeaders(),
           body: JSON.stringify({
-            strategy: els.prefStrategy.value || "avalanche",
+            strategy: els.prefStrategy?.value || "avalanche",
             extra_payment,
-            monthly_budget: Number(els.prefMonthlyBudget.value || 0)
+            monthly_budget: Number(els.prefMonthlyBudget?.value || 0)
           })
         });
-
         lastComparisonPayload = json.data || json || null;
         const data = lastComparisonPayload || {};
         const avalanche = data.avalanche || {};
         const snowball = data.snowball || {};
         const recommended = data.recommended_strategy || "avalanche";
 
-        els.comparisonStatus.textContent =
+        setText(
+          els.comparisonStatus,
           "Comparación calculada.\n\n" +
           "Avalanche:\n" +
           "Meses: " + (avalanche.estimated_months_to_payoff ?? "-") + "\n" +
           "Interés: " + formatMoney(avalanche.total_interest_paid || 0) + "\n\n" +
           "Snowball:\n" +
           "Meses: " + (snowball.estimated_months_to_payoff ?? "-") + "\n" +
-          "Interés: " + formatMoney(snowball.total_interest_paid || 0);
+          "Interés: " + formatMoney(snowball.total_interest_paid || 0)
+        );
 
-        els.comparisonHighlight.style.display = "block";
-        els.comparisonHighlight.textContent =
-          "Recomendación actual: " + recommended +
-          ". Razón: " + (data.reason || data.comparison?.reason || "sin razón disponible");
+        if (els.comparisonHighlight) {
+          els.comparisonHighlight.style.display = "block";
+          els.comparisonHighlight.textContent =
+            "Recomendación actual: " + recommended +
+            ". Razón: " + (data.reason || data.comparison?.reason || "sin razón disponible");
+        }
 
         showToast("Comparación calculada.", false);
       } catch (e) {
@@ -2231,12 +1706,12 @@
       }
     }
 
-    async function savePlan(){
+    async function savePlan() {
       try {
         setLoading(els.savePlanBtn, true, "Guardando plan...");
-        let strategy = els.prefStrategy.value || "avalanche";
-        let extra_payment = Number(els.compareExtraPayment.value || els.prefExtraPayment.value || 0);
-        let monthly_budget = Number(els.prefMonthlyBudget.value || 0);
+        let strategy = els.prefStrategy?.value || "avalanche";
+        let extra_payment = Number(els.compareExtraPayment?.value || els.prefExtraPayment?.value || 0);
+        let monthly_budget = Number(els.prefMonthlyBudget?.value || 0);
 
         if (lastComparisonPayload) {
           strategy = lastComparisonPayload.strategy || lastComparisonPayload.recommended_strategy || strategy;
@@ -2247,17 +1722,13 @@
         await api("/payment-plans/save", {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify({
-            strategy,
-            extra_payment,
-            monthly_budget
-          })
+          body: JSON.stringify({ strategy, extra_payment, monthly_budget })
         });
 
         showToast("Payment plan guardado.", false);
         await loadPlans();
         activateTab("panel-datos");
-        scrollToElement(document.getElementById("plansTableBody"));
+        scrollToElement(els.plansTableBody);
       } catch (e) {
         showToast("Error guardando payment plan:\n" + (e.message || String(e)), true);
       } finally {
@@ -2265,27 +1736,22 @@
       }
     }
 
-    async function loadPlaidItems(){
+    async function loadPlaidItems() {
       const json = await api("/plaid/items", { method: "GET", headers: authHeaders() });
       plaidItemsCache = Array.isArray(json.data) ? json.data : [];
-
       if (!plaidItemsCache.length) {
-        els.plaidStatus.textContent = "No hay plaid_items guardados para este usuario.";
+        setText(els.plaidStatus, "No hay plaid_items guardados para este usuario.");
         return;
       }
-
       const item = plaidItemsCache[0];
-      els.plaidStatus.textContent =
-        "Último item: " + (item.institution_name || "Plaid Sandbox") +
-        " | " + safeDate(item.created_at);
+      setText(els.plaidStatus, "Último item: " + (item.institution_name || "Plaid Sandbox") + " | " + safeDate(item.created_at));
     }
 
-    async function connectBank(){
+    async function connectBank() {
       if (!session?.access_token) {
         showToast("Primero inicia sesión.", true);
         return;
       }
-
       try {
         setLoading(els.connectBankBtn, true, "Abriendo Plaid...");
         const tokenJson = await api("/plaid/create_link_token", {
@@ -2305,12 +1771,8 @@
               await api("/plaid/exchange_public_token", {
                 method: "POST",
                 headers: authHeaders(),
-                body: JSON.stringify({
-                  public_token,
-                  institution_name: institutionName
-                })
+                body: JSON.stringify({ public_token, institution_name: institutionName })
               });
-
               showToast("Banco conectado.", false);
               await loadPlaidItems();
             } catch (e) {
@@ -2334,7 +1796,7 @@
       }
     }
 
-    async function importAccounts(){
+    async function importAccounts() {
       try {
         setLoading(els.importAccountsBtn, true, "Importando...");
         const json = await api("/plaid/accounts/import-last", {
@@ -2342,12 +1804,11 @@
           headers: authHeaders(),
           body: JSON.stringify({})
         });
-
         showToast("Cuentas importadas: " + String(json.imported_count || 0), false);
         await loadAccounts();
         await loadDashboard();
         activateTab("panel-datos");
-        scrollToElement(document.getElementById("accountsSection"));
+        scrollToElement($("accountsSection"));
       } catch (e) {
         showToast("Error importando cuentas:\n" + (e.message || String(e)), true);
       } finally {
@@ -2355,7 +1816,7 @@
       }
     }
 
-    async function importTransactions(){
+    async function importTransactions() {
       try {
         setLoading(els.importTransactionsBtn, true, "Importando...");
         const json = await api("/plaid/transactions/import-last", {
@@ -2363,17 +1824,11 @@
           headers: authHeaders(),
           body: JSON.stringify({})
         });
-
-        showToast(
-          "Transacciones importadas.\n" +
-          "Importadas: " + String(json.imported_count || 0),
-          false
-        );
-
+        showToast("Transacciones importadas.\nImportadas: " + String(json.imported_count || 0), false);
         await loadTransactions();
         await loadDashboard();
         activateTab("panel-datos");
-        scrollToElement(document.getElementById("transactionsSection"));
+        scrollToElement($("transactionsSection"));
       } catch (e) {
         showToast("Error importando transacciones:\n" + (e.message || String(e)), true);
       } finally {
@@ -2381,13 +1836,13 @@
       }
     }
 
-    async function createRule(){
-      const rule_name = els.ruleName.value.trim();
-      const rule_type = els.ruleType.value;
-      const rule_value = Number(els.ruleValue.value || 0);
-      const execution_mode = els.ruleExecutionMode.value;
-      const min_transaction_amount = Number(els.ruleMinAmount.value || 0);
-      const target_debt_id = els.ruleTargetDebt.value;
+    async function createRule() {
+      const rule_name = els.ruleName?.value?.trim();
+      const rule_type = els.ruleType?.value;
+      const rule_value = Number(els.ruleValue?.value || 0);
+      const execution_mode = els.ruleExecutionMode?.value || "safe";
+      const min_transaction_amount = Number(els.ruleMinAmount?.value || 0);
+      const target_debt_id = els.ruleTargetDebt?.value;
 
       if (!rule_name || !target_debt_id) {
         showToast("Completa nombre y deuda destino.", true);
@@ -2420,9 +1875,9 @@
           })
         });
 
-        els.ruleName.value = "";
-        els.ruleValue.value = "";
-        els.ruleMinAmount.value = "0";
+        if (els.ruleName) els.ruleName.value = "";
+        if (els.ruleValue) els.ruleValue.value = "";
+        if (els.ruleMinAmount) els.ruleMinAmount.value = "0";
 
         showToast("Regla creada.", false);
         await loadRules();
@@ -2433,7 +1888,7 @@
       }
     }
 
-    async function patchRule(ruleId, payload){
+    async function patchRule(ruleId, payload) {
       return await api("/automation-rules/" + encodeURIComponent(ruleId), {
         method: "PATCH",
         headers: authHeaders(),
@@ -2441,7 +1896,7 @@
       });
     }
 
-    async function toggleRule(ruleId, currentActive, btn){
+    async function toggleRule(ruleId, currentActive, btn) {
       try {
         setLoading(btn, true, currentActive ? "Desactivando..." : "Activando...");
         await patchRule(ruleId, { active: !currentActive });
@@ -2454,7 +1909,7 @@
       }
     }
 
-    async function editRule(ruleId, btn){
+    async function editRule(ruleId, btn) {
       const rule = rulesCache.find(r => String(r.id) === String(ruleId));
       if (!rule) return;
 
@@ -2487,10 +1942,9 @@
       }
     }
 
-    async function deleteRule(ruleId, btn){
+    async function deleteRule(ruleId, btn) {
       const ok = confirm("¿Seguro que quieres eliminar esta regla?");
       if (!ok) return;
-
       try {
         setLoading(btn, true, "Eliminando...");
         await api("/automation-rules/" + encodeURIComponent(ruleId), {
@@ -2506,7 +1960,7 @@
       }
     }
 
-    async function runRules(){
+    async function runRules() {
       try {
         setLoading(els.runRulesBtn, true, "Aplicando...");
         const json = await api("/automation-rules/run", {
@@ -2514,11 +1968,10 @@
           headers: authHeaders(),
           body: JSON.stringify({})
         });
-
         showToast("Asignaciones creadas: " + String(json.created_count || 0), false);
         await loadAllocations();
         activateTab("panel-datos");
-        scrollToElement(document.getElementById("allocationsSection"));
+        scrollToElement($("allocationsSection"));
       } catch (e) {
         showToast("Error aplicando reglas:\n" + (e.message || String(e)), true);
       } finally {
@@ -2526,23 +1979,22 @@
       }
     }
 
-    async function buildIntents(){
+    async function buildIntents() {
       try {
         setLoading(els.buildIntentsBtn, true, "Construyendo...");
         const json = await api("/payment-intents/build", {
           method: "POST",
           headers: authHeaders(),
           body: JSON.stringify({
-            execution_mode: els.buildExecutionMode.value,
+            execution_mode: els.buildExecutionMode?.value || "safe",
             execution_frequency: "daily",
             debt_id: null
           })
         });
-
         showToast(json.message || ("Payment intents creados: " + String(json.created_count || 0)), false);
         await Promise.allSettled([loadIntents(), loadAllocations(), loadDashboard()]);
         activateTab("panel-datos");
-        scrollToElement(document.getElementById("intentsTableBody"));
+        scrollToElement(els.intentsTableBody);
       } catch (e) {
         showToast("Error construyendo payment intents:\n" + (e.message || String(e)), true);
       } finally {
@@ -2550,7 +2002,7 @@
       }
     }
 
-    async function approveIntent(id, btn){
+    async function approveIntent(id, btn) {
       try {
         setLoading(btn, true, "Aprobando...");
         await api("/payment-intents/" + encodeURIComponent(id) + "/approve", {
@@ -2558,7 +2010,6 @@
           headers: authHeaders(),
           body: JSON.stringify({})
         });
-
         showToast("Payment intent aprobado.", false);
         await Promise.allSettled([loadIntents(), loadDashboard()]);
       } catch (e) {
@@ -2568,10 +2019,9 @@
       }
     }
 
-    async function executeIntent(id, btn){
+    async function executeIntent(id, btn) {
       const ok = confirm("¿Seguro que quieres ejecutar este pago ahora?");
       if (!ok) return;
-
       try {
         setLoading(btn, true, "Ejecutando...");
         const json = await api("/payment-intents/" + encodeURIComponent(id) + "/execute", {
@@ -2579,11 +2029,10 @@
           headers: authHeaders(),
           body: JSON.stringify({})
         });
-
         showToast(json.message || "Payment intent ejecutado.", false);
         await Promise.allSettled([loadIntents(), loadDebts(), loadExecutions(), loadDashboard(), loadPayoff()]);
         activateTab("panel-datos");
-        scrollToElement(document.getElementById("executionsTableBody"));
+        scrollToElement(els.executionsTableBody);
       } catch (e) {
         showToast("Error ejecutando payment intent:\n" + (e.message || String(e)), true);
       } finally {
@@ -2591,9 +2040,8 @@
       }
     }
 
-    async function refreshAll(){
+    async function refreshAll() {
       if (!session?.access_token) return;
-
       setLoading(els.refreshAllBtn, true, "Refrescando...");
       await Promise.allSettled([
         loadPlaidItems(),
@@ -2609,45 +2057,31 @@
         loadDashboard(),
         loadNotifications()
       ]);
-      if (els.payoffStrategy.value) {
-        await Promise.allSettled([loadPayoff()]);
-      }
+      if (els.payoffStrategy?.value) await Promise.allSettled([loadPayoff()]);
       setLoading(els.refreshAllBtn, false);
     }
 
-    function bindTabs(){
+    function bindTabs() {
       document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.addEventListener("click", () => activateTab(btn.dataset.tab));
       });
     }
 
-    function bindEvents(){
-      els.loginForm.onsubmit = async (e) => {
+    function bindEvents() {
+      els.loginForm?.addEventListener("submit", async (e) => {
         e.preventDefault();
         await login();
-      };
+      });
 
-      els.loginBtn.onclick = async (e) => {
+      els.loginBtn?.addEventListener("click", async (e) => {
         e.preventDefault();
         await login();
-      };
+      });
 
-      els.signupBtn.onclick = signup;
-      els.logoutBtn.onclick = logout;
-
-      els.saveApiBaseBtn.onclick = () => {
-        const value = els.apiBaseInput.value.trim();
-        if (!value) {
-          showToast("Pon una API base válida.", true);
-          return;
-        }
-        setApiBase(value);
-        showToast("API base guardada.", false);
-      };
-
-      els.connectBankBtn.onclick = connectBank;
-
-      els.loadPlaidItemsBtn.onclick = async () => {
+      els.signupBtn?.addEventListener("click", signup);
+      els.logoutBtn?.addEventListener("click", logout);
+      els.connectBankBtn?.addEventListener("click", connectBank);
+      els.loadPlaidItemsBtn?.addEventListener("click", async () => {
         try {
           setLoading(els.loadPlaidItemsBtn, true, "Cargando...");
           await loadPlaidItems();
@@ -2657,164 +2091,159 @@
         } finally {
           setLoading(els.loadPlaidItemsBtn, false);
         }
-      };
+      });
 
-      els.importAccountsBtn.onclick = importAccounts;
-
-      els.loadAccountsBtn.onclick = async () => {
+      els.importAccountsBtn?.addEventListener("click", importAccounts);
+      els.loadAccountsBtn?.addEventListener("click", async () => {
         try {
           setLoading(els.loadAccountsBtn, true, "Cargando...");
           await loadAccounts();
           showToast("Cuentas cargadas.", false);
           activateTab("panel-datos");
-          scrollToElement(document.getElementById("accountsSection"));
+          scrollToElement($("accountsSection"));
         } catch (e) {
           showToast("Error cargando cuentas:\n" + (e.message || String(e)), true);
         } finally {
           setLoading(els.loadAccountsBtn, false);
         }
-      };
+      });
 
-      els.importTransactionsBtn.onclick = importTransactions;
-
-      els.loadTransactionsBtn.onclick = async () => {
+      els.importTransactionsBtn?.addEventListener("click", importTransactions);
+      els.loadTransactionsBtn?.addEventListener("click", async () => {
         try {
           setLoading(els.loadTransactionsBtn, true, "Cargando...");
           await loadTransactions();
           showToast("Transacciones cargadas.", false);
           activateTab("panel-datos");
-          scrollToElement(document.getElementById("transactionsSection"));
+          scrollToElement($("transactionsSection"));
         } catch (e) {
           showToast("Error cargando transacciones:\n" + (e.message || String(e)), true);
         } finally {
           setLoading(els.loadTransactionsBtn, false);
         }
-      };
+      });
 
-      els.createRuleBtn.onclick = createRule;
-
-      els.loadRulesBtn.onclick = async () => {
+      els.createRuleBtn?.addEventListener("click", createRule);
+      els.loadRulesBtn?.addEventListener("click", async () => {
         try {
           setLoading(els.loadRulesBtn, true, "Cargando...");
           await loadRules();
           showToast("Reglas cargadas.", false);
           activateTab("panel-datos");
-          scrollToElement(document.getElementById("rulesTableBody"));
+          scrollToElement(els.rulesTableBody);
         } catch (e) {
           showToast("Error cargando reglas:\n" + (e.message || String(e)), true);
         } finally {
           setLoading(els.loadRulesBtn, false);
         }
-      };
+      });
 
-      els.runRulesBtn.onclick = runRules;
-      els.buildIntentsBtn.onclick = buildIntents;
+      els.runRulesBtn?.addEventListener("click", runRules);
+      els.buildIntentsBtn?.addEventListener("click", buildIntents);
 
-      els.loadIntentsBtn.onclick = async () => {
+      els.loadIntentsBtn?.addEventListener("click", async () => {
         try {
           setLoading(els.loadIntentsBtn, true, "Cargando...");
           await loadIntents();
           showToast("Payment intents cargados.", false);
           activateTab("panel-datos");
-          scrollToElement(document.getElementById("intentsTableBody"));
+          scrollToElement(els.intentsTableBody);
         } catch (e) {
           showToast("Error cargando payment intents:\n" + (e.message || String(e)), true);
         } finally {
           setLoading(els.loadIntentsBtn, false);
         }
-      };
+      });
 
-      els.loadAllocationsBtn.onclick = async () => {
+      els.loadAllocationsBtn?.addEventListener("click", async () => {
         try {
           setLoading(els.loadAllocationsBtn, true, "Cargando...");
           await loadAllocations();
           showToast("Allocations cargadas.", false);
           activateTab("panel-datos");
-          scrollToElement(document.getElementById("allocationsSection"));
+          scrollToElement($("allocationsSection"));
         } catch (e) {
           showToast("Error cargando allocations:\n" + (e.message || String(e)), true);
         } finally {
           setLoading(els.loadAllocationsBtn, false);
         }
-      };
+      });
 
-      els.loadPlansBtn.onclick = async () => {
+      els.loadPlansBtn?.addEventListener("click", async () => {
         try {
           setLoading(els.loadPlansBtn, true, "Cargando...");
           await loadPlans();
           showToast("Payment plans cargados.", false);
           activateTab("panel-datos");
-          scrollToElement(document.getElementById("plansTableBody"));
+          scrollToElement(els.plansTableBody);
         } catch (e) {
           showToast("Error cargando payment plans:\n" + (e.message || String(e)), true);
         } finally {
           setLoading(els.loadPlansBtn, false);
         }
-      };
+      });
 
-      els.loadExecutionsBtn.onclick = async () => {
+      els.loadExecutionsBtn?.addEventListener("click", async () => {
         try {
           setLoading(els.loadExecutionsBtn, true, "Cargando...");
           await loadExecutions();
           showToast("Historial cargado.", false);
           activateTab("panel-datos");
-          scrollToElement(document.getElementById("executionsTableBody"));
+          scrollToElement(els.executionsTableBody);
         } catch (e) {
           showToast("Error cargando historial:\n" + (e.message || String(e)), true);
         } finally {
           setLoading(els.loadExecutionsBtn, false);
         }
-      };
+      });
 
-      els.loadDashboardBtn.onclick = loadDashboard;
-      els.loadPayoffBtn.onclick = loadPayoff;
-      els.loadNotificationsBtn.onclick = loadNotifications;
-      els.simulateGoalBtn.onclick = simulateGoal;
-      els.analyzeCategoriesBtn.onclick = analyzeCategories;
+      els.loadDashboardBtn?.addEventListener("click", loadDashboard);
+      els.loadPayoffBtn?.addEventListener("click", loadPayoff);
+      els.loadNotificationsBtn?.addEventListener("click", loadNotifications);
+      els.simulateGoalBtn?.addEventListener("click", simulateGoal);
+      els.analyzeCategoriesBtn?.addEventListener("click", analyzeCategories);
+      els.compareStrategiesBtn?.addEventListener("click", compareStrategies);
+      els.savePlanBtn?.addEventListener("click", savePlan);
+      els.savePreferencesBtn?.addEventListener("click", savePreferences);
+      els.refreshAllBtn?.addEventListener("click", refreshAll);
 
-      els.compareStrategiesBtn.onclick = compareStrategies;
-      els.savePlanBtn.onclick = savePlan;
-      els.savePreferencesBtn.onclick = savePreferences;
-      els.refreshAllBtn.onclick = refreshAll;
+      els.applyModeBtn?.addEventListener("click", () => {
+        applyVisualMode(els.globalExecutionMode?.value || "safe");
+        showToast("Modo visual aplicado: " + (els.globalExecutionMode?.value || "safe"), false);
+      });
 
-      els.applyModeBtn.onclick = () => {
-        applyVisualMode(els.globalExecutionMode.value);
-        showToast("Modo visual aplicado: " + els.globalExecutionMode.value, false);
-      };
-
-      els.filterTxBtn.onclick = filterTransactions;
-      els.clearTxBtn.onclick = () => {
-        els.txSearch.value = "";
+      els.filterTxBtn?.addEventListener("click", filterTransactions);
+      els.clearTxBtn?.addEventListener("click", () => {
+        if (els.txSearch) els.txSearch.value = "";
         renderTransactions(transactionsCache);
-      };
+      });
 
-      els.goRulesBtn.onclick = () => {
+      els.goRulesBtn?.addEventListener("click", () => {
         activateTab("panel-acciones");
-        scrollToElement(document.getElementById("rulesSection"));
-      };
+        scrollToElement($("rulesSection"));
+      });
 
-      els.goIntentsBtn.onclick = () => {
+      els.goIntentsBtn?.addEventListener("click", () => {
         activateTab("panel-acciones");
-        scrollToElement(document.getElementById("intentsSection"));
-      };
+        scrollToElement($("intentsSection"));
+      });
 
-      els.email.onkeydown = e => {
+      els.email?.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
           login();
         }
-      };
+      });
 
-      els.password.onkeydown = e => {
+      els.password?.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
           login();
         }
-      };
+      });
     }
 
-    async function bootstrap(){
-      setApiBase(getApiBase());
+    async function bootstrap() {
       applyVisualMode("safe");
       bindTabs();
       bindEvents();
@@ -2825,7 +2254,7 @@
       updateAuthUI();
 
       if (currentUser?.email) {
-        els.userEmailLabel.textContent = currentUser.email;
+        setText(els.userEmailLabel, currentUser.email);
         setBoot("Sesión encontrada. Refrescando datos...");
         await refreshAll();
       } else {
