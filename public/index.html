@@ -2,9 +2,13 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  />
   <title>DebtYa</title>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+
   <style>
     :root{
       --bg:#f6f9ff;
@@ -23,9 +27,12 @@
       --shadow:0 10px 30px rgba(63,105,163,.10);
       --radius:20px;
     }
+
     *{box-sizing:border-box}
+
     html,body{
-      margin:0;padding:0;
+      margin:0;
+      padding:0;
       font-family:Inter,Arial,sans-serif;
       color:var(--text);
       background:
@@ -33,72 +40,144 @@
         radial-gradient(circle at top right, rgba(79,141,247,.10), transparent 22%),
         linear-gradient(180deg,var(--bg),var(--bg2));
     }
+
     body{padding:18px}
     .wrap{max-width:1360px;margin:0 auto}
+
     .topbar{
-      display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
-      margin-bottom:18px;padding:14px;border:1px solid var(--border);border-radius:22px;
-      background:rgba(255,255,255,.88);backdrop-filter:blur(10px);box-shadow:var(--shadow)
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+      padding:14px;
+      border:1px solid var(--border);
+      border-radius:22px;
+      background:rgba(255,255,255,.88);
+      backdrop-filter:blur(10px);
+      box-shadow:var(--shadow);
     }
+
     .brand{display:flex;align-items:center;gap:14px}
     .logo{
       width:54px;height:54px;border-radius:16px;
       background:linear-gradient(135deg,#6fb6ff,#4f8df7);
       display:flex;align-items:center;justify-content:center;
-      font-weight:800;font-size:24px;color:#fff
+      color:#fff;font-weight:800;font-size:24px;
     }
     .brand h1{margin:0;font-size:28px}
     .brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+
     .chips{display:flex;gap:10px;flex-wrap:wrap}
     .chip{
       display:inline-flex;align-items:center;gap:8px;
-      border:1px solid var(--border);background:#f8fbff;color:var(--muted);
-      border-radius:999px;padding:10px 14px;font-size:13px;min-height:42px
+      border:1px solid var(--border);
+      background:#f8fbff;
+      color:var(--muted);
+      border-radius:999px;
+      padding:10px 14px;
+      font-size:13px;
+      min-height:42px;
     }
     .chip strong{color:var(--text)}
+
     .stack{display:grid;gap:16px}
     .hero{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
     @media (max-width:1100px){.hero{grid-template-columns:1fr}}
     .hero-main{display:grid;gap:16px}
+
     .card{
-      background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-      padding:18px;box-shadow:var(--shadow)
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
     }
+
     .soft-card{
-      background:var(--card3);border:1px solid var(--border);border-radius:18px;padding:14px
+      background:var(--card3);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:14px;
     }
+
     .eyebrow{
-      color:#4f8df7;text-transform:uppercase;letter-spacing:.55px;font-size:11px;font-weight:700;margin-bottom:8px
+      color:#4f8df7;
+      text-transform:uppercase;
+      letter-spacing:.55px;
+      font-size:11px;
+      font-weight:700;
+      margin-bottom:8px;
     }
+
     h2,h3,h4{margin:0 0 10px;line-height:1.15}
     .sub{color:var(--muted);font-size:13px;margin-bottom:14px;line-height:1.45}
+
     .section-header{
-      display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
     }
+
     .right{display:flex;gap:10px;flex-wrap:wrap}
-    .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
-    .stat{
-      border:1px solid var(--border);border-radius:18px;background:#fbfdff;padding:14px
+
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+      gap:12px;
     }
-    .stat .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
-    .stat .value{margin-top:8px;font-size:clamp(24px,2.4vw,30px);font-weight:800}
+
+    .stat{
+      border:1px solid var(--border);
+      border-radius:18px;
+      background:#fbfdff;
+      padding:14px;
+    }
+
+    .stat .label{
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.4px;
+    }
+
+    .stat .value{
+      margin-top:8px;
+      font-size:clamp(24px,2.4vw,30px);
+      font-weight:800;
+    }
+
     .stat .hint{margin-top:8px;color:var(--muted);font-size:12px}
+
     .step-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
     @media (max-width:1200px){.step-grid{grid-template-columns:repeat(2,1fr)}}
     @media (max-width:650px){.step-grid{grid-template-columns:1fr}}
+
     .step{
-      border:1px solid var(--border);border-radius:18px;padding:16px;background:#fbfdff
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      background:#fbfdff;
     }
+
     .step-number{
-      width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;
-      font-weight:800;background:#7eb5ff;color:#fff;margin-bottom:10px
+      width:34px;height:34px;border-radius:999px;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;background:#7eb5ff;color:#fff;margin-bottom:10px;
     }
+
     .step p{margin:0;color:var(--muted);font-size:13px;line-height:1.45;min-height:56px}
     .actions{margin-top:14px;display:grid;gap:8px}
+
     .tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
     .tab-btn.active{background:#7eb5ff;color:#fff;border-color:#7eb5ff}
     .panel{display:none}
     .panel.active{display:block}
+
     .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
     .span-12{grid-column:span 12}
     .span-7{grid-column:span 7}
@@ -110,52 +189,103 @@
     @media (max-width:1100px){
       .span-7,.span-6,.span-5,.span-4,.span-3,.span-2{grid-column:span 12}
     }
+
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
     .field{display:grid;gap:6px;flex:1 1 220px;min-width:0}
     .field label{font-size:12px;color:var(--muted)}
     form{margin:0}
+
     input,select,button,textarea{
-      min-height:46px;padding:12px 14px;border-radius:14px;font-size:15px;transition:.16s ease;font-family:inherit
+      min-height:48px;
+      padding:12px 14px;
+      border-radius:14px;
+      font-size:16px;
+      transition:.16s ease;
+      font-family:inherit;
     }
+
     input,select,textarea{
-      width:100%;border:1px solid var(--border);background:var(--card2);color:var(--text);outline:none
+      width:100%;
+      border:1px solid var(--border);
+      background:var(--card2);
+      color:var(--text);
+      outline:none;
     }
-    input:focus,select:focus,textarea:focus{border-color:#7fb3ff;box-shadow:0 0 0 3px rgba(79,141,247,.14)}
+
+    input:focus,select:focus,textarea:focus{
+      border-color:#7fb3ff;
+      box-shadow:0 0 0 3px rgba(79,141,247,.14);
+    }
+
     button{
-      border:none;background:var(--primary);color:#fff;cursor:pointer;font-weight:700;letter-spacing:.1px;
-      -webkit-appearance:none;appearance:none;touch-action:manipulation
+      border:none;
+      background:var(--primary);
+      color:#fff;
+      cursor:pointer;
+      font-weight:700;
+      letter-spacing:.1px;
+      -webkit-appearance:none;
+      appearance:none;
+      touch-action:manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
     }
-    button:hover{background:var(--primary2);transform:translateY(-1px)}
-    button:disabled{opacity:.62;cursor:not-allowed;transform:none}
+
+    button:hover{background:var(--primary2)}
+    button:disabled{opacity:.62;cursor:not-allowed}
     button.secondary{background:#fff;border:1px solid var(--border);color:var(--text)}
     button.secondary:hover{background:#f5f9ff}
     button.success{background:var(--ok)}
     button.danger{background:var(--danger)}
+
     .grow{flex:1;min-width:220px}
     .full{width:100%}
+
     .status,.ok,.err,.highlight{
-      margin-top:12px;padding:12px 14px;border-radius:14px;white-space:pre-wrap;font-size:14px;line-height:1.45
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      white-space:pre-wrap;
+      font-size:14px;
+      line-height:1.45;
     }
+
     .status{background:#f6faff;border:1px solid var(--border);color:var(--text)}
     .ok{background:rgba(34,160,107,.10);border:1px solid rgba(34,160,107,.26);color:#1b7a55;display:none}
     .err{background:rgba(226,91,91,.10);border:1px solid rgba(226,91,91,.28);color:#b03f3f;display:none}
     .highlight{background:rgba(97,181,255,.10);border:1px solid rgba(97,181,255,.28);color:var(--text);display:none}
-    .quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:8px}
+
+    .quick-actions{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:10px;
+      margin-top:8px;
+    }
+
     .list-grid{display:grid;gap:10px}
     .list-item{border:1px solid var(--border);border-radius:16px;background:#fbfdff;padding:12px}
     .list-item .title{font-weight:700;margin-bottom:6px}
     .list-item .meta{font-size:13px;color:var(--muted);line-height:1.45}
+
     .pill{
-      display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      white-space:nowrap;
     }
+
     .pill-ok{background:rgba(34,160,107,.10);border:1px solid rgba(34,160,107,.26);color:#1b7a55}
     .pill-warn{background:rgba(243,179,61,.12);border:1px solid rgba(243,179,61,.28);color:#8d6515}
     .pill-neutral{background:rgba(79,141,247,.08);border:1px solid rgba(79,141,247,.18);color:#44678f}
     .pill-danger{background:rgba(226,91,91,.10);border:1px solid rgba(226,91,91,.26);color:#b03f3f}
+
     .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:16px;background:#fff}
     table{width:100%;border-collapse:collapse;min-width:760px}
     th,td{padding:11px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:14px}
     th{background:#f8fbff;color:var(--text);position:sticky;top:0;z-index:1}
+
     .progress-list{display:grid;gap:12px}
     .progress-item{border:1px solid var(--border);background:#fbfdff;border-radius:16px;padding:12px}
     .progress-top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
@@ -163,19 +293,42 @@
     .progress-meta{color:var(--muted);font-size:12px}
     .bar{width:100%;height:12px;border-radius:999px;background:#edf4ff;border:1px solid var(--border);overflow:hidden}
     .bar-fill{height:100%;background:linear-gradient(90deg,#7eb5ff,#4f8df7);width:0%}
-    .empty-box{padding:16px;border:1px dashed var(--border);border-radius:16px;color:var(--muted);text-align:center;background:#fbfdff}
-    .toast{
-      position:fixed;right:18px;bottom:18px;max-width:460px;background:#fff;color:var(--text);
-      border:1px solid var(--border);border-radius:16px;padding:12px 14px;display:none;z-index:99999;
-      white-space:pre-wrap;box-shadow:var(--shadow);line-height:1.45
+
+    .empty-box{
+      padding:16px;
+      border:1px dashed var(--border);
+      border-radius:16px;
+      color:var(--muted);
+      text-align:center;
+      background:#fbfdff;
     }
+
+    .toast{
+      position:fixed;
+      right:18px;
+      bottom:18px;
+      max-width:460px;
+      background:#fff;
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:12px 14px;
+      display:none;
+      z-index:99999;
+      white-space:pre-wrap;
+      box-shadow:var(--shadow);
+      line-height:1.45;
+    }
+
     .hidden{display:none !important}
+
     @media (max-width:760px){
       body{padding:12px}
       .topbar{padding:12px}
       .brand h1{font-size:24px}
       .summary-grid{grid-template-columns:1fr 1fr}
     }
+
     @media (max-width:560px){
       .summary-grid{grid-template-columns:1fr}
     }
@@ -308,7 +461,7 @@
           <h2 id="authCardTitle">Entrar</h2>
           <div class="sub" id="authCardSub">Inicia sesión para usar DebtYa.</div>
 
-          <form id="loginForm">
+          <form id="loginForm" novalidate>
             <div id="authGuestBox">
               <div class="field">
                 <label for="email">Correo</label>
@@ -330,8 +483,8 @@
           <div id="authLoggedBox" class="hidden">
             <div class="soft-card">
               <div class="eyebrow" style="margin-bottom:6px;">Sesión activa</div>
-              <div style="font-weight:800; font-size:18px; margin-bottom:8px;" id="loggedUserEmail">-</div>
-              <div style="color:var(--muted); font-size:13px;">Ya estás dentro. Por eso el formulario de acceso se oculta automáticamente.</div>
+              <div id="loggedUserEmail" style="font-weight:800;font-size:18px;margin-bottom:8px;">-</div>
+              <div style="color:var(--muted);font-size:13px;">Ya estás dentro. Por eso el formulario de acceso se oculta automáticamente.</div>
               <div class="row">
                 <button id="logoutBtn" type="button" class="secondary full">Salir</button>
               </div>
@@ -855,13 +1008,6 @@
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
     const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmVs...".replace("...","oiJzdXBhYmVs"); // se reescribe debajo
-  </script>
-
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -879,6 +1025,7 @@
     let lastDashboardPayload = null;
     let lastPayoffPayload = null;
     let lastComparisonPayload = null;
+    let mobileLoginLock = false;
 
     const $ = (id) => document.getElementById(id);
 
@@ -1435,14 +1582,23 @@
     }
 
     async function login() {
+      if (mobileLoginLock) return;
+      mobileLoginLock = true;
       clearErr();
+
       try {
+        const email = (els.email?.value || "").trim();
+        const password = els.password?.value || "";
+
+        if (!email || !password) {
+          throw new Error("Pon tu correo y tu contraseña.");
+        }
+
         setLoading(els.loginBtn, true, "Entrando...");
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: (els.email?.value || "").trim(),
-          password: els.password?.value || ""
-        });
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
         session = data.session;
         currentUser = data.user;
         updateAuthUI();
@@ -1452,6 +1608,7 @@
         showErr("Error iniciando sesión:\n" + (e.message || String(e)));
       } finally {
         setLoading(els.loginBtn, false);
+        setTimeout(() => { mobileLoginLock = false; }, 400);
       }
     }
 
@@ -2061,6 +2218,21 @@
       setLoading(els.refreshAllBtn, false);
     }
 
+    function bindLoginHandlers() {
+      if (!els.loginBtn || !els.loginForm) return;
+
+      const triggerLogin = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await login();
+      };
+
+      els.loginForm.addEventListener("submit", triggerLogin, { passive: false });
+      els.loginBtn.addEventListener("click", triggerLogin, { passive: false });
+      els.loginBtn.addEventListener("touchend", triggerLogin, { passive: false });
+      els.loginBtn.addEventListener("pointerup", triggerLogin, { passive: false });
+    }
+
     function bindTabs() {
       document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.addEventListener("click", () => activateTab(btn.dataset.tab));
@@ -2068,18 +2240,11 @@
     }
 
     function bindEvents() {
-      els.loginForm?.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        await login();
-      });
-
-      els.loginBtn?.addEventListener("click", async (e) => {
-        e.preventDefault();
-        await login();
-      });
+      bindLoginHandlers();
 
       els.signupBtn?.addEventListener("click", signup);
       els.logoutBtn?.addEventListener("click", logout);
+
       els.connectBankBtn?.addEventListener("click", connectBank);
       els.loadPlaidItemsBtn?.addEventListener("click", async () => {
         try {
