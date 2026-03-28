@@ -8,20 +8,22 @@
 
   <style>
     :root{
-      --bg:#07101f;
-      --bg2:#0b1528;
-      --card:#101a2d;
-      --card2:#16233d;
-      --border:#24314d;
-      --text:#f3f7ff;
-      --muted:#9fb0d1;
-      --primary:#2563eb;
-      --primary2:#1d4ed8;
-      --ok:#16a34a;
-      --warn:#f59e0b;
-      --danger:#dc2626;
-      --shadow:0 16px 40px rgba(0,0,0,.28);
-      --radius:18px;
+      --bg:#f6f9ff;
+      --bg2:#eef4ff;
+      --card:#ffffff;
+      --card2:#f8fbff;
+      --card3:#f3f7ff;
+      --border:#d8e3f2;
+      --text:#16304f;
+      --muted:#6e84a3;
+      --primary:#4f8df7;
+      --primary2:#3c7ae6;
+      --ok:#22a06b;
+      --warn:#f3b33d;
+      --danger:#e25b5b;
+      --info:#61b5ff;
+      --shadow:0 10px 30px rgba(63, 105, 163, .10);
+      --radius:20px;
     }
 
     *{ box-sizing:border-box; }
@@ -31,15 +33,15 @@
       padding:0;
       scroll-behavior:smooth;
       background:
-        radial-gradient(circle at top left, rgba(37,99,235,.16), transparent 28%),
-        radial-gradient(circle at top right, rgba(56,189,248,.10), transparent 22%),
+        radial-gradient(circle at top left, rgba(97,181,255,.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(79,141,247,.10), transparent 22%),
         linear-gradient(180deg,var(--bg),var(--bg2));
       color:var(--text);
       font-family:Inter, Arial, sans-serif;
     }
 
     body{ padding:18px; }
-    .wrap{ max-width:1380px; margin:0 auto; }
+    .wrap{ max-width:1360px; margin:0 auto; }
 
     .topbar{
       display:flex;
@@ -48,6 +50,15 @@
       gap:14px;
       flex-wrap:wrap;
       margin-bottom:18px;
+      position:sticky;
+      top:10px;
+      z-index:20;
+      padding:14px;
+      border:1px solid var(--border);
+      border-radius:22px;
+      background:rgba(255,255,255,.86);
+      backdrop-filter:blur(10px);
+      box-shadow:var(--shadow);
     }
 
     .brand{
@@ -60,13 +71,15 @@
       width:54px;
       height:54px;
       border-radius:16px;
-      background:linear-gradient(135deg,#2563eb,#38bdf8);
+      background:linear-gradient(135deg,#6fb6ff,#4f8df7);
       display:flex;
       align-items:center;
       justify-content:center;
       font-weight:800;
       font-size:24px;
-      box-shadow:0 10px 30px rgba(37,99,235,.35);
+      color:#fff;
+      box-shadow:0 10px 24px rgba(79,141,247,.22);
+      flex:0 0 auto;
     }
 
     .brand h1{
@@ -93,22 +106,35 @@
       align-items:center;
       gap:8px;
       border:1px solid var(--border);
-      background:#0c1527;
+      background:#f8fbff;
       color:var(--muted);
       border-radius:999px;
       padding:10px 14px;
       font-size:13px;
+      min-height:42px;
     }
 
-    .chip strong{ color:var(--text); }
+    .chip strong{
+      color:var(--text);
+      max-width:280px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
 
     .card{
-      background:linear-gradient(180deg, rgba(16,26,45,.96), rgba(16,26,45,.92));
+      background:var(--card);
       border:1px solid var(--border);
       border-radius:var(--radius);
-      padding:16px;
+      padding:18px;
       box-shadow:var(--shadow);
-      backdrop-filter:blur(8px);
+    }
+
+    .soft-card{
+      background:var(--card3);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:14px;
     }
 
     .stack{ display:grid; gap:16px; }
@@ -121,15 +147,17 @@
 
     .span-12{ grid-column:span 12; }
     .span-8{ grid-column:span 8; }
+    .span-7{ grid-column:span 7; }
     .span-6{ grid-column:span 6; }
+    .span-5{ grid-column:span 5; }
     .span-4{ grid-column:span 4; }
     .span-3{ grid-column:span 3; }
 
     @media (max-width:1100px){
-      .span-8,.span-6,.span-4,.span-3{ grid-column:span 12; }
+      .span-8,.span-7,.span-6,.span-5,.span-4,.span-3{ grid-column:span 12; }
     }
 
-    h2,h3{
+    h2,h3,h4{
       margin:0 0 10px 0;
       line-height:1.15;
     }
@@ -137,8 +165,17 @@
     .sub{
       color:var(--muted);
       font-size:13px;
-      margin-bottom:12px;
+      margin-bottom:14px;
       line-height:1.45;
+    }
+
+    .eyebrow{
+      color:#4f8df7;
+      text-transform:uppercase;
+      letter-spacing:.55px;
+      font-size:11px;
+      font-weight:700;
+      margin-bottom:8px;
     }
 
     .row{
@@ -147,6 +184,18 @@
       flex-wrap:wrap;
       align-items:center;
       margin-top:10px;
+    }
+
+    .field{
+      display:grid;
+      gap:6px;
+      flex:1 1 220px;
+      min-width:0;
+    }
+
+    .field label{
+      font-size:12px;
+      color:var(--muted);
     }
 
     input,select,button,textarea{
@@ -168,8 +217,8 @@
     }
 
     input:focus,select:focus,textarea:focus{
-      border-color:#3b82f6;
-      box-shadow:0 0 0 3px rgba(59,130,246,.15);
+      border-color:#7fb3ff;
+      box-shadow:0 0 0 3px rgba(79,141,247,.14);
     }
 
     button{
@@ -193,21 +242,15 @@
     }
 
     button.secondary{
-      background:transparent;
+      background:#ffffff;
       border:1px solid var(--border);
-      color:#fff;
+      color:var(--text);
     }
 
-    button.secondary:hover{ background:#15203a; }
-
+    button.secondary:hover{ background:#f5f9ff; }
     button.success{ background:var(--ok); }
-    button.success:hover{ background:#15803d; }
-
-    button.warn{
-      background:var(--warn);
-      color:#111827;
-    }
-
+    button.success:hover{ background:#1b8b5d; }
+    button.warn{ background:var(--warn); color:#4a3720; }
     button.danger{ background:var(--danger); }
 
     .grow{ flex:1; min-width:220px; }
@@ -215,7 +258,7 @@
 
     .hero{
       display:grid;
-      grid-template-columns:1.3fr .7fr;
+      grid-template-columns:1.25fr .75fr;
       gap:16px;
     }
 
@@ -223,16 +266,21 @@
       .hero{ grid-template-columns:1fr; }
     }
 
+    .hero-main{
+      display:grid;
+      gap:16px;
+    }
+
     .summary-grid{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
       gap:12px;
     }
 
     .stat{
       border:1px solid var(--border);
-      border-radius:16px;
-      background:#0d162a;
+      border-radius:18px;
+      background:#fbfdff;
       padding:14px;
       min-width:0;
     }
@@ -248,7 +296,7 @@
 
     .stat .value{
       margin-top:8px;
-      font-size:clamp(24px, 2.4vw, 28px);
+      font-size:clamp(24px, 2.4vw, 30px);
       font-weight:800;
       line-height:1.15;
       overflow-wrap:anywhere;
@@ -277,7 +325,7 @@
       border:1px solid var(--border);
       border-radius:16px;
       padding:14px;
-      background:#0d162a;
+      background:#fbfdff;
     }
 
     .mode-title{
@@ -310,7 +358,20 @@
       border:1px solid var(--border);
       border-radius:18px;
       padding:16px;
-      background:#0d162a;
+      background:#fbfdff;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .step::after{
+      content:"";
+      position:absolute;
+      inset:auto -30px -30px auto;
+      width:90px;
+      height:90px;
+      border-radius:999px;
+      background:radial-gradient(circle, rgba(97,181,255,.18), transparent 70%);
+      pointer-events:none;
     }
 
     .step-number{
@@ -321,7 +382,8 @@
       align-items:center;
       justify-content:center;
       font-weight:800;
-      background:#1d4ed8;
+      background:#7eb5ff;
+      color:#fff;
       margin-bottom:10px;
     }
 
@@ -335,6 +397,7 @@
       color:var(--muted);
       font-size:13px;
       line-height:1.45;
+      min-height:56px;
     }
 
     .step .actions{
@@ -351,7 +414,9 @@
     }
 
     .tab-btn.active{
-      background:#1d4ed8;
+      background:#7eb5ff;
+      color:#fff;
+      border-color:#7eb5ff;
     }
 
     .panel{ display:none; }
@@ -361,10 +426,10 @@
       margin-top:12px;
       padding:12px 14px;
       border-radius:14px;
-      background:#0c1527;
+      background:#f6faff;
       border:1px solid var(--border);
       white-space:pre-wrap;
-      color:#dbeafe;
+      color:var(--text);
       font-size:14px;
       line-height:1.45;
     }
@@ -373,9 +438,9 @@
       margin-top:12px;
       padding:12px 14px;
       border-radius:14px;
-      background:rgba(22,163,74,.12);
-      border:1px solid rgba(22,163,74,.35);
-      color:#bbf7d0;
+      background:rgba(34,160,107,.10);
+      border:1px solid rgba(34,160,107,.26);
+      color:#1b7a55;
       white-space:pre-wrap;
       display:none;
       font-size:14px;
@@ -386,9 +451,9 @@
       margin-top:12px;
       padding:12px 14px;
       border-radius:14px;
-      background:rgba(220,38,38,.12);
-      border:1px solid rgba(220,38,38,.35);
-      color:#fecaca;
+      background:rgba(226,91,91,.10);
+      border:1px solid rgba(226,91,91,.28);
+      color:#b03f3f;
       white-space:pre-wrap;
       display:none;
       font-size:14px;
@@ -399,12 +464,19 @@
       margin-top:10px;
       padding:12px 14px;
       border-radius:14px;
-      background:rgba(37,99,235,.12);
-      border:1px solid rgba(59,130,246,.32);
-      color:#dbeafe;
+      background:rgba(97,181,255,.10);
+      border:1px solid rgba(97,181,255,.28);
+      color:var(--text);
       font-size:14px;
       line-height:1.45;
       display:none;
+    }
+
+    .quick-actions{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:10px;
+      margin-top:8px;
     }
 
     .list-grid{
@@ -415,7 +487,7 @@
     .list-item{
       border:1px solid var(--border);
       border-radius:16px;
-      background:#0d162a;
+      background:#fbfdff;
       padding:12px;
     }
 
@@ -440,33 +512,34 @@
     }
 
     .pill-ok{
-      background:rgba(22,163,74,.12);
-      border:1px solid rgba(22,163,74,.35);
-      color:#bbf7d0;
+      background:rgba(34,160,107,.10);
+      border:1px solid rgba(34,160,107,.26);
+      color:#1b7a55;
     }
 
     .pill-warn{
-      background:rgba(245,158,11,.12);
-      border:1px solid rgba(245,158,11,.35);
-      color:#fde68a;
+      background:rgba(243,179,61,.12);
+      border:1px solid rgba(243,179,61,.28);
+      color:#8d6515;
     }
 
     .pill-neutral{
-      background:rgba(148,163,184,.12);
-      border:1px solid rgba(148,163,184,.35);
-      color:#cbd5e1;
+      background:rgba(79,141,247,.08);
+      border:1px solid rgba(79,141,247,.18);
+      color:#44678f;
     }
 
     .pill-danger{
-      background:rgba(220,38,38,.12);
-      border:1px solid rgba(220,38,38,.35);
-      color:#fecaca;
+      background:rgba(226,91,91,.10);
+      border:1px solid rgba(226,91,91,.26);
+      color:#b03f3f;
     }
 
     .table-wrap{
       overflow:auto;
       border:1px solid var(--border);
       border-radius:16px;
+      background:#fff;
     }
 
     table{
@@ -484,14 +557,14 @@
     }
 
     th{
-      background:#0c1527;
-      color:#dbeafe;
+      background:#f8fbff;
+      color:var(--text);
       position:sticky;
       top:0;
       z-index:1;
     }
 
-    tr:hover td{ background:rgba(255,255,255,.02); }
+    tr:hover td{ background:rgba(97,181,255,.04); }
 
     .progress-list{
       display:grid;
@@ -500,7 +573,7 @@
 
     .progress-item{
       border:1px solid var(--border);
-      background:#0d162a;
+      background:#fbfdff;
       border-radius:16px;
       padding:12px;
     }
@@ -521,15 +594,40 @@
       width:100%;
       height:12px;
       border-radius:999px;
-      background:#0a1222;
+      background:#edf4ff;
       border:1px solid var(--border);
       overflow:hidden;
     }
 
     .bar-fill{
       height:100%;
-      background:linear-gradient(90deg,#2563eb,#38bdf8);
+      background:linear-gradient(90deg,#7eb5ff,#4f8df7);
       width:0%;
+    }
+
+    .empty-box{
+      padding:16px;
+      border:1px dashed var(--border);
+      border-radius:16px;
+      color:var(--muted);
+      text-align:center;
+      background:#fbfdff;
+    }
+
+    .section-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .section-header .right{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
     }
 
     .toast{
@@ -537,16 +635,30 @@
       right:18px;
       bottom:18px;
       max-width:460px;
-      background:#0c1527;
-      color:#fff;
+      background:#ffffff;
+      color:var(--text);
       border:1px solid var(--border);
       border-radius:16px;
       padding:12px 14px;
       display:none;
       z-index:99999;
       white-space:pre-wrap;
-      box-shadow:0 10px 30px rgba(0,0,0,.32);
+      box-shadow:var(--shadow);
       line-height:1.45;
+    }
+
+    .hidden{ display:none !important; }
+
+    @media (max-width:760px){
+      body{ padding:12px; }
+      .topbar{ padding:12px; }
+      .brand h1{ font-size:24px; }
+      .chip strong{ max-width:160px; }
+      .summary-grid{ grid-template-columns:1fr 1fr; }
+    }
+
+    @media (max-width:560px){
+      .summary-grid{ grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -557,7 +669,7 @@
         <div class="logo">D</div>
         <div>
           <h1>DebtYa</h1>
-          <p>Simple, clara e intuitiva</p>
+          <p>Simple, claro y fácil de usar</p>
         </div>
       </div>
 
@@ -565,150 +677,186 @@
         <div class="chip">API <strong id="apiBaseLabel">http://localhost:3000</strong></div>
         <div class="chip">Usuario <strong id="userEmailLabel">sin sesión</strong></div>
         <div class="chip">Modo <strong id="modeLabel">safe</strong></div>
-        <button id="logoutBtn" type="button" class="secondary">Salir</button>
       </div>
     </div>
 
     <div class="stack">
       <div class="hero">
-        <div class="card">
-          <h2>Resumen rápido</h2>
-          <div class="sub">Lo más importante primero.</div>
-
-          <div class="summary-grid">
-            <div class="stat">
-              <div class="label">Deuda total</div>
-              <div class="value" id="statDebtBalance">$0</div>
-              <div class="hint">Balance activo total</div>
+        <div class="hero-main">
+          <div class="card">
+            <div class="section-header">
+              <div>
+                <div class="eyebrow">Resumen</div>
+                <h2>Panel principal</h2>
+                <div class="sub">Lo importante arriba para entrar y trabajar rápido.</div>
+              </div>
+              <div class="right">
+                <button id="loadDashboardBtn" type="button">Refrescar</button>
+                <button id="refreshAllBtn" type="button" class="secondary">Refrescar todo</button>
+              </div>
             </div>
 
-            <div class="stat">
-              <div class="label">Pago mínimo total</div>
-              <div class="value" id="statMinimumBalance">$0</div>
-              <div class="hint">Carga mínima mensual</div>
+            <div class="summary-grid">
+              <div class="stat">
+                <div class="label">Deuda total</div>
+                <div class="value" id="statDebtBalance">$0</div>
+                <div class="hint">Balance activo total</div>
+              </div>
+
+              <div class="stat">
+                <div class="label">Pago mínimo total</div>
+                <div class="value" id="statMinimumBalance">$0</div>
+                <div class="hint">Carga mínima mensual</div>
+              </div>
+
+              <div class="stat">
+                <div class="label">Disponible para deuda</div>
+                <div class="value" id="statAvailableToDebt">$0</div>
+                <div class="hint">Capacidad para atacar deuda</div>
+              </div>
+
+              <div class="stat">
+                <div class="label">Intents pendientes</div>
+                <div class="value" id="statPendingIntents">0</div>
+                <div class="hint">Pendientes o en cola</div>
+              </div>
             </div>
 
-            <div class="stat">
-              <div class="label">Disponible</div>
-              <div class="value" id="statAvailableToDebt">$0</div>
-              <div class="hint">Capacidad para atacar deuda</div>
-            </div>
-
-            <div class="stat">
-              <div class="label">Intents pendientes</div>
-              <div class="value" id="statPendingIntents">0</div>
-              <div class="hint">Pendientes o en cola</div>
-            </div>
+            <div id="dashboardStatus" class="status">Sin dashboard cargado.</div>
           </div>
 
-          <div class="row">
-            <button id="loadDashboardBtn" type="button">Refrescar dashboard</button>
-            <button id="refreshAllBtn" type="button" class="secondary">Refrescar todo</button>
-          </div>
+          <div class="card">
+            <div class="section-header">
+              <div>
+                <div class="eyebrow">Flujo</div>
+                <h2>Hazlo en orden</h2>
+                <div class="sub">Conecta, importa, aplica reglas y ejecuta.</div>
+              </div>
+            </div>
 
-          <div id="dashboardStatus" class="status">Sin dashboard cargado.</div>
+            <div class="step-grid">
+              <div class="step">
+                <div class="step-number">1</div>
+                <h4>Conectar banco</h4>
+                <p>Conecta Plaid y valida que el item quede guardado.</p>
+                <div class="actions">
+                  <button id="connectBankBtn" type="button">Conectar banco</button>
+                  <button id="loadPlaidItemsBtn" type="button" class="secondary">Ver item</button>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step-number">2</div>
+                <h4>Importar cuentas</h4>
+                <p>Trae cuentas reales y actualiza balances.</p>
+                <div class="actions">
+                  <button id="importAccountsBtn" type="button">Importar cuentas</button>
+                  <button id="loadAccountsBtn" type="button" class="secondary">Ver cuentas</button>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step-number">3</div>
+                <h4>Importar transacciones</h4>
+                <p>Usa movimientos reales para reglas y análisis.</p>
+                <div class="actions">
+                  <button id="importTransactionsBtn" type="button">Importar transacciones</button>
+                  <button id="loadTransactionsBtn" type="button" class="secondary">Ver transacciones</button>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step-number">4</div>
+                <h4>Aplicar reglas</h4>
+                <p>Convierte compras o movimientos en pagos de deuda.</p>
+                <div class="actions">
+                  <button id="goRulesBtn" type="button" class="secondary">Ir a reglas</button>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step-number">5</div>
+                <h4>Construir y ejecutar</h4>
+                <p>Genera intents, revísalos y ejecútalos.</p>
+                <div class="actions">
+                  <button id="goIntentsBtn" type="button" class="secondary">Ir a intents</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="plaidStatus" class="status">Sin banco conectado.</div>
+          </div>
         </div>
 
         <div class="card">
-          <h2>Acceso</h2>
-          <div class="sub">Entra y trabaja todo desde aquí.</div>
+          <div class="eyebrow">Cuenta</div>
+          <h2 id="authCardTitle">Entrar</h2>
+          <div class="sub" id="authCardSub">Inicia sesión para usar DebtYa.</div>
 
-          <input id="email" type="email" placeholder="Correo" />
-          <div class="row">
-            <input id="password" type="password" placeholder="Contraseña" />
-          </div>
-          <div class="row">
-            <button id="loginBtn" type="button" class="grow">Iniciar sesión</button>
-            <button id="signupBtn" type="button" class="secondary grow">Crear cuenta</button>
-          </div>
-
-          <div class="row">
-            <input id="apiBaseInput" type="text" placeholder="http://localhost:3000 o tu URL de Render" />
-          </div>
-          <div class="row">
-            <button id="saveApiBaseBtn" type="button" class="secondary full">Guardar API base</button>
-          </div>
-
-          <div class="mode-boxes">
-            <div class="mode-box">
-              <div class="mode-title">Safe</div>
-              <p>Propone, revisas y luego ejecutas.</p>
+          <div id="authGuestBox">
+            <div class="field">
+              <label for="email">Correo</label>
+              <input id="email" type="email" placeholder="Correo" />
             </div>
-            <div class="mode-box">
-              <div class="mode-title">Full Auto</div>
-              <p>Automatiza más y reduce pasos manuales.</p>
+
+            <div class="field">
+              <label for="password">Contraseña</label>
+              <input id="password" type="password" placeholder="Contraseña" />
+            </div>
+
+            <div class="row">
+              <button id="loginBtn" type="button" class="grow">Iniciar sesión</button>
+              <button id="signupBtn" type="button" class="secondary grow">Crear cuenta</button>
             </div>
           </div>
 
-          <div class="row">
-            <select id="globalExecutionMode" class="grow">
-              <option value="safe">safe</option>
-              <option value="full_auto">full_auto</option>
-            </select>
-            <button id="applyModeBtn" type="button" class="secondary grow">Aplicar modo</button>
+          <div id="authLoggedBox" class="hidden">
+            <div class="soft-card">
+              <div class="eyebrow" style="margin-bottom:6px;">Sesión activa</div>
+              <div style="font-weight:800; font-size:18px; margin-bottom:8px;" id="loggedUserEmail">-</div>
+              <div style="color:var(--muted); font-size:13px;">Ya estás dentro. Por eso el formulario de acceso se oculta automáticamente.</div>
+              <div class="row">
+                <button id="logoutBtn" type="button" class="secondary full">Salir</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="soft-card" style="margin-top:14px;">
+            <div class="field">
+              <label for="apiBaseInput">API base</label>
+              <input id="apiBaseInput" type="text" placeholder="http://localhost:3000 o tu URL de Render" />
+            </div>
+            <div class="row">
+              <button id="saveApiBaseBtn" type="button" class="secondary full">Guardar API base</button>
+            </div>
+          </div>
+
+          <div class="soft-card" style="margin-top:14px;">
+            <div class="eyebrow" style="margin-bottom:10px;">Modo</div>
+            <div class="mode-boxes">
+              <div class="mode-box">
+                <div class="mode-title">Safe</div>
+                <p>Revisas antes de ejecutar.</p>
+              </div>
+              <div class="mode-box">
+                <div class="mode-title">Full Auto</div>
+                <p>Reduce pasos manuales.</p>
+              </div>
+            </div>
+
+            <div class="row">
+              <select id="globalExecutionMode" class="grow">
+                <option value="safe">safe</option>
+                <option value="full_auto">full_auto</option>
+              </select>
+              <button id="applyModeBtn" type="button" class="secondary grow">Aplicar modo</button>
+            </div>
           </div>
 
           <div id="bootStatus" class="status">HTML cargado. Esperando JavaScript...</div>
           <div id="okBox" class="ok"></div>
           <div id="errBox" class="err"></div>
         </div>
-      </div>
-
-      <div class="card">
-        <h2>Flujo principal</h2>
-        <div class="sub">Haz las cosas en orden, sin perderte.</div>
-
-        <div class="step-grid">
-          <div class="step">
-            <div class="step-number">1</div>
-            <h4>Conectar banco</h4>
-            <p>Primero conecta Plaid y valida que el item quedó guardado.</p>
-            <div class="actions">
-              <button id="connectBankBtn" type="button">Conectar banco</button>
-              <button id="loadPlaidItemsBtn" type="button" class="secondary">Ver item Plaid</button>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number">2</div>
-            <h4>Importar cuentas</h4>
-            <p>Trae tus cuentas reales y actualiza el balance disponible.</p>
-            <div class="actions">
-              <button id="importAccountsBtn" type="button">Importar cuentas</button>
-              <button id="loadAccountsBtn" type="button" class="secondary">Ver cuentas</button>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number">3</div>
-            <h4>Importar transacciones</h4>
-            <p>Trae movimientos reales para reglas, análisis y categorización.</p>
-            <div class="actions">
-              <button id="importTransactionsBtn" type="button">Importar transacciones</button>
-              <button id="loadTransactionsBtn" type="button" class="secondary">Ver transacciones</button>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number">4</div>
-            <h4>Crear regla</h4>
-            <p>Define cómo convertir compras o movimientos en pagos de deuda.</p>
-            <div class="actions">
-              <button id="goRulesBtn" type="button" class="secondary">Ir a reglas</button>
-            </div>
-          </div>
-
-          <div class="step">
-            <div class="step-number">5</div>
-            <h4>Construir y ejecutar</h4>
-            <p>Aplica reglas, crea intents y luego aprueba o ejecuta.</p>
-            <div class="actions">
-              <button id="goIntentsBtn" type="button" class="secondary">Ir a intents</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="plaidStatus" class="status">Sin banco conectado.</div>
       </div>
 
       <div class="card">
@@ -722,61 +870,84 @@
         <div id="panel-acciones" class="panel active">
           <div class="grid">
             <div class="card span-6" id="rulesSection">
-              <h3>Regla automática</h3>
-              <div class="sub">Crea reglas de forma clara y rápida.</div>
+              <div class="eyebrow">Reglas</div>
+              <h3>Crear regla automática</h3>
+              <div class="sub">Nombre, tipo, valor y deuda destino.</div>
 
-              <input id="ruleName" type="text" placeholder="Nombre de la regla" />
-
-              <div class="row">
-                <select id="ruleType" class="grow">
-                  <option value="percentage">Porcentaje</option>
-                  <option value="fixed_amount">Monto fijo</option>
-                  <option value="round_up">Round up</option>
-                </select>
-                <input id="ruleValue" class="grow" type="number" step="0.01" placeholder="Valor" />
+              <div class="field">
+                <label for="ruleName">Nombre de la regla</label>
+                <input id="ruleName" type="text" placeholder="Ej: 10% de compras a Chase" />
               </div>
 
               <div class="row">
-                <select id="ruleExecutionMode" class="grow">
-                  <option value="safe">safe</option>
-                  <option value="full_auto">full_auto</option>
-                </select>
-                <input id="ruleMinAmount" class="grow" type="number" step="0.01" value="0" placeholder="Mínimo transacción" />
+                <div class="field grow">
+                  <label for="ruleType">Tipo</label>
+                  <select id="ruleType">
+                    <option value="percentage">Porcentaje</option>
+                    <option value="fixed_amount">Monto fijo</option>
+                    <option value="round_up">Round up</option>
+                  </select>
+                </div>
+
+                <div class="field grow">
+                  <label for="ruleValue">Valor</label>
+                  <input id="ruleValue" type="number" step="0.01" placeholder="Valor" />
+                </div>
               </div>
 
               <div class="row">
-                <select id="ruleTargetDebt" class="grow">
+                <div class="field grow">
+                  <label for="ruleExecutionMode">Modo</label>
+                  <select id="ruleExecutionMode">
+                    <option value="safe">safe</option>
+                    <option value="full_auto">full_auto</option>
+                  </select>
+                </div>
+
+                <div class="field grow">
+                  <label for="ruleMinAmount">Mínimo de transacción</label>
+                  <input id="ruleMinAmount" type="number" step="0.01" value="0" placeholder="Mínimo transacción" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="ruleTargetDebt">Deuda destino</label>
+                <select id="ruleTargetDebt">
                   <option value="">Selecciona deuda destino</option>
                 </select>
               </div>
 
-              <div class="row">
-                <button id="createRuleBtn" type="button" class="grow">Crear regla</button>
-                <button id="loadRulesBtn" type="button" class="secondary grow">Ver reglas</button>
-                <button id="runRulesBtn" type="button" class="grow">Aplicar reglas</button>
+              <div class="quick-actions">
+                <button id="createRuleBtn" type="button">Crear regla</button>
+                <button id="loadRulesBtn" type="button" class="secondary">Ver reglas</button>
+                <button id="runRulesBtn" type="button">Aplicar reglas</button>
               </div>
             </div>
 
             <div class="card span-6" id="intentsSection">
-              <h3>Payment intents</h3>
-              <div class="sub">Construye, revisa y ejecuta.</div>
+              <div class="eyebrow">Ejecución</div>
+              <h3>Construir y ejecutar intents</h3>
+              <div class="sub">Primero construyes. Después revisas y ejecutas.</div>
 
               <div class="row">
-                <select id="buildExecutionMode" class="grow">
-                  <option value="safe">safe</option>
-                  <option value="full_auto">full_auto</option>
-                </select>
+                <div class="field grow">
+                  <label for="buildExecutionMode">Modo de construcción</label>
+                  <select id="buildExecutionMode">
+                    <option value="safe">safe</option>
+                    <option value="full_auto">full_auto</option>
+                  </select>
+                </div>
                 <button id="buildIntentsBtn" type="button" class="grow">Construir intents</button>
               </div>
 
-              <div class="row">
-                <button id="loadAllocationsBtn" type="button" class="secondary grow">Ver allocations</button>
-                <button id="loadIntentsBtn" type="button" class="secondary grow">Ver intents</button>
-                <button id="loadExecutionsBtn" type="button" class="secondary grow">Ver historial</button>
+              <div class="quick-actions">
+                <button id="loadAllocationsBtn" type="button" class="secondary">Ver allocations</button>
+                <button id="loadIntentsBtn" type="button" class="secondary">Ver intents</button>
+                <button id="loadExecutionsBtn" type="button" class="secondary">Ver historial</button>
               </div>
 
               <div class="highlight" id="executionHint" style="display:block;">
-                Consejo: en modo <strong>safe</strong> revisas antes de ejecutar. En <strong>full_auto</strong> reduces pasos manuales.
+                En <strong>safe</strong> revisas primero. En <strong>full_auto</strong> reduces pasos.
               </div>
             </div>
           </div>
@@ -784,16 +955,25 @@
 
         <div id="panel-payoff" class="panel">
           <div class="grid">
-            <div class="card span-6">
-              <h3>Payoff visual</h3>
-              <div class="sub">Proyección simple para ver tiempo e interés.</div>
+            <div class="card span-7">
+              <div class="eyebrow">Proyección</div>
+              <h3>Payoff</h3>
+              <div class="sub">Meses, interés, total pagado y deuda foco.</div>
 
               <div class="row">
-                <select id="payoffStrategy" class="grow">
-                  <option value="avalanche">Avalanche</option>
-                  <option value="snowball">Snowball</option>
-                </select>
-                <input id="payoffExtraPayment" class="grow" type="number" step="0.01" value="0" placeholder="Extra payment" />
+                <div class="field grow">
+                  <label for="payoffStrategy">Estrategia</label>
+                  <select id="payoffStrategy">
+                    <option value="avalanche">Avalanche</option>
+                    <option value="snowball">Snowball</option>
+                  </select>
+                </div>
+
+                <div class="field grow">
+                  <label for="payoffExtraPayment">Extra payment</label>
+                  <input id="payoffExtraPayment" type="number" step="0.01" value="0" placeholder="Extra payment" />
+                </div>
+
                 <button id="loadPayoffBtn" type="button">Calcular</button>
               </div>
 
@@ -823,18 +1003,34 @@
               <div id="payoffHighlight" class="highlight"></div>
             </div>
 
-            <div class="card span-6">
-              <h3>Meta</h3>
-              <div class="sub">Simula una meta clara y medible.</div>
+            <div class="card span-5">
+              <div class="eyebrow">Meta y comparación</div>
+              <h3>Planificar mejor</h3>
+              <div class="sub">Compara estrategias y simula una meta.</div>
 
               <div class="row">
-                <input id="goalAmount" class="grow" type="number" step="0.01" placeholder="Meta de deuda objetivo" />
-                <input id="goalMonths" class="grow" type="number" step="1" placeholder="Meses meta" />
-                <button id="simulateGoalBtn" type="button" class="secondary">Simular</button>
+                <div class="field grow">
+                  <label for="goalAmount">Meta de deuda</label>
+                  <input id="goalAmount" type="number" step="0.01" placeholder="Meta de deuda objetivo" />
+                </div>
+                <div class="field grow">
+                  <label for="goalMonths">Meses meta</label>
+                  <input id="goalMonths" type="number" step="1" placeholder="Meses meta" />
+                </div>
               </div>
 
               <div class="row">
-                <input id="compareExtraPayment" class="grow" type="number" step="0.01" value="0" placeholder="Extra payment" />
+                <button id="simulateGoalBtn" type="button" class="secondary grow">Simular meta</button>
+              </div>
+
+              <div class="row">
+                <div class="field grow">
+                  <label for="compareExtraPayment">Extra para comparar</label>
+                  <input id="compareExtraPayment" type="number" step="0.01" value="0" placeholder="Extra payment" />
+                </div>
+              </div>
+
+              <div class="quick-actions">
                 <button id="compareStrategiesBtn" type="button">Comparar</button>
                 <button id="savePlanBtn" type="button" class="secondary">Guardar plan</button>
               </div>
@@ -849,21 +1045,31 @@
         <div id="panel-recordatorios" class="panel">
           <div class="grid">
             <div class="card span-6">
-              <h3>Recordatorios</h3>
-              <div class="sub">Próximos pagos y prioridades.</div>
-              <div class="row">
-                <button id="loadNotificationsBtn" type="button">Ver recordatorios</button>
+              <div class="section-header">
+                <div>
+                  <div class="eyebrow">Próximos pagos</div>
+                  <h3>Recordatorios</h3>
+                  <div class="sub">Prioridades y vencimientos en una vista rápida.</div>
+                </div>
+                <div class="right">
+                  <button id="loadNotificationsBtn" type="button">Ver recordatorios</button>
+                </div>
               </div>
               <div id="notificationsList" class="list-grid">
-                <div>No hay recordatorios cargados.</div>
+                <div class="empty-box">No hay recordatorios cargados.</div>
               </div>
             </div>
 
             <div class="card span-6">
-              <h3>Categorización visual</h3>
-              <div class="sub">Resumen simple de tus movimientos.</div>
-              <div class="row">
-                <button id="analyzeCategoriesBtn" type="button">Analizar categorías</button>
+              <div class="section-header">
+                <div>
+                  <div class="eyebrow">Análisis</div>
+                  <h3>Categorización visual</h3>
+                  <div class="sub">Resumen simple de movimientos y hábitos.</div>
+                </div>
+                <div class="right">
+                  <button id="analyzeCategoriesBtn" type="button">Analizar categorías</button>
+                </div>
               </div>
               <div id="categorySummary" class="status">Todavía no se ha calculado la categorización visual.</div>
             </div>
@@ -873,11 +1079,16 @@
         <div id="panel-datos" class="panel">
           <div class="grid">
             <div class="card span-12" id="debtsSection">
-              <h3>Deudas y progreso</h3>
-              <div class="sub">Aquí ves tus deudas y abajo el peso relativo de cada una dentro del total.</div>
+              <div class="section-header">
+                <div>
+                  <div class="eyebrow">Deudas</div>
+                  <h3>Deudas y progreso</h3>
+                  <div class="sub">Progreso arriba y detalle abajo.</div>
+                </div>
+              </div>
 
               <div id="debtProgressList" class="progress-list" style="margin-bottom:16px;">
-                <div>No hay deudas cargadas.</div>
+                <div class="empty-box">No hay deudas cargadas.</div>
               </div>
 
               <div class="table-wrap">
@@ -900,7 +1111,8 @@
             </div>
 
             <div class="card span-12" id="accountsSection">
-              <h3>Cuentas</h3>
+              <div class="eyebrow">Cuentas</div>
+              <h3>Cuentas importadas</h3>
               <div class="table-wrap">
                 <table>
                   <thead>
@@ -921,7 +1133,13 @@
             </div>
 
             <div class="card span-12" id="transactionsSection">
-              <h3>Transacciones</h3>
+              <div class="section-header">
+                <div>
+                  <div class="eyebrow">Transacciones</div>
+                  <h3>Movimientos reales</h3>
+                  <div class="sub">Busca por merchant, descripción o categoría.</div>
+                </div>
+              </div>
 
               <div class="row">
                 <input id="txSearch" class="grow" type="text" placeholder="Buscar por merchant, descripción o categoría" />
@@ -949,7 +1167,8 @@
             </div>
 
             <div class="card span-12" id="allocationsSection">
-              <h3>Allocations</h3>
+              <div class="eyebrow">Allocations</div>
+              <h3>Asignaciones generadas por reglas</h3>
               <div class="table-wrap">
                 <table>
                   <thead>
@@ -971,7 +1190,8 @@
             </div>
 
             <div class="card span-12">
-              <h3>Reglas</h3>
+              <div class="eyebrow">Reglas</div>
+              <h3>Reglas automáticas</h3>
               <div class="table-wrap">
                 <table>
                   <thead>
@@ -993,7 +1213,8 @@
             </div>
 
             <div class="card span-12">
-              <h3>Payment intents</h3>
+              <div class="eyebrow">Payment intents</div>
+              <h3>Intents listos para revisar y ejecutar</h3>
               <div class="table-wrap">
                 <table>
                   <thead>
@@ -1014,8 +1235,9 @@
             </div>
 
             <div class="card span-12">
+              <div class="eyebrow">Planes</div>
               <h3>Planes guardados</h3>
-              <div class="row">
+              <div class="row" style="margin-top:0;margin-bottom:12px;">
                 <button id="loadPlansBtn" type="button" class="secondary">Ver payment plans</button>
               </div>
               <div class="table-wrap">
@@ -1038,7 +1260,8 @@
             </div>
 
             <div class="card span-12">
-              <h3>Historial de ejecuciones</h3>
+              <div class="eyebrow">Historial</div>
+              <h3>Ejecuciones</h3>
               <div class="table-wrap">
                 <table>
                   <thead>
@@ -1062,24 +1285,44 @@
       </div>
 
       <div class="card">
-        <h3>Preferencias</h3>
-        <div class="sub">Defaults del usuario.</div>
+        <div class="section-header">
+          <div>
+            <div class="eyebrow">Preferencias</div>
+            <h3>Defaults del usuario</h3>
+            <div class="sub">Valores base para ahorrar pasos.</div>
+          </div>
+        </div>
 
         <div class="grid">
           <div class="span-4">
-            <input id="prefFullName" type="text" placeholder="Nombre completo" />
+            <div class="field">
+              <label for="prefFullName">Nombre completo</label>
+              <input id="prefFullName" type="text" placeholder="Nombre completo" />
+            </div>
           </div>
+
           <div class="span-3">
-            <select id="prefStrategy">
-              <option value="avalanche">Avalanche</option>
-              <option value="snowball">Snowball</option>
-            </select>
+            <div class="field">
+              <label for="prefStrategy">Estrategia preferida</label>
+              <select id="prefStrategy">
+                <option value="avalanche">Avalanche</option>
+                <option value="snowball">Snowball</option>
+              </select>
+            </div>
           </div>
+
           <div class="span-3">
-            <input id="prefExtraPayment" type="number" step="0.01" placeholder="Extra payment default" />
+            <div class="field">
+              <label for="prefExtraPayment">Extra payment default</label>
+              <input id="prefExtraPayment" type="number" step="0.01" placeholder="Extra payment default" />
+            </div>
           </div>
+
           <div class="span-2">
-            <input id="prefMonthlyBudget" type="number" step="0.01" placeholder="Budget" />
+            <div class="field">
+              <label for="prefMonthlyBudget">Budget</label>
+              <input id="prefMonthlyBudget" type="number" step="0.01" placeholder="Budget" />
+            </div>
           </div>
         </div>
 
@@ -1131,6 +1374,12 @@
       okBox: document.getElementById("okBox"),
       errBox: document.getElementById("errBox"),
       toast: document.getElementById("toast"),
+
+      authGuestBox: document.getElementById("authGuestBox"),
+      authLoggedBox: document.getElementById("authLoggedBox"),
+      authCardTitle: document.getElementById("authCardTitle"),
+      authCardSub: document.getElementById("authCardSub"),
+      loggedUserEmail: document.getElementById("loggedUserEmail"),
 
       connectBankBtn: document.getElementById("connectBankBtn"),
       loadPlaidItemsBtn: document.getElementById("loadPlaidItemsBtn"),
@@ -1220,11 +1469,11 @@
     };
 
     function getApiBase(){
-      return localStorage.getItem("DEBTYA_API_BASE") || "http://localhost:3000";
+      return localStorage.getItem("DEBTYA_API_BASE") || "https://debtya-api.onrender.com";
     }
 
     function setApiBase(value){
-      const clean = value.trim().replace(/\/+$/,"");
+      const clean = value.trim().replace(/\/+$/,'');
       localStorage.setItem("DEBTYA_API_BASE", clean);
       els.apiBaseLabel.textContent = clean;
       els.apiBaseInput.value = clean;
@@ -1288,8 +1537,8 @@
     function showToast(msg, isError = false){
       els.toast.style.display = "block";
       els.toast.textContent = msg;
-      els.toast.style.borderColor = isError ? "rgba(220,38,38,.35)" : "rgba(37,99,235,.32)";
-      els.toast.style.color = isError ? "#fecaca" : "#fff";
+      els.toast.style.borderColor = isError ? "rgba(226,91,91,.28)" : "rgba(79,141,247,.22)";
+      els.toast.style.color = isError ? "#b03f3f" : "var(--text)";
       clearTimeout(showToast._t);
       showToast._t = setTimeout(() => {
         els.toast.style.display = "none";
@@ -1329,6 +1578,26 @@
       els.buildExecutionMode.value = clean;
     }
 
+    function updateAuthUI(){
+      const loggedIn = !!session?.access_token && !!currentUser;
+
+      els.userEmailLabel.textContent = loggedIn ? (currentUser.email || "sesión activa") : "sin sesión";
+
+      if (loggedIn) {
+        els.authGuestBox.classList.add("hidden");
+        els.authLoggedBox.classList.remove("hidden");
+        els.authCardTitle.textContent = "Sesión activa";
+        els.authCardSub.textContent = "Ya estás dentro.";
+        els.loggedUserEmail.textContent = currentUser.email || "-";
+      } else {
+        els.authGuestBox.classList.remove("hidden");
+        els.authLoggedBox.classList.add("hidden");
+        els.authCardTitle.textContent = "Entrar";
+        els.authCardSub.textContent = "Inicia sesión para usar DebtYa.";
+        els.loggedUserEmail.textContent = "-";
+      }
+    }
+
     function fillDebtSelect(){
       const currentValue = els.ruleTargetDebt.value;
       let html = '<option value="">Selecciona deuda destino</option>';
@@ -1361,7 +1630,7 @@
 
     function renderDebtProgress(){
       if (!debtsCache.length) {
-        els.debtProgressList.innerHTML = '<div>No hay deudas cargadas.</div>';
+        els.debtProgressList.innerHTML = '<div class="empty-box">No hay deudas cargadas.</div>';
         return;
       }
 
@@ -1574,7 +1843,7 @@
 
     function renderNotifications(items){
       if (!items?.length) {
-        els.notificationsList.innerHTML = '<div>No hay recordatorios cargados.</div>';
+        els.notificationsList.innerHTML = '<div class="empty-box">No hay recordatorios cargados.</div>';
         return;
       }
 
@@ -1686,7 +1955,7 @@
         if (error) throw error;
         session = data.session;
         currentUser = data.user;
-        els.userEmailLabel.textContent = currentUser?.email || "sin sesión";
+        updateAuthUI();
         showOk("Login correcto.");
         await refreshAll();
       } catch (e) {
@@ -1717,6 +1986,9 @@
       try { await supabase.auth.signOut(); } catch {}
       session = null;
       currentUser = null;
+      els.email.value = "";
+      els.password.value = "";
+      updateAuthUI();
       els.userEmailLabel.textContent = "sin sesión";
       showToast("Sesión cerrada.", false);
     }
@@ -2076,9 +2348,8 @@
         });
 
         showToast(
-          "Transacciones importadas.\nAgregadas: " + String(json.imported_added_count || 0) +
-          "\nModificadas: " + String(json.imported_modified_count || 0) +
-          "\nEliminadas: " + String(json.imported_removed_count || 0),
+          "Transacciones importadas.\n" +
+          "Importadas: " + String(json.imported_count || 0),
           false
         );
 
@@ -2519,13 +2790,14 @@
       const { data } = await supabase.auth.getSession();
       session = data.session || null;
       currentUser = session?.user || null;
+      updateAuthUI();
 
       if (currentUser?.email) {
         els.userEmailLabel.textContent = currentUser.email;
         setBoot("Sesión encontrada. Refrescando datos...");
         await refreshAll();
       } else {
-        setBoot("Listo. Inicia sesión y luego sigue el flujo paso a paso.");
+        setBoot("Listo. Inicia sesión y sigue el flujo.");
       }
     }
 
