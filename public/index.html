@@ -2,10 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>DebtYa</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -37,208 +34,80 @@
     button,input,select,textarea{font:inherit}
     button{touch-action:manipulation}
 
-    .wrap{
-      width:100%;
-      max-width:1240px;
-      margin:0 auto;
-      padding:16px;
-    }
-
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom:18px;
-    }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      min-width:0;
-    }
-
+    .wrap{width:100%;max-width:1280px;margin:0 auto;padding:16px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
     .brand-badge{
-      width:44px;
-      height:44px;
-      border-radius:14px;
-      display:grid;
-      place-items:center;
-      background:linear-gradient(135deg,#2563eb,#60a5fa);
-      color:#fff;
-      font-weight:900;
-      box-shadow:var(--shadow);
-      flex:0 0 auto;
+      width:46px;height:46px;border-radius:15px;display:grid;place-items:center;
+      background:linear-gradient(135deg,#2563eb,#60a5fa);color:#fff;font-weight:900;
+      box-shadow:var(--shadow);flex:0 0 auto;font-size:1.4rem
     }
+    .brand-text h1{margin:0;font-size:1.55rem;line-height:1.05;letter-spacing:-0.03em}
+    .brand-text p{margin:5px 0 0;color:var(--muted);font-size:.96rem}
 
-    .brand-text h1{
-      margin:0;
-      font-size:1.45rem;
-      line-height:1.1;
-      letter-spacing:-0.02em;
-    }
-
-    .brand-text p{
-      margin:4px 0 0;
-      color:var(--muted);
-      font-size:.95rem;
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:999px;
+      font-size:.82rem;font-weight:800;border:1px solid var(--line);background:#fff;white-space:nowrap
     }
 
     .grid{display:grid;gap:16px}
     .auth-grid{grid-template-columns:1fr}
     .app-grid{grid-template-columns:repeat(12,minmax(0,1fr))}
-
     .panel-12{grid-column:span 12}
     .panel-8{grid-column:span 8}
     .panel-6{grid-column:span 6}
     .panel-4{grid-column:span 4}
+    .panel-3{grid-column:span 3}
 
     .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
+      background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+      box-shadow:var(--shadow);overflow:hidden
     }
-
     .card-head{
-      padding:16px 18px 10px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:10px;
+      padding:16px 18px 10px;border-bottom:1px solid var(--line);
+      display:flex;align-items:flex-start;justify-content:space-between;gap:12px
     }
-
-    .card-title{
-      margin:0;
-      font-size:1.05rem;
-      font-weight:800;
-      letter-spacing:-0.01em;
-    }
-
-    .card-sub{
-      margin:6px 0 0;
-      color:var(--muted);
-      font-size:.92rem;
-    }
-
+    .card-title{margin:0;font-size:1.05rem;font-weight:900;letter-spacing:-0.02em}
+    .card-sub{margin:6px 0 0;color:var(--muted);font-size:.92rem;line-height:1.4}
     .card-body{padding:16px 18px}
 
-    .hero{padding:22px}
+    .hero{padding:24px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%)}
     .hero h2{
-      margin:0 0 10px;
-      font-size:1.6rem;
-      line-height:1.08;
-      letter-spacing:-0.03em;
+      margin:0 0 10px;font-size:1.72rem;line-height:1.05;letter-spacing:-0.04em;max-width:780px
     }
-    .hero p{
-      margin:0;
-      color:var(--muted);
-      line-height:1.5;
-    }
-
-    .pill-row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:16px;
-    }
-
+    .hero p{margin:0;color:var(--muted);line-height:1.55;max-width:780px}
+    .pill-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
     .pill{
-      border:1px solid var(--line);
-      background:#f8fafc;
-      color:#0f172a;
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:.92rem;
-      font-weight:700;
+      border:1px solid var(--line);background:#f8fafc;color:#0f172a;padding:10px 12px;
+      border-radius:999px;font-size:.9rem;font-weight:800
     }
 
-    .auth-tabs{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-
+    .auth-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
     .tab-btn{
-      border:1px solid var(--line);
-      background:#fff;
-      color:var(--text);
-      padding:10px 14px;
-      border-radius:999px;
-      cursor:pointer;
-      font-weight:800;
+      border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 14px;
+      border-radius:999px;cursor:pointer;font-weight:800
     }
-
-    .tab-btn.active{
-      background:var(--primary);
-      color:#fff;
-      border-color:var(--primary);
-    }
+    .tab-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 
     .form{display:grid;gap:12px}
-
     .field{display:grid;gap:7px}
-    .field label{
-      font-size:.92rem;
-      font-weight:800;
-    }
-
+    .field label{font-size:.92rem;font-weight:800}
     .input,.select,.textarea{
-      width:100%;
-      min-height:46px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px 14px;
-      background:#fff;
-      color:var(--text);
-      outline:none;
+      width:100%;min-height:46px;border:1px solid var(--line);border-radius:14px;
+      padding:12px 14px;background:#fff;color:var(--text);outline:none
     }
-
-    .textarea{
-      min-height:90px;
-      resize:vertical;
-    }
-
+    .textarea{min-height:100px;resize:vertical}
     .input:focus,.select:focus,.textarea:focus{
-      border-color:#93c5fd;
-      box-shadow:0 0 0 4px rgba(37,99,235,.10);
+      border-color:#93c5fd;box-shadow:0 0 0 4px rgba(37,99,235,.10)
     }
 
-    .row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    .toolbar{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-    }
-
+    .toolbar,.row,.action-grid{display:flex;flex-wrap:wrap;gap:10px}
     .btn{
-      min-height:44px;
-      border:none;
-      border-radius:14px;
-      padding:11px 15px;
-      cursor:pointer;
-      font-weight:800;
-      transition:.18s ease;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
+      min-height:44px;border:none;border-radius:14px;padding:11px 15px;cursor:pointer;
+      font-weight:900;transition:.18s ease;display:inline-flex;align-items:center;justify-content:center;
+      gap:8px;letter-spacing:-0.01em
     }
-
-    .btn:disabled{
-      opacity:.65;
-      cursor:not-allowed;
-    }
-
+    .btn:disabled{opacity:.65;cursor:not-allowed}
     .btn-primary{background:var(--primary);color:#fff}
     .btn-primary:hover{background:var(--primary-2)}
     .btn-secondary{background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}
@@ -247,319 +116,97 @@
     .btn-success{background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}
     .btn-warn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
 
-    .status{
-      margin-top:12px;
-      min-height:22px;
-      font-size:.94rem;
-      font-weight:800;
-    }
-
+    .status{margin-top:12px;min-height:22px;font-size:.94rem;font-weight:800}
     .status.ok{color:var(--success)}
     .status.warn{color:var(--warn)}
     .status.err{color:var(--danger)}
     .status.muted{color:var(--muted)}
-
     .hidden{display:none !important}
 
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(5,minmax(0,1fr));
-      gap:12px;
-      margin-bottom:16px;
-    }
-
-    .stat{
-      padding:14px;
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:#fff;
-    }
-
-    .stat-label{
-      color:var(--muted);
-      font-size:.86rem;
-      font-weight:800;
-      margin-bottom:8px;
-    }
-
-    .stat-value{
-      font-size:1.35rem;
-      font-weight:900;
-      letter-spacing:-0.03em;
-    }
-
     .app-user{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      padding:14px 16px;
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:#fff;
-      margin-bottom:16px;
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+      padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:#fff;margin-bottom:16px
+    }
+    .app-user strong{display:block;font-size:1rem}
+    .app-user span{color:var(--muted);font-size:.92rem}
+
+    .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}
+    .stat{padding:14px;border:1px solid var(--line);border-radius:16px;background:#fff}
+    .stat-label{color:var(--muted);font-size:.86rem;font-weight:800;margin-bottom:8px}
+    .stat-value{font-size:1.35rem;font-weight:900;letter-spacing:-0.03em}
+
+    .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .summary-box{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+    .summary-box .k{color:var(--muted);font-size:.85rem;font-weight:800;margin-bottom:8px}
+    .summary-box .v{font-size:1.18rem;font-weight:900;letter-spacing:-0.03em}
+
+    .inline-note{
+      margin-top:12px;padding:12px 14px;border-radius:14px;background:#f8fafc;
+      border:1px solid var(--line);color:var(--muted);font-size:.9rem;line-height:1.45
     }
 
-    .app-user strong{
-      display:block;
-      font-size:1rem;
-    }
-
-    .app-user span{
-      color:var(--muted);
-      font-size:.92rem;
-    }
-
-    .list{
-      display:grid;
-      gap:10px;
-    }
-
-    .item{
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:14px;
-      background:#fff;
-    }
-
-    .item-top{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:flex-start;
-    }
-
-    .item-title{
-      margin:0;
-      font-weight:800;
-      font-size:1rem;
-      letter-spacing:-0.01em;
-    }
-
-    .item-sub{
-      margin:6px 0 0;
-      color:var(--muted);
-      font-size:.9rem;
-      line-height:1.4;
-    }
-
-    .amount{
-      font-weight:900;
-      white-space:nowrap;
-      font-size:1rem;
-      letter-spacing:-0.02em;
-    }
-
+    .list{display:grid;gap:10px}
+    .item{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+    .item-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .item-title{margin:0;font-weight:900;font-size:1rem;letter-spacing:-0.01em}
+    .item-sub{margin:6px 0 0;color:var(--muted);font-size:.9rem;line-height:1.4}
+    .amount{font-weight:900;white-space:nowrap;font-size:1rem;letter-spacing:-0.02em}
     .muted{color:var(--muted)}
     .good{color:var(--success)}
     .bad{color:var(--danger)}
     .warn{color:var(--warn)}
 
-    .mini-grid{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:10px;
-      margin-top:10px;
-    }
-
-    .mini{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:#f8fafc;
-    }
-
-    .mini .k{
-      color:var(--muted);
-      font-size:.82rem;
-      font-weight:800;
-      margin-bottom:6px;
-    }
-
-    .mini .v{
-      font-size:1rem;
-      font-weight:900;
-      letter-spacing:-0.02em;
-    }
+    .mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+    .mini{border:1px solid var(--line);border-radius:14px;padding:12px;background:#f8fafc}
+    .mini .k{color:var(--muted);font-size:.82rem;font-weight:800;margin-bottom:6px}
+    .mini .v{font-size:1rem;font-weight:900;letter-spacing:-0.02em}
 
     .empty{
-      padding:16px;
-      border:1px dashed var(--line);
-      border-radius:16px;
-      color:var(--muted);
-      background:#fafcff;
+      padding:16px;border:1px dashed var(--line);border-radius:16px;color:var(--muted);background:#fafcff
     }
 
-    .log{
-      background:#0f172a;
-      color:#e2e8f0;
-      border-radius:16px;
-      padding:14px;
-      min-height:150px;
-      max-height:340px;
-      overflow:auto;
-      font-size:.9rem;
-      line-height:1.45;
-      white-space:pre-wrap;
-      word-break:break-word;
-    }
-
-    .small{
-      font-size:.88rem;
-      color:var(--muted);
-    }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:8px 10px;
-      border-radius:999px;
-      font-size:.82rem;
-      font-weight:800;
-      border:1px solid var(--line);
-      background:#fff;
-    }
-
-    .divider{
-      height:1px;
-      background:var(--line);
-      margin:14px 0;
-    }
-
-    .summary-grid{
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:10px;
-    }
-
-    .summary-box{
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:14px;
-      background:#fff;
-    }
-
-    .summary-box .k{
-      color:var(--muted);
-      font-size:.85rem;
-      font-weight:800;
-      margin-bottom:8px;
-    }
-
-    .summary-box .v{
-      font-size:1.2rem;
-      font-weight:900;
-      letter-spacing:-0.03em;
-    }
-
-    .progress-wrap{
-      margin-top:12px;
-    }
-
-    .progress-bar{
-      width:100%;
-      height:10px;
-      background:#e2e8f0;
-      border-radius:999px;
-      overflow:hidden;
-    }
-
-    .progress-fill{
-      height:100%;
-      background:linear-gradient(90deg,#2563eb,#60a5fa);
-      border-radius:999px;
-    }
-
-    .kv{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:8px;
-      margin-top:12px;
-    }
-
-    .kv .cell{
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:10px;
-      background:#f8fafc;
-    }
-
-    .kv .cell .k{
-      color:var(--muted);
-      font-size:.8rem;
-      font-weight:800;
-      margin-bottom:5px;
-    }
-
-    .kv .cell .v{
-      font-size:.95rem;
-      font-weight:900;
-      letter-spacing:-0.02em;
-    }
-
-    .chip-row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-top:10px;
-    }
-
+    .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
     .chip{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:7px 10px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:#fff;
-      font-size:.8rem;
-      font-weight:800;
+      display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;
+      border:1px solid var(--line);background:#fff;font-size:.8rem;font-weight:800
     }
-
     .chip.success{background:var(--soft-green);border-color:#bbf7d0;color:#166534}
     .chip.warn{background:var(--soft-amber);border-color:#fde68a;color:#92400e}
     .chip.danger{background:var(--soft-red);border-color:#fecaca;color:#991b1b}
     .chip.primary{background:var(--soft-blue);border-color:#bfdbfe;color:#1d4ed8}
 
-    .intent-actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-top:12px;
+    .kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+    .cell{border:1px solid var(--line);border-radius:12px;padding:10px;background:#f8fafc}
+    .cell .k{color:var(--muted);font-size:.8rem;font-weight:800;margin-bottom:5px}
+    .cell .v{font-size:.95rem;font-weight:900;letter-spacing:-0.02em}
+
+    .progress-wrap{margin-top:12px}
+    .progress-bar{width:100%;height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+    .progress-fill{height:100%;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:999px}
+
+    .intent-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+
+    .log{
+      background:#0f172a;color:#e2e8f0;border-radius:16px;padding:14px;min-height:150px;max-height:360px;
+      overflow:auto;font-size:.9rem;line-height:1.45;white-space:pre-wrap;word-break:break-word
     }
 
-    .inline-note{
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:12px;
-      background:#f8fafc;
-      border:1px solid var(--line);
-      color:var(--muted);
-      font-size:.88rem;
-      line-height:1.4;
-    }
+    .small{font-size:.88rem;color:var(--muted)}
 
-    @media (max-width: 1024px){
+    @media (max-width:1100px){
       .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
-      .panel-8,.panel-6,.panel-4,.panel-12{grid-column:span 12}
-      .summary-grid{grid-template-columns:1fr}
+      .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .panel-8,.panel-6,.panel-4,.panel-3,.panel-12{grid-column:span 12}
     }
 
-    @media (max-width: 680px){
+    @media (max-width:680px){
       .wrap{padding:12px}
       .topbar{align-items:flex-start;flex-direction:column}
       .hero{padding:18px}
-      .hero h2{font-size:1.35rem}
-      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .mini-grid,.kv{grid-template-columns:1fr}
-      .btn,.row .btn,.toolbar .btn{width:100%}
+      .hero h2{font-size:1.36rem}
+      .stats,.summary-grid,.mini-grid,.kv{grid-template-columns:1fr}
+      .btn,.toolbar .btn,.row .btn,.action-grid .btn{width:100%}
       .app-user{align-items:flex-start}
-    }
-
-    @media (max-width: 420px){
-      .stats{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -579,16 +226,16 @@
     <section id="authSection" class="grid auth-grid">
       <div class="card">
         <div class="hero">
-          <h2>Base estable para móvil primero.</h2>
+          <h2>Una base estable primero. Todo lo demás encima.</h2>
           <p>
-            Este index mantiene el login simple que ya confirmó funcionar en móvil y iPhone.
-            Encima de esa base agregamos cuentas, deudas, comparación e intents sin tocar la lógica segura del acceso.
+            Este index mantiene el login móvil que ya funciona bien y organiza toda la app
+            en bloques seguros: cuentas, deudas, estrategias, intents, transacciones y diagnóstico.
           </p>
           <div class="pill-row">
             <div class="pill">Login móvil estable</div>
-            <div class="pill">Interfaz simple</div>
-            <div class="pill">Cuentas y deudas más claras</div>
-            <div class="pill">Botones approve / execute</div>
+            <div class="pill">Interfaz simple y profesional</div>
+            <div class="pill">Sin romper iPhone</div>
+            <div class="pill">Acciones diarias más claras</div>
           </div>
         </div>
       </div>
@@ -686,11 +333,11 @@
           <div class="card-head">
             <div>
               <h3 class="card-title">Acciones rápidas</h3>
-              <p class="card-sub">Primero conecta el banco. Después importa, compara, construye y ejecuta.</p>
+              <p class="card-sub">Flujo diario: conectar, importar, comparar, construir, aprobar y ejecutar.</p>
             </div>
           </div>
           <div class="card-body">
-            <div class="toolbar">
+            <div class="action-grid">
               <button id="importAccountsBtn" class="btn btn-plain" type="button">Importar cuentas</button>
               <button id="syncTxBtn" class="btn btn-plain" type="button">Importar transacciones</button>
               <button id="compareBtn" class="btn btn-plain" type="button">Comparar Avalanche vs Snowball</button>
@@ -704,8 +351,8 @@
         <div class="card panel-12">
           <div class="card-head">
             <div>
-              <h3 class="card-title">Resumen</h3>
-              <p class="card-sub">Lo importante arriba: cuánto debes, cuánto pagas mínimo y cuál deuda pega más fuerte.</p>
+              <h3 class="card-title">Resumen general</h3>
+              <p class="card-sub">Lo importante arriba: cuánto debes, cuánto pagas mínimo y qué atacar primero.</p>
             </div>
           </div>
           <div class="card-body">
@@ -722,6 +369,10 @@
                 <div class="k">APR promedio</div>
                 <div id="summaryAvgApr" class="v">0%</div>
               </div>
+              <div class="summary-box">
+                <div class="k">Próximo paso sugerido</div>
+                <div id="summaryNextStep" class="v">—</div>
+              </div>
             </div>
             <div id="summaryFocus" class="inline-note">Todavía no hay suficiente información para recomendar la siguiente deuda a atacar.</div>
           </div>
@@ -731,7 +382,7 @@
           <div class="card-head">
             <div>
               <h3 class="card-title">Cuentas</h3>
-              <p class="card-sub">Cuentas importadas desde Plaid con saldo claro y legible.</p>
+              <p class="card-sub">Cuentas importadas desde Plaid con saldo actual y disponible.</p>
             </div>
             <div id="accountsMeta" class="badge">0 cargadas</div>
           </div>
@@ -746,7 +397,7 @@
           <div class="card-head">
             <div>
               <h3 class="card-title">Deudas</h3>
-              <p class="card-sub">Una sola vista con balance, APR, mínimo y prioridad visual.</p>
+              <p class="card-sub">Balance, APR, mínimo, vencimiento y prioridad visual en un solo bloque.</p>
             </div>
             <div id="debtsMeta" class="badge">0 cargadas</div>
           </div>
@@ -761,7 +412,7 @@
           <div class="card-head">
             <div>
               <h3 class="card-title">Comparación de estrategia</h3>
-              <p class="card-sub">Avalanche ataca APR más alta. Snowball liquida primero la más pequeña.</p>
+              <p class="card-sub">Avalanche prioriza APR más alta. Snowball elimina primero el saldo más pequeño.</p>
             </div>
           </div>
           <div class="card-body">
@@ -773,7 +424,7 @@
           <div class="card-head">
             <div>
               <h3 class="card-title">Payment intents</h3>
-              <p class="card-sub">Ahora con botones de aprobar y ejecutar dentro de cada card.</p>
+              <p class="card-sub">Listos para revisar, aprobar y ejecutar sin salir del panel.</p>
             </div>
             <div id="intentsMeta" class="badge">0 cargados</div>
           </div>
@@ -802,7 +453,7 @@
           <div class="card-head">
             <div>
               <h3 class="card-title">Actividad / diagnóstico</h3>
-              <p class="card-sub">Aquí ves exactamente qué respondió el backend sin romper la interfaz.</p>
+              <p class="card-sub">Respuestas del backend sin romper la interfaz.</p>
             </div>
           </div>
           <div class="card-body">
@@ -819,13 +470,11 @@
 
       const CONFIG = {
         SUPABASE_URL: "https://spybejltsgzfxlwzobkh.supabase.co",
-        SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs",
+        SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmVjb2zfxlwzobkhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs",
         API_BASE: (
           location.origin &&
           (location.origin.includes("debtya.com") || location.origin.includes("onrender.com"))
-        )
-          ? location.origin
-          : "https://debtya-api.onrender.com"
+        ) ? location.origin : "https://debtya-api.onrender.com"
       };
 
       const supabase = window.supabase.createClient(
@@ -848,7 +497,6 @@
 
       const els = {
         envBadge: $("envBadge"),
-
         authSection: $("authSection"),
         appSection: $("appSection"),
 
@@ -896,6 +544,7 @@
         summaryDebtTotal: $("summaryDebtTotal"),
         summaryMinimumTotal: $("summaryMinimumTotal"),
         summaryAvgApr: $("summaryAvgApr"),
+        summaryNextStep: $("summaryNextStep"),
         summaryFocus: $("summaryFocus"),
 
         accountsMeta: $("accountsMeta"),
@@ -914,9 +563,7 @@
         const now = new Date().toLocaleString("es-US");
         let line = `[${now}] ${message}`;
         if (typeof data !== "undefined") {
-          try {
-            line += "\n" + JSON.stringify(data, null, 2);
-          } catch (_) {}
+          try { line += "\n" + JSON.stringify(data, null, 2); } catch (_) {}
         }
         if (els.logBox) {
           els.logBox.textContent = `${line}\n\n${els.logBox.textContent || ""}`.trim();
@@ -950,6 +597,15 @@
 
       function safeArray(v) {
         return Array.isArray(v) ? v : [];
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
       }
 
       function firstData(payload) {
@@ -1004,7 +660,6 @@
           "Content-Type": "application/json",
           ...(options.headers || {})
         };
-
         if (token) headers.Authorization = `Bearer ${token}`;
 
         const res = await fetch(`${CONFIG.API_BASE}${path}`, {
@@ -1043,19 +698,10 @@
             return { path, result };
           } catch (err) {
             lastError = err;
-            if (![404, 405].includes(err.status)) throw err;
+            if (![404,405].includes(err.status)) throw err;
           }
         }
         throw lastError || new Error("No se encontró una ruta compatible.");
-      }
-
-      function escapeHtml(value) {
-        return String(value ?? "")
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
       }
 
       function renderAuth(user) {
@@ -1073,26 +719,6 @@
         }
       }
 
-      function debtPriorityInfo(debt, allDebts) {
-        const balance = num(debt.balance);
-        const apr = num(debt.apr);
-        const balances = allDebts.map(d => num(d.balance)).filter(v => v > 0);
-        const aprs = allDebts.map(d => num(d.apr)).filter(v => v >= 0);
-
-        const maxBalance = balances.length ? Math.max(...balances) : 0;
-        const minBalance = balances.length ? Math.min(...balances) : 0;
-        const maxApr = aprs.length ? Math.max(...aprs) : 0;
-
-        const isHighestApr = apr > 0 && apr === maxApr;
-        const isSmallestBalance = balance > 0 && balance === minBalance;
-        const isLargestBalance = balance > 0 && balance === maxBalance;
-
-        if (isHighestApr) return { text: "Prioridad Avalanche", type: "danger" };
-        if (isSmallestBalance) return { text: "Buena candidata Snowball", type: "success" };
-        if (isLargestBalance) return { text: "Mayor saldo", type: "warn" };
-        return { text: "Seguimiento", type: "primary" };
-      }
-
       function renderStats() {
         const debts = safeArray(state.debts);
         const debtTotal = debts.reduce((s, d) => s + num(d.balance), 0);
@@ -1104,44 +730,57 @@
         if (els.statTx) els.statTx.textContent = String(safeArray(state.transactions).length);
       }
 
+      function getDebtPriority(debt, allDebts) {
+        const balance = num(debt.balance);
+        const apr = num(debt.apr);
+        const balances = allDebts.map(d => num(d.balance)).filter(v => v > 0);
+        const aprs = allDebts.map(d => num(d.apr)).filter(v => v >= 0);
+
+        const maxBalance = balances.length ? Math.max(...balances) : 0;
+        const minBalance = balances.length ? Math.min(...balances) : 0;
+        const maxApr = aprs.length ? Math.max(...aprs) : 0;
+
+        if (apr > 0 && apr === maxApr) return { text:"Prioridad Avalanche", type:"danger" };
+        if (balance > 0 && balance === minBalance) return { text:"Buena candidata Snowball", type:"success" };
+        if (balance > 0 && balance === maxBalance) return { text:"Mayor saldo", type:"warn" };
+        return { text:"Seguimiento", type:"primary" };
+      }
+
       function renderSummary() {
         const debts = safeArray(state.debts);
-
         const debtTotal = debts.reduce((s, d) => s + num(d.balance), 0);
         const minTotal = debts.reduce((s, d) => s + num(d.minimum_payment ?? d.minimum), 0);
-        const avgApr = debts.length
-          ? debts.reduce((s, d) => s + num(d.apr), 0) / debts.length
-          : 0;
+        const avgApr = debts.length ? (debts.reduce((s, d) => s + num(d.apr), 0) / debts.length) : 0;
 
         if (els.summaryDebtTotal) els.summaryDebtTotal.textContent = money(debtTotal);
         if (els.summaryMinimumTotal) els.summaryMinimumTotal.textContent = money(minTotal);
         if (els.summaryAvgApr) els.summaryAvgApr.textContent = pct(avgApr);
 
         if (!debts.length) {
-          if (els.summaryFocus) {
-            els.summaryFocus.textContent = "Todavía no hay suficiente información para recomendar la siguiente deuda a atacar.";
-          }
+          if (els.summaryNextStep) els.summaryNextStep.textContent = "—";
+          if (els.summaryFocus) els.summaryFocus.textContent = "Todavía no hay suficiente información para recomendar la siguiente deuda a atacar.";
           return;
         }
 
         const highestAprDebt = [...debts].sort((a,b)=>num(b.apr)-num(a.apr))[0];
         const smallestDebt = [...debts].sort((a,b)=>num(a.balance)-num(b.balance))[0];
 
+        if (els.summaryNextStep) {
+          els.summaryNextStep.textContent = highestAprDebt?.name || "Revisar deudas";
+        }
+
         if (els.summaryFocus) {
           els.summaryFocus.innerHTML =
-            `Avalanche apunta primero a <strong>${escapeHtml(highestAprDebt?.name || "tu deuda con APR más alta")}</strong> con ${pct(highestAprDebt?.apr)}. ` +
-            `Snowball empezaría por <strong>${escapeHtml(smallestDebt?.name || "tu deuda más pequeña")}</strong> con saldo de ${money(smallestDebt?.balance)}.`;
+            `Avalanche apunta primero a <strong>${escapeHtml(highestAprDebt?.name || "la deuda con APR más alta")}</strong> con ${pct(highestAprDebt?.apr)}. ` +
+            `Snowball empezaría por <strong>${escapeHtml(smallestDebt?.name || "la deuda más pequeña")}</strong> con saldo de ${money(smallestDebt?.balance)}.`;
         }
       }
 
       function renderAccounts() {
         const list = safeArray(state.accounts);
+        if (els.accountsMeta) els.accountsMeta.textContent = `${list.length} cargadas`;
+
         if (!els.accountsList) return;
-
-        if (els.accountsMeta) {
-          els.accountsMeta.textContent = `${list.length} cargadas`;
-        }
-
         if (!list.length) {
           els.accountsList.innerHTML = `<div class="empty">Todavía no hay cuentas cargadas.</div>`;
           renderStats();
@@ -1152,18 +791,9 @@
           const name = a.name || a.official_name || "Cuenta";
           const subtype = a.subtype || a.type || "—";
           const mask = a.mask ? `•••• ${a.mask}` : "";
-          const current =
-            a.current_balance ??
-            a.balance_current ??
-            a.balances?.current ??
-            0;
-          const available =
-            a.available_balance ??
-            a.balances?.available ??
-            0;
-
-          const positive = num(current) >= 0;
-          const tone = positive ? "good" : "bad";
+          const current = a.current_balance ?? a.balance_current ?? a.balances?.current ?? 0;
+          const available = a.available_balance ?? a.balances?.available ?? 0;
+          const tone = num(current) >= 0 ? "good" : "bad";
 
           return `
             <div class="item">
@@ -1174,7 +804,6 @@
                 </div>
                 <div class="amount ${tone}">${money(current)}</div>
               </div>
-
               <div class="kv">
                 <div class="cell">
                   <div class="k">Saldo actual</div>
@@ -1194,12 +823,9 @@
 
       function renderDebts() {
         const list = safeArray(state.debts);
+        if (els.debtsMeta) els.debtsMeta.textContent = `${list.length} cargadas`;
+
         if (!els.debtsList) return;
-
-        if (els.debtsMeta) {
-          els.debtsMeta.textContent = `${list.length} cargadas`;
-        }
-
         if (!list.length) {
           els.debtsList.innerHTML = `<div class="empty">Todavía no hay deudas cargadas.</div>`;
           renderStats();
@@ -1216,7 +842,7 @@
           const minimum = num(d.minimum_payment ?? d.minimum);
           const dueDay = d.due_day ?? "—";
           const pctOfTotal = totalBalance > 0 ? Math.min((balance / totalBalance) * 100, 100) : 0;
-          const priority = debtPriorityInfo(d, list);
+          const priority = getDebtPriority(d, list);
 
           return `
             <div class="item">
@@ -1227,12 +853,10 @@
                 </div>
                 <div class="amount">${money(balance)}</div>
               </div>
-
               <div class="chip-row">
                 <div class="chip ${priority.type}">${escapeHtml(priority.text)}</div>
                 <div class="chip primary">Representa ${pct(pctOfTotal)}</div>
               </div>
-
               <div class="progress-wrap">
                 <div class="progress-bar">
                   <div class="progress-fill" style="width:${pctOfTotal}%;"></div>
@@ -1269,11 +893,8 @@
         const snInterest = snowball?.total_interest ?? snowball?.interest ?? 0;
 
         let winner = "Las dos estrategias quedaron muy parecidas.";
-        if (num(avInterest) < num(snInterest)) {
-          winner = "Avalanche normalmente ahorra más interés.";
-        } else if (num(snInterest) < num(avInterest)) {
-          winner = "Snowball salió con menos interés en esta simulación.";
-        }
+        if (num(avInterest) < num(snInterest)) winner = "Avalanche normalmente ahorra más interés.";
+        else if (num(snInterest) < num(avInterest)) winner = "Snowball salió con menos interés en esta simulación.";
 
         els.compareBox.innerHTML = `
           <div class="mini-grid">
@@ -1288,7 +909,6 @@
               <div class="small">Interés total: ${money(snInterest)}</div>
             </div>
           </div>
-          <div class="divider"></div>
           <div class="inline-note">${escapeHtml(winner)}</div>
         `;
       }
@@ -1296,19 +916,26 @@
       function intentStatusType(status) {
         const s = String(status || "").toLowerCase();
         if (["approved","executed","completed","success"].includes(s)) return "success";
-        if (["pending","built","created","ready"].includes(s)) return "warn";
+        if (["pending","built","created","ready","draft"].includes(s)) return "warn";
         if (["failed","error","rejected","cancelled"].includes(s)) return "danger";
         return "primary";
       }
 
+      function canApproveStatus(status) {
+        const s = String(status || "").toLowerCase();
+        return ["pending","built","created","ready","draft"].includes(s);
+      }
+
+      function canExecuteStatus(status) {
+        const s = String(status || "").toLowerCase();
+        return ["approved","ready_to_execute","ready"].includes(s);
+      }
+
       function renderIntents() {
         const list = safeArray(state.intents);
+        if (els.intentsMeta) els.intentsMeta.textContent = `${list.length} cargados`;
+
         if (!els.intentsList) return;
-
-        if (els.intentsMeta) {
-          els.intentsMeta.textContent = `${list.length} cargados`;
-        }
-
         if (!list.length) {
           els.intentsList.innerHTML = `<div class="empty">Todavía no hay intents cargados.</div>`;
           renderStats();
@@ -1323,11 +950,9 @@
           const created = i.created_at ? new Date(i.created_at).toLocaleString("es-US") : "—";
           const mode = i.mode || i.execution_mode || "";
           const note = i.note || i.description || "";
-          const canApprove = ["pending","built","created","ready"].includes(String(status).toLowerCase());
-          const canExecute = ["approved","ready_to_execute","ready"].includes(String(status).toLowerCase());
 
           return `
-            <div class="item" data-intent-id="${escapeHtml(String(id))}">
+            <div class="item">
               <div class="item-top">
                 <div>
                   <h4 class="item-title">${escapeHtml(String(title))}</h4>
@@ -1335,17 +960,14 @@
                 </div>
                 <div class="amount">${money(amount)}</div>
               </div>
-
               <div class="chip-row">
                 <div class="chip ${intentStatusType(status)}">Estado: ${escapeHtml(String(status))}</div>
                 ${mode ? `<div class="chip primary">Modo: ${escapeHtml(String(mode))}</div>` : ""}
               </div>
-
               ${note ? `<div class="inline-note">${escapeHtml(String(note))}</div>` : ""}
-
               <div class="intent-actions">
-                <button class="btn btn-success js-approve-intent" data-intent-id="${escapeHtml(String(id))}" ${canApprove ? "" : "disabled"}>Aprobar</button>
-                <button class="btn btn-primary js-execute-intent" data-intent-id="${escapeHtml(String(id))}" ${canExecute ? "" : "disabled"}>Ejecutar</button>
+                <button class="btn btn-success js-approve-intent" data-intent-id="${escapeHtml(String(id))}" ${canApproveStatus(status) ? "" : "disabled"}>Aprobar</button>
+                <button class="btn btn-primary js-execute-intent" data-intent-id="${escapeHtml(String(id))}" ${canExecuteStatus(status) ? "" : "disabled"}>Ejecutar</button>
               </div>
             </div>
           `;
@@ -1413,10 +1035,7 @@
       async function loadAccounts(showStatus = true) {
         try {
           if (showStatus) setStatus(els.appStatus, "Cargando cuentas…", "muted");
-          const { result, path } = await apiTry([
-            "/plaid/accounts",
-            "/accounts"
-          ]);
+          const { result, path } = await apiTry(["/plaid/accounts", "/accounts"]);
           state.accounts = firstData(result);
           renderAccounts();
           if (showStatus) setStatus(els.appStatus, "Cuentas cargadas.", "ok");
@@ -1432,10 +1051,7 @@
       async function loadDebts(showStatus = false) {
         try {
           if (showStatus) setStatus(els.appStatus, "Cargando deudas…", "muted");
-          const { result, path } = await apiTry([
-            "/debts",
-            "/api/debts"
-          ]);
+          const { result, path } = await apiTry(["/debts", "/api/debts"]);
           state.debts = firstData(result);
           renderDebts();
           if (showStatus) setStatus(els.appStatus, "Deudas cargadas.", "ok");
@@ -1451,10 +1067,7 @@
       async function loadIntents(showStatus = true) {
         try {
           if (showStatus) setStatus(els.appStatus, "Cargando intents…", "muted");
-          const { result, path } = await apiTry([
-            "/payment-intents",
-            "/api/payment-intents"
-          ]);
+          const { result, path } = await apiTry(["/payment-intents", "/api/payment-intents"]);
           state.intents = firstData(result);
           renderIntents();
           if (showStatus) setStatus(els.appStatus, "Intents cargados.", "ok");
@@ -1491,10 +1104,7 @@
         try {
           setButtonBusy(els.compareBtn, true, "Comparando…", "Comparar Avalanche vs Snowball");
           setStatus(els.appStatus, "Comparando estrategias…", "muted");
-          const { result, path } = await apiTry([
-            "/strategy/compare",
-            "/api/strategy/compare"
-          ]);
+          const { result, path } = await apiTry(["/strategy/compare", "/api/strategy/compare"]);
           state.compare = pickCompare(result);
           renderCompare();
           setStatus(els.appStatus, "Comparación lista.", "ok");
@@ -1513,10 +1123,7 @@
         try {
           setButtonBusy(els.importAccountsBtn, true, "Importando…", "Importar cuentas");
           setStatus(els.appStatus, "Importando cuentas…", "muted");
-          const { result, path } = await apiTry([
-            "/plaid/accounts",
-            "/accounts"
-          ]);
+          const { result, path } = await apiTry(["/plaid/accounts", "/accounts"]);
           state.accounts = firstData(result);
           renderAccounts();
           setStatus(els.appStatus, "Cuentas importadas.", "ok");
@@ -1533,7 +1140,6 @@
         try {
           setButtonBusy(els.syncTxBtn, true, "Importando…", "Importar transacciones");
           setStatus(els.appStatus, "Importando transacciones…", "muted");
-
           const { result, path } = await apiTry([
             "/plaid/transactions/sync",
             "/transactions/sync"
@@ -1541,7 +1147,6 @@
             method: "POST",
             body: {}
           });
-
           log(`Sync de transacciones desde ${path}`, result);
           await loadTransactions(false);
           setStatus(els.appStatus, "Transacciones importadas.", "ok");
@@ -1557,7 +1162,6 @@
         try {
           setButtonBusy(els.buildIntentsBtn, true, "Construyendo…", "Construir intents");
           setStatus(els.appStatus, "Construyendo intents…", "muted");
-
           const { result, path } = await apiTry([
             "/payment-intents/build",
             "/build_intents_v2",
@@ -1568,7 +1172,6 @@
             method: "POST",
             body: {}
           });
-
           log(`Build intents desde ${path}`, result);
           await loadIntents(false);
           setStatus(els.appStatus, "Intents construidos.", "ok");
@@ -1585,7 +1188,6 @@
         try {
           if (btn) setButtonBusy(btn, true, "Aprobando…", "Aprobar");
           setStatus(els.appStatus, "Aprobando intent…", "muted");
-
           const { result, path } = await apiTry([
             `/payment-intents/${intentId}/approve`,
             `/approve_intent_v2/${intentId}`,
@@ -1594,10 +1196,8 @@
             method: "POST",
             body: {}
           });
-
           log(`Intent aprobado desde ${path}`, result);
-          await loadIntents(false);
-          await loadDebts(false);
+          await Promise.allSettled([loadIntents(false), loadDebts(false)]);
           setStatus(els.appStatus, "Intent aprobado.", "ok");
         } catch (err) {
           setStatus(els.appStatus, `No se pudo aprobar el intent: ${err.message}`, "warn");
@@ -1612,7 +1212,6 @@
         try {
           if (btn) setButtonBusy(btn, true, "Ejecutando…", "Ejecutar");
           setStatus(els.appStatus, "Ejecutando intent…", "muted");
-
           const { result, path } = await apiTry([
             `/payment-intents/${intentId}/execute`,
             `/execute_intent_v2/${intentId}`,
@@ -1621,13 +1220,8 @@
             method: "POST",
             body: {}
           });
-
           log(`Intent ejecutado desde ${path}`, result);
-          await Promise.allSettled([
-            loadIntents(false),
-            loadDebts(false),
-            loadTransactions(false)
-          ]);
+          await Promise.allSettled([loadIntents(false), loadDebts(false), loadTransactions(false)]);
           setStatus(els.appStatus, "Intent ejecutado.", "ok");
         } catch (err) {
           setStatus(els.appStatus, `No se pudo ejecutar el intent: ${err.message}`, "warn");
@@ -1641,7 +1235,6 @@
         document.querySelectorAll(".js-approve-intent").forEach((btn) => {
           btn.onclick = () => approveIntent(btn.getAttribute("data-intent-id"), btn);
         });
-
         document.querySelectorAll(".js-execute-intent").forEach((btn) => {
           btn.onclick = () => executeIntent(btn.getAttribute("data-intent-id"), btn);
         });
@@ -1660,15 +1253,8 @@
             body: {}
           });
 
-          const linkToken =
-            result?.link_token ||
-            result?.data?.link_token ||
-            result?.token ||
-            null;
-
-          if (!linkToken) {
-            throw new Error("No llegó link_token desde el backend.");
-          }
+          const linkToken = result?.link_token || result?.data?.link_token || result?.token || null;
+          if (!linkToken) throw new Error("No llegó link_token desde el backend.");
 
           log(`Link token creado desde ${path}`, result);
 
@@ -1721,14 +1307,12 @@
       async function refreshAll() {
         setButtonBusy(els.refreshAllBtn, true, "Cargando…", "Refrescar todo");
         setStatus(els.appStatus, "Cargando todo…", "muted");
-
         await Promise.allSettled([
           loadAccounts(false),
           loadDebts(false),
           loadIntents(false),
           loadTransactions(false)
         ]);
-
         renderSummary();
         setStatus(els.appStatus, "Todo actualizado.", "ok");
         setButtonBusy(els.refreshAllBtn, false, "Cargando…", "Refrescar todo");
@@ -1833,6 +1417,7 @@
           state.intents = [];
           state.transactions = [];
           state.compare = null;
+
           renderAccounts();
           renderDebts();
           renderIntents();
@@ -1841,6 +1426,7 @@
           renderSummary();
           renderStats();
           renderAuth(null);
+
           setStatus(els.appStatus, "", "muted");
           log("Sesión cerrada");
         } catch (err) {
@@ -1899,11 +1485,8 @@
           state.user = session?.user || null;
           renderAuth(state.user);
 
-          if (state.user) {
-            log("AuthStateChange: sesión activa", { email: state.user.email });
-          } else {
-            log("AuthStateChange: sin sesión");
-          }
+          if (state.user) log("AuthStateChange: sesión activa", { email: state.user.email });
+          else log("AuthStateChange: sin sesión");
         });
       }
 
