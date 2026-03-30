@@ -1,357 +1,1921 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
   />
-  <title>DebtYa Login Test</title>
+  <title>DebtYa</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+
   <style>
     :root{
-      --bg:#f6f9ff;
+      --bg:#f4f7fb;
       --card:#ffffff;
-      --border:#d8e3f2;
-      --text:#16304f;
-      --muted:#6e84a3;
-      --primary:#4f8df7;
-      --primary2:#3c7ae6;
-      --ok:#22a06b;
-      --danger:#e25b5b;
-      --shadow:0 10px 30px rgba(63,105,163,.10);
-      --radius:20px;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e2e8f0;
+      --primary:#2563eb;
+      --primary-2:#1d4ed8;
+      --success:#16a34a;
+      --warn:#d97706;
+      --danger:#dc2626;
+      --shadow:0 12px 32px rgba(15,23,42,.08);
+      --radius:18px;
+      --soft-blue:#eff6ff;
+      --soft-green:#f0fdf4;
+      --soft-red:#fef2f2;
+      --soft-amber:#fffbeb;
     }
 
     *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+    body{min-height:100vh}
+    button,input,select,textarea{font:inherit}
+    button{touch-action:manipulation}
 
-    html,body{
-      margin:0;
-      padding:0;
-      font-family:Inter,Arial,sans-serif;
-      background:linear-gradient(180deg,#f6f9ff,#eef4ff);
-      color:var(--text);
-    }
-
-    body{
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+    .wrap{
+      width:100%;
+      max-width:1240px;
+      margin:0 auto;
       padding:16px;
     }
 
-    .card{
-      width:100%;
-      max-width:460px;
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      padding:22px;
-      box-shadow:var(--shadow);
-    }
-
-    .logo{
-      width:56px;
-      height:56px;
-      border-radius:16px;
-      background:linear-gradient(135deg,#6fb6ff,#4f8df7);
+    .topbar{
       display:flex;
       align-items:center;
-      justify-content:center;
-      color:#fff;
-      font-weight:800;
-      font-size:24px;
-      margin-bottom:14px;
-    }
-
-    h1{
-      margin:0 0 6px 0;
-      font-size:28px;
-    }
-
-    .sub{
-      color:var(--muted);
-      font-size:14px;
-      line-height:1.45;
+      justify-content:space-between;
+      gap:12px;
       margin-bottom:18px;
     }
 
-    .field{
-      display:grid;
-      gap:6px;
-      margin-bottom:12px;
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
     }
 
-    .field label{
-      font-size:13px;
-      color:var(--muted);
-    }
-
-    input,button{
-      width:100%;
-      min-height:50px;
-      padding:12px 14px;
+    .brand-badge{
+      width:44px;
+      height:44px;
       border-radius:14px;
-      font-size:16px;
-      font-family:inherit;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg,#2563eb,#60a5fa);
+      color:#fff;
+      font-weight:900;
+      box-shadow:var(--shadow);
+      flex:0 0 auto;
     }
 
-    input{
-      border:1px solid var(--border);
-      background:#f8fbff;
+    .brand-text h1{
+      margin:0;
+      font-size:1.45rem;
+      line-height:1.1;
+      letter-spacing:-0.02em;
+    }
+
+    .brand-text p{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:.95rem;
+    }
+
+    .grid{display:grid;gap:16px}
+    .auth-grid{grid-template-columns:1fr}
+    .app-grid{grid-template-columns:repeat(12,minmax(0,1fr))}
+
+    .panel-12{grid-column:span 12}
+    .panel-8{grid-column:span 8}
+    .panel-6{grid-column:span 6}
+    .panel-4{grid-column:span 4}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .card-head{
+      padding:16px 18px 10px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .card-title{
+      margin:0;
+      font-size:1.05rem;
+      font-weight:800;
+      letter-spacing:-0.01em;
+    }
+
+    .card-sub{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:.92rem;
+    }
+
+    .card-body{padding:16px 18px}
+
+    .hero{padding:22px}
+    .hero h2{
+      margin:0 0 10px;
+      font-size:1.6rem;
+      line-height:1.08;
+      letter-spacing:-0.03em;
+    }
+    .hero p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .pill-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:16px;
+    }
+
+    .pill{
+      border:1px solid var(--line);
+      background:#f8fafc;
+      color:#0f172a;
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:.92rem;
+      font-weight:700;
+    }
+
+    .auth-tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+
+    .tab-btn{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:800;
+    }
+
+    .tab-btn.active{
+      background:var(--primary);
+      color:#fff;
+      border-color:var(--primary);
+    }
+
+    .form{display:grid;gap:12px}
+
+    .field{display:grid;gap:7px}
+    .field label{
+      font-size:.92rem;
+      font-weight:800;
+    }
+
+    .input,.select,.textarea{
+      width:100%;
+      min-height:46px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 14px;
+      background:#fff;
       color:var(--text);
       outline:none;
     }
 
-    input:focus{
-      border-color:#7fb3ff;
-      box-shadow:0 0 0 3px rgba(79,141,247,.14);
+    .textarea{
+      min-height:90px;
+      resize:vertical;
     }
 
-    button{
+    .input:focus,.select:focus,.textarea:focus{
+      border-color:#93c5fd;
+      box-shadow:0 0 0 4px rgba(37,99,235,.10);
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    .btn{
+      min-height:44px;
       border:none;
-      background:var(--primary);
-      color:#fff;
-      font-weight:700;
+      border-radius:14px;
+      padding:11px 15px;
       cursor:pointer;
-      -webkit-appearance:none;
-      appearance:none;
-      touch-action:manipulation;
-      -webkit-tap-highlight-color: transparent;
+      font-weight:800;
+      transition:.18s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
     }
 
-    button:hover{
-      background:var(--primary2);
-    }
-
-    button:disabled{
+    .btn:disabled{
       opacity:.65;
       cursor:not-allowed;
     }
 
-    .secondary{
-      margin-top:10px;
-      background:#fff;
-      color:var(--text);
-      border:1px solid var(--border);
-    }
-
-    .hidden{
-      display:none !important;
-    }
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-primary:hover{background:var(--primary-2)}
+    .btn-secondary{background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}
+    .btn-plain{background:#f8fafc;color:var(--text);border:1px solid var(--line)}
+    .btn-danger{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+    .btn-success{background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}
+    .btn-warn{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
 
     .status{
-      margin-top:14px;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:#f6faff;
-      white-space:pre-wrap;
-      line-height:1.45;
-      font-size:14px;
-    }
-
-    .ok{
-      background:rgba(34,160,107,.10);
-      border-color:rgba(34,160,107,.26);
-      color:#1b7a55;
-    }
-
-    .err{
-      background:rgba(226,91,91,.10);
-      border-color:rgba(226,91,91,.28);
-      color:#b03f3f;
-    }
-
-    .session-box{
-      margin-top:16px;
-      padding:14px;
-      border:1px solid var(--border);
-      border-radius:16px;
-      background:#f8fbff;
-    }
-
-    .session-email{
+      margin-top:12px;
+      min-height:22px;
+      font-size:.94rem;
       font-weight:800;
-      font-size:18px;
+    }
+
+    .status.ok{color:var(--success)}
+    .status.warn{color:var(--warn)}
+    .status.err{color:var(--danger)}
+    .status.muted{color:var(--muted)}
+
+    .hidden{display:none !important}
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .stat{
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:#fff;
+    }
+
+    .stat-label{
+      color:var(--muted);
+      font-size:.86rem;
+      font-weight:800;
       margin-bottom:8px;
+    }
+
+    .stat-value{
+      font-size:1.35rem;
+      font-weight:900;
+      letter-spacing:-0.03em;
+    }
+
+    .app-user{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 16px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:#fff;
+      margin-bottom:16px;
+    }
+
+    .app-user strong{
+      display:block;
+      font-size:1rem;
+    }
+
+    .app-user span{
+      color:var(--muted);
+      font-size:.92rem;
+    }
+
+    .list{
+      display:grid;
+      gap:10px;
+    }
+
+    .item{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      background:#fff;
+    }
+
+    .item-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+    }
+
+    .item-title{
+      margin:0;
+      font-weight:800;
+      font-size:1rem;
+      letter-spacing:-0.01em;
+    }
+
+    .item-sub{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:.9rem;
+      line-height:1.4;
+    }
+
+    .amount{
+      font-weight:900;
+      white-space:nowrap;
+      font-size:1rem;
+      letter-spacing:-0.02em;
+    }
+
+    .muted{color:var(--muted)}
+    .good{color:var(--success)}
+    .bad{color:var(--danger)}
+    .warn{color:var(--warn)}
+
+    .mini-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .mini{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      background:#f8fafc;
+    }
+
+    .mini .k{
+      color:var(--muted);
+      font-size:.82rem;
+      font-weight:800;
+      margin-bottom:6px;
+    }
+
+    .mini .v{
+      font-size:1rem;
+      font-weight:900;
+      letter-spacing:-0.02em;
+    }
+
+    .empty{
+      padding:16px;
+      border:1px dashed var(--line);
+      border-radius:16px;
+      color:var(--muted);
+      background:#fafcff;
+    }
+
+    .log{
+      background:#0f172a;
+      color:#e2e8f0;
+      border-radius:16px;
+      padding:14px;
+      min-height:150px;
+      max-height:340px;
+      overflow:auto;
+      font-size:.9rem;
+      line-height:1.45;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    .small{
+      font-size:.88rem;
+      color:var(--muted);
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 10px;
+      border-radius:999px;
+      font-size:.82rem;
+      font-weight:800;
+      border:1px solid var(--line);
+      background:#fff;
+    }
+
+    .divider{
+      height:1px;
+      background:var(--line);
+      margin:14px 0;
+    }
+
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .summary-box{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      background:#fff;
+    }
+
+    .summary-box .k{
+      color:var(--muted);
+      font-size:.85rem;
+      font-weight:800;
+      margin-bottom:8px;
+    }
+
+    .summary-box .v{
+      font-size:1.2rem;
+      font-weight:900;
+      letter-spacing:-0.03em;
+    }
+
+    .progress-wrap{
+      margin-top:12px;
+    }
+
+    .progress-bar{
+      width:100%;
+      height:10px;
+      background:#e2e8f0;
+      border-radius:999px;
+      overflow:hidden;
+    }
+
+    .progress-fill{
+      height:100%;
+      background:linear-gradient(90deg,#2563eb,#60a5fa);
+      border-radius:999px;
+    }
+
+    .kv{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .kv .cell{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background:#f8fafc;
+    }
+
+    .kv .cell .k{
+      color:var(--muted);
+      font-size:.8rem;
+      font-weight:800;
+      margin-bottom:5px;
+    }
+
+    .kv .cell .v{
+      font-size:.95rem;
+      font-weight:900;
+      letter-spacing:-0.02em;
+    }
+
+    .chip-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
+      font-size:.8rem;
+      font-weight:800;
+    }
+
+    .chip.success{background:var(--soft-green);border-color:#bbf7d0;color:#166534}
+    .chip.warn{background:var(--soft-amber);border-color:#fde68a;color:#92400e}
+    .chip.danger{background:var(--soft-red);border-color:#fecaca;color:#991b1b}
+    .chip.primary{background:var(--soft-blue);border-color:#bfdbfe;color:#1d4ed8}
+
+    .intent-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .inline-note{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:#f8fafc;
+      border:1px solid var(--line);
+      color:var(--muted);
+      font-size:.88rem;
+      line-height:1.4;
+    }
+
+    @media (max-width: 1024px){
+      .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .panel-8,.panel-6,.panel-4,.panel-12{grid-column:span 12}
+      .summary-grid{grid-template-columns:1fr}
+    }
+
+    @media (max-width: 680px){
+      .wrap{padding:12px}
+      .topbar{align-items:flex-start;flex-direction:column}
+      .hero{padding:18px}
+      .hero h2{font-size:1.35rem}
+      .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .mini-grid,.kv{grid-template-columns:1fr}
+      .btn,.row .btn,.toolbar .btn{width:100%}
+      .app-user{align-items:flex-start}
+    }
+
+    @media (max-width: 420px){
+      .stats{grid-template-columns:1fr}
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">D</div>
-    <h1>DebtYa</h1>
-    <div class="sub">Prueba mínima de login móvil. Aquí no hay nada extra, solo autenticación.</div>
-
-    <form id="loginForm" novalidate>
-      <div id="guestBox">
-        <div class="field">
-          <label for="email">Correo</label>
-          <input
-            id="email"
-            type="email"
-            placeholder="Correo"
-            autocomplete="email"
-            inputmode="email"
-            autocapitalize="off"
-            autocorrect="off"
-            spellcheck="false"
-          />
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-badge">D</div>
+        <div class="brand-text">
+          <h1>DebtYa</h1>
+          <p>Paga tus deudas con control, claridad y automatización.</p>
         </div>
-
-        <div class="field">
-          <label for="password">Contraseña</label>
-          <input
-            id="password"
-            type="password"
-            placeholder="Contraseña"
-            autocomplete="current-password"
-            autocapitalize="off"
-            autocorrect="off"
-            spellcheck="false"
-          />
-        </div>
-
-        <button id="loginBtn" type="submit">Iniciar sesión</button>
-        <button id="signupBtn" type="button" class="secondary">Crear cuenta</button>
       </div>
-    </form>
-
-    <div id="sessionBox" class="session-box hidden">
-      <div style="font-size:12px;color:#6e84a3;margin-bottom:6px;">Sesión activa</div>
-      <div id="sessionEmail" class="session-email">-</div>
-      <button id="logoutBtn" type="button" class="secondary">Salir</button>
+      <div id="envBadge" class="badge">Cargando…</div>
     </div>
 
-    <div id="statusBox" class="status">Listo. Prueba el login aquí.</div>
+    <section id="authSection" class="grid auth-grid">
+      <div class="card">
+        <div class="hero">
+          <h2>Base estable para móvil primero.</h2>
+          <p>
+            Este index mantiene el login simple que ya confirmó funcionar en móvil y iPhone.
+            Encima de esa base agregamos cuentas, deudas, comparación e intents sin tocar la lógica segura del acceso.
+          </p>
+          <div class="pill-row">
+            <div class="pill">Login móvil estable</div>
+            <div class="pill">Interfaz simple</div>
+            <div class="pill">Cuentas y deudas más claras</div>
+            <div class="pill">Botones approve / execute</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Acceso</h3>
+            <p class="card-sub">Entra o crea tu cuenta desde esta base segura.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="auth-tabs">
+            <button id="tabLogin" class="tab-btn active" type="button">Entrar</button>
+            <button id="tabSignup" class="tab-btn" type="button">Crear cuenta</button>
+            <button id="tabReset" class="tab-btn" type="button">Resetear contraseña</button>
+          </div>
+
+          <form id="loginForm" class="form">
+            <div class="field">
+              <label for="loginEmail">Email</label>
+              <input id="loginEmail" class="input" type="email" autocomplete="email" inputmode="email" placeholder="tuemail@gmail.com" required />
+            </div>
+            <div class="field">
+              <label for="loginPassword">Contraseña</label>
+              <input id="loginPassword" class="input" type="password" autocomplete="current-password" placeholder="Tu contraseña" required />
+            </div>
+            <button id="loginBtn" class="btn btn-primary" type="submit">Entrar</button>
+          </form>
+
+          <form id="signupForm" class="form hidden">
+            <div class="field">
+              <label for="signupEmail">Email</label>
+              <input id="signupEmail" class="input" type="email" autocomplete="email" inputmode="email" placeholder="tuemail@gmail.com" />
+            </div>
+            <div class="field">
+              <label for="signupPassword">Contraseña</label>
+              <input id="signupPassword" class="input" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" />
+            </div>
+            <button id="signupBtn" class="btn btn-primary" type="submit">Crear cuenta</button>
+          </form>
+
+          <form id="resetForm" class="form hidden">
+            <div class="field">
+              <label for="resetEmail">Email</label>
+              <input id="resetEmail" class="input" type="email" autocomplete="email" inputmode="email" placeholder="tuemail@gmail.com" />
+            </div>
+            <button id="resetBtn" class="btn btn-secondary" type="submit">Enviar email de recuperación</button>
+          </form>
+
+          <div id="authStatus" class="status muted"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="appSection" class="hidden">
+      <div class="app-user">
+        <div>
+          <strong id="userEmail">Sin sesión</strong>
+          <span id="userMeta">Conéctate para empezar.</span>
+        </div>
+        <div class="toolbar">
+          <button id="connectBankBtn" class="btn btn-primary" type="button">Conectar banco</button>
+          <button id="refreshBtn" class="btn btn-plain" type="button">Refrescar</button>
+          <button id="refreshAllBtn" class="btn btn-secondary" type="button">Refrescar todo</button>
+          <button id="logoutBtn" class="btn btn-danger" type="button">Salir</button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Cuentas</div>
+          <div id="statAccounts" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Deudas</div>
+          <div id="statDebts" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Balance total</div>
+          <div id="statDebtBalance" class="stat-value">$0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Intents</div>
+          <div id="statIntents" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Transacciones</div>
+          <div id="statTx" class="stat-value">0</div>
+        </div>
+      </div>
+
+      <div class="grid app-grid">
+        <div class="card panel-12">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title">Acciones rápidas</h3>
+              <p class="card-sub">Primero conecta el banco. Después importa, compara, construye y ejecuta.</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="toolbar">
+              <button id="importAccountsBtn" class="btn btn-plain" type="button">Importar cuentas</button>
+              <button id="syncTxBtn" class="btn btn-plain" type="button">Importar transacciones</button>
+              <button id="compareBtn" class="btn btn-plain" type="button">Comparar Avalanche vs Snowball</button>
+              <button id="buildIntentsBtn" class="btn btn-warn" type="button">Construir intents</button>
+              <button id="loadIntentsBtn" class="btn btn-plain" type="button">Cargar intents</button>
+            </div>
+            <div id="appStatus" class="status muted"></div>
+          </div>
+        </div>
+
+        <div class="card panel-12">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title">Resumen</h3>
+              <p class="card-sub">Lo importante arriba: cuánto debes, cuánto pagas mínimo y cuál deuda pega más fuerte.</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="summary-grid">
+              <div class="summary-box">
+                <div class="k">Deuda total</div>
+                <div id="summaryDebtTotal" class="v">$0</div>
+              </div>
+              <div class="summary-box">
+                <div class="k">Pago mínimo total</div>
+                <div id="summaryMinimumTotal" class="v">$0</div>
+              </div>
+              <div class="summary-box">
+                <div class="k">APR promedio</div>
+                <div id="summaryAvgApr" class="v">0%</div>
+              </div>
+            </div>
+            <div id="summaryFocus" class="inline-note">Todavía no hay suficiente información para recomendar la siguiente deuda a atacar.</div>
+          </div>
+        </div>
+
+        <div class="card panel-6">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title">Cuentas</h3>
+              <p class="card-sub">Cuentas importadas desde Plaid con saldo claro y legible.</p>
+            </div>
+            <div id="accountsMeta" class="badge">0 cargadas</div>
+          </div>
+          <div class="card-body">
+            <div id="accountsList" class="list">
+              <div class="empty">Todavía no hay cuentas cargadas.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card panel-6">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title">Deudas</h3>
+              <p class="card-sub">Una sola vista con balance, APR, mínimo y prioridad visual.</p>
+            </div>
+            <div id="debtsMeta" class="badge">0 cargadas</div>
+          </div>
+          <div class="card-body">
+            <div id="debtsList" class="list">
+              <div class="empty">Todavía no hay deudas cargadas.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card panel-6">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title">Comparación de estrategia</h3>
+              <p class="card-sub">Avalanche ataca APR más alta. Snowball liquida primero la más pequeña.</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="compareBox" class="empty">Pulsa “Comparar Avalanche vs Snowball”.</div>
+          </div>
+        </div>
+
+        <div class="card panel-6">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title">Payment intents</h3>
+              <p class="card-sub">Ahora con botones de aprobar y ejecutar dentro de cada card.</p>
+            </div>
+            <div id="intentsMeta" class="badge">0 cargados</div>
+          </div>
+          <div class="card-body">
+            <div id="intentsList" class="list">
+              <div class="empty">Todavía no hay intents cargados.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card panel-12">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title">Últimas transacciones</h3>
+              <p class="card-sub">Vista rápida para confirmar que la importación entró bien.</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="txList" class="list">
+              <div class="empty">Todavía no hay transacciones cargadas.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card panel-12">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title">Actividad / diagnóstico</h3>
+              <p class="card-sub">Aquí ves exactamente qué respondió el backend sin romper la interfaz.</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="logBox" class="log">Iniciando…</div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <script>
+    (function () {
+      "use strict";
 
-    const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const CONFIG = {
+        SUPABASE_URL: "https://spybejltsgzfxlwzobkh.supabase.co",
+        SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs",
+        API_BASE: (
+          location.origin &&
+          (location.origin.includes("debtya.com") || location.origin.includes("onrender.com"))
+        )
+          ? location.origin
+          : "https://debtya-api.onrender.com"
+      };
 
-    const els = {
-      loginForm: document.getElementById("loginForm"),
-      guestBox: document.getElementById("guestBox"),
-      email: document.getElementById("email"),
-      password: document.getElementById("password"),
-      loginBtn: document.getElementById("loginBtn"),
-      signupBtn: document.getElementById("signupBtn"),
-      logoutBtn: document.getElementById("logoutBtn"),
-      sessionBox: document.getElementById("sessionBox"),
-      sessionEmail: document.getElementById("sessionEmail"),
-      statusBox: document.getElementById("statusBox")
-    };
+      const supabase = window.supabase.createClient(
+        CONFIG.SUPABASE_URL,
+        CONFIG.SUPABASE_ANON_KEY
+      );
 
-    let loginLock = false;
+      const state = {
+        session: null,
+        user: null,
+        accounts: [],
+        debts: [],
+        intents: [],
+        transactions: [],
+        compare: null,
+        plaidHandler: null
+      };
 
-    function setStatus(text, kind = "") {
-      els.statusBox.className = "status";
-      if (kind) els.statusBox.classList.add(kind);
-      els.statusBox.textContent = text;
-    }
+      const $ = (id) => document.getElementById(id);
 
-    function setLoading(loading) {
-      els.loginBtn.disabled = loading;
-      els.loginBtn.textContent = loading ? "Entrando..." : "Iniciar sesión";
-    }
+      const els = {
+        envBadge: $("envBadge"),
 
-    function updateUI(session) {
-      const user = session?.user || null;
-      if (user?.email) {
-        els.guestBox.classList.add("hidden");
-        els.sessionBox.classList.remove("hidden");
-        els.sessionEmail.textContent = user.email;
-        setStatus("Login correcto.", "ok");
-      } else {
-        els.guestBox.classList.remove("hidden");
-        els.sessionBox.classList.add("hidden");
-        els.sessionEmail.textContent = "-";
-        setStatus("Listo. Prueba el login aquí.");
+        authSection: $("authSection"),
+        appSection: $("appSection"),
+
+        tabLogin: $("tabLogin"),
+        tabSignup: $("tabSignup"),
+        tabReset: $("tabReset"),
+
+        loginForm: $("loginForm"),
+        signupForm: $("signupForm"),
+        resetForm: $("resetForm"),
+
+        loginEmail: $("loginEmail"),
+        loginPassword: $("loginPassword"),
+        signupEmail: $("signupEmail"),
+        signupPassword: $("signupPassword"),
+        resetEmail: $("resetEmail"),
+
+        loginBtn: $("loginBtn"),
+        signupBtn: $("signupBtn"),
+        resetBtn: $("resetBtn"),
+
+        authStatus: $("authStatus"),
+        appStatus: $("appStatus"),
+
+        userEmail: $("userEmail"),
+        userMeta: $("userMeta"),
+
+        connectBankBtn: $("connectBankBtn"),
+        refreshBtn: $("refreshBtn"),
+        refreshAllBtn: $("refreshAllBtn"),
+        logoutBtn: $("logoutBtn"),
+
+        importAccountsBtn: $("importAccountsBtn"),
+        syncTxBtn: $("syncTxBtn"),
+        compareBtn: $("compareBtn"),
+        buildIntentsBtn: $("buildIntentsBtn"),
+        loadIntentsBtn: $("loadIntentsBtn"),
+
+        statAccounts: $("statAccounts"),
+        statDebts: $("statDebts"),
+        statDebtBalance: $("statDebtBalance"),
+        statIntents: $("statIntents"),
+        statTx: $("statTx"),
+
+        summaryDebtTotal: $("summaryDebtTotal"),
+        summaryMinimumTotal: $("summaryMinimumTotal"),
+        summaryAvgApr: $("summaryAvgApr"),
+        summaryFocus: $("summaryFocus"),
+
+        accountsMeta: $("accountsMeta"),
+        debtsMeta: $("debtsMeta"),
+        intentsMeta: $("intentsMeta"),
+
+        accountsList: $("accountsList"),
+        debtsList: $("debtsList"),
+        compareBox: $("compareBox"),
+        intentsList: $("intentsList"),
+        txList: $("txList"),
+        logBox: $("logBox")
+      };
+
+      function log(message, data) {
+        const now = new Date().toLocaleString("es-US");
+        let line = `[${now}] ${message}`;
+        if (typeof data !== "undefined") {
+          try {
+            line += "\n" + JSON.stringify(data, null, 2);
+          } catch (_) {}
+        }
+        if (els.logBox) {
+          els.logBox.textContent = `${line}\n\n${els.logBox.textContent || ""}`.trim();
+        }
+        console.log(message, data || "");
       }
-    }
 
-    async function doLogin() {
-      if (loginLock) return false;
-      loginLock = true;
+      function setStatus(target, text, type) {
+        if (!target) return;
+        target.className = `status ${type || "muted"}`;
+        target.textContent = text || "";
+      }
 
-      try {
-        const email = (els.email.value || "").trim();
-        const password = els.password.value || "";
+      function money(v) {
+        const n = Number(v || 0);
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD"
+        }).format(Number.isFinite(n) ? n : 0);
+      }
 
-        if (!email || !password) {
-          throw new Error("Pon tu correo y tu contraseña.");
+      function pct(v) {
+        const n = Number(v || 0);
+        return `${Number.isFinite(n) ? n.toFixed(2) : "0.00"}%`;
+      }
+
+      function num(v) {
+        const n = Number(v || 0);
+        return Number.isFinite(n) ? n : 0;
+      }
+
+      function safeArray(v) {
+        return Array.isArray(v) ? v : [];
+      }
+
+      function firstData(payload) {
+        if (Array.isArray(payload)) return payload;
+        if (!payload || typeof payload !== "object") return [];
+        if (Array.isArray(payload.data)) return payload.data;
+        if (Array.isArray(payload.accounts)) return payload.accounts;
+        if (Array.isArray(payload.items)) return payload.items;
+        if (Array.isArray(payload.intents)) return payload.intents;
+        if (Array.isArray(payload.transactions)) return payload.transactions;
+        if (Array.isArray(payload.results)) return payload.results;
+        return [];
+      }
+
+      function pickCompare(payload) {
+        if (!payload || typeof payload !== "object") return null;
+        if (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) return payload.data;
+        return payload;
+      }
+
+      function setButtonBusy(btn, busy, busyText, normalText) {
+        if (!btn) return;
+        btn.disabled = !!busy;
+        if (busy && busyText) btn.textContent = busyText;
+        if (!busy && normalText) btn.textContent = normalText;
+      }
+
+      function setAuthTab(tab) {
+        const map = {
+          login: { btn: els.tabLogin, form: els.loginForm },
+          signup: { btn: els.tabSignup, form: els.signupForm },
+          reset: { btn: els.tabReset, form: els.resetForm }
+        };
+
+        Object.keys(map).forEach((key) => {
+          const active = key === tab;
+          if (map[key].btn) map[key].btn.classList.toggle("active", active);
+          if (map[key].form) map[key].form.classList.toggle("hidden", !active);
+        });
+
+        setStatus(els.authStatus, "", "muted");
+      }
+
+      async function getAccessToken() {
+        const { data } = await supabase.auth.getSession();
+        return data?.session?.access_token || "";
+      }
+
+      async function api(path, options = {}) {
+        const token = await getAccessToken();
+        const headers = {
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        };
+
+        if (token) headers.Authorization = `Bearer ${token}`;
+
+        const res = await fetch(`${CONFIG.API_BASE}${path}`, {
+          method: options.method || "GET",
+          headers,
+          body: options.body ? JSON.stringify(options.body) : undefined
+        });
+
+        const text = await res.text();
+        let json = null;
+        try {
+          json = text ? JSON.parse(text) : null;
+        } catch (_) {
+          json = text;
         }
 
-        setLoading(true);
-        setStatus("Intentando iniciar sesión...");
+        if (!res.ok) {
+          const err = new Error(
+            (json && json.error) ||
+            (json && json.message) ||
+            `HTTP ${res.status}`
+          );
+          err.status = res.status;
+          err.payload = json;
+          throw err;
+        }
 
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
+        return json;
+      }
+
+      async function apiTry(paths, options = {}) {
+        let lastError = null;
+        for (const path of paths) {
+          try {
+            const result = await api(path, options);
+            return { path, result };
+          } catch (err) {
+            lastError = err;
+            if (![404, 405].includes(err.status)) throw err;
+          }
+        }
+        throw lastError || new Error("No se encontró una ruta compatible.");
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function renderAuth(user) {
+        const logged = !!user;
+        if (els.authSection) els.authSection.classList.toggle("hidden", logged);
+        if (els.appSection) els.appSection.classList.toggle("hidden", !logged);
+
+        if (logged) {
+          if (els.userEmail) els.userEmail.textContent = user.email || "Usuario";
+          if (els.userMeta) els.userMeta.textContent = `Sesión activa • ${CONFIG.API_BASE}`;
+          setStatus(els.authStatus, "", "muted");
+        } else {
+          if (els.userEmail) els.userEmail.textContent = "Sin sesión";
+          if (els.userMeta) els.userMeta.textContent = "Conéctate para empezar.";
+        }
+      }
+
+      function debtPriorityInfo(debt, allDebts) {
+        const balance = num(debt.balance);
+        const apr = num(debt.apr);
+        const balances = allDebts.map(d => num(d.balance)).filter(v => v > 0);
+        const aprs = allDebts.map(d => num(d.apr)).filter(v => v >= 0);
+
+        const maxBalance = balances.length ? Math.max(...balances) : 0;
+        const minBalance = balances.length ? Math.min(...balances) : 0;
+        const maxApr = aprs.length ? Math.max(...aprs) : 0;
+
+        const isHighestApr = apr > 0 && apr === maxApr;
+        const isSmallestBalance = balance > 0 && balance === minBalance;
+        const isLargestBalance = balance > 0 && balance === maxBalance;
+
+        if (isHighestApr) return { text: "Prioridad Avalanche", type: "danger" };
+        if (isSmallestBalance) return { text: "Buena candidata Snowball", type: "success" };
+        if (isLargestBalance) return { text: "Mayor saldo", type: "warn" };
+        return { text: "Seguimiento", type: "primary" };
+      }
+
+      function renderStats() {
+        const debts = safeArray(state.debts);
+        const debtTotal = debts.reduce((s, d) => s + num(d.balance), 0);
+
+        if (els.statAccounts) els.statAccounts.textContent = String(safeArray(state.accounts).length);
+        if (els.statDebts) els.statDebts.textContent = String(debts.length);
+        if (els.statDebtBalance) els.statDebtBalance.textContent = money(debtTotal);
+        if (els.statIntents) els.statIntents.textContent = String(safeArray(state.intents).length);
+        if (els.statTx) els.statTx.textContent = String(safeArray(state.transactions).length);
+      }
+
+      function renderSummary() {
+        const debts = safeArray(state.debts);
+
+        const debtTotal = debts.reduce((s, d) => s + num(d.balance), 0);
+        const minTotal = debts.reduce((s, d) => s + num(d.minimum_payment ?? d.minimum), 0);
+        const avgApr = debts.length
+          ? debts.reduce((s, d) => s + num(d.apr), 0) / debts.length
+          : 0;
+
+        if (els.summaryDebtTotal) els.summaryDebtTotal.textContent = money(debtTotal);
+        if (els.summaryMinimumTotal) els.summaryMinimumTotal.textContent = money(minTotal);
+        if (els.summaryAvgApr) els.summaryAvgApr.textContent = pct(avgApr);
+
+        if (!debts.length) {
+          if (els.summaryFocus) {
+            els.summaryFocus.textContent = "Todavía no hay suficiente información para recomendar la siguiente deuda a atacar.";
+          }
+          return;
+        }
+
+        const highestAprDebt = [...debts].sort((a,b)=>num(b.apr)-num(a.apr))[0];
+        const smallestDebt = [...debts].sort((a,b)=>num(a.balance)-num(b.balance))[0];
+
+        if (els.summaryFocus) {
+          els.summaryFocus.innerHTML =
+            `Avalanche apunta primero a <strong>${escapeHtml(highestAprDebt?.name || "tu deuda con APR más alta")}</strong> con ${pct(highestAprDebt?.apr)}. ` +
+            `Snowball empezaría por <strong>${escapeHtml(smallestDebt?.name || "tu deuda más pequeña")}</strong> con saldo de ${money(smallestDebt?.balance)}.`;
+        }
+      }
+
+      function renderAccounts() {
+        const list = safeArray(state.accounts);
+        if (!els.accountsList) return;
+
+        if (els.accountsMeta) {
+          els.accountsMeta.textContent = `${list.length} cargadas`;
+        }
+
+        if (!list.length) {
+          els.accountsList.innerHTML = `<div class="empty">Todavía no hay cuentas cargadas.</div>`;
+          renderStats();
+          return;
+        }
+
+        els.accountsList.innerHTML = list.map((a) => {
+          const name = a.name || a.official_name || "Cuenta";
+          const subtype = a.subtype || a.type || "—";
+          const mask = a.mask ? `•••• ${a.mask}` : "";
+          const current =
+            a.current_balance ??
+            a.balance_current ??
+            a.balances?.current ??
+            0;
+          const available =
+            a.available_balance ??
+            a.balances?.available ??
+            0;
+
+          const positive = num(current) >= 0;
+          const tone = positive ? "good" : "bad";
+
+          return `
+            <div class="item">
+              <div class="item-top">
+                <div>
+                  <h4 class="item-title">${escapeHtml(name)}</h4>
+                  <p class="item-sub">${escapeHtml([subtype, mask].filter(Boolean).join(" • "))}</p>
+                </div>
+                <div class="amount ${tone}">${money(current)}</div>
+              </div>
+
+              <div class="kv">
+                <div class="cell">
+                  <div class="k">Saldo actual</div>
+                  <div class="v">${money(current)}</div>
+                </div>
+                <div class="cell">
+                  <div class="k">Disponible</div>
+                  <div class="v">${money(available)}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        renderStats();
+      }
+
+      function renderDebts() {
+        const list = safeArray(state.debts);
+        if (!els.debtsList) return;
+
+        if (els.debtsMeta) {
+          els.debtsMeta.textContent = `${list.length} cargadas`;
+        }
+
+        if (!list.length) {
+          els.debtsList.innerHTML = `<div class="empty">Todavía no hay deudas cargadas.</div>`;
+          renderStats();
+          renderSummary();
+          return;
+        }
+
+        const totalBalance = list.reduce((s, d) => s + num(d.balance), 0);
+
+        els.debtsList.innerHTML = list.map((d) => {
+          const name = d.name || d.creditor || "Deuda";
+          const balance = num(d.balance);
+          const apr = num(d.apr);
+          const minimum = num(d.minimum_payment ?? d.minimum);
+          const dueDay = d.due_day ?? "—";
+          const pctOfTotal = totalBalance > 0 ? Math.min((balance / totalBalance) * 100, 100) : 0;
+          const priority = debtPriorityInfo(d, list);
+
+          return `
+            <div class="item">
+              <div class="item-top">
+                <div>
+                  <h4 class="item-title">${escapeHtml(name)}</h4>
+                  <p class="item-sub">APR ${pct(apr)} • Pago mínimo ${money(minimum)} • Vence día ${escapeHtml(String(dueDay))}</p>
+                </div>
+                <div class="amount">${money(balance)}</div>
+              </div>
+
+              <div class="chip-row">
+                <div class="chip ${priority.type}">${escapeHtml(priority.text)}</div>
+                <div class="chip primary">Representa ${pct(pctOfTotal)}</div>
+              </div>
+
+              <div class="progress-wrap">
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width:${pctOfTotal}%;"></div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        renderStats();
+        renderSummary();
+      }
+
+      function renderCompare() {
+        if (!els.compareBox) return;
+        const c = state.compare;
+
+        if (!c) {
+          els.compareBox.innerHTML = `Pulsa “Comparar Avalanche vs Snowball”.`;
+          return;
+        }
+
+        const avalanche = c.avalanche || c.strategy_avalanche || c.data?.avalanche || null;
+        const snowball = c.snowball || c.strategy_snowball || c.data?.snowball || null;
+
+        if (!avalanche && !snowball) {
+          els.compareBox.innerHTML = `<div class="empty">La comparación no devolvió un formato conocido.</div>`;
+          return;
+        }
+
+        const avMonths = avalanche?.months_to_payoff ?? avalanche?.months ?? "—";
+        const snMonths = snowball?.months_to_payoff ?? snowball?.months ?? "—";
+        const avInterest = avalanche?.total_interest ?? avalanche?.interest ?? 0;
+        const snInterest = snowball?.total_interest ?? snowball?.interest ?? 0;
+
+        let winner = "Las dos estrategias quedaron muy parecidas.";
+        if (num(avInterest) < num(snInterest)) {
+          winner = "Avalanche normalmente ahorra más interés.";
+        } else if (num(snInterest) < num(avInterest)) {
+          winner = "Snowball salió con menos interés en esta simulación.";
+        }
+
+        els.compareBox.innerHTML = `
+          <div class="mini-grid">
+            <div class="mini">
+              <div class="k">Avalanche</div>
+              <div class="v">${escapeHtml(String(avMonths))} meses</div>
+              <div class="small">Interés total: ${money(avInterest)}</div>
+            </div>
+            <div class="mini">
+              <div class="k">Snowball</div>
+              <div class="v">${escapeHtml(String(snMonths))} meses</div>
+              <div class="small">Interés total: ${money(snInterest)}</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="inline-note">${escapeHtml(winner)}</div>
+        `;
+      }
+
+      function intentStatusType(status) {
+        const s = String(status || "").toLowerCase();
+        if (["approved","executed","completed","success"].includes(s)) return "success";
+        if (["pending","built","created","ready"].includes(s)) return "warn";
+        if (["failed","error","rejected","cancelled"].includes(s)) return "danger";
+        return "primary";
+      }
+
+      function renderIntents() {
+        const list = safeArray(state.intents);
+        if (!els.intentsList) return;
+
+        if (els.intentsMeta) {
+          els.intentsMeta.textContent = `${list.length} cargados`;
+        }
+
+        if (!list.length) {
+          els.intentsList.innerHTML = `<div class="empty">Todavía no hay intents cargados.</div>`;
+          renderStats();
+          return;
+        }
+
+        els.intentsList.innerHTML = list.map((i) => {
+          const id = i.id || "";
+          const title = i.name || i.strategy || "Payment intent";
+          const amount = num(i.amount ?? i.total_amount);
+          const status = i.status || "pendiente";
+          const created = i.created_at ? new Date(i.created_at).toLocaleString("es-US") : "—";
+          const mode = i.mode || i.execution_mode || "";
+          const note = i.note || i.description || "";
+          const canApprove = ["pending","built","created","ready"].includes(String(status).toLowerCase());
+          const canExecute = ["approved","ready_to_execute","ready"].includes(String(status).toLowerCase());
+
+          return `
+            <div class="item" data-intent-id="${escapeHtml(String(id))}">
+              <div class="item-top">
+                <div>
+                  <h4 class="item-title">${escapeHtml(String(title))}</h4>
+                  <p class="item-sub">Creado: ${escapeHtml(created)}</p>
+                </div>
+                <div class="amount">${money(amount)}</div>
+              </div>
+
+              <div class="chip-row">
+                <div class="chip ${intentStatusType(status)}">Estado: ${escapeHtml(String(status))}</div>
+                ${mode ? `<div class="chip primary">Modo: ${escapeHtml(String(mode))}</div>` : ""}
+              </div>
+
+              ${note ? `<div class="inline-note">${escapeHtml(String(note))}</div>` : ""}
+
+              <div class="intent-actions">
+                <button class="btn btn-success js-approve-intent" data-intent-id="${escapeHtml(String(id))}" ${canApprove ? "" : "disabled"}>Aprobar</button>
+                <button class="btn btn-primary js-execute-intent" data-intent-id="${escapeHtml(String(id))}" ${canExecute ? "" : "disabled"}>Ejecutar</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        bindDynamicIntentButtons();
+        renderStats();
+      }
+
+      function renderTransactions() {
+        const list = safeArray(state.transactions).slice(0, 20);
+        if (!els.txList) return;
+
+        if (!list.length) {
+          els.txList.innerHTML = `<div class="empty">Todavía no hay transacciones cargadas.</div>`;
+          renderStats();
+          return;
+        }
+
+        els.txList.innerHTML = list.map((t) => {
+          const name = t.name || t.merchant_name || t.description || "Movimiento";
+          const amount = num(t.amount);
+          const date = t.date || t.authorized_date || t.created_at || "—";
+          const account = t.account_name || t.account_id || "";
+          const tone = amount > 0 ? "bad" : "good";
+
+          return `
+            <div class="item">
+              <div class="item-top">
+                <div>
+                  <h4 class="item-title">${escapeHtml(String(name))}</h4>
+                  <p class="item-sub">${escapeHtml(String(date))}${account ? ` • ${escapeHtml(String(account))}` : ""}</p>
+                </div>
+                <div class="amount ${tone}">${money(amount)}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        renderStats();
+      }
+
+      async function loadHealth() {
+        try {
+          const health = await api("/health");
+          const ok = !!health?.ok;
+          if (els.envBadge) {
+            els.envBadge.textContent = ok ? "Backend conectado" : "Backend con aviso";
+            els.envBadge.style.borderColor = ok ? "#bbf7d0" : "#fde68a";
+            els.envBadge.style.background = ok ? "#f0fdf4" : "#fffbeb";
+            els.envBadge.style.color = ok ? "#166534" : "#92400e";
+          }
+          log("Health OK", health);
+        } catch (err) {
+          if (els.envBadge) {
+            els.envBadge.textContent = "Backend no disponible";
+            els.envBadge.style.borderColor = "#fecaca";
+            els.envBadge.style.background = "#fef2f2";
+            els.envBadge.style.color = "#991b1b";
+          }
+          log("Error en /health", err.payload || err.message);
+        }
+      }
+
+      async function loadAccounts(showStatus = true) {
+        try {
+          if (showStatus) setStatus(els.appStatus, "Cargando cuentas…", "muted");
+          const { result, path } = await apiTry([
+            "/plaid/accounts",
+            "/accounts"
+          ]);
+          state.accounts = firstData(result);
+          renderAccounts();
+          if (showStatus) setStatus(els.appStatus, "Cuentas cargadas.", "ok");
+          log(`Cuentas cargadas desde ${path}`, result);
+        } catch (err) {
+          state.accounts = [];
+          renderAccounts();
+          if (showStatus) setStatus(els.appStatus, `No se pudieron cargar las cuentas: ${err.message}`, "warn");
+          log("Error cargando cuentas", err.payload || err.message);
+        }
+      }
+
+      async function loadDebts(showStatus = false) {
+        try {
+          if (showStatus) setStatus(els.appStatus, "Cargando deudas…", "muted");
+          const { result, path } = await apiTry([
+            "/debts",
+            "/api/debts"
+          ]);
+          state.debts = firstData(result);
+          renderDebts();
+          if (showStatus) setStatus(els.appStatus, "Deudas cargadas.", "ok");
+          log(`Deudas cargadas desde ${path}`, result);
+        } catch (err) {
+          state.debts = [];
+          renderDebts();
+          if (showStatus) setStatus(els.appStatus, `No se pudieron cargar las deudas: ${err.message}`, "warn");
+          log("Error cargando deudas", err.payload || err.message);
+        }
+      }
+
+      async function loadIntents(showStatus = true) {
+        try {
+          if (showStatus) setStatus(els.appStatus, "Cargando intents…", "muted");
+          const { result, path } = await apiTry([
+            "/payment-intents",
+            "/api/payment-intents"
+          ]);
+          state.intents = firstData(result);
+          renderIntents();
+          if (showStatus) setStatus(els.appStatus, "Intents cargados.", "ok");
+          log(`Intents cargados desde ${path}`, result);
+        } catch (err) {
+          state.intents = [];
+          renderIntents();
+          if (showStatus) setStatus(els.appStatus, `No se pudieron cargar los intents: ${err.message}`, "warn");
+          log("Error cargando intents", err.payload || err.message);
+        }
+      }
+
+      async function loadTransactions(showStatus = false) {
+        try {
+          if (showStatus) setStatus(els.appStatus, "Cargando transacciones…", "muted");
+          const { result, path } = await apiTry([
+            "/transactions",
+            "/plaid/transactions",
+            "/plaid/transactions/sync?preview=1"
+          ]);
+          state.transactions = firstData(result);
+          renderTransactions();
+          if (showStatus) setStatus(els.appStatus, "Transacciones cargadas.", "ok");
+          log(`Transacciones cargadas desde ${path}`, result);
+        } catch (err) {
+          state.transactions = [];
+          renderTransactions();
+          if (showStatus) setStatus(els.appStatus, `No se pudieron cargar transacciones: ${err.message}`, "warn");
+          log("Error cargando transacciones", err.payload || err.message);
+        }
+      }
+
+      async function runCompare() {
+        try {
+          setButtonBusy(els.compareBtn, true, "Comparando…", "Comparar Avalanche vs Snowball");
+          setStatus(els.appStatus, "Comparando estrategias…", "muted");
+          const { result, path } = await apiTry([
+            "/strategy/compare",
+            "/api/strategy/compare"
+          ]);
+          state.compare = pickCompare(result);
+          renderCompare();
+          setStatus(els.appStatus, "Comparación lista.", "ok");
+          log(`Comparación cargada desde ${path}`, result);
+        } catch (err) {
+          state.compare = null;
+          renderCompare();
+          setStatus(els.appStatus, `No se pudo calcular la comparación: ${err.message}`, "warn");
+          log("Error en comparación", err.payload || err.message);
+        } finally {
+          setButtonBusy(els.compareBtn, false, "Comparando…", "Comparar Avalanche vs Snowball");
+        }
+      }
+
+      async function importAccounts() {
+        try {
+          setButtonBusy(els.importAccountsBtn, true, "Importando…", "Importar cuentas");
+          setStatus(els.appStatus, "Importando cuentas…", "muted");
+          const { result, path } = await apiTry([
+            "/plaid/accounts",
+            "/accounts"
+          ]);
+          state.accounts = firstData(result);
+          renderAccounts();
+          setStatus(els.appStatus, "Cuentas importadas.", "ok");
+          log(`Importación de cuentas desde ${path}`, result);
+        } catch (err) {
+          setStatus(els.appStatus, `No se pudieron importar cuentas: ${err.message}`, "warn");
+          log("Error importando cuentas", err.payload || err.message);
+        } finally {
+          setButtonBusy(els.importAccountsBtn, false, "Importando…", "Importar cuentas");
+        }
+      }
+
+      async function syncTransactions() {
+        try {
+          setButtonBusy(els.syncTxBtn, true, "Importando…", "Importar transacciones");
+          setStatus(els.appStatus, "Importando transacciones…", "muted");
+
+          const { result, path } = await apiTry([
+            "/plaid/transactions/sync",
+            "/transactions/sync"
+          ], {
+            method: "POST",
+            body: {}
+          });
+
+          log(`Sync de transacciones desde ${path}`, result);
+          await loadTransactions(false);
+          setStatus(els.appStatus, "Transacciones importadas.", "ok");
+        } catch (err) {
+          setStatus(els.appStatus, `No se pudieron importar transacciones: ${err.message}`, "warn");
+          log("Error importando transacciones", err.payload || err.message);
+        } finally {
+          setButtonBusy(els.syncTxBtn, false, "Importando…", "Importar transacciones");
+        }
+      }
+
+      async function buildIntents() {
+        try {
+          setButtonBusy(els.buildIntentsBtn, true, "Construyendo…", "Construir intents");
+          setStatus(els.appStatus, "Construyendo intents…", "muted");
+
+          const { result, path } = await apiTry([
+            "/payment-intents/build",
+            "/build_intents_v2",
+            "/payment-intents/build-v2",
+            "/api/build-intents",
+            "/api/payment-intents/build"
+          ], {
+            method: "POST",
+            body: {}
+          });
+
+          log(`Build intents desde ${path}`, result);
+          await loadIntents(false);
+          setStatus(els.appStatus, "Intents construidos.", "ok");
+        } catch (err) {
+          setStatus(els.appStatus, `No se pudieron construir intents: ${err.message}`, "warn");
+          log("Error construyendo intents", err.payload || err.message);
+        } finally {
+          setButtonBusy(els.buildIntentsBtn, false, "Construyendo…", "Construir intents");
+        }
+      }
+
+      async function approveIntent(intentId, btn) {
+        if (!intentId) return;
+        try {
+          if (btn) setButtonBusy(btn, true, "Aprobando…", "Aprobar");
+          setStatus(els.appStatus, "Aprobando intent…", "muted");
+
+          const { result, path } = await apiTry([
+            `/payment-intents/${intentId}/approve`,
+            `/approve_intent_v2/${intentId}`,
+            `/api/payment-intents/${intentId}/approve`
+          ], {
+            method: "POST",
+            body: {}
+          });
+
+          log(`Intent aprobado desde ${path}`, result);
+          await loadIntents(false);
+          await loadDebts(false);
+          setStatus(els.appStatus, "Intent aprobado.", "ok");
+        } catch (err) {
+          setStatus(els.appStatus, `No se pudo aprobar el intent: ${err.message}`, "warn");
+          log("Error aprobando intent", err.payload || err.message);
+        } finally {
+          if (btn) setButtonBusy(btn, false, "Aprobando…", "Aprobar");
+        }
+      }
+
+      async function executeIntent(intentId, btn) {
+        if (!intentId) return;
+        try {
+          if (btn) setButtonBusy(btn, true, "Ejecutando…", "Ejecutar");
+          setStatus(els.appStatus, "Ejecutando intent…", "muted");
+
+          const { result, path } = await apiTry([
+            `/payment-intents/${intentId}/execute`,
+            `/execute_intent_v2/${intentId}`,
+            `/api/payment-intents/${intentId}/execute`
+          ], {
+            method: "POST",
+            body: {}
+          });
+
+          log(`Intent ejecutado desde ${path}`, result);
+          await Promise.allSettled([
+            loadIntents(false),
+            loadDebts(false),
+            loadTransactions(false)
+          ]);
+          setStatus(els.appStatus, "Intent ejecutado.", "ok");
+        } catch (err) {
+          setStatus(els.appStatus, `No se pudo ejecutar el intent: ${err.message}`, "warn");
+          log("Error ejecutando intent", err.payload || err.message);
+        } finally {
+          if (btn) setButtonBusy(btn, false, "Ejecutando…", "Ejecutar");
+        }
+      }
+
+      function bindDynamicIntentButtons() {
+        document.querySelectorAll(".js-approve-intent").forEach((btn) => {
+          btn.onclick = () => approveIntent(btn.getAttribute("data-intent-id"), btn);
         });
 
-        if (error) throw error;
-
-        updateUI(data.session);
-        return false;
-      } catch (e) {
-        setStatus("Error iniciando sesión:\n" + (e.message || String(e)), "err");
-        return false;
-      } finally {
-        setLoading(false);
-        setTimeout(() => { loginLock = false; }, 400);
-      }
-    }
-
-    els.loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      await doLogin();
-      return false;
-    });
-
-    els.loginBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      await doLogin();
-      return false;
-    });
-
-    els.loginBtn.addEventListener("touchend", async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      await doLogin();
-      return false;
-    }, { passive: false });
-
-    els.signupBtn.addEventListener("click", async () => {
-      try {
-        setStatus("Creando cuenta...");
-        const { error } = await supabase.auth.signUp({
-          email: (els.email.value || "").trim(),
-          password: els.password.value || ""
+        document.querySelectorAll(".js-execute-intent").forEach((btn) => {
+          btn.onclick = () => executeIntent(btn.getAttribute("data-intent-id"), btn);
         });
-        if (error) throw error;
-        setStatus("Cuenta creada. Si aplica, confirma en tu correo.", "ok");
-      } catch (e) {
-        setStatus("Error creando cuenta:\n" + (e.message || String(e)), "err");
       }
-    });
 
-    els.logoutBtn.addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      els.email.value = "";
-      els.password.value = "";
-      updateUI(null);
-    });
+      async function createPlaidLink() {
+        try {
+          setButtonBusy(els.connectBankBtn, true, "Preparando…", "Conectar banco");
+          setStatus(els.appStatus, "Preparando Plaid Link…", "muted");
 
-    const { data } = await supabase.auth.getSession();
-    updateUI(data.session || null);
+          const { result, path } = await apiTry([
+            "/plaid/create_link_token",
+            "/plaid/web"
+          ], {
+            method: "POST",
+            body: {}
+          });
+
+          const linkToken =
+            result?.link_token ||
+            result?.data?.link_token ||
+            result?.token ||
+            null;
+
+          if (!linkToken) {
+            throw new Error("No llegó link_token desde el backend.");
+          }
+
+          log(`Link token creado desde ${path}`, result);
+
+          state.plaidHandler = window.Plaid.create({
+            token: linkToken,
+            onSuccess: async (public_token, metadata) => {
+              try {
+                setStatus(els.appStatus, "Banco conectado. Guardando acceso…", "muted");
+                const exchange = await api("/plaid/exchange_public_token", {
+                  method: "POST",
+                  body: { public_token, metadata }
+                });
+                log("Public token intercambiado", exchange);
+                setStatus(els.appStatus, "Banco conectado correctamente.", "ok");
+                await refreshAll();
+              } catch (err) {
+                setStatus(els.appStatus, `Conectó pero falló el intercambio: ${err.message}`, "warn");
+                log("Error exchange_public_token", err.payload || err.message);
+              }
+            },
+            onExit: (err, metadata) => {
+              if (err) {
+                setStatus(els.appStatus, `Plaid cerró con error: ${err.display_message || err.message || "desconocido"}`, "warn");
+                log("Plaid onExit error", { err, metadata });
+              } else {
+                setStatus(els.appStatus, "Plaid cerrado.", "muted");
+                log("Plaid cerrado por el usuario", metadata);
+              }
+            }
+          });
+
+          state.plaidHandler.open();
+        } catch (err) {
+          setStatus(els.appStatus, `No se pudo abrir Plaid: ${err.message}`, "warn");
+          log("Error creando Plaid Link", err.payload || err.message);
+        } finally {
+          setButtonBusy(els.connectBankBtn, false, "Preparando…", "Conectar banco");
+        }
+      }
+
+      async function refreshLite() {
+        await Promise.allSettled([
+          loadAccounts(false),
+          loadDebts(false),
+          loadIntents(false)
+        ]);
+        setStatus(els.appStatus, "Refresco rápido completado.", "ok");
+      }
+
+      async function refreshAll() {
+        setButtonBusy(els.refreshAllBtn, true, "Cargando…", "Refrescar todo");
+        setStatus(els.appStatus, "Cargando todo…", "muted");
+
+        await Promise.allSettled([
+          loadAccounts(false),
+          loadDebts(false),
+          loadIntents(false),
+          loadTransactions(false)
+        ]);
+
+        renderSummary();
+        setStatus(els.appStatus, "Todo actualizado.", "ok");
+        setButtonBusy(els.refreshAllBtn, false, "Cargando…", "Refrescar todo");
+      }
+
+      async function handleLogin(evt) {
+        evt.preventDefault();
+        const email = (els.loginEmail?.value || "").trim();
+        const password = els.loginPassword?.value || "";
+
+        if (!email || !password) {
+          setStatus(els.authStatus, "Escribe email y contraseña.", "warn");
+          return;
+        }
+
+        try {
+          setButtonBusy(els.loginBtn, true, "Entrando…", "Entrar");
+          setStatus(els.authStatus, "Entrando…", "muted");
+
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+
+          state.session = data?.session || null;
+          state.user = data?.user || data?.session?.user || null;
+
+          setStatus(els.authStatus, "Login correcto.", "ok");
+          log("Login correcto", { email: state.user?.email });
+          renderAuth(state.user);
+
+          await refreshAll();
+        } catch (err) {
+          setStatus(els.authStatus, err.message || "No se pudo iniciar sesión.", "err");
+          log("Error login", err.message);
+        } finally {
+          setButtonBusy(els.loginBtn, false, "Entrando…", "Entrar");
+        }
+      }
+
+      async function handleSignup(evt) {
+        evt.preventDefault();
+        const email = (els.signupEmail?.value || "").trim();
+        const password = els.signupPassword?.value || "";
+
+        if (!email || !password) {
+          setStatus(els.authStatus, "Escribe email y contraseña.", "warn");
+          return;
+        }
+
+        try {
+          setButtonBusy(els.signupBtn, true, "Creando…", "Crear cuenta");
+          setStatus(els.authStatus, "Creando cuenta…", "muted");
+
+          const { error } = await supabase.auth.signUp({ email, password });
+          if (error) throw error;
+
+          setStatus(els.authStatus, "Cuenta creada. Revisa tu email si Supabase pide confirmación.", "ok");
+          log("Signup enviado", { email });
+        } catch (err) {
+          setStatus(els.authStatus, err.message || "No se pudo crear la cuenta.", "err");
+          log("Error signup", err.message);
+        } finally {
+          setButtonBusy(els.signupBtn, false, "Creando…", "Crear cuenta");
+        }
+      }
+
+      async function handleReset(evt) {
+        evt.preventDefault();
+        const email = (els.resetEmail?.value || "").trim();
+
+        if (!email) {
+          setStatus(els.authStatus, "Escribe el email.", "warn");
+          return;
+        }
+
+        try {
+          setButtonBusy(els.resetBtn, true, "Enviando…", "Enviar email de recuperación");
+          setStatus(els.authStatus, "Enviando email…", "muted");
+
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: location.origin
+          });
+          if (error) throw error;
+
+          setStatus(els.authStatus, "Email de recuperación enviado.", "ok");
+          log("Reset password enviado", { email });
+        } catch (err) {
+          setStatus(els.authStatus, err.message || "No se pudo enviar el reset.", "err");
+          log("Error reset password", err.message);
+        } finally {
+          setButtonBusy(els.resetBtn, false, "Enviando…", "Enviar email de recuperación");
+        }
+      }
+
+      async function handleLogout() {
+        try {
+          setStatus(els.appStatus, "Cerrando sesión…", "muted");
+          await supabase.auth.signOut();
+          state.session = null;
+          state.user = null;
+          state.accounts = [];
+          state.debts = [];
+          state.intents = [];
+          state.transactions = [];
+          state.compare = null;
+          renderAccounts();
+          renderDebts();
+          renderIntents();
+          renderTransactions();
+          renderCompare();
+          renderSummary();
+          renderStats();
+          renderAuth(null);
+          setStatus(els.appStatus, "", "muted");
+          log("Sesión cerrada");
+        } catch (err) {
+          setStatus(els.appStatus, err.message || "No se pudo cerrar sesión.", "err");
+          log("Error logout", err.message);
+        }
+      }
+
+      async function bootstrapSession() {
+        try {
+          const { data } = await supabase.auth.getSession();
+          state.session = data?.session || null;
+          state.user = data?.session?.user || null;
+
+          renderAuth(state.user);
+          renderStats();
+          renderAccounts();
+          renderDebts();
+          renderIntents();
+          renderTransactions();
+          renderCompare();
+          renderSummary();
+
+          if (state.user) {
+            log("Sesión restaurada", { email: state.user.email });
+            await refreshAll();
+          } else {
+            log("Sin sesión activa");
+          }
+        } catch (err) {
+          log("Error restaurando sesión", err.message);
+        }
+      }
+
+      function bindEvents() {
+        if (els.tabLogin) els.tabLogin.addEventListener("click", () => setAuthTab("login"));
+        if (els.tabSignup) els.tabSignup.addEventListener("click", () => setAuthTab("signup"));
+        if (els.tabReset) els.tabReset.addEventListener("click", () => setAuthTab("reset"));
+
+        if (els.loginForm) els.loginForm.addEventListener("submit", handleLogin);
+        if (els.signupForm) els.signupForm.addEventListener("submit", handleSignup);
+        if (els.resetForm) els.resetForm.addEventListener("submit", handleReset);
+
+        if (els.logoutBtn) els.logoutBtn.addEventListener("click", handleLogout);
+        if (els.connectBankBtn) els.connectBankBtn.addEventListener("click", createPlaidLink);
+        if (els.refreshBtn) els.refreshBtn.addEventListener("click", refreshLite);
+        if (els.refreshAllBtn) els.refreshAllBtn.addEventListener("click", refreshAll);
+        if (els.importAccountsBtn) els.importAccountsBtn.addEventListener("click", importAccounts);
+        if (els.syncTxBtn) els.syncTxBtn.addEventListener("click", syncTransactions);
+        if (els.compareBtn) els.compareBtn.addEventListener("click", runCompare);
+        if (els.buildIntentsBtn) els.buildIntentsBtn.addEventListener("click", buildIntents);
+        if (els.loadIntentsBtn) els.loadIntentsBtn.addEventListener("click", () => loadIntents(true));
+
+        supabase.auth.onAuthStateChange(async (_event, session) => {
+          state.session = session || null;
+          state.user = session?.user || null;
+          renderAuth(state.user);
+
+          if (state.user) {
+            log("AuthStateChange: sesión activa", { email: state.user.email });
+          } else {
+            log("AuthStateChange: sin sesión");
+          }
+        });
+      }
+
+      async function init() {
+        setAuthTab("login");
+        bindEvents();
+        await loadHealth();
+        await bootstrapSession();
+      }
+
+      init();
+    })();
   </script>
 </body>
 </html>
