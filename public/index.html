@@ -470,7 +470,7 @@
 
       const CONFIG = {
         SUPABASE_URL: "https://spybejltsgzfxlwzobkh.supabase.co",
-        SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmVjb2zfxlwzobkhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs",
+        SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs",
         API_BASE: (
           location.origin &&
           (location.origin.includes("debtya.com") || location.origin.includes("onrender.com"))
@@ -563,10 +563,10 @@
         const now = new Date().toLocaleString("es-US");
         let line = `[${now}] ${message}`;
         if (typeof data !== "undefined") {
-          try { line += "\n" + JSON.stringify(data, null, 2); } catch (_) {}
+          try { line += "\\n" + JSON.stringify(data, null, 2); } catch (_) {}
         }
         if (els.logBox) {
-          els.logBox.textContent = `${line}\n\n${els.logBox.textContent || ""}`.trim();
+          els.logBox.textContent = `${line}\\n\\n${els.logBox.textContent || ""}`.trim();
         }
         console.log(message, data || "");
       }
