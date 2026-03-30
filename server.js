@@ -216,7 +216,7 @@ async function getPendingOrApprovedIntents(userId) {
 app.get("/health", async (_req, res) => {
   return res.json({
     ok: true,
-    message: "DebtYa API funcionando",
+    message: "DebtYa API funcionando",`r`n    server_version: "cron-safe-v1",
     now: new Date().toISOString(),
     env_debug: {
       has_supabase_url: !!SUPABASE_URL,
@@ -926,7 +926,7 @@ app.post("/cron/full-auto", async (req, res) => {
 
     return res.json({
       ok: true,
-      ran_at: startedAt,
+      ran_at: startedAt,`r`n      server_version: "cron-safe-v1",`r`n      server_version: "cron-safe-v1",
       total_users: users.length,
       success_users: successUsers,
       failed_users: failedUsers,
@@ -952,3 +952,5 @@ app.get("*", (_req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor DebtYa corriendo en puerto ${PORT}`);
 });
+
+
