@@ -3,14 +3,13 @@ require("dotenv").config();
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
-const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v1";
+const SERVER_VERSION = "cron-safe-v3";
 
 const {
   SUPABASE_URL,
@@ -33,19 +32,20 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-const supabaseAnon = SUPABASE_URL && SUPABASE_ANON_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+const supabaseAnon =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
 
-const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-  : null;
+const supabaseAdmin =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    : null;
 
 const plaidConfig =
   PLAID_CLIENT_ID && PLAID_SECRET
     ? new Configuration({
-        basePath:
-          PlaidEnvironments[PLAID_ENV] || PlaidEnvironments.sandbox,
+        basePath: PlaidEnvironments[PLAID_ENV] || PlaidEnvironments.sandbox,
         baseOptions: {
           headers: {
             "PLAID-CLIENT-ID": PLAID_CLIENT_ID,
@@ -66,10 +66,6 @@ function isUuid(value) {
 function safeNumber(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
-}
-
-function truthy(value) {
-  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 function jsonError(res, status, message, extra = {}) {
@@ -140,7 +136,9 @@ async function ensureProfile(userId) {
         },
         { onConflict: "id" }
       );
-  } catch (_) {}
+  } catch (e) {
+    console.warn("No se pudo asegurar profile:", e.message);
+  }
 }
 
 async function getPlaidItemsForUser(userId) {
@@ -177,9 +175,7 @@ async function upsertPlaidItem({
 
   const { data, error } = await supabaseAdmin
     .from("plaid_items")
-    .upsert(payload, {
-      onConflict: "plaid_item_id"
-    })
+    .upsert(payload, { onConflict: "plaid_item_id" })
     .select()
     .single();
 
@@ -195,7 +191,8 @@ async function getInstitutionName(institutionId) {
       country_codes: PLAID_COUNTRY_CODES.split(",").map((x) => x.trim())
     });
     return response?.data?.institution?.name || null;
-  } catch (_) {
+  } catch (e) {
+    console.warn("No se pudo obtener institución:", e.message);
     return null;
   }
 }
@@ -263,11 +260,7 @@ async function callRpc(name, params = {}) {
 }
 
 function getBaseUrl(req) {
-  return (
-    APP_BASE_URL ||
-    FRONTEND_URL ||
-    `${req.protocol}://${req.get("host")}`
-  );
+  return APP_BASE_URL || FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
 }
 
 app.get("/health", async (_req, res) => {
@@ -1002,8 +995,8 @@ app.get("/strategy/compare", requireUser, async (req, res) => {
 
     if (error) throw error;
 
-    const monthlyBudget = safeNumber(req.query.monthly_budget || req.body?.monthly_budget, 0);
-    const extraPayment = safeNumber(req.query.extra_payment || req.body?.extra_payment, 0);
+    const monthlyBudget = safeNumber(req.query.monthly_budget, 0);
+    const extraPayment = safeNumber(req.query.extra_payment, 0);
 
     const normalizedDebts = (debts || []).map((d) => ({
       id: d.id,
@@ -1024,7 +1017,7 @@ app.get("/strategy/compare", requireUser, async (req, res) => {
 
         const active = items.filter((d) => d.balance > 0.009);
         const minimums = active.reduce((sum, d) => sum + d.minimum_payment, 0);
-        let extra = Math.max(0, monthlyBudget + extraPayment - minimums);
+        const extra = Math.max(0, monthlyBudget + extraPayment - minimums);
 
         active.forEach((d) => {
           const monthlyRate = d.apr / 100 / 12;
@@ -1215,8 +1208,29 @@ app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
   }
 });
 
-app.get("*", (_req, res) => {
-  return res.sendFile(path.join(__dirname, "public", "index.html"));
+app.use((req, res, next) => {
+  if (
+    req.method === "GET" &&
+    !req.path.startsWith("/health") &&
+    !req.path.startsWith("/supabase") &&
+    !req.path.startsWith("/plaid") &&
+    !req.path.startsWith("/accounts") &&
+    !req.path.startsWith("/debts") &&
+    !req.path.startsWith("/payment-plans") &&
+    !req.path.startsWith("/rules") &&
+    !req.path.startsWith("/apply_rules_v2") &&
+    !req.path.startsWith("/build_intents_v2") &&
+    !req.path.startsWith("/approve_intent_v2") &&
+    !req.path.startsWith("/execute_intent_v2") &&
+    !req.path.startsWith("/auto_sweep_v2") &&
+    !req.path.startsWith("/payment-intents") &&
+    !req.path.startsWith("/payment-trace") &&
+    !req.path.startsWith("/strategy") &&
+    !req.path.startsWith("/cron")
+  ) {
+    return res.sendFile(path.join(__dirname, "public", "index.html"));
+  }
+  next();
 });
 
 app.use((err, _req, res, _next) => {
