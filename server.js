@@ -5,276 +5,732 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
+const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/* =========================
-   CONFIG
-========================= */
+const SERVER_VERSION = "cron-safe-v1";
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const PLAID_CLIENT_ID = process.env.PLAID_CLIENT_ID || "";
-const PLAID_SECRET = process.env.PLAID_SECRET || "";
-const PLAID_ENV = process.env.PLAID_ENV || "sandbox";
-const PLAID_PRODUCTS = (process.env.PLAID_PRODUCTS || "transactions").split(",").map(s => s.trim()).filter(Boolean);
-const PLAID_COUNTRY_CODES = (process.env.PLAID_COUNTRY_CODES || "US").split(",").map(s => s.trim()).filter(Boolean);
-const CRON_SECRET = process.env.CRON_SECRET || "";
-
-const IS_RENDER = !!process.env.RENDER;
-
-const PLAID_BASE_URL =
-  PLAID_ENV === "production"
-    ? "https://production.plaid.com"
-    : PLAID_ENV === "development"
-    ? "https://development.plaid.com"
-    : "https://sandbox.plaid.com";
-
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* =========================
-   APP SETUP
-========================= */
+const {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_ROLE_KEY,
+  PLAID_CLIENT_ID,
+  PLAID_SECRET,
+  PLAID_ENV = "sandbox",
+  PLAID_PRODUCTS = "auth,transactions",
+  PLAID_COUNTRY_CODES = "US",
+  PLAID_REDIRECT_URI,
+  PLAID_ANDROID_PACKAGE_NAME,
+  CRON_SECRET,
+  APP_BASE_URL,
+  FRONTEND_URL
+} = process.env;
 
 app.use(cors());
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-/* =========================
-   HELPERS
-========================= */
+const supabaseAnon = SUPABASE_URL && SUPABASE_ANON_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
-function safeNumber(v, fallback = 0) {
-  const n = Number(v);
+const supabaseAdmin = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : null;
+
+const plaidConfig =
+  PLAID_CLIENT_ID && PLAID_SECRET
+    ? new Configuration({
+        basePath:
+          PlaidEnvironments[PLAID_ENV] || PlaidEnvironments.sandbox,
+        baseOptions: {
+          headers: {
+            "PLAID-CLIENT-ID": PLAID_CLIENT_ID,
+            "PLAID-SECRET": PLAID_SECRET
+          }
+        }
+      })
+    : null;
+
+const plaidClient = plaidConfig ? new PlaidApi(plaidConfig) : null;
+
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    String(value || "")
+  );
+}
+
+function safeNumber(value, fallback = 0) {
+  const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function truthy(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+function jsonError(res, status, message, extra = {}) {
+  return res.status(status).json({
+    ok: false,
+    error: message,
+    ...extra
+  });
 }
 
 function getBearerToken(req) {
   const auth = req.headers.authorization || "";
-  if (!auth.toLowerCase().startsWith("bearer ")) return null;
-  return auth.slice(7).trim();
+  if (!auth.startsWith("Bearer ")) return null;
+  return auth.slice("Bearer ".length).trim();
 }
 
-async function getAuthedUser(req) {
+async function getUserFromRequest(req) {
+  if (!supabaseAdmin) {
+    throw new Error("Supabase no configurado");
+  }
+
   const token = getBearerToken(req);
-  if (!token) return { user: null, error: "Falta Authorization Bearer token" };
-
-  const { data, error } = await supabaseAnon.auth.getUser(token);
-  if (error || !data?.user) {
-    return { user: null, error: error?.message || "Token inválido" };
+  if (!token) {
+    const err = new Error("Falta Authorization Bearer token");
+    err.status = 401;
+    throw err;
   }
 
-  return { user: data.user, error: null };
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !data?.user?.id) {
+    const err = new Error("Token inválido o sesión expirada");
+    err.status = 401;
+    throw err;
+  }
+
+  return data.user;
 }
 
-async function requireAuth(req, res, next) {
+async function requireUser(req, res, next) {
   try {
-    const { user, error } = await getAuthedUser(req);
-    if (error || !user) {
-      return res.status(401).json({ ok: false, error: error || "No autenticado" });
-    }
-    req.user = user;
+    req.user = await getUserFromRequest(req);
     next();
-  } catch (err) {
-    return res.status(401).json({ ok: false, error: err.message || "No autenticado" });
+  } catch (error) {
+    return jsonError(res, error.status || 401, error.message);
   }
 }
 
-function isCronAuthorized(req) {
-  const received = req.headers["x-cron-secret"] || "";
-  return !!CRON_SECRET && received === CRON_SECRET;
+function requireCronSecret(req, res, next) {
+  const provided = req.headers["x-cron-secret"];
+  if (!CRON_SECRET) {
+    return jsonError(res, 500, "CRON_SECRET no configurado");
+  }
+  if (!provided || provided !== CRON_SECRET) {
+    return jsonError(res, 401, "Unauthorized");
+  }
+  next();
 }
 
-async function plaidRequest(endpoint, body) {
-  const { data } = await axios.post(`${PLAID_BASE_URL}${endpoint}`, body, {
-    headers: { "Content-Type": "application/json" },
-    timeout: 30000,
-  });
-  return data;
+async function ensureProfile(userId) {
+  if (!supabaseAdmin || !userId) return;
+  try {
+    await supabaseAdmin
+      .from("profiles")
+      .upsert(
+        {
+          id: userId,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: "id" }
+      );
+  } catch (_) {}
 }
 
-async function getUserPreferencesRow(userId) {
-  const { data, error } = await supabaseAdmin
-    .from("user_preferences")
-    .select("*")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error && error.code !== "PGRST116") throw error;
-
-  return {
-    user_id: userId,
-    strategy: data?.strategy || "avalanche",
-    execution_mode: data?.execution_mode || "safe",
-    extra_payment_default: safeNumber(data?.extra_payment_default, 0),
-    monthly_budget_default: safeNumber(data?.monthly_budget_default, 0),
-    updated_at: data?.updated_at || new Date().toISOString(),
-  };
-}
-
-async function getCurrentPaymentPlanRow(userId) {
-  const { data, error } = await supabaseAdmin
-    .from("payment_plans")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("is_active", true)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error && error.code !== "PGRST116") throw error;
-  return data || null;
-}
-
-async function getUserPlaidAccessToken(userId) {
+async function getPlaidItemsForUser(userId) {
   const { data, error } = await supabaseAdmin
     .from("plaid_items")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error && error.code !== "PGRST116") throw error;
-  if (!data?.access_token) throw new Error("Usuario sin access_token de Plaid");
-
-  return data.access_token;
-}
-
-async function tryRpcVariants(name, variants) {
-  let lastError = null;
-
-  for (const args of variants) {
-    const { data, error } = await supabaseAdmin.rpc(name, args);
-    if (!error) return { ok: true, data, args };
-    lastError = error;
-  }
-
-  return { ok: false, error: lastError };
-}
-
-async function tryBuildIntentsForUser(userId) {
-  return tryRpcVariants("build_intents_v2", [
-    { p_user_id: userId },
-    { user_id: userId },
-    { p_user: userId },
-  ]);
-}
-
-async function tryApproveIntent(intentId, userId) {
-  return tryRpcVariants("approve_intent_v2", [
-    { p_intent_id: intentId, p_user_id: userId },
-    { intent_id: intentId, user_id: userId },
-    { p_payment_intent_id: intentId, p_user_id: userId },
-  ]);
-}
-
-async function tryExecuteIntent(intentId, userId) {
-  return tryRpcVariants("execute_intent_v2", [
-    { p_intent_id: intentId, p_user_id: userId },
-    { intent_id: intentId, user_id: userId },
-    { p_payment_intent_id: intentId, p_user_id: userId },
-  ]);
-}
-
-async function tryApplyRules(userId) {
-  return tryRpcVariants("apply_rules_v2", [
-    { p_user_id: userId },
-    { user_id: userId },
-    { p_user: userId },
-  ]);
-}
-
-async function tryAutoSweep(userId) {
-  return tryRpcVariants("auto_sweep_v2", [
-    { p_user_id: userId },
-    { user_id: userId },
-    { p_user: userId },
-  ]);
-}
-
-async function getPendingOrApprovedIntents(userId) {
-  const { data, error } = await supabaseAdmin
-    .from("payment_intents")
-    .select("*")
-    .eq("user_id", userId)
-    .in("status", ["pending", "built", "created", "ready", "draft", "approved"])
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return Array.isArray(data) ? data : [];
+  return data || [];
 }
 
-/* =========================
-   HEALTH
-========================= */
+async function getLatestPlaidItemForUser(userId) {
+  const items = await getPlaidItemsForUser(userId);
+  return items[0] || null;
+}
+
+async function upsertPlaidItem({
+  userId,
+  itemId,
+  accessToken,
+  institutionId = null,
+  institutionName = null
+}) {
+  const payload = {
+    user_id: userId,
+    plaid_item_id: itemId,
+    access_token: accessToken,
+    institution_id: institutionId,
+    institution_name: institutionName,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from("plaid_items")
+    .upsert(payload, {
+      onConflict: "plaid_item_id"
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+async function getInstitutionName(institutionId) {
+  if (!plaidClient || !institutionId) return null;
+  try {
+    const response = await plaidClient.institutionsGetById({
+      institution_id: institutionId,
+      country_codes: PLAID_COUNTRY_CODES.split(",").map((x) => x.trim())
+    });
+    return response?.data?.institution?.name || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function insertAccountsFromPlaid(userId, accounts, item) {
+  if (!accounts?.length) return [];
+
+  const rows = accounts.map((acc) => ({
+    user_id: userId,
+    plaid_account_id: acc.account_id,
+    plaid_item_id: item?.plaid_item_id || item?.item_id || null,
+    name: acc.name || acc.official_name || "Cuenta",
+    mask: acc.mask || null,
+    type: acc.type || null,
+    subtype: acc.subtype || null,
+    current_balance: safeNumber(acc.balances?.current),
+    available_balance: safeNumber(acc.balances?.available),
+    limit_balance: safeNumber(acc.balances?.limit),
+    currency_code: acc.balances?.iso_currency_code || "USD",
+    updated_at: new Date().toISOString()
+  }));
+
+  const { data, error } = await supabaseAdmin
+    .from("accounts")
+    .upsert(rows, { onConflict: "plaid_account_id" })
+    .select();
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function insertTransactionsRaw(userId, plaidItemId, transactions) {
+  if (!transactions?.length) return { inserted: 0 };
+
+  const rows = transactions.map((tx) => ({
+    user_id: userId,
+    plaid_item_id: plaidItemId,
+    plaid_transaction_id: tx.transaction_id,
+    plaid_account_id: tx.account_id,
+    name: tx.name || tx.merchant_name || "Movimiento",
+    merchant_name: tx.merchant_name || null,
+    amount: safeNumber(tx.amount),
+    iso_currency_code: tx.iso_currency_code || "USD",
+    category: Array.isArray(tx.category) ? tx.category.join(" > ") : null,
+    category_id: tx.category_id || null,
+    authorized_date: tx.authorized_date || null,
+    date: tx.date || null,
+    pending: !!tx.pending,
+    payment_channel: tx.payment_channel || null,
+    raw_json: tx
+  }));
+
+  const { error } = await supabaseAdmin
+    .from("transactions_raw")
+    .upsert(rows, { onConflict: "plaid_transaction_id" });
+
+  if (error) throw error;
+  return { inserted: rows.length };
+}
+
+async function callRpc(name, params = {}) {
+  const { data, error } = await supabaseAdmin.rpc(name, params);
+  if (error) throw error;
+  return data;
+}
+
+function getBaseUrl(req) {
+  return (
+    APP_BASE_URL ||
+    FRONTEND_URL ||
+    `${req.protocol}://${req.get("host")}`
+  );
+}
 
 app.get("/health", async (_req, res) => {
   return res.json({
     ok: true,
-    message: "DebtYa API funcionando",`r`n    server_version: "cron-safe-v1",
+    message: "DebtYa API funcionando",
+    server_version: SERVER_VERSION,
     now: new Date().toISOString(),
     env_debug: {
       has_supabase_url: !!SUPABASE_URL,
       has_anon_key: !!SUPABASE_ANON_KEY,
       has_service_role_key: !!SUPABASE_SERVICE_ROLE_KEY,
-      has_plaid_client_id: !!PLAID_CLIENT_ID,
-      has_plaid_secret: !!PLAID_SECRET,
-      has_cron_secret: !!CRON_SECRET,
-      plaid_env: PLAID_ENV,
-      is_render: IS_RENDER,
-    },
+      has_cron_secret: !!CRON_SECRET
+    }
   });
 });
 
-/* =========================
-   AUTH TEST
-========================= */
-
-app.get("/me", requireAuth, async (req, res) => {
-  return res.json({
-    ok: true,
-    data: {
-      id: req.user.id,
-      email: req.user.email,
-    },
-  });
-});
-
-/* =========================
-   PREFERENCES
-========================= */
-
-app.get("/preferences", requireAuth, async (req, res) => {
+app.get("/supabase/ping", async (_req, res) => {
   try {
-    const row = await getUserPreferencesRow(req.user.id);
-    return res.json({ ok: true, data: row });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando preferencias" });
-  }
-});
+    if (!supabaseAdmin) {
+      return jsonError(res, 500, "Supabase no configurado");
+    }
 
-app.post("/preferences", requireAuth, async (req, res) => {
-  try {
     const payload = {
-      user_id: req.user.id,
-      strategy: ["avalanche", "snowball"].includes(String(req.body.strategy || "").toLowerCase())
-        ? String(req.body.strategy).toLowerCase()
-        : "avalanche",
-      execution_mode: ["safe", "full_auto"].includes(String(req.body.execution_mode || "").toLowerCase())
-        ? String(req.body.execution_mode).toLowerCase()
-        : "safe",
-      extra_payment_default: safeNumber(req.body.extra_payment_default, 0),
-      monthly_budget_default: safeNumber(req.body.monthly_budget_default, 0),
-      updated_at: new Date().toISOString(),
+      ping_at: new Date().toISOString()
     };
 
     const { data, error } = await supabaseAdmin
-      .from("user_preferences")
+      .from("debug_pings")
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      return jsonError(res, 500, "Error insertando en Supabase", {
+        details: error.message
+      });
+    }
+
+    return res.json({ ok: true, data });
+  } catch (error) {
+    return jsonError(res, 500, error.message);
+  }
+});
+
+app.get("/plaid/web", (req, res) => {
+  const baseUrl = getBaseUrl(req);
+  return res.send(`
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DebtYa Plaid Web</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f7f7fb; padding:40px; }
+    .card { max-width:560px; margin:auto; background:#fff; border-radius:16px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,.08); }
+    button { background:#111827; color:white; border:0; border-radius:10px; padding:12px 18px; cursor:pointer; }
+    pre { white-space:pre-wrap; background:#f3f4f6; padding:12px; border-radius:10px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>DebtYa - Conectar banco</h2>
+    <p>Esta página usa Plaid Link Web.</p>
+    <button id="connectBtn">Conectar banco</button>
+    <pre id="output"></pre>
+  </div>
+  <script>
+    const output = document.getElementById("output");
+    const btn = document.getElementById("connectBtn");
+
+    btn.onclick = async () => {
+      const token = localStorage.getItem("debtya_access_token");
+      if (!token) {
+        output.textContent = "Falta debtya_access_token en localStorage.";
+        return;
+      }
+
+      const r = await fetch("${baseUrl}/plaid/create_link_token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        }
+      });
+
+      const data = await r.json();
+      output.textContent = JSON.stringify(data, null, 2);
+
+      if (!data.ok || !data.link_token) return;
+
+      const handler = Plaid.create({
+        token: data.link_token,
+        onSuccess: async (public_token, metadata) => {
+          const rr = await fetch("${baseUrl}/plaid/exchange_public_token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({ public_token, metadata })
+          });
+          const dd = await rr.json();
+          output.textContent = JSON.stringify(dd, null, 2);
+        },
+        onExit: (err, metadata) => {
+          output.textContent = JSON.stringify({ err, metadata }, null, 2);
+        }
+      });
+
+      handler.open();
+    };
+  </script>
+</body>
+</html>
+  `);
+});
+
+app.post("/plaid/create_link_token", requireUser, async (req, res) => {
+  try {
+    if (!plaidClient) {
+      return jsonError(res, 500, "Plaid no configurado");
+    }
+
+    await ensureProfile(req.user.id);
+
+    const request = {
+      user: {
+        client_user_id: req.user.id
+      },
+      client_name: "DebtYa",
+      products: PLAID_PRODUCTS.split(",").map((x) => x.trim()),
+      country_codes: PLAID_COUNTRY_CODES.split(",").map((x) => x.trim()),
+      language: "es"
+    };
+
+    if (PLAID_REDIRECT_URI) {
+      request.redirect_uri = PLAID_REDIRECT_URI;
+    }
+
+    if (PLAID_ANDROID_PACKAGE_NAME) {
+      request.android_package_name = PLAID_ANDROID_PACKAGE_NAME;
+    }
+
+    const response = await plaidClient.linkTokenCreate(request);
+
+    return res.json({
+      ok: true,
+      link_token: response.data.link_token,
+      expiration: response.data.expiration
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error creando link token", {
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+app.post("/plaid/exchange_public_token", requireUser, async (req, res) => {
+  try {
+    if (!plaidClient) {
+      return jsonError(res, 500, "Plaid no configurado");
+    }
+
+    const publicToken = req.body.public_token;
+    const metadata = req.body.metadata || {};
+
+    if (!publicToken) {
+      return jsonError(res, 400, "Falta public_token");
+    }
+
+    const exchange = await plaidClient.itemPublicTokenExchange({
+      public_token: publicToken
+    });
+
+    const accessToken = exchange.data.access_token;
+    const itemId = exchange.data.item_id;
+    const institutionId = metadata?.institution?.institution_id || null;
+    const institutionName =
+      metadata?.institution?.name || (await getInstitutionName(institutionId));
+
+    const plaidItem = await upsertPlaidItem({
+      userId: req.user.id,
+      itemId,
+      accessToken,
+      institutionId,
+      institutionName
+    });
+
+    return res.json({
+      ok: true,
+      item: {
+        id: plaidItem.id,
+        plaid_item_id: plaidItem.plaid_item_id,
+        institution_id: plaidItem.institution_id,
+        institution_name: plaidItem.institution_name
+      }
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error intercambiando public_token", {
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+app.get("/plaid/items", requireUser, async (req, res) => {
+  try {
+    const items = await getPlaidItemsForUser(req.user.id);
+    return res.json({ ok: true, data: items });
+  } catch (error) {
+    return jsonError(res, 500, "Error cargando plaid items", {
+      details: error.message
+    });
+  }
+});
+
+app.get("/plaid/accounts", requireUser, async (req, res) => {
+  try {
+    if (!plaidClient) {
+      return jsonError(res, 500, "Plaid no configurado");
+    }
+
+    const item = await getLatestPlaidItemForUser(req.user.id);
+    if (!item?.access_token) {
+      return jsonError(res, 400, "No hay cuenta bancaria conectada");
+    }
+
+    const response = await plaidClient.accountsGet({
+      access_token: item.access_token
+    });
+
+    const saved = await insertAccountsFromPlaid(req.user.id, response.data.accounts, item);
+
+    return res.json({
+      ok: true,
+      item_id: item.plaid_item_id,
+      total_accounts: response.data.accounts.length,
+      data: saved
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error importando cuentas", {
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+app.post("/plaid/transactions/sync", requireUser, async (req, res) => {
+  try {
+    if (!plaidClient) {
+      return jsonError(res, 500, "Plaid no configurado");
+    }
+
+    const item = await getLatestPlaidItemForUser(req.user.id);
+    if (!item?.access_token) {
+      return jsonError(res, 400, "No hay cuenta bancaria conectada");
+    }
+
+    let cursor = req.body.cursor || item.sync_cursor || null;
+    let added = [];
+    let hasMore = true;
+
+    while (hasMore) {
+      const response = await plaidClient.transactionsSync({
+        access_token: item.access_token,
+        cursor
+      });
+
+      const data = response.data;
+      added = added.concat(data.added || []);
+      cursor = data.next_cursor;
+      hasMore = !!data.has_more;
+    }
+
+    const syncResult = await insertTransactionsRaw(
+      req.user.id,
+      item.plaid_item_id,
+      added
+    );
+
+    await supabaseAdmin
+      .from("plaid_items")
+      .update({
+        sync_cursor: cursor,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", item.id);
+
+    return res.json({
+      ok: true,
+      plaid_item_id: item.plaid_item_id,
+      imported: syncResult.inserted,
+      next_cursor: cursor
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error importando transacciones", {
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+app.get("/accounts", requireUser, async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("accounts")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("updated_at", { ascending: false });
+
+    if (error) throw error;
+
+    return res.json({ ok: true, data: data || [] });
+  } catch (error) {
+    return jsonError(res, 500, "Error cargando cuentas", {
+      details: error.message
+    });
+  }
+});
+
+app.get("/debts", requireUser, async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("debts")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .eq("is_active", true)
+      .order("apr", { ascending: false });
+
+    if (error) throw error;
+
+    return res.json({ ok: true, data: data || [] });
+  } catch (error) {
+    return jsonError(res, 500, "Error cargando deudas", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/debts", requireUser, async (req, res) => {
+  try {
+    const payload = {
+      user_id: req.user.id,
+      name: req.body.name || "Deuda",
+      balance: safeNumber(req.body.balance),
+      apr: safeNumber(req.body.apr),
+      minimum_payment: safeNumber(req.body.minimum_payment),
+      due_day: req.body.due_day ? Number(req.body.due_day) : null,
+      type: req.body.type || "credit_card",
+      is_active: true,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabaseAdmin
+      .from("debts")
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.json({ ok: true, data });
+  } catch (error) {
+    return jsonError(res, 500, "Error creando deuda", {
+      details: error.message
+    });
+  }
+});
+
+app.patch("/debts/:id", requireUser, async (req, res) => {
+  try {
+    const debtId = req.params.id;
+    if (!isUuid(debtId)) {
+      return jsonError(res, 400, "ID inválido");
+    }
+
+    const patch = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (req.body.name !== undefined) patch.name = req.body.name;
+    if (req.body.balance !== undefined) patch.balance = safeNumber(req.body.balance);
+    if (req.body.apr !== undefined) patch.apr = safeNumber(req.body.apr);
+    if (req.body.minimum_payment !== undefined) patch.minimum_payment = safeNumber(req.body.minimum_payment);
+    if (req.body.due_day !== undefined) patch.due_day = req.body.due_day ? Number(req.body.due_day) : null;
+    if (req.body.type !== undefined) patch.type = req.body.type;
+    if (req.body.is_active !== undefined) patch.is_active = !!req.body.is_active;
+
+    const { data, error } = await supabaseAdmin
+      .from("debts")
+      .update(patch)
+      .eq("id", debtId)
+      .eq("user_id", req.user.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.json({ ok: true, data });
+  } catch (error) {
+    return jsonError(res, 500, "Error actualizando deuda", {
+      details: error.message
+    });
+  }
+});
+
+app.delete("/debts/:id", requireUser, async (req, res) => {
+  try {
+    const debtId = req.params.id;
+    if (!isUuid(debtId)) {
+      return jsonError(res, 400, "ID inválido");
+    }
+
+    const { error } = await supabaseAdmin
+      .from("debts")
+      .update({
+        is_active: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", debtId)
+      .eq("user_id", req.user.id);
+
+    if (error) throw error;
+
+    return res.json({ ok: true });
+  } catch (error) {
+    return jsonError(res, 500, "Error eliminando deuda", {
+      details: error.message
+    });
+  }
+});
+
+app.get("/payment-plans", requireUser, async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("payment_plans")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("updated_at", { ascending: false });
+
+    if (error) throw error;
+
+    return res.json({ ok: true, data: data || [] });
+  } catch (error) {
+    return jsonError(res, 500, "Error cargando planes", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/payment-plans", requireUser, async (req, res) => {
+  try {
+    const payload = {
+      user_id: req.user.id,
+      strategy: req.body.strategy || "avalanche",
+      monthly_budget: safeNumber(req.body.monthly_budget),
+      extra_payment_default: safeNumber(req.body.extra_payment_default),
+      auto_mode: req.body.auto_mode || "manual",
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabaseAdmin
+      .from("payment_plans")
       .upsert(payload, { onConflict: "user_id" })
       .select()
       .single();
@@ -282,101 +738,22 @@ app.post("/preferences", requireAuth, async (req, res) => {
     if (error) throw error;
 
     return res.json({ ok: true, data });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error guardando preferencias" });
+  } catch (error) {
+    return jsonError(res, 500, "Error guardando plan", {
+      details: error.message
+    });
   }
 });
 
-/* =========================
-   PAYMENT PLANS
-========================= */
-
-app.get("/payment-plans/current", requireAuth, async (req, res) => {
-  try {
-    const row = await getCurrentPaymentPlanRow(req.user.id);
-    return res.json({ ok: true, data: row });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando payment plan" });
-  }
-});
-
-app.get("/payment-plans", requireAuth, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("payment_plans")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("updated_at", { ascending: false });
-
-    if (error) throw error;
-    return res.json({ ok: true, data: Array.isArray(data) ? data : [] });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando payment plans" });
-  }
-});
-
-app.post("/payment-plans", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    await supabaseAdmin
-      .from("payment_plans")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq("user_id", userId)
-      .eq("is_active", true);
-
-    const payload = {
-      user_id: userId,
-      name: (req.body.name || "Plan principal").trim(),
-      plan_type: ["monthly", "weekly"].includes(String(req.body.plan_type || "").toLowerCase())
-        ? String(req.body.plan_type).toLowerCase()
-        : "monthly",
-      budget: safeNumber(req.body.budget, 0),
-      target_day: req.body.target_day ? Number(req.body.target_day) : null,
-      is_active: true,
-      updated_at: new Date().toISOString(),
-    };
-
-    const { data, error } = await supabaseAdmin
-      .from("payment_plans")
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return res.json({ ok: true, data });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error guardando payment plan" });
-  }
-});
-
-/* =========================
-   RULES
-========================= */
-
-app.get("/rules", requireAuth, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("micro_rules")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("updated_at", { ascending: false });
-
-    if (error) throw error;
-    return res.json({ ok: true, data: Array.isArray(data) ? data : [] });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando reglas" });
-  }
-});
-
-app.post("/rules", requireAuth, async (req, res) => {
+app.post("/rules", requireUser, async (req, res) => {
   try {
     const payload = {
       user_id: req.user.id,
-      name: (req.body.name || "Regla").trim(),
-      keyword: (req.body.keyword || "").trim(),
-      percent: safeNumber(req.body.percent, 0),
-      updated_at: new Date().toISOString(),
+      name: req.body.name || "Regla",
+      rule_type: req.body.rule_type || "roundup_percent",
+      is_active: req.body.is_active === undefined ? true : !!req.body.is_active,
+      config_json: req.body.config_json || req.body.config || {},
+      updated_at: new Date().toISOString()
     };
 
     const { data, error } = await supabaseAdmin
@@ -386,272 +763,236 @@ app.post("/rules", requireAuth, async (req, res) => {
       .single();
 
     if (error) throw error;
+
     return res.json({ ok: true, data });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error guardando regla" });
-  }
-});
-
-app.post("/rules/apply", requireAuth, async (req, res) => {
-  try {
-    const out = await tryApplyRules(req.user.id);
-    if (!out.ok) {
-      return res.status(500).json({ ok: false, error: out.error?.message || "apply_rules_v2 falló" });
-    }
-    return res.json({ ok: true, data: out.data });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error aplicando reglas" });
-  }
-});
-
-/* =========================
-   PLAID
-========================= */
-
-app.post("/plaid/create_link_token", requireAuth, async (req, res) => {
-  try {
-    const baseUrl =
-      process.env.APP_BASE_URL ||
-      process.env.PUBLIC_APP_URL ||
-      `https://${req.headers.host}`;
-
-    const data = await plaidRequest("/link/token/create", {
-      client_id: PLAID_CLIENT_ID,
-      secret: PLAID_SECRET,
-      client_name: "DebtYa",
-      country_codes: PLAID_COUNTRY_CODES,
-      language: "es",
-      user: { client_user_id: req.user.id },
-      products: PLAID_PRODUCTS,
-      webhooks: null,
-      redirect_uri: process.env.PLAID_REDIRECT_URI || undefined,
-      account_filters: undefined,
-      android_package_name: undefined,
-    });
-
-    return res.json({ ok: true, link_token: data.link_token, base_url: baseUrl });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: err.response?.data?.error_message || err.message || "Error creando link token",
+  } catch (error) {
+    return jsonError(res, 500, "Error creando regla", {
+      details: error.message
     });
   }
 });
 
-app.post("/plaid/web", requireAuth, async (req, res) => {
+app.get("/rules", requireUser, async (req, res) => {
   try {
-    const data = await plaidRequest("/link/token/create", {
-      client_id: PLAID_CLIENT_ID,
-      secret: PLAID_SECRET,
-      client_name: "DebtYa",
-      country_codes: PLAID_COUNTRY_CODES,
-      language: "es",
-      user: { client_user_id: req.user.id },
-      products: PLAID_PRODUCTS,
-    });
+    const { data, error } = await supabaseAdmin
+      .from("micro_rules")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false });
 
-    return res.json({ ok: true, link_token: data.link_token });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: err.response?.data?.error_message || err.message || "Error creando link token",
+    if (error) throw error;
+
+    return res.json({ ok: true, data: data || [] });
+  } catch (error) {
+    return jsonError(res, 500, "Error cargando reglas", {
+      details: error.message
     });
   }
 });
 
-app.post("/plaid/exchange_public_token", requireAuth, async (req, res) => {
+app.post("/apply_rules_v2", requireUser, async (req, res) => {
   try {
-    const publicToken = req.body.public_token;
-    if (!publicToken) {
-      return res.status(400).json({ ok: false, error: "Falta public_token" });
+    const result = await callRpc("apply_rules_v2", {
+      p_user_id: req.user.id
+    });
+
+    return res.json({
+      ok: true,
+      data: result
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error ejecutando apply_rules_v2", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/build_intents_v2", requireUser, async (req, res) => {
+  try {
+    const result = await callRpc("build_intents_v2", {
+      p_user_id: req.user.id
+    });
+
+    return res.json({
+      ok: true,
+      data: result
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error ejecutando build_intents_v2", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/approve_intent_v2", requireUser, async (req, res) => {
+  try {
+    const intentId = req.body.intent_id;
+    if (!isUuid(intentId)) {
+      return jsonError(res, 400, "intent_id inválido");
     }
 
-    const exchange = await plaidRequest("/item/public_token/exchange", {
-      client_id: PLAID_CLIENT_ID,
-      secret: PLAID_SECRET,
-      public_token: publicToken,
+    const result = await callRpc("approve_intent_v2", {
+      p_user_id: req.user.id,
+      p_intent_id: intentId
     });
 
-    const itemPayload = {
+    return res.json({
+      ok: true,
+      data: result
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error ejecutando approve_intent_v2", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/execute_intent_v2", requireUser, async (req, res) => {
+  try {
+    const intentId = req.body.intent_id;
+    if (!isUuid(intentId)) {
+      return jsonError(res, 400, "intent_id inválido");
+    }
+
+    const result = await callRpc("execute_intent_v2", {
+      p_user_id: req.user.id,
+      p_intent_id: intentId
+    });
+
+    return res.json({
+      ok: true,
+      data: result
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error ejecutando execute_intent_v2", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/auto_sweep_v2", requireUser, async (req, res) => {
+  try {
+    const result = await callRpc("auto_sweep_v2", {
+      p_user_id: req.user.id
+    });
+
+    return res.json({
+      ok: true,
+      data: result
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error ejecutando auto_sweep_v2", {
+      details: error.message
+    });
+  }
+});
+
+app.get("/payment-intents", requireUser, async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("payment_intents")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return res.json({ ok: true, data: data || [] });
+  } catch (error) {
+    return jsonError(res, 500, "Error cargando intents", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/payment-intents", requireUser, async (req, res) => {
+  try {
+    const payload = {
       user_id: req.user.id,
-      plaid_item_id: exchange.item_id,
-      access_token: exchange.access_token,
-      institution_id: req.body?.metadata?.institution?.institution_id || null,
-      institution_name: req.body?.metadata?.institution?.name || null,
-      updated_at: new Date().toISOString(),
+      debt_id: req.body.debt_id || null,
+      source_account_id: req.body.source_account_id || null,
+      strategy: req.body.strategy || "avalanche",
+      amount: safeNumber(req.body.amount),
+      status: req.body.status || "draft",
+      scheduled_for: req.body.scheduled_for || null,
+      notes: req.body.notes || null
     };
 
     const { data, error } = await supabaseAdmin
-      .from("plaid_items")
-      .upsert(itemPayload, { onConflict: "plaid_item_id" })
-      .select();
+      .from("payment_intents")
+      .insert(payload)
+      .select()
+      .single();
 
     if (error) throw error;
 
-    return res.json({
-      ok: true,
-      item_id: exchange.item_id,
-      data,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: err.response?.data?.error_message || err.message || "Error intercambiando public token",
+    return res.json({ ok: true, data });
+  } catch (error) {
+    return jsonError(res, 500, "Error creando intent", {
+      details: error.message
     });
   }
 });
 
-app.get("/plaid/accounts", requireAuth, async (req, res) => {
+app.post("/payment-intents/:id/approve", requireUser, async (req, res) => {
   try {
-    const accessToken = await getUserPlaidAccessToken(req.user.id);
-
-    const data = await plaidRequest("/accounts/get", {
-      client_id: PLAID_CLIENT_ID,
-      secret: PLAID_SECRET,
-      access_token: accessToken,
-    });
-
-    const accounts = Array.isArray(data.accounts)
-      ? data.accounts.map((a) => ({
-          id: a.account_id,
-          account_id: a.account_id,
-          name: a.name,
-          official_name: a.official_name,
-          subtype: a.subtype,
-          type: a.type,
-          mask: a.mask,
-          current_balance: safeNumber(a.balances?.current, 0),
-          available_balance: safeNumber(a.balances?.available, 0),
-          balances: a.balances || {},
-        }))
-      : [];
-
-    return res.json({ ok: true, data: accounts });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: err.response?.data?.error_message || err.message || "Error cargando cuentas de Plaid",
-    });
-  }
-});
-
-app.post("/plaid/accounts", requireAuth, async (req, res) => {
-  req.method = "GET";
-  return app._router.handle(req, res, () => {});
-});
-
-app.post("/plaid/transactions/sync", requireAuth, async (req, res) => {
-  try {
-    const accessToken = await getUserPlaidAccessToken(req.user.id);
-
-    let cursor = null;
-    let added = [];
-    let hasMore = true;
-    let loops = 0;
-
-    while (hasMore && loops < 20) {
-      loops += 1;
-
-      const sync = await plaidRequest("/transactions/sync", {
-        client_id: PLAID_CLIENT_ID,
-        secret: PLAID_SECRET,
-        access_token: accessToken,
-        cursor,
-      });
-
-      added = added.concat(sync.added || []);
-      cursor = sync.next_cursor || cursor;
-      hasMore = !!sync.has_more;
+    const intentId = req.params.id;
+    if (!isUuid(intentId)) {
+      return jsonError(res, 400, "ID inválido");
     }
 
-    const rows = added.map((t) => ({
-      user_id: req.user.id,
-      transaction_id: t.transaction_id,
-      account_id: t.account_id,
-      amount: safeNumber(t.amount, 0),
-      date: t.date || null,
-      name: t.name || null,
-      merchant_name: t.merchant_name || null,
-      category_primary: Array.isArray(t.category) && t.category.length ? t.category[0] : null,
-      raw_json: t,
-      updated_at: new Date().toISOString(),
-    }));
+    const result = await callRpc("approve_intent_v2", {
+      p_user_id: req.user.id,
+      p_intent_id: intentId
+    });
 
-    if (rows.length) {
-      const { error } = await supabaseAdmin
-        .from("transactions_raw")
-        .upsert(rows, { onConflict: "transaction_id" });
+    return res.json({ ok: true, data: result });
+  } catch (error) {
+    return jsonError(res, 500, "Error aprobando intent", {
+      details: error.message
+    });
+  }
+});
 
-      if (error) throw error;
+app.post("/payment-intents/:id/execute", requireUser, async (req, res) => {
+  try {
+    const intentId = req.params.id;
+    if (!isUuid(intentId)) {
+      return jsonError(res, 400, "ID inválido");
     }
 
-    return res.json({
-      ok: true,
-      added_count: rows.length,
-      data: rows,
-      next_cursor: cursor,
+    const result = await callRpc("execute_intent_v2", {
+      p_user_id: req.user.id,
+      p_intent_id: intentId
     });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: err.response?.data?.error_message || err.message || "Error sincronizando transacciones",
+
+    return res.json({ ok: true, data: result });
+  } catch (error) {
+    return jsonError(res, 500, "Error ejecutando intent", {
+      details: error.message
     });
   }
 });
 
-app.get("/plaid/transactions", requireAuth, async (req, res) => {
+app.get("/payment-trace", requireUser, async (req, res) => {
   try {
     const { data, error } = await supabaseAdmin
-      .from("transactions_raw")
+      .from("v_payment_trace")
       .select("*")
       .eq("user_id", req.user.id)
-      .order("date", { ascending: false })
-      .limit(100);
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return res.json({ ok: true, data: Array.isArray(data) ? data : [] });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando transacciones" });
+
+    return res.json({ ok: true, data: data || [] });
+  } catch (error) {
+    return jsonError(res, 500, "Error cargando trace", {
+      details: error.message
+    });
   }
 });
 
-app.get("/transactions", requireAuth, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("transactions_raw")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("date", { ascending: false })
-      .limit(100);
-
-    if (error) throw error;
-    return res.json({ ok: true, data: Array.isArray(data) ? data : [] });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando transacciones" });
-  }
-});
-
-/* =========================
-   DEBTS / STRATEGY
-========================= */
-
-app.get("/debts", requireAuth, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("debts")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .eq("is_active", true)
-      .order("created_at", { ascending: true });
-
-    if (error) throw error;
-    return res.json({ ok: true, data: Array.isArray(data) ? data : [] });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando deudas" });
-  }
-});
-
-app.get("/strategy/compare", requireAuth, async (req, res) => {
+app.get("/strategy/compare", requireUser, async (req, res) => {
   try {
     const { data: debts, error } = await supabaseAdmin
       .from("debts")
@@ -661,296 +1002,231 @@ app.get("/strategy/compare", requireAuth, async (req, res) => {
 
     if (error) throw error;
 
-    const list = Array.isArray(debts) ? debts : [];
-    if (!list.length) {
-      return res.json({
-        ok: true,
-        data: {
-          avalanche: { months_to_payoff: 0, total_interest: 0 },
-          snowball: { months_to_payoff: 0, total_interest: 0 },
-        },
-      });
-    }
+    const monthlyBudget = safeNumber(req.query.monthly_budget || req.body?.monthly_budget, 0);
+    const extraPayment = safeNumber(req.query.extra_payment || req.body?.extra_payment, 0);
 
-    const totalBalance = list.reduce((s, d) => s + safeNumber(d.balance, 0), 0);
-    const avgApr = list.length
-      ? list.reduce((s, d) => s + safeNumber(d.apr, 0), 0) / list.length
-      : 0;
+    const normalizedDebts = (debts || []).map((d) => ({
+      id: d.id,
+      name: d.name,
+      balance: safeNumber(d.balance),
+      apr: safeNumber(d.apr),
+      minimum_payment: safeNumber(d.minimum_payment)
+    }));
 
-    const avalancheMonths = Math.max(1, Math.ceil(totalBalance / Math.max(1, list.reduce((s, d) => s + safeNumber(d.minimum_payment || d.minimum, 0), 0))));
-    const snowballMonths = Math.max(1, avalancheMonths + (list.length > 1 ? 1 : 0));
+    const compare = (strategyName) => {
+      let items = normalizedDebts.map((d) => ({ ...d }));
+      let month = 0;
+      let totalInterest = 0;
+      const timeline = [];
 
-    const avalancheInterest = totalBalance * (avgApr / 100) * 0.45;
-    const snowballInterest = totalBalance * (avgApr / 100) * 0.52;
+      while (items.some((d) => d.balance > 0.009) && month < 600) {
+        month += 1;
+
+        const active = items.filter((d) => d.balance > 0.009);
+        const minimums = active.reduce((sum, d) => sum + d.minimum_payment, 0);
+        let extra = Math.max(0, monthlyBudget + extraPayment - minimums);
+
+        active.forEach((d) => {
+          const monthlyRate = d.apr / 100 / 12;
+          const interest = d.balance * monthlyRate;
+          totalInterest += interest;
+          d.balance += interest;
+        });
+
+        let ordered = [...active];
+        if (strategyName === "avalanche") {
+          ordered.sort((a, b) => b.apr - a.apr || a.balance - b.balance);
+        } else {
+          ordered.sort((a, b) => a.balance - b.balance || b.apr - a.apr);
+        }
+
+        ordered.forEach((d, index) => {
+          let payment = d.minimum_payment;
+          if (index === 0) payment += extra;
+          payment = Math.min(payment, d.balance);
+          d.balance = Math.max(0, d.balance - payment);
+        });
+
+        timeline.push({
+          month,
+          remaining_balance: Number(
+            items.reduce((sum, d) => sum + d.balance, 0).toFixed(2)
+          )
+        });
+      }
+
+      return {
+        strategy: strategyName,
+        months: month,
+        total_interest: Number(totalInterest.toFixed(2)),
+        total_paid: Number(
+          (
+            normalizedDebts.reduce((sum, d) => sum + d.balance, 0) +
+            totalInterest
+          ).toFixed(2)
+        ),
+        timeline
+      };
+    };
+
+    const avalanche = compare("avalanche");
+    const snowball = compare("snowball");
 
     return res.json({
       ok: true,
       data: {
-        avalanche: {
-          months_to_payoff: avalancheMonths,
-          total_interest: Number(avalancheInterest.toFixed(2)),
+        inputs: {
+          debts: normalizedDebts,
+          monthly_budget: monthlyBudget,
+          extra_payment: extraPayment
         },
-        snowball: {
-          months_to_payoff: snowballMonths,
-          total_interest: Number(snowballInterest.toFixed(2)),
-        },
-      },
+        avalanche,
+        snowball
+      }
     });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error comparando estrategias" });
+  } catch (error) {
+    return jsonError(res, 500, "Error comparando estrategias", {
+      details: error.message
+    });
   }
 });
 
-/* =========================
-   INTENTS
-========================= */
-
-app.get("/payment-intents", requireAuth, async (req, res) => {
+app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
   try {
-    const { data, error } = await supabaseAdmin
-      .from("payment_intents")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
+    if (!supabaseAdmin) {
+      return jsonError(res, 500, "Supabase no configurado");
+    }
+
+    const { data: users, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id");
 
     if (error) throw error;
-    return res.json({ ok: true, data: Array.isArray(data) ? data : [] });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando payment intents" });
-  }
-});
 
-app.post("/payment-intents/build", requireAuth, async (req, res) => {
-  try {
-    const out = await tryBuildIntentsForUser(req.user.id);
-    if (!out.ok) {
-      return res.status(500).json({ ok: false, error: out.error?.message || "build_intents_v2 falló" });
-    }
-    return res.json({ ok: true, data: out.data });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error construyendo intents" });
-  }
-});
-
-app.post("/payment-intents/:intentId/approve", requireAuth, async (req, res) => {
-  try {
-    const out = await tryApproveIntent(req.params.intentId, req.user.id);
-    if (!out.ok) {
-      return res.status(500).json({ ok: false, error: out.error?.message || "approve_intent_v2 falló" });
-    }
-    return res.json({ ok: true, data: out.data });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error aprobando intent" });
-  }
-});
-
-app.post("/payment-intents/:intentId/execute", requireAuth, async (req, res) => {
-  try {
-    const out = await tryExecuteIntent(req.params.intentId, req.user.id);
-    if (!out.ok) {
-      return res.status(500).json({ ok: false, error: out.error?.message || "execute_intent_v2 falló" });
-    }
-    return res.json({ ok: true, data: out.data });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error ejecutando intent" });
-  }
-});
-
-/* =========================
-   HISTORY / TRACE
-========================= */
-
-app.get("/payment-executions", requireAuth, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("payment_executions")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    if (!error) {
-      return res.json({ ok: true, data: Array.isArray(data) ? data : [] });
-    }
-
-    const trace = await supabaseAdmin
-      .from("v_payment_trace")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    if (trace.error) throw trace.error;
-
-    return res.json({ ok: true, data: Array.isArray(trace.data) ? trace.data : [] });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando historial" });
-  }
-});
-
-app.get("/history", requireAuth, async (req, res) => {
-  try {
-    const trace = await supabaseAdmin
-      .from("v_payment_trace")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    if (trace.error) throw trace.error;
-
-    return res.json({ ok: true, data: Array.isArray(trace.data) ? trace.data : [] });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error cargando historial" });
-  }
-});
-
-/* =========================
-   CRON SAFE / FULL AUTO
-========================= */
-
-async function runFullAutoForUser(userId) {
-  const summary = {
-    user_id: userId,
-    mode: "full_auto",
-    skipped: false,
-    built: false,
-    approved: 0,
-    executed: 0,
-    notes: [],
-  };
-
-  const prefs = await getUserPreferencesRow(userId);
-
-  if (prefs.execution_mode !== "full_auto") {
-    summary.skipped = true;
-    summary.notes.push("Usuario en modo safe. No se ejecuta automáticamente.");
-    return summary;
-  }
-
-  const autoSweep = await tryAutoSweep(userId);
-  if (autoSweep.ok) {
-    summary.notes.push("auto_sweep_v2 ejecutado correctamente.");
-    summary.built = true;
-    return summary;
-  }
-
-  summary.notes.push(
-    `auto_sweep_v2 no disponible o falló: ${autoSweep.error?.message || "sin detalle"}`
-  );
-
-  const applyRules = await tryApplyRules(userId);
-  if (applyRules.ok) {
-    summary.notes.push("apply_rules_v2 ejecutado correctamente.");
-  } else {
-    summary.notes.push(`apply_rules_v2 falló: ${applyRules.error?.message || "sin detalle"}`);
-  }
-
-  const build = await tryBuildIntentsForUser(userId);
-  if (build.ok) {
-    summary.built = true;
-    summary.notes.push("build_intents_v2 ejecutado correctamente.");
-  } else {
-    summary.notes.push(`build_intents_v2 falló: ${build.error?.message || "sin detalle"}`);
-  }
-
-  const intents = await getPendingOrApprovedIntents(userId);
-
-  for (const intent of intents) {
-    const status = String(intent.status || "").toLowerCase();
-
-    if (["pending", "built", "created", "ready", "draft"].includes(status)) {
-      const approve = await tryApproveIntent(intent.id, userId);
-      if (approve.ok) {
-        summary.approved += 1;
-        summary.notes.push(`Intent aprobado: ${intent.id}`);
-      } else {
-        summary.notes.push(`No se pudo aprobar ${intent.id}: ${approve.error?.message || "sin detalle"}`);
-        continue;
-      }
-    }
-
-    const execute = await tryExecuteIntent(intent.id, userId);
-    if (execute.ok) {
-      summary.executed += 1;
-      summary.notes.push(`Intent ejecutado: ${intent.id}`);
-    } else {
-      summary.notes.push(`No se pudo ejecutar ${intent.id}: ${execute.error?.message || "sin detalle"}`);
-    }
-  }
-
-  return summary;
-}
-
-app.post("/cron/full-auto", async (req, res) => {
-  if (!isCronAuthorized(req)) {
-    return res.status(401).json({ ok: false, error: "Unauthorized" });
-  }
-
-  try {
-    const startedAt = new Date().toISOString();
-
-    const { data: prefsRows, error: prefsError } = await supabaseAdmin
-      .from("user_preferences")
-      .select("user_id, execution_mode")
-      .eq("execution_mode", "full_auto");
-
-    if (prefsError) throw prefsError;
-
-    const users = Array.isArray(prefsRows) ? prefsRows : [];
     const results = [];
-
     let successUsers = 0;
     let failedUsers = 0;
+    let allocationsCreated = 0;
+    let intentsCreated = 0;
     let intentsExecuted = 0;
+    let totalExecutedAmount = 0;
 
-    for (const row of users) {
+    for (const user of users || []) {
       try {
-        const summary = await runFullAutoForUser(row.user_id);
-        results.push(summary);
+        const userId = user.id;
+
+        const applyResult = await callRpc("apply_rules_v2", {
+          p_user_id: userId
+        }).catch(() => null);
+
+        const buildResult = await callRpc("build_intents_v2", {
+          p_user_id: userId
+        }).catch(() => null);
+
+        let buildItems = [];
+        if (Array.isArray(buildResult)) buildItems = buildResult;
+        if (buildResult?.intents && Array.isArray(buildResult.intents)) {
+          buildItems = buildResult.intents;
+        }
+
+        let createdForUser = 0;
+        let executedForUser = 0;
+        let totalExecutedForUser = 0;
+
+        for (const item of buildItems) {
+          const intentId =
+            item?.intent_id || item?.id || item?.payment_intent_id || null;
+          if (!intentId || !isUuid(intentId)) continue;
+
+          createdForUser += 1;
+
+          await callRpc("approve_intent_v2", {
+            p_user_id: userId,
+            p_intent_id: intentId
+          }).catch(() => null);
+
+          const executeResult = await callRpc("execute_intent_v2", {
+            p_user_id: userId,
+            p_intent_id: intentId
+          }).catch(() => null);
+
+          executedForUser += 1;
+
+          const executedAmount =
+            safeNumber(executeResult?.amount) ||
+            safeNumber(executeResult?.executed_amount) ||
+            safeNumber(item?.amount);
+
+          totalExecutedForUser += executedAmount;
+        }
+
+        const allocationsForUser =
+          safeNumber(applyResult?.allocations_created) ||
+          safeNumber(applyResult?.count) ||
+          0;
+
+        allocationsCreated += allocationsForUser;
+        intentsCreated += createdForUser;
+        intentsExecuted += executedForUser;
+        totalExecutedAmount += totalExecutedForUser;
         successUsers += 1;
-        intentsExecuted += safeNumber(summary.executed, 0);
-      } catch (err) {
+
         results.push({
-          user_id: row.user_id,
-          mode: "full_auto",
-          skipped: false,
-          built: false,
-          approved: 0,
-          executed: 0,
-          notes: [err.message || "Error ejecutando full auto"],
+          user_id: userId,
+          ok: true,
+          allocations_created: allocationsForUser,
+          intents_created: createdForUser,
+          intents_executed: executedForUser,
+          total_executed: Number(totalExecutedForUser.toFixed(2))
         });
+      } catch (error) {
         failedUsers += 1;
+        results.push({
+          user_id: user.id,
+          ok: false,
+          error: error.message
+        });
       }
     }
 
     return res.json({
       ok: true,
-      ran_at: startedAt,`r`n      server_version: "cron-safe-v1",`r`n      server_version: "cron-safe-v1",
-      total_users: users.length,
+      server_version: SERVER_VERSION,
+      ran_at: new Date().toISOString(),
+      total_users: (users || []).length,
       success_users: successUsers,
       failed_users: failedUsers,
+      allocations_created: allocationsCreated,
+      intents_created: intentsCreated,
       intents_executed: intentsExecuted,
+      total_executed_amount: Number(totalExecutedAmount.toFixed(2)),
       results,
+      env_debug: {
+        has_supabase_url: !!SUPABASE_URL,
+        has_anon_key: !!SUPABASE_ANON_KEY,
+        has_service_role_key: !!SUPABASE_SERVICE_ROLE_KEY,
+        has_cron_secret: !!CRON_SECRET
+      }
     });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: err.message || "Error ejecutando cron full-auto",
+  } catch (error) {
+    return jsonError(res, 500, "Error ejecutando cron full-auto", {
+      details: error.message
     });
   }
 });
-
-/* =========================
-   FALLBACK WEB
-========================= */
 
 app.get("*", (_req, res) => {
   return res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor DebtYa corriendo en puerto ${PORT}`);
+app.use((err, _req, res, _next) => {
+  console.error("ERROR NO CONTROLADO:", err);
+  return jsonError(res, 500, "Error interno del servidor", {
+    details: err.message
+  });
 });
 
-
+app.listen(PORT, () => {
+  console.log(`DebtYa API escuchando en puerto ${PORT}`);
+  console.log(`Server version: ${SERVER_VERSION}`);
+});
