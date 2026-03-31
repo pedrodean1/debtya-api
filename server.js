@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v3";
+const SERVER_VERSION = "cron-safe-v4";
 
 const {
   SUPABASE_URL,
@@ -66,6 +66,18 @@ function isUuid(value) {
 function safeNumber(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function safeNullableNumber(value, fallback = null) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function safeBoolean(value, fallback = false) {
+  if (value === true || value === "true" || value === 1 || value === "1") return true;
+  if (value === false || value === "false" || value === 0 || value === "0") return false;
+  return fallback;
 }
 
 function jsonError(res, status, message, extra = {}) {
@@ -261,6 +273,104 @@ async function callRpc(name, params = {}) {
 
 function getBaseUrl(req) {
   return APP_BASE_URL || FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
+}
+
+function buildMicroRulePayload(userId, body = {}) {
+  const mode = body.mode || body.rule_type || "roundup_percent";
+  const config = body.config_json || body.config || {};
+
+  const percent =
+    body.percent !== undefined
+      ? safeNumber(body.percent)
+      : config.percent !== undefined
+      ? safeNumber(config.percent)
+      : mode === "roundup_percent"
+      ? 10
+      : 0;
+
+  const fixedAmount =
+    body.fixed_amount !== undefined
+      ? safeNumber(body.fixed_amount)
+      : config.fixed_amount !== undefined
+      ? safeNumber(config.fixed_amount)
+      : config.amount !== undefined
+      ? safeNumber(config.amount)
+      : 0;
+
+  const roundupTo =
+    body.roundup_to !== undefined
+      ? safeNumber(body.roundup_to)
+      : config.roundup_to !== undefined
+      ? safeNumber(config.roundup_to)
+      : 1;
+
+  const minPurchaseAmount =
+    body.min_purchase_amount !== undefined
+      ? safeNumber(body.min_purchase_amount)
+      : config.min_purchase_amount !== undefined
+      ? safeNumber(config.min_purchase_amount)
+      : 0;
+
+  const capDaily =
+    body.cap_daily !== undefined
+      ? safeNullableNumber(body.cap_daily)
+      : config.cap_daily !== undefined
+      ? safeNullableNumber(config.cap_daily)
+      : null;
+
+  const capWeekly =
+    body.cap_weekly !== undefined
+      ? safeNullableNumber(body.cap_weekly)
+      : config.cap_weekly !== undefined
+      ? safeNullableNumber(config.cap_weekly)
+      : null;
+
+  const targetDebtId =
+    body.target_debt_id !== undefined
+      ? body.target_debt_id || null
+      : config.target_debt_id !== undefined
+      ? config.target_debt_id || null
+      : body.debt_id !== undefined
+      ? body.debt_id || null
+      : null;
+
+  return {
+    user_id: userId,
+    enabled:
+      body.enabled !== undefined
+        ? safeBoolean(body.enabled, true)
+        : body.is_active !== undefined
+        ? safeBoolean(body.is_active, true)
+        : true,
+    mode,
+    fixed_amount: fixedAmount,
+    percent,
+    roundup_to: roundupTo,
+    min_purchase_amount: minPurchaseAmount,
+    cap_daily: capDaily,
+    cap_weekly: capWeekly,
+    target_debt_id: isUuid(targetDebtId) ? targetDebtId : null,
+    auto_run:
+      body.auto_run !== undefined
+        ? safeBoolean(body.auto_run, false)
+        : config.auto_run !== undefined
+        ? safeBoolean(config.auto_run, false)
+        : false,
+    payout_enabled:
+      body.payout_enabled !== undefined
+        ? safeBoolean(body.payout_enabled, false)
+        : config.payout_enabled !== undefined
+        ? safeBoolean(config.payout_enabled, false)
+        : false,
+    payout_min_threshold:
+      body.payout_min_threshold !== undefined
+        ? safeNumber(body.payout_min_threshold)
+        : config.payout_min_threshold !== undefined
+        ? safeNumber(config.payout_min_threshold)
+        : 0,
+    updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  };
 }
 
 app.get("/health", async (_req, res) => {
@@ -738,16 +848,27 @@ app.post("/payment-plans", requireUser, async (req, res) => {
   }
 });
 
+app.get("/rules", requireUser, async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("micro_rules")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return res.json({ ok: true, data: data || [] });
+  } catch (error) {
+    return jsonError(res, 500, "Error cargando reglas", {
+      details: error.message
+    });
+  }
+});
+
 app.post("/rules", requireUser, async (req, res) => {
   try {
-    const payload = {
-      user_id: req.user.id,
-      name: req.body.name || "Regla",
-      rule_type: req.body.rule_type || "roundup_percent",
-      is_active: req.body.is_active === undefined ? true : !!req.body.is_active,
-      config_json: req.body.config_json || req.body.config || {},
-      updated_at: new Date().toISOString()
-    };
+    const payload = buildMicroRulePayload(req.user.id, req.body);
 
     const { data, error } = await supabaseAdmin
       .from("micro_rules")
@@ -765,19 +886,100 @@ app.post("/rules", requireUser, async (req, res) => {
   }
 });
 
-app.get("/rules", requireUser, async (req, res) => {
+app.patch("/rules/:id", requireUser, async (req, res) => {
   try {
+    const ruleId = req.params.id;
+    if (!isUuid(ruleId)) {
+      return jsonError(res, 400, "ID inválido");
+    }
+
+    const config = req.body.config_json || req.body.config || {};
+    const patch = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (req.body.enabled !== undefined) patch.enabled = safeBoolean(req.body.enabled, true);
+    if (req.body.is_active !== undefined) patch.enabled = safeBoolean(req.body.is_active, true);
+    if (req.body.mode !== undefined) patch.mode = req.body.mode;
+    if (req.body.rule_type !== undefined) patch.mode = req.body.rule_type;
+
+    if (req.body.fixed_amount !== undefined) patch.fixed_amount = safeNumber(req.body.fixed_amount);
+    else if (config.fixed_amount !== undefined) patch.fixed_amount = safeNumber(config.fixed_amount);
+    else if (config.amount !== undefined) patch.fixed_amount = safeNumber(config.amount);
+
+    if (req.body.percent !== undefined) patch.percent = safeNumber(req.body.percent);
+    else if (config.percent !== undefined) patch.percent = safeNumber(config.percent);
+
+    if (req.body.roundup_to !== undefined) patch.roundup_to = safeNumber(req.body.roundup_to);
+    else if (config.roundup_to !== undefined) patch.roundup_to = safeNumber(config.roundup_to);
+
+    if (req.body.min_purchase_amount !== undefined) patch.min_purchase_amount = safeNumber(req.body.min_purchase_amount);
+    else if (config.min_purchase_amount !== undefined) patch.min_purchase_amount = safeNumber(config.min_purchase_amount);
+
+    if (req.body.cap_daily !== undefined) patch.cap_daily = safeNullableNumber(req.body.cap_daily);
+    else if (config.cap_daily !== undefined) patch.cap_daily = safeNullableNumber(config.cap_daily);
+
+    if (req.body.cap_weekly !== undefined) patch.cap_weekly = safeNullableNumber(req.body.cap_weekly);
+    else if (config.cap_weekly !== undefined) patch.cap_weekly = safeNullableNumber(config.cap_weekly);
+
+    const targetDebtId =
+      req.body.target_debt_id !== undefined
+        ? req.body.target_debt_id
+        : config.target_debt_id !== undefined
+        ? config.target_debt_id
+        : req.body.debt_id !== undefined
+        ? req.body.debt_id
+        : undefined;
+
+    if (targetDebtId !== undefined) {
+      patch.target_debt_id = isUuid(targetDebtId) ? targetDebtId : null;
+    }
+
+    if (req.body.auto_run !== undefined) patch.auto_run = safeBoolean(req.body.auto_run, false);
+    else if (config.auto_run !== undefined) patch.auto_run = safeBoolean(config.auto_run, false);
+
+    if (req.body.payout_enabled !== undefined) patch.payout_enabled = safeBoolean(req.body.payout_enabled, false);
+    else if (config.payout_enabled !== undefined) patch.payout_enabled = safeBoolean(config.payout_enabled, false);
+
+    if (req.body.payout_min_threshold !== undefined) patch.payout_min_threshold = safeNumber(req.body.payout_min_threshold);
+    else if (config.payout_min_threshold !== undefined) patch.payout_min_threshold = safeNumber(config.payout_min_threshold);
+
     const { data, error } = await supabaseAdmin
       .from("micro_rules")
-      .select("*")
+      .update(patch)
+      .eq("id", ruleId)
       .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
+      .select()
+      .single();
 
     if (error) throw error;
 
-    return res.json({ ok: true, data: data || [] });
+    return res.json({ ok: true, data });
   } catch (error) {
-    return jsonError(res, 500, "Error cargando reglas", {
+    return jsonError(res, 500, "Error actualizando regla", {
+      details: error.message
+    });
+  }
+});
+
+app.delete("/rules/:id", requireUser, async (req, res) => {
+  try {
+    const ruleId = req.params.id;
+    if (!isUuid(ruleId)) {
+      return jsonError(res, 400, "ID inválido");
+    }
+
+    const { error } = await supabaseAdmin
+      .from("micro_rules")
+      .delete()
+      .eq("id", ruleId)
+      .eq("user_id", req.user.id);
+
+    if (error) throw error;
+
+    return res.json({ ok: true });
+  } catch (error) {
+    return jsonError(res, 500, "Error eliminando regla", {
       details: error.message
     });
   }
