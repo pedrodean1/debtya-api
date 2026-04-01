@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v4";
+const SERVER_VERSION = "cron-safe-v5";
 
 const {
   SUPABASE_URL,
@@ -373,6 +373,182 @@ function buildMicroRulePayload(userId, body = {}) {
   };
 }
 
+function normalizePaymentPlan(row) {
+  if (!row) {
+    return {
+      strategy: "avalanche",
+      monthly_budget_default: 0,
+      extra_payment_default: 0,
+      automation_mode: "manual",
+      auto_mode: "manual"
+    };
+  }
+
+  const automationMode = row.automation_mode || row.auto_mode || "manual";
+
+  return {
+    ...row,
+    monthly_budget_default:
+      row.monthly_budget_default !== undefined && row.monthly_budget_default !== null
+        ? safeNumber(row.monthly_budget_default)
+        : safeNumber(row.monthly_budget),
+    extra_payment_default: safeNumber(row.extra_payment_default),
+    automation_mode: automationMode,
+    auto_mode: automationMode
+  };
+}
+
+async function getCurrentPaymentPlan(userId) {
+  const { data, error } = await supabaseAdmin
+    .from("payment_plans")
+    .select("*")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+
+  if (error) throw error;
+  return normalizePaymentPlan(data?.[0] || null);
+}
+
+async function savePaymentPlanForUser(userId, body = {}) {
+  const payload = {
+    user_id: userId,
+    strategy: body.strategy || "avalanche",
+    monthly_budget:
+      body.monthly_budget !== undefined
+        ? safeNumber(body.monthly_budget)
+        : safeNumber(body.monthly_budget_default),
+    extra_payment_default:
+      body.extra_payment_default !== undefined
+        ? safeNumber(body.extra_payment_default)
+        : 0,
+    auto_mode: body.auto_mode || body.automation_mode || "manual",
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from("payment_plans")
+    .upsert(payload, { onConflict: "user_id" })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return normalizePaymentPlan(data);
+}
+
+async function importPlaidAccountsForUser(userId) {
+  if (!plaidClient) {
+    throw new Error("Plaid no configurado");
+  }
+
+  const item = await getLatestPlaidItemForUser(userId);
+  if (!item?.access_token) {
+    const err = new Error("No hay cuenta bancaria conectada");
+    err.status = 400;
+    throw err;
+  }
+
+  const response = await plaidClient.accountsGet({
+    access_token: item.access_token
+  });
+
+  const saved = await insertAccountsFromPlaid(userId, response.data.accounts, item);
+
+  return {
+    item,
+    response,
+    saved
+  };
+}
+
+async function compareStrategiesForUser(userId, monthlyBudget = 0, extraPayment = 0) {
+  const { data: debts, error } = await supabaseAdmin
+    .from("debts")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_active", true);
+
+  if (error) throw error;
+
+  const normalizedDebts = (debts || []).map((d) => ({
+    id: d.id,
+    name: d.name,
+    balance: safeNumber(d.balance),
+    apr: safeNumber(d.apr),
+    minimum_payment: safeNumber(d.minimum_payment)
+  }));
+
+  const compare = (strategyName) => {
+    let items = normalizedDebts.map((d) => ({ ...d }));
+    let month = 0;
+    let totalInterest = 0;
+    const timeline = [];
+
+    while (items.some((d) => d.balance > 0.009) && month < 600) {
+      month += 1;
+
+      const active = items.filter((d) => d.balance > 0.009);
+      const minimums = active.reduce((sum, d) => sum + d.minimum_payment, 0);
+      const extra = Math.max(0, monthlyBudget + extraPayment - minimums);
+
+      active.forEach((d) => {
+        const monthlyRate = d.apr / 100 / 12;
+        const interest = d.balance * monthlyRate;
+        totalInterest += interest;
+        d.balance += interest;
+      });
+
+      let ordered = [...active];
+      if (strategyName === "avalanche") {
+        ordered.sort((a, b) => b.apr - a.apr || a.balance - b.balance);
+      } else {
+        ordered.sort((a, b) => a.balance - b.balance || b.apr - a.apr);
+      }
+
+      ordered.forEach((d, index) => {
+        let payment = d.minimum_payment;
+        if (index === 0) payment += extra;
+        payment = Math.min(payment, d.balance);
+        d.balance = Math.max(0, d.balance - payment);
+      });
+
+      timeline.push({
+        month,
+        remaining_balance: Number(
+          items.reduce((sum, d) => sum + d.balance, 0).toFixed(2)
+        )
+      });
+    }
+
+    return {
+      strategy: strategyName,
+      months: month,
+      months_to_payoff: month,
+      total_interest: Number(totalInterest.toFixed(2)),
+      total_paid: Number(
+        (
+          normalizedDebts.reduce((sum, d) => sum + d.balance, 0) +
+          totalInterest
+        ).toFixed(2)
+      ),
+      timeline
+    };
+  };
+
+  const avalanche = compare("avalanche");
+  const snowball = compare("snowball");
+
+  return {
+    inputs: {
+      debts: normalizedDebts,
+      monthly_budget: monthlyBudget,
+      extra_payment: extraPayment
+    },
+    avalanche,
+    snowball
+  };
+}
+
 app.get("/health", async (_req, res) => {
   return res.json({
     ok: true,
@@ -537,8 +713,8 @@ app.post("/plaid/exchange_public_token", requireUser, async (req, res) => {
       return jsonError(res, 500, "Plaid no configurado");
     }
 
-    const publicToken = req.body.public_token;
-    const metadata = req.body.metadata || {};
+    const publicToken = req.body?.public_token || null;
+    const metadata = req.body?.metadata || {};
 
     if (!publicToken) {
       return jsonError(res, 400, "Falta public_token");
@@ -548,11 +724,30 @@ app.post("/plaid/exchange_public_token", requireUser, async (req, res) => {
       public_token: publicToken
     });
 
-    const accessToken = exchange.data.access_token;
-    const itemId = exchange.data.item_id;
+    const accessToken = exchange?.data?.access_token || null;
+    const itemId = exchange?.data?.item_id || null;
+
+    if (!accessToken || !itemId) {
+      return jsonError(res, 500, "Plaid no devolvió access_token o item_id", {
+        details: exchange?.data || null
+      });
+    }
+
     const institutionId = metadata?.institution?.institution_id || null;
-    const institutionName =
-      metadata?.institution?.name || (await getInstitutionName(institutionId));
+
+    let institutionName = metadata?.institution?.name || null;
+
+    if (!institutionName && institutionId) {
+      try {
+        institutionName = await getInstitutionName(institutionId);
+      } catch (institutionError) {
+        console.error(
+          "getInstitutionName ERROR:",
+          institutionError?.response?.data || institutionError?.message || institutionError
+        );
+        institutionName = null;
+      }
+    }
 
     const plaidItem = await upsertPlaidItem({
       userId: req.user.id,
@@ -565,15 +760,20 @@ app.post("/plaid/exchange_public_token", requireUser, async (req, res) => {
     return res.json({
       ok: true,
       item: {
-        id: plaidItem.id,
-        plaid_item_id: plaidItem.plaid_item_id,
-        institution_id: plaidItem.institution_id,
-        institution_name: plaidItem.institution_name
+        id: plaidItem?.id || null,
+        plaid_item_id: plaidItem?.plaid_item_id || itemId,
+        institution_id: plaidItem?.institution_id || institutionId,
+        institution_name: plaidItem?.institution_name || institutionName
       }
     });
   } catch (error) {
+    console.error(
+      "exchange_public_token ERROR:",
+      error?.response?.data || error?.message || error
+    );
+
     return jsonError(res, 500, "Error intercambiando public_token", {
-      details: error.response?.data || error.message
+      details: error?.response?.data || error?.message || null
     });
   }
 });
@@ -595,25 +795,34 @@ app.get("/plaid/accounts", requireUser, async (req, res) => {
       return jsonError(res, 500, "Plaid no configurado");
     }
 
-    const item = await getLatestPlaidItemForUser(req.user.id);
-    if (!item?.access_token) {
-      return jsonError(res, 400, "No hay cuenta bancaria conectada");
-    }
-
-    const response = await plaidClient.accountsGet({
-      access_token: item.access_token
-    });
-
-    const saved = await insertAccountsFromPlaid(req.user.id, response.data.accounts, item);
+    const result = await importPlaidAccountsForUser(req.user.id);
 
     return res.json({
       ok: true,
-      item_id: item.plaid_item_id,
-      total_accounts: response.data.accounts.length,
-      data: saved
+      item_id: result.item.plaid_item_id,
+      total_accounts: result.response.data.accounts.length,
+      data: result.saved
     });
   } catch (error) {
-    return jsonError(res, 500, "Error importando cuentas", {
+    return jsonError(res, error.status || 500, "Error importando cuentas", {
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+app.post("/plaid/accounts/import", requireUser, async (req, res) => {
+  try {
+    const result = await importPlaidAccountsForUser(req.user.id);
+
+    return res.json({
+      ok: true,
+      item_id: result.item.plaid_item_id,
+      total_accounts: result.response.data.accounts.length,
+      count: result.saved.length,
+      data: result.saved
+    });
+  } catch (error) {
+    return jsonError(res, error.status || 500, "Error importando cuentas", {
       details: error.response?.data || error.message
     });
   }
@@ -664,6 +873,7 @@ app.post("/plaid/transactions/sync", requireUser, async (req, res) => {
       ok: true,
       plaid_item_id: item.plaid_item_id,
       imported: syncResult.inserted,
+      added: syncResult.inserted,
       next_cursor: cursor
     });
   } catch (error) {
@@ -720,6 +930,7 @@ app.post("/debts", requireUser, async (req, res) => {
       minimum_payment: safeNumber(req.body.minimum_payment),
       due_day: req.body.due_day ? Number(req.body.due_day) : null,
       type: req.body.type || "credit_card",
+      goal_note: req.body.goal_note || null,
       is_active: true,
       updated_at: new Date().toISOString()
     };
@@ -757,6 +968,7 @@ app.patch("/debts/:id", requireUser, async (req, res) => {
     if (req.body.minimum_payment !== undefined) patch.minimum_payment = safeNumber(req.body.minimum_payment);
     if (req.body.due_day !== undefined) patch.due_day = req.body.due_day ? Number(req.body.due_day) : null;
     if (req.body.type !== undefined) patch.type = req.body.type;
+    if (req.body.goal_note !== undefined) patch.goal_note = req.body.goal_note || null;
     if (req.body.is_active !== undefined) patch.is_active = !!req.body.is_active;
 
     const { data, error } = await supabaseAdmin
@@ -813,7 +1025,10 @@ app.get("/payment-plans", requireUser, async (req, res) => {
 
     if (error) throw error;
 
-    return res.json({ ok: true, data: data || [] });
+    return res.json({
+      ok: true,
+      data: (data || []).map(normalizePaymentPlan)
+    });
   } catch (error) {
     return jsonError(res, 500, "Error cargando planes", {
       details: error.message
@@ -823,23 +1038,29 @@ app.get("/payment-plans", requireUser, async (req, res) => {
 
 app.post("/payment-plans", requireUser, async (req, res) => {
   try {
-    const payload = {
-      user_id: req.user.id,
-      strategy: req.body.strategy || "avalanche",
-      monthly_budget: safeNumber(req.body.monthly_budget),
-      extra_payment_default: safeNumber(req.body.extra_payment_default),
-      auto_mode: req.body.auto_mode || "manual",
-      updated_at: new Date().toISOString()
-    };
+    const data = await savePaymentPlanForUser(req.user.id, req.body);
+    return res.json({ ok: true, data });
+  } catch (error) {
+    return jsonError(res, 500, "Error guardando plan", {
+      details: error.message
+    });
+  }
+});
 
-    const { data, error } = await supabaseAdmin
-      .from("payment_plans")
-      .upsert(payload, { onConflict: "user_id" })
-      .select()
-      .single();
+app.get("/payment-plan", requireUser, async (req, res) => {
+  try {
+    const data = await getCurrentPaymentPlan(req.user.id);
+    return res.json({ ok: true, data });
+  } catch (error) {
+    return jsonError(res, 500, "Error cargando plan", {
+      details: error.message
+    });
+  }
+});
 
-    if (error) throw error;
-
+app.post("/payment-plan", requireUser, async (req, res) => {
+  try {
+    const data = await savePaymentPlanForUser(req.user.id, req.body);
     return res.json({ ok: true, data });
   } catch (error) {
     return jsonError(res, 500, "Error guardando plan", {
@@ -1002,6 +1223,30 @@ app.post("/apply_rules_v2", requireUser, async (req, res) => {
   }
 });
 
+app.post("/rules/apply", requireUser, async (req, res) => {
+  try {
+    const result = await callRpc("apply_rules_v2", {
+      p_user_id: req.user.id
+    });
+
+    const created =
+      safeNumber(result?.allocations_created) ||
+      safeNumber(result?.count) ||
+      safeNumber(result?.created) ||
+      0;
+
+    return res.json({
+      ok: true,
+      created,
+      data: result
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error aplicando reglas", {
+      details: error.message
+    });
+  }
+});
+
 app.post("/build_intents_v2", requireUser, async (req, res) => {
   try {
     const result = await callRpc("build_intents_v2", {
@@ -1014,6 +1259,23 @@ app.post("/build_intents_v2", requireUser, async (req, res) => {
     });
   } catch (error) {
     return jsonError(res, 500, "Error ejecutando build_intents_v2", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/payment-intents/build", requireUser, async (req, res) => {
+  try {
+    const result = await callRpc("build_intents_v2", {
+      p_user_id: req.user.id
+    });
+
+    return res.json({
+      ok: true,
+      data: result
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error construyendo intents", {
       details: error.message
     });
   }
@@ -1189,95 +1451,47 @@ app.get("/payment-trace", requireUser, async (req, res) => {
 
 app.get("/strategy/compare", requireUser, async (req, res) => {
   try {
-    const { data: debts, error } = await supabaseAdmin
-      .from("debts")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .eq("is_active", true);
-
-    if (error) throw error;
-
     const monthlyBudget = safeNumber(req.query.monthly_budget, 0);
     const extraPayment = safeNumber(req.query.extra_payment, 0);
 
-    const normalizedDebts = (debts || []).map((d) => ({
-      id: d.id,
-      name: d.name,
-      balance: safeNumber(d.balance),
-      apr: safeNumber(d.apr),
-      minimum_payment: safeNumber(d.minimum_payment)
-    }));
-
-    const compare = (strategyName) => {
-      let items = normalizedDebts.map((d) => ({ ...d }));
-      let month = 0;
-      let totalInterest = 0;
-      const timeline = [];
-
-      while (items.some((d) => d.balance > 0.009) && month < 600) {
-        month += 1;
-
-        const active = items.filter((d) => d.balance > 0.009);
-        const minimums = active.reduce((sum, d) => sum + d.minimum_payment, 0);
-        const extra = Math.max(0, monthlyBudget + extraPayment - minimums);
-
-        active.forEach((d) => {
-          const monthlyRate = d.apr / 100 / 12;
-          const interest = d.balance * monthlyRate;
-          totalInterest += interest;
-          d.balance += interest;
-        });
-
-        let ordered = [...active];
-        if (strategyName === "avalanche") {
-          ordered.sort((a, b) => b.apr - a.apr || a.balance - b.balance);
-        } else {
-          ordered.sort((a, b) => a.balance - b.balance || b.apr - a.apr);
-        }
-
-        ordered.forEach((d, index) => {
-          let payment = d.minimum_payment;
-          if (index === 0) payment += extra;
-          payment = Math.min(payment, d.balance);
-          d.balance = Math.max(0, d.balance - payment);
-        });
-
-        timeline.push({
-          month,
-          remaining_balance: Number(
-            items.reduce((sum, d) => sum + d.balance, 0).toFixed(2)
-          )
-        });
-      }
-
-      return {
-        strategy: strategyName,
-        months: month,
-        total_interest: Number(totalInterest.toFixed(2)),
-        total_paid: Number(
-          (
-            normalizedDebts.reduce((sum, d) => sum + d.balance, 0) +
-            totalInterest
-          ).toFixed(2)
-        ),
-        timeline
-      };
-    };
-
-    const avalanche = compare("avalanche");
-    const snowball = compare("snowball");
+    const data = await compareStrategiesForUser(
+      req.user.id,
+      monthlyBudget,
+      extraPayment
+    );
 
     return res.json({
       ok: true,
-      data: {
-        inputs: {
-          debts: normalizedDebts,
-          monthly_budget: monthlyBudget,
-          extra_payment: extraPayment
-        },
-        avalanche,
-        snowball
-      }
+      data
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error comparando estrategias", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/strategy/compare", requireUser, async (req, res) => {
+  try {
+    const monthlyBudget =
+      req.body.monthly_budget_default !== undefined
+        ? safeNumber(req.body.monthly_budget_default, 0)
+        : safeNumber(req.body.monthly_budget, 0);
+
+    const extraPayment =
+      req.body.extra_payment_default !== undefined
+        ? safeNumber(req.body.extra_payment_default, 0)
+        : safeNumber(req.body.extra_payment, 0);
+
+    const data = await compareStrategiesForUser(
+      req.user.id,
+      monthlyBudget,
+      extraPayment
+    );
+
+    return res.json({
+      ok: true,
+      data
     });
   } catch (error) {
     return jsonError(res, 500, "Error comparando estrategias", {
@@ -1418,6 +1632,7 @@ app.use((req, res, next) => {
     !req.path.startsWith("/plaid") &&
     !req.path.startsWith("/accounts") &&
     !req.path.startsWith("/debts") &&
+    !req.path.startsWith("/payment-plan") &&
     !req.path.startsWith("/payment-plans") &&
     !req.path.startsWith("/rules") &&
     !req.path.startsWith("/apply_rules_v2") &&
