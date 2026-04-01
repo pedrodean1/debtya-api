@@ -258,33 +258,28 @@
     }
 
     .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
-    .stat {
-      padding: 18px;
-    }
-
-    .stat .k {
-      color: var(--muted);
-      font-size: 12px;
+    .chip {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 12px;
+      font-size: 13px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 10px;
-    }
-
-    .stat .v {
-      font-size: 28px;
-      font-weight: 700;
-      line-height: 1.1;
     }
 
     .section {
       padding: 18px;
+    }
+
+    .section h3 {
+      margin: 0 0 14px;
+      font-size: 18px;
     }
 
     .section-head {
@@ -295,15 +290,34 @@
       margin-bottom: 14px;
     }
 
-    .section-title {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    .section-sub {
+    .section-head p {
       margin: 4px 0 0;
       color: var(--muted);
       font-size: 13px;
+    }
+
+    .metric {
+      padding: 18px;
+      min-height: 124px;
+    }
+
+    .metric .kicker {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .metric .value {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .metric .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
     }
 
     .list {
@@ -315,277 +329,359 @@
       border: 1px solid var(--line);
       border-radius: 16px;
       padding: 14px;
-      background: #fff;
+      background: #fcfdff;
     }
 
     .item-top {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
       align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
     }
 
     .item-title {
-      margin: 0 0 4px;
+      margin: 0;
       font-size: 16px;
     }
 
     .item-sub {
-      margin: 0;
-      color: var(--muted);
+      margin: 4px 0 0;
       font-size: 13px;
+      color: var(--muted);
     }
 
     .amount {
-      font-size: 20px;
-      font-weight: 700;
+      font-weight: 800;
+      font-size: 16px;
       white-space: nowrap;
     }
 
-    .tag-row {
+    .mini {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .row {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
+      gap: 8px 12px;
+      align-items: center;
     }
 
-    .tag {
-      padding: 7px 10px;
+    .bar {
+      width: 100%;
+      height: 10px;
+      background: #edf2f7;
       border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      background: #f3f6fb;
-      color: var(--text);
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #60a5fa);
+      border-radius: inherit;
+    }
+
+    .note {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f8fafc;
       border: 1px solid var(--line);
-    }
-
-    .tag.blue {
-      background: #eef4ff;
-      color: var(--primary);
-      border-color: #dbe7ff;
-    }
-
-    .tag.green {
-      background: #eaf8ef;
-      color: var(--success);
-      border-color: #d4f0dd;
-    }
-
-    .tag.yellow {
-      background: #fff8e6;
-      color: var(--warning);
-      border-color: #f5e7b5;
-    }
-
-    .tag.red {
-      background: #feecec;
-      color: var(--danger);
-      border-color: #ffd4d4;
-    }
-
-    .empty {
-      padding: 18px;
-      border: 1px dashed var(--line);
-      border-radius: 16px;
-      text-align: center;
       color: var(--muted);
-      background: #fafcff;
-    }
-
-    .notice {
-      margin-bottom: 16px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.45;
-      border: 1px solid transparent;
     }
 
-    .notice.info {
-      background: #eef4ff;
-      border-color: #dbe7ff;
-      color: var(--primary);
+    .success-box {
+      background: #ecfdf3;
+      border: 1px solid #ccebd8;
+      color: #0b7a43;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.45;
     }
 
-    .notice.success {
-      background: #eaf8ef;
-      border-color: #d4f0dd;
-      color: #16703f;
+    .warning-box {
+      background: #fff8e8;
+      border: 1px solid #f4dfac;
+      color: #946200;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.45;
     }
 
-    .notice.error {
-      background: #feecec;
-      border-color: #ffd4d4;
-      color: #b42318;
-    }
-
-    .compare-box {
-      display: grid;
-      gap: 12px;
-    }
-
-    .compare-result {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 14px;
-      background: #fff;
-    }
-
-    .compare-result h4 {
-      margin: 0 0 8px;
-      font-size: 16px;
+    .danger-box {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      color: #be123c;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.45;
     }
 
     .footer-space {
       height: 24px;
     }
 
-    @media (max-width: 980px) {
-      .hero-stats,
-      .grid-3 {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 720px) {
-      .topbar,
-      .app-header,
-      .section-head,
-      .item-top {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .hero-stats,
-      .grid-2,
+    @media (max-width: 960px) {
       .grid-3 {
         grid-template-columns: 1fr;
       }
 
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .app-header {
+        flex-direction: column;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 640px) {
       .wrap {
         padding: 12px;
       }
 
-      .auth-card,
-      .section,
-      .stat,
+      .auth-shell {
+        min-height: auto;
+      }
+
+      .auth-card {
+        padding: 18px;
+      }
+
+      .auth-title {
+        font-size: 24px;
+      }
+
       .app-header {
         padding: 16px;
       }
 
-      .stat .v {
-        font-size: 24px;
+      .section {
+        padding: 16px;
+      }
+
+      .metric {
+        min-height: auto;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .status-pill {
+        width: 100%;
+        justify-content: center;
       }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <div class="brand">
-        <div class="brand-badge">DY</div>
-        <div>
-          <h1>DebtYa</h1>
-          <p>Organiza deudas, pagos y reglas automáticas en un solo lugar.</p>
-        </div>
-      </div>
-      <div id="serverStatus" class="status-pill">Backend listo</div>
-    </div>
-
     <div id="authView" class="auth-shell">
       <div class="card auth-card">
-        <h2 class="auth-title">Entra a DebtYa</h2>
-        <p class="auth-subtitle">
-          Esta versión está hecha para ser simple, estable y fácil de usar en móvil y desktop.
-        </p>
+        <div class="brand" style="margin-bottom: 16px;">
+          <div class="brand-badge">DY</div>
+          <div>
+            <h1>DebtYa</h1>
+            <p>Control simple de deudas, pagos y automatización.</p>
+          </div>
+        </div>
 
-        <div id="authNotice" class="notice info hidden"></div>
+        <h2 class="auth-title">Entrar o crear cuenta</h2>
+        <p class="auth-subtitle">
+          Usa tu email y contraseña para entrar. Si no tienes cuenta, puedes crearla aquí mismo.
+        </p>
 
         <div class="grid">
           <div class="field">
             <label class="label" for="email">Email</label>
-            <input id="email" type="email" autocomplete="email" placeholder="tuemail@email.com" />
+            <input id="email" type="email" autocomplete="email" placeholder="tuemail@gmail.com" />
           </div>
 
           <div class="field">
             <label class="label" for="password">Contraseña</label>
-            <input id="password" type="password" autocomplete="current-password" placeholder="Tu contraseña" />
+            <input id="password" type="password" autocomplete="current-password" placeholder="********" />
           </div>
 
           <div class="actions">
-            <button id="loginBtn" type="button" class="btn-primary">Entrar</button>
-            <button id="signupBtn" type="button" class="btn-secondary">Crear cuenta</button>
-            <button id="resetBtn" type="button" class="btn-ghost">Reset password</button>
+            <button id="loginBtn" class="btn-primary" type="button">Entrar</button>
+            <button id="signupBtn" class="btn-secondary" type="button">Crear cuenta</button>
+            <button id="resetBtn" class="btn-ghost" type="button">Resetear contraseña</button>
           </div>
+
+          <div id="authMsg" class="note">Listo para iniciar.</div>
         </div>
       </div>
     </div>
 
     <div id="appView" class="hidden">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-badge">DY</div>
+          <div>
+            <h1>DebtYa</h1>
+            <p>Tu panel diario para organizar, decidir y ejecutar.</p>
+          </div>
+        </div>
+        <div class="status-pill" id="userBadge">Sin sesión</div>
+      </div>
+
       <div class="card app-header">
         <div>
-          <h2>Tu panel principal</h2>
-          <p id="userEmail">Cargando usuario...</p>
+          <h2>Panel principal</h2>
+          <p>
+            Conecta tus cuentas, importa movimientos, define reglas, compara estrategias y ejecuta pagos con control.
+          </p>
         </div>
-        <div class="actions">
-          <button id="refreshBtn" type="button" class="btn-secondary">Refrescar</button>
-          <button id="connectBankBtn" type="button" class="btn-primary">Conectar banco</button>
-          <button id="importAccountsBtn" type="button" class="btn-ghost">Importar cuentas</button>
-          <button id="importTxBtn" type="button" class="btn-ghost">Importar transacciones</button>
-          <button id="logoutBtn" type="button" class="btn-danger">Salir</button>
-        </div>
-      </div>
-
-      <div id="appNotice" class="notice info hidden"></div>
-
-      <div class="hero-stats">
-        <div class="card stat">
-          <div class="k">Deuda total</div>
-          <div id="statDebt" class="v">$0.00</div>
-        </div>
-        <div class="card stat">
-          <div class="k">Cuentas</div>
-          <div id="statAccounts" class="v">0</div>
-        </div>
-        <div class="card stat">
-          <div class="k">Reglas</div>
-          <div id="statRules" class="v">0</div>
-        </div>
-        <div class="card stat">
-          <div class="k">Intents</div>
-          <div id="statIntents" class="v">0</div>
+        <div class="hero-stats">
+          <div class="chip" id="serverChip">Backend: esperando</div>
+          <div class="chip" id="syncChip">Sincronización: pendiente</div>
+          <div class="chip" id="modeChip">Modo: manual</div>
         </div>
       </div>
 
-      <div class="grid-2">
+      <div class="grid-3" style="margin-bottom: 16px;">
+        <div class="card metric">
+          <div class="kicker">Deuda total</div>
+          <div class="value" id="metricDebt">$0.00</div>
+          <div class="hint">Suma de balances activos registrados en tus deudas.</div>
+        </div>
+        <div class="card metric">
+          <div class="kicker">Pago mínimo total</div>
+          <div class="value" id="metricMinimum">$0.00</div>
+          <div class="hint">Base mensual mínima antes de agregar extra.</div>
+        </div>
+        <div class="card metric">
+          <div class="kicker">Extra mensual</div>
+          <div class="value" id="metricExtra">$0.00</div>
+          <div class="hint">Cantidad adicional configurada para acelerar el plan.</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 16px;">
         <div class="card section">
           <div class="section-head">
             <div>
-              <h3 class="section-title">Deudas</h3>
-              <p class="section-sub">Agrega y revisa tus deudas activas.</p>
+              <h3>Acciones rápidas</h3>
+              <p>Lo esencial para uso diario.</p>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="refreshBtn" class="btn-primary" type="button">Refrescar</button>
+            <button id="refreshAllBtn" class="btn-secondary" type="button">Refrescar todo</button>
+            <button id="connectBankBtn" class="btn-ghost" type="button">Conectar banco</button>
+            <button id="importAccountsBtn" class="btn-ghost" type="button">Importar cuentas</button>
+            <button id="importTxBtn" class="btn-ghost" type="button">Importar transacciones</button>
+            <button id="logoutBtn" class="btn-danger" type="button">Cerrar sesión</button>
+          </div>
+          <div style="margin-top: 14px;" id="quickMsg" class="note">Sin acciones recientes.</div>
+        </div>
+
+        <div class="card section">
+          <div class="section-head">
+            <div>
+              <h3>Configuración del plan</h3>
+              <p>Define tu estrategia base y presupuesto.</p>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="strategySelect">Estrategia</label>
+                <select id="strategySelect">
+                  <option value="avalanche">Avalanche</option>
+                  <option value="snowball">Snowball</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label class="label" for="automationSelect">Automatización</label>
+                <select id="automationSelect">
+                  <option value="manual">Manual</option>
+                  <option value="safe">Avanzada segura</option>
+                  <option value="full_auto">Avanzada full auto</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="monthlyBudgetInput">Presupuesto mensual</label>
+                <input id="monthlyBudgetInput" type="number" step="0.01" min="0" placeholder="0.00" />
+              </div>
+
+              <div class="field">
+                <label class="label" for="extraPaymentInput">Pago extra mensual</label>
+                <input id="extraPaymentInput" type="number" step="0.01" min="0" placeholder="0.00" />
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="savePlanBtn" class="btn-primary" type="button">Guardar plan</button>
+              <button id="compareBtn" class="btn-secondary" type="button">Comparar Avalanche vs Snowball</button>
+            </div>
+
+            <div id="planMsg" class="note">Todavía no se ha guardado ninguna configuración nueva.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 16px;">
+        <div class="card section">
+          <div class="section-head">
+            <div>
+              <h3>Tus deudas</h3>
+              <p>Agrega, revisa y sigue el progreso.</p>
             </div>
           </div>
 
-          <div class="grid">
-            <div class="field">
-              <label class="label" for="debtName">Nombre</label>
-              <input id="debtName" type="text" placeholder="Ej: Chase Freedom" />
+          <div class="grid" style="margin-bottom: 14px;">
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="debtName">Nombre</label>
+                <input id="debtName" type="text" placeholder="Ej. Chase Freedom" />
+              </div>
+              <div class="field">
+                <label class="label" for="debtType">Tipo</label>
+                <select id="debtType">
+                  <option value="credit_card">Tarjeta</option>
+                  <option value="loan">Préstamo</option>
+                  <option value="personal">Personal</option>
+                  <option value="other">Otro</option>
+                </select>
+              </div>
             </div>
 
             <div class="grid-3">
               <div class="field">
                 <label class="label" for="debtBalance">Balance</label>
-                <input id="debtBalance" type="number" step="0.01" placeholder="0.00" />
+                <input id="debtBalance" type="number" step="0.01" min="0" placeholder="0.00" />
               </div>
-
               <div class="field">
-                <label class="label" for="debtApr">APR</label>
-                <input id="debtApr" type="number" step="0.01" placeholder="24.99" />
+                <label class="label" for="debtApr">APR %</label>
+                <input id="debtApr" type="number" step="0.01" min="0" placeholder="0.00" />
               </div>
-
               <div class="field">
-                <label class="label" for="debtMin">Pago mínimo</label>
-                <input id="debtMin" type="number" step="0.01" placeholder="95.00" />
+                <label class="label" for="debtMinimum">Pago mínimo</label>
+                <input id="debtMinimum" type="number" step="0.01" min="0" placeholder="0.00" />
               </div>
             </div>
 
@@ -594,225 +690,161 @@
                 <label class="label" for="debtDueDay">Día de pago</label>
                 <input id="debtDueDay" type="number" min="1" max="31" placeholder="15" />
               </div>
-
               <div class="field">
-                <label class="label" for="debtType">Tipo</label>
-                <select id="debtType">
-                  <option value="credit_card">Credit card</option>
-                  <option value="personal_loan">Personal loan</option>
-                  <option value="loan">Loan</option>
-                </select>
+                <label class="label" for="debtGoal">Meta opcional</label>
+                <input id="debtGoal" type="text" placeholder="Ej. Pagar primero esta tarjeta" />
               </div>
             </div>
 
             <div class="actions">
-              <button id="saveDebtBtn" type="button" class="btn-primary">Guardar deuda</button>
-              <button id="loadDebtsBtn" type="button" class="btn-ghost">Recargar deudas</button>
+              <button id="saveDebtBtn" class="btn-primary" type="button">Guardar deuda</button>
             </div>
           </div>
 
-          <div id="debtsList" class="list" style="margin-top: 16px;"></div>
+          <div id="debtsList" class="list">
+            <div class="note">No hay deudas cargadas todavía.</div>
+          </div>
         </div>
 
         <div class="card section">
           <div class="section-head">
             <div>
-              <h3 class="section-title">Reglas automáticas</h3>
-              <p class="section-sub">Crea reglas simples sin romper el flujo actual.</p>
+              <h3>Reglas automáticas</h3>
+              <p>Convierte movimientos en aportes automáticos a una deuda.</p>
             </div>
           </div>
 
-          <div class="grid">
+          <div class="grid" style="margin-bottom: 14px;">
             <div class="grid-2">
+              <div class="field">
+                <label class="label" for="ruleName">Nombre de regla</label>
+                <input id="ruleName" type="text" placeholder="Ej. 10% de compras de gasolina" />
+              </div>
+
+              <div class="field">
+                <label class="label" for="ruleDebtId">Deuda destino</label>
+                <select id="ruleDebtId">
+                  <option value="">Selecciona una deuda</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid-3">
+              <div class="field">
+                <label class="label" for="ruleMatchType">Tipo de coincidencia</label>
+                <select id="ruleMatchType">
+                  <option value="merchant">Merchant</option>
+                  <option value="category">Categoría</option>
+                  <option value="contains">Texto contiene</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label class="label" for="ruleMatchValue">Valor a buscar</label>
+                <input id="ruleMatchValue" type="text" placeholder="Ej. SHELL" />
+              </div>
+
               <div class="field">
                 <label class="label" for="ruleMode">Modo</label>
                 <select id="ruleMode">
-                  <option value="roundup_percent">Roundup percent</option>
-                  <option value="fixed_amount">Fixed amount</option>
-                  <option value="roundup_fixed">Roundup fixed</option>
+                  <option value="percent">Porcentaje</option>
+                  <option value="fixed">Cantidad fija</option>
                 </select>
-              </div>
-
-              <div class="field">
-                <label class="label" for="ruleEnabled">Activa</label>
-                <select id="ruleEnabled">
-                  <option value="true">Sí</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="grid-3">
-              <div class="field">
-                <label class="label" for="rulePercent">Percent</label>
-                <input id="rulePercent" type="number" step="0.01" placeholder="10" />
-              </div>
-
-              <div class="field">
-                <label class="label" for="ruleFixed">Fixed amount</label>
-                <input id="ruleFixed" type="number" step="0.01" placeholder="0" />
-              </div>
-
-              <div class="field">
-                <label class="label" for="ruleRoundupTo">Roundup to</label>
-                <input id="ruleRoundupTo" type="number" step="0.01" placeholder="1" />
-              </div>
-            </div>
-
-            <div class="grid-3">
-              <div class="field">
-                <label class="label" for="ruleMinPurchase">Min purchase</label>
-                <input id="ruleMinPurchase" type="number" step="0.01" placeholder="0" />
-              </div>
-
-              <div class="field">
-                <label class="label" for="ruleCapDaily">Cap daily</label>
-                <input id="ruleCapDaily" type="number" step="0.01" placeholder="vacío = sin límite" />
-              </div>
-
-              <div class="field">
-                <label class="label" for="ruleCapWeekly">Cap weekly</label>
-                <input id="ruleCapWeekly" type="number" step="0.01" placeholder="vacío = sin límite" />
               </div>
             </div>
 
             <div class="grid-2">
               <div class="field">
-                <label class="label" for="ruleAutoRun">Auto run</label>
-                <select id="ruleAutoRun">
-                  <option value="false">No</option>
-                  <option value="true">Sí</option>
-                </select>
+                <label class="label" for="ruleAmount">Cantidad</label>
+                <input id="ruleAmount" type="number" step="0.01" min="0" placeholder="Ej. 10 o 5.00" />
               </div>
 
               <div class="field">
-                <label class="label" for="ruleDebt">Target debt</label>
-                <select id="ruleDebt">
-                  <option value="">Sin asignar</option>
-                </select>
+                <label class="label" for="ruleCap">Tope mensual opcional</label>
+                <input id="ruleCap" type="number" step="0.01" min="0" placeholder="0.00" />
               </div>
             </div>
 
             <div class="actions">
-              <button id="saveRuleBtn" type="button" class="btn-primary">Guardar regla</button>
-              <button id="loadRulesBtn" type="button" class="btn-ghost">Recargar reglas</button>
+              <button id="saveRuleBtn" class="btn-primary" type="button">Guardar regla</button>
+              <button id="applyRulesBtn" class="btn-secondary" type="button">Aplicar reglas</button>
             </div>
+
+            <div id="rulesMsg" class="note">Crea una regla para empezar la automatización.</div>
           </div>
 
-          <div id="rulesList" class="list" style="margin-top: 16px;"></div>
+          <div id="rulesList" class="list">
+            <div class="note">No hay reglas creadas todavía.</div>
+          </div>
         </div>
       </div>
 
-      <div class="grid-2" style="margin-top: 16px;">
+      <div class="grid-2" style="margin-bottom: 16px;">
         <div class="card section">
           <div class="section-head">
             <div>
-              <h3 class="section-title">Comparación Avalanche vs Snowball</h3>
-              <p class="section-sub">Haz una comparación rápida con tu presupuesto.</p>
+              <h3>Comparación de estrategias</h3>
+              <p>Qué te conviene más: Avalanche o Snowball.</p>
             </div>
           </div>
-
-          <div class="compare-box">
-            <div class="grid-2">
-              <div class="field">
-                <label class="label" for="compareBudget">Monthly budget</label>
-                <input id="compareBudget" type="number" step="0.01" value="500" />
-              </div>
-
-              <div class="field">
-                <label class="label" for="compareExtra">Extra payment</label>
-                <input id="compareExtra" type="number" step="0.01" value="100" />
-              </div>
-            </div>
-
-            <div class="actions">
-              <button id="runCompareBtn" type="button" class="btn-primary">Comparar</button>
-            </div>
-
-            <div id="compareSummary" class="empty">Corre la comparación para ver cuál te conviene más.</div>
-
-            <div class="grid-2">
-              <div id="compareAvalanche" class="compare-result hidden"></div>
-              <div id="compareSnowball" class="compare-result hidden"></div>
-            </div>
+          <div id="compareBox" class="note">
+            Aquí verás el cálculo comparado cuando presiones el botón de comparar.
           </div>
         </div>
 
         <div class="card section">
           <div class="section-head">
             <div>
-              <h3 class="section-title">Intents e historial</h3>
-              <p class="section-sub">Revisa intents recientes y pagos ejecutados.</p>
-            </div>
-            <div class="actions">
-              <button id="buildIntentsBtn" type="button" class="btn-secondary">Build intents</button>
-              <button id="loadIntentsBtn" type="button" class="btn-ghost">Recargar intents</button>
-              <button id="loadTraceBtn" type="button" class="btn-ghost">Recargar historial</button>
+              <h3>Payment intents</h3>
+              <p>Construye, aprueba y ejecuta pagos.</p>
             </div>
           </div>
-
-          <div id="intentsList" class="list"></div>
-          <div id="traceList" class="list" style="margin-top: 16px;"></div>
+          <div class="actions" style="margin-bottom: 14px;">
+            <button id="buildIntentsBtn" class="btn-primary" type="button">Construir intents</button>
+            <button id="approveAllBtn" class="btn-secondary" type="button">Aprobar visibles</button>
+            <button id="executeAllBtn" class="btn-ghost" type="button">Ejecutar visibles</button>
+          </div>
+          <div id="intentsMsg" class="note">No hay intents cargados todavía.</div>
+          <div id="intentsList" class="list" style="margin-top: 14px;">
+            <div class="note">Sin intents.</div>
+          </div>
         </div>
       </div>
 
-      <div class="grid-2" style="margin-top: 16px;">
+      <div class="grid-2" style="margin-bottom: 16px;">
         <div class="card section">
           <div class="section-head">
             <div>
-              <h3 class="section-title">Cuentas</h3>
-              <p class="section-sub">Tus cuentas conectadas por Plaid.</p>
+              <h3>Cuentas conectadas</h3>
+              <p>Información importada desde Plaid.</p>
             </div>
           </div>
-          <div id="accountsList" class="list"></div>
+          <div id="accountsList" class="list">
+            <div class="note">Sin cuentas importadas todavía.</div>
+          </div>
         </div>
 
         <div class="card section">
           <div class="section-head">
             <div>
-              <h3 class="section-title">Plan de pagos</h3>
-              <p class="section-sub">Guarda tu estrategia y presupuesto mensual.</p>
+              <h3>Historial reciente</h3>
+              <p>Últimas ejecuciones y movimientos importantes.</p>
             </div>
           </div>
-
-          <div class="grid">
-            <div class="grid-3">
-              <div class="field">
-                <label class="label" for="planStrategy">Strategy</label>
-                <select id="planStrategy">
-                  <option value="avalanche">Avalanche</option>
-                  <option value="snowball">Snowball</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label class="label" for="planBudget">Monthly budget</label>
-                <input id="planBudget" type="number" step="0.01" placeholder="500" />
-              </div>
-
-              <div class="field">
-                <label class="label" for="planExtra">Extra payment default</label>
-                <input id="planExtra" type="number" step="0.01" placeholder="100" />
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="label" for="planMode">Modo</label>
-              <select id="planMode">
-                <option value="manual">Manual</option>
-                <option value="safe">Safe</option>
-                <option value="full_auto">Full auto</option>
-              </select>
-            </div>
-
-            <div class="actions">
-              <button id="savePlanBtn" type="button" class="btn-primary">Guardar plan</button>
-              <button id="loadPlanBtn" type="button" class="btn-ghost">Recargar plan</button>
-            </div>
-
-            <div id="planBox" class="empty">Aún no se ha cargado el plan.</div>
+          <div id="historyList" class="list">
+            <div class="note">Sin historial reciente.</div>
           </div>
         </div>
+      </div>
+
+      <div class="card section">
+        <div class="section-head">
+          <div>
+            <h3>Estado general</h3>
+            <p>Mensajes técnicos y operativos del flujo.</p>
+          </div>
+        </div>
+        <div id="globalMsg" class="note">App cargada.</div>
       </div>
 
       <div class="footer-space"></div>
@@ -820,230 +852,146 @@
   </div>
 
   <script>
+    const API_BASE = "https://debtya-api.onrender.com";
     const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmVqIiwicmVmIjoic3B5YmVqbHRzZ3pmeGx3em9ia2giLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3MjEzODcwMCwiZXhwIjoyMDg3NzE0NzAwfQ.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
-    const API_BASE = localStorage.getItem("DEBTYA_API_BASE") || "https://debtya-api.onrender.com";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBiYXNlIiwicmVmIjoic3B5YmVqbHRzZ3pmeGx3em9ia2giLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3MjEzODcwMCwiZXhwIjoyMDg3NzE0NzAwfQ.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const els = {};
-    let currentSession = null;
+    const state = {
+      session: null,
+      user: null,
+      debts: [],
+      rules: [],
+      accounts: [],
+      intents: [],
+      paymentPlan: null,
+      comparison: null,
+      history: []
+    };
 
-    document.addEventListener("DOMContentLoaded", init);
+    const els = {
+      authView: document.getElementById("authView"),
+      appView: document.getElementById("appView"),
+      email: document.getElementById("email"),
+      password: document.getElementById("password"),
+      loginBtn: document.getElementById("loginBtn"),
+      signupBtn: document.getElementById("signupBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      authMsg: document.getElementById("authMsg"),
 
-    async function init() {
-      bindEls();
-      bindEvents();
-      await checkServerHealth();
-      await bootstrapAuth();
-    }
+      userBadge: document.getElementById("userBadge"),
+      serverChip: document.getElementById("serverChip"),
+      syncChip: document.getElementById("syncChip"),
+      modeChip: document.getElementById("modeChip"),
 
-    function bindEls() {
-      [
-        "authView","appView","authNotice","appNotice","serverStatus","email","password","loginBtn","signupBtn","resetBtn",
-        "userEmail","refreshBtn","connectBankBtn","importAccountsBtn","importTxBtn","logoutBtn",
-        "statDebt","statAccounts","statRules","statIntents",
-        "debtsList","rulesList","accountsList","intentsList","traceList","planBox",
-        "debtName","debtBalance","debtApr","debtMin","debtDueDay","debtType","saveDebtBtn","loadDebtsBtn",
-        "ruleMode","ruleEnabled","rulePercent","ruleFixed","ruleRoundupTo","ruleMinPurchase","ruleCapDaily","ruleCapWeekly","ruleAutoRun","ruleDebt","saveRuleBtn","loadRulesBtn",
-        "compareBudget","compareExtra","runCompareBtn","compareSummary","compareAvalanche","compareSnowball",
-        "buildIntentsBtn","loadIntentsBtn","loadTraceBtn",
-        "planStrategy","planBudget","planExtra","planMode","savePlanBtn","loadPlanBtn"
-      ].forEach((id) => {
-        els[id] = document.getElementById(id);
-      });
-    }
+      metricDebt: document.getElementById("metricDebt"),
+      metricMinimum: document.getElementById("metricMinimum"),
+      metricExtra: document.getElementById("metricExtra"),
 
-    function bindEvents() {
-      els.loginBtn.addEventListener("click", login);
-      els.signupBtn.addEventListener("click", signup);
-      els.resetBtn.addEventListener("click", resetPassword);
-      els.logoutBtn.addEventListener("click", logout);
+      refreshBtn: document.getElementById("refreshBtn"),
+      refreshAllBtn: document.getElementById("refreshAllBtn"),
+      connectBankBtn: document.getElementById("connectBankBtn"),
+      importAccountsBtn: document.getElementById("importAccountsBtn"),
+      importTxBtn: document.getElementById("importTxBtn"),
+      logoutBtn: document.getElementById("logoutBtn"),
+      quickMsg: document.getElementById("quickMsg"),
 
-      els.refreshBtn.addEventListener("click", loadAll);
-      els.connectBankBtn.addEventListener("click", openPlaidWeb);
-      els.importAccountsBtn.addEventListener("click", importAccounts);
-      els.importTxBtn.addEventListener("click", importTransactions);
+      strategySelect: document.getElementById("strategySelect"),
+      automationSelect: document.getElementById("automationSelect"),
+      monthlyBudgetInput: document.getElementById("monthlyBudgetInput"),
+      extraPaymentInput: document.getElementById("extraPaymentInput"),
+      savePlanBtn: document.getElementById("savePlanBtn"),
+      compareBtn: document.getElementById("compareBtn"),
+      planMsg: document.getElementById("planMsg"),
 
-      els.saveDebtBtn.addEventListener("click", saveDebt);
-      els.loadDebtsBtn.addEventListener("click", loadDebts);
+      debtName: document.getElementById("debtName"),
+      debtType: document.getElementById("debtType"),
+      debtBalance: document.getElementById("debtBalance"),
+      debtApr: document.getElementById("debtApr"),
+      debtMinimum: document.getElementById("debtMinimum"),
+      debtDueDay: document.getElementById("debtDueDay"),
+      debtGoal: document.getElementById("debtGoal"),
+      saveDebtBtn: document.getElementById("saveDebtBtn"),
+      debtsList: document.getElementById("debtsList"),
 
-      els.saveRuleBtn.addEventListener("click", saveRule);
-      els.loadRulesBtn.addEventListener("click", loadRules);
+      ruleName: document.getElementById("ruleName"),
+      ruleDebtId: document.getElementById("ruleDebtId"),
+      ruleMatchType: document.getElementById("ruleMatchType"),
+      ruleMatchValue: document.getElementById("ruleMatchValue"),
+      ruleMode: document.getElementById("ruleMode"),
+      ruleAmount: document.getElementById("ruleAmount"),
+      ruleCap: document.getElementById("ruleCap"),
+      saveRuleBtn: document.getElementById("saveRuleBtn"),
+      applyRulesBtn: document.getElementById("applyRulesBtn"),
+      rulesMsg: document.getElementById("rulesMsg"),
+      rulesList: document.getElementById("rulesList"),
 
-      els.runCompareBtn.addEventListener("click", runCompare);
+      compareBox: document.getElementById("compareBox"),
 
-      els.buildIntentsBtn.addEventListener("click", buildIntents);
-      els.loadIntentsBtn.addEventListener("click", loadIntents);
-      els.loadTraceBtn.addEventListener("click", loadTrace);
+      buildIntentsBtn: document.getElementById("buildIntentsBtn"),
+      approveAllBtn: document.getElementById("approveAllBtn"),
+      executeAllBtn: document.getElementById("executeAllBtn"),
+      intentsMsg: document.getElementById("intentsMsg"),
+      intentsList: document.getElementById("intentsList"),
 
-      els.savePlanBtn.addEventListener("click", savePlan);
-      els.loadPlanBtn.addEventListener("click", loadPlan);
+      accountsList: document.getElementById("accountsList"),
+      historyList: document.getElementById("historyList"),
+      globalMsg: document.getElementById("globalMsg")
+    };
 
-      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-        if (session?.access_token) {
-          currentSession = session;
-          localStorage.setItem("debtya_access_token", session.access_token);
-          setAuthView(false);
-          setUser(session.user);
-          await loadAll();
-        } else {
-          currentSession = null;
-          localStorage.removeItem("debtya_access_token");
-          setAuthView(true);
-        }
-      });
-    }
-
-    async function bootstrapAuth() {
-      const { data } = await supabaseClient.auth.getSession();
-      currentSession = data.session || null;
-
-      if (currentSession?.access_token) {
-        localStorage.setItem("debtya_access_token", currentSession.access_token);
-        setAuthView(false);
-        setUser(currentSession.user);
-        await loadAll();
-      } else {
-        setAuthView(true);
-      }
-    }
-
-    function setAuthView(showAuth) {
-      els.authView.classList.toggle("hidden", !showAuth);
-      els.appView.classList.toggle("hidden", showAuth);
-    }
-
-    function setUser(user) {
-      els.userEmail.textContent = user?.email ? `Sesión activa: ${user.email}` : "Sesión activa";
-    }
-
-    function showNotice(target, message, type = "info") {
-      const el = target === "auth" ? els.authNotice : els.appNotice;
-      el.textContent = message;
-      el.className = `notice ${type}`;
-      el.classList.remove("hidden");
-    }
-
-    function hideNotice(target) {
-      const el = target === "auth" ? els.authNotice : els.appNotice;
-      el.classList.add("hidden");
-    }
-
-    function formatMoney(value) {
-      return new Intl.NumberFormat("en-US", {
+    function money(value) {
+      const number = Number(value || 0);
+      return number.toLocaleString("en-US", {
         style: "currency",
         currency: "USD"
-      }).format(Number(value || 0));
+      });
     }
 
-    async function checkServerHealth() {
-      try {
-        const r = await fetch(`${API_BASE}/health`);
-        const data = await r.json();
-        els.serverStatus.textContent = data.server_version
-          ? `Backend listo · ${data.server_version}`
-          : "Backend listo";
-      } catch (_e) {
-        els.serverStatus.textContent = "Backend no disponible";
-      }
+    function percent(value) {
+      const number = Number(value || 0);
+      return `${number.toFixed(2)}%`;
     }
 
-    async function login() {
-      hideNotice("auth");
-      const email = els.email.value.trim();
-      const password = els.password.value;
+    function safeText(value, fallback = "") {
+      return value == null || value === "" ? fallback : String(value);
+    }
 
-      if (!email || !password) {
-        showNotice("auth", "Pon email y contraseña.", "error");
-        return;
-      }
+    function setNote(el, text, tone = "note") {
+      if (!el) return;
+      el.className = tone === "success"
+        ? "success-box"
+        : tone === "warning"
+        ? "warning-box"
+        : tone === "danger"
+        ? "danger-box"
+        : "note";
+      el.textContent = text;
+    }
 
-      els.loginBtn.disabled = true;
-      try {
-        const { error } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password
-        });
-        if (error) throw error;
-        showNotice("auth", "Entrando...", "success");
-      } catch (error) {
-        showNotice("auth", error.message || "No se pudo entrar.", "error");
-      } finally {
-        els.loginBtn.disabled = false;
+    function setLoading(button, loading, textWhileLoading = "Procesando...") {
+      if (!button) return;
+      if (loading) {
+        button.dataset.originalText = button.textContent;
+        button.textContent = textWhileLoading;
+        button.disabled = true;
+      } else {
+        button.textContent = button.dataset.originalText || button.textContent;
+        button.disabled = false;
       }
     }
 
-    async function signup() {
-      hideNotice("auth");
-      const email = els.email.value.trim();
-      const password = els.password.value;
-
-      if (!email || !password) {
-        showNotice("auth", "Pon email y contraseña.", "error");
-        return;
-      }
-
-      els.signupBtn.disabled = true;
-      try {
-        const { error } = await supabaseClient.auth.signUp({
-          email,
-          password
-        });
-        if (error) throw error;
-        showNotice("auth", "Cuenta creada. Revisa tu email si Supabase lo pide.", "success");
-      } catch (error) {
-        showNotice("auth", error.message || "No se pudo crear la cuenta.", "error");
-      } finally {
-        els.signupBtn.disabled = false;
-      }
-    }
-
-    async function resetPassword() {
-      hideNotice("auth");
-      const email = els.email.value.trim();
-
-      if (!email) {
-        showNotice("auth", "Pon tu email para resetear contraseña.", "error");
-        return;
-      }
-
-      els.resetBtn.disabled = true;
-      try {
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-          redirectTo: "https://www.debtya.com"
-        });
-        if (error) throw error;
-        showNotice("auth", "Si ese email existe, se envió el enlace.", "success");
-      } catch (error) {
-        showNotice("auth", error.message || "No se pudo enviar el reset.", "error");
-      } finally {
-        els.resetBtn.disabled = false;
-      }
-    }
-
-    async function logout() {
-      await supabaseClient.auth.signOut();
-      currentSession = null;
-      localStorage.removeItem("debtya_access_token");
-      setAuthView(true);
-      showNotice("auth", "Sesión cerrada.", "info");
-    }
-
-    function getToken() {
-      const token = currentSession?.access_token || localStorage.getItem("debtya_access_token");
-      if (token) {
-        localStorage.setItem("debtya_access_token", token);
-      }
-      return token;
+    function getAccessToken() {
+      return state.session?.access_token || "";
     }
 
     async function api(path, options = {}) {
-      const token = getToken();
       const headers = {
+        "Content-Type": "application/json",
         ...(options.headers || {})
       };
 
+      const token = getAccessToken();
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
@@ -1056,464 +1004,831 @@
       let data = null;
       try {
         data = await response.json();
-      } catch (_e) {
+      } catch (e) {
         data = null;
       }
 
       if (!response.ok) {
-        const msg = data?.error || data?.details || `Error ${response.status}`;
-        throw new Error(msg);
+        const message =
+          data?.error ||
+          data?.message ||
+          `Error ${response.status} en ${path}`;
+        throw new Error(message);
       }
 
       return data;
     }
 
-    async function loadAll() {
-      hideNotice("app");
-      await Promise.allSettled([
-        loadAccounts(),
-        loadDebts(),
-        loadRules(),
-        loadPlan(),
-        loadIntents(),
-        loadTrace()
-      ]);
-      updateStats();
+    function renderAuth(connected) {
+      els.authView.classList.toggle("hidden", connected);
+      els.appView.classList.toggle("hidden", !connected);
     }
 
-    async function openPlaidWeb() {
-      const token = getToken();
-      if (!token) {
-        showNotice("app", "Tu sesión expiró. Vuelve a entrar.", "error");
+    function updateUserBadge() {
+      if (state.user?.email) {
+        els.userBadge.textContent = `Sesión: ${state.user.email}`;
+      } else {
+        els.userBadge.textContent = "Sin sesión";
+      }
+    }
+
+    async function checkBackendHealth() {
+      try {
+        const data = await api("/health", { method: "GET" });
+        const version = data?.server_version || "sin versión";
+        els.serverChip.textContent = `Backend: ${version}`;
+      } catch (error) {
+        els.serverChip.textContent = "Backend: error";
+      }
+    }
+
+    function renderMetrics() {
+      const totalDebt = state.debts.reduce((sum, item) => sum + Number(item.balance || 0), 0);
+      const totalMinimum = state.debts.reduce((sum, item) => sum + Number(item.minimum_payment || 0), 0);
+      const extra = Number(state.paymentPlan?.extra_payment_default || 0);
+
+      els.metricDebt.textContent = money(totalDebt);
+      els.metricMinimum.textContent = money(totalMinimum);
+      els.metricExtra.textContent = money(extra);
+
+      els.modeChip.textContent = `Modo: ${state.paymentPlan?.automation_mode || "manual"}`;
+      els.syncChip.textContent = `Sincronización: ${state.accounts.length ? "ok" : "pendiente"}`;
+    }
+
+    function renderDebts() {
+      const debts = Array.isArray(state.debts) ? state.debts : [];
+      if (!debts.length) {
+        els.debtsList.innerHTML = `<div class="note">No hay deudas cargadas todavía.</div>`;
+      } else {
+        const total = debts.reduce((sum, item) => sum + Number(item.balance || 0), 0) || 1;
+
+        els.debtsList.innerHTML = debts
+          .map((item) => {
+            const progress = Math.max(3, Math.min(100, (Number(item.minimum_payment || 0) / (Number(item.balance || 1))) * 100));
+            const share = Math.max(0, Math.min(100, (Number(item.balance || 0) / total) * 100));
+
+            return `
+              <div class="item">
+                <div class="item-top">
+                  <div>
+                    <h4 class="item-title">${safeText(item.name, "Sin nombre")}</h4>
+                    <p class="item-sub">
+                      ${safeText(item.type, "deuda")} · APR ${percent(item.apr || 0)} · vence día ${safeText(item.due_day, "-")}
+                    </p>
+                  </div>
+                  <div class="amount">${money(item.balance || 0)}</div>
+                </div>
+
+                <div class="row">
+                  <span class="chip">Mínimo ${money(item.minimum_payment || 0)}</span>
+                  ${item.goal_note ? `<span class="chip">${safeText(item.goal_note)}</span>` : ""}
+                </div>
+
+                <div class="mini" style="margin-top:10px;">Peso dentro de la deuda total</div>
+                <div class="bar"><span style="width:${share}%;"></span></div>
+
+                <div class="mini" style="margin-top:10px;">Relación mínimo / balance</div>
+                <div class="bar"><span style="width:${progress}%;"></span></div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      const currentValue = els.ruleDebtId.value;
+      els.ruleDebtId.innerHTML =
+        `<option value="">Selecciona una deuda</option>` +
+        debts
+          .map((item) => `<option value="${item.id}">${safeText(item.name)}</option>`)
+          .join("");
+
+      if (debts.some((d) => d.id === currentValue)) {
+        els.ruleDebtId.value = currentValue;
+      }
+    }
+
+    function renderRules() {
+      const rules = Array.isArray(state.rules) ? state.rules : [];
+      if (!rules.length) {
+        els.rulesList.innerHTML = `<div class="note">No hay reglas creadas todavía.</div>`;
         return;
       }
-      localStorage.setItem("debtya_access_token", token);
-      window.open(`${API_BASE}/plaid/web`, "_blank");
+
+      const debtMap = new Map(state.debts.map((d) => [d.id, d.name]));
+
+      els.rulesList.innerHTML = rules
+        .map((rule) => {
+          const amountLabel =
+            rule.mode === "percent"
+              ? `${Number(rule.amount || 0)}%`
+              : money(rule.amount || 0);
+
+          return `
+            <div class="item">
+              <div class="item-top">
+                <div>
+                  <h4 class="item-title">${safeText(rule.name, "Regla")}</h4>
+                  <p class="item-sub">
+                    ${safeText(rule.match_type, "match")} · ${safeText(rule.match_value, "")}
+                  </p>
+                </div>
+                <div class="amount">${amountLabel}</div>
+              </div>
+              <div class="row">
+                <span class="chip">Destino: ${safeText(debtMap.get(rule.debt_id), "Sin deuda")}</span>
+                <span class="chip">Modo: ${safeText(rule.mode, "-")}</span>
+                ${rule.monthly_cap ? `<span class="chip">Tope ${money(rule.monthly_cap)}</span>` : ""}
+                <span class="chip">${rule.is_active === false ? "Inactiva" : "Activa"}</span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
     }
 
-    async function importAccounts() {
-      try {
-        showNotice("app", "Importando cuentas...", "info");
-        const data = await api("/plaid/accounts");
-        await loadAccounts();
-        showNotice("app", `Cuentas importadas: ${data.total_accounts || 0}`, "success");
-      } catch (error) {
-        showNotice("app", error.message || "Error importando cuentas.", "error");
+    function renderAccounts() {
+      const accounts = Array.isArray(state.accounts) ? state.accounts : [];
+      if (!accounts.length) {
+        els.accountsList.innerHTML = `<div class="note">Sin cuentas importadas todavía.</div>`;
+        return;
+      }
+
+      els.accountsList.innerHTML = accounts
+        .map((account) => {
+          return `
+            <div class="item">
+              <div class="item-top">
+                <div>
+                  <h4 class="item-title">${safeText(account.name || account.official_name, "Cuenta")}</h4>
+                  <p class="item-sub">
+                    ${safeText(account.subtype || account.type, "sin tipo")} · ${safeText(account.mask ? `****${account.mask}` : "", "")}
+                  </p>
+                </div>
+                <div class="amount">${money(account.current_balance || account.balance || 0)}</div>
+              </div>
+              <div class="row">
+                ${account.available_balance != null ? `<span class="chip">Disponible ${money(account.available_balance)}</span>` : ""}
+                ${account.institution_name ? `<span class="chip">${safeText(account.institution_name)}</span>` : ""}
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function renderComparison() {
+      const c = state.comparison;
+      if (!c) {
+        els.compareBox.className = "note";
+        els.compareBox.textContent =
+          "Aquí verás el cálculo comparado cuando presiones el botón de comparar.";
+        return;
+      }
+
+      const avalancheMonths = c.avalanche?.months_to_payoff ?? "-";
+      const avalancheInterest = c.avalanche?.total_interest ?? 0;
+      const snowballMonths = c.snowball?.months_to_payoff ?? "-";
+      const snowballInterest = c.snowball?.total_interest ?? 0;
+
+      let winnerText = "Ambas estrategias dan un resultado similar.";
+      if (Number(avalancheInterest) < Number(snowballInterest)) {
+        winnerText = "Avalanche paga menos intereses y suele ser la mejor financieramente.";
+      } else if (Number(snowballInterest) < Number(avalancheInterest)) {
+        winnerText = "Snowball termina mejor en este escenario y además puede dar impulso psicológico.";
+      }
+
+      els.compareBox.className = "success-box";
+      els.compareBox.innerHTML = `
+        <div><strong>Avalanche:</strong> ${avalancheMonths} meses · intereses ${money(avalancheInterest)}</div>
+        <div style="margin-top:6px;"><strong>Snowball:</strong> ${snowballMonths} meses · intereses ${money(snowballInterest)}</div>
+        <div style="margin-top:10px;">${winnerText}</div>
+      `;
+    }
+
+    function renderIntents() {
+      const intents = Array.isArray(state.intents) ? state.intents : [];
+      if (!intents.length) {
+        els.intentsList.innerHTML = `<div class="note">Sin intents.</div>`;
+        return;
+      }
+
+      els.intentsList.innerHTML = intents
+        .map((intent) => {
+          const status = safeText(intent.status, "pending");
+          const amount = Number(intent.amount || intent.total_amount || 0);
+
+          return `
+            <div class="item">
+              <div class="item-top">
+                <div>
+                  <h4 class="item-title">Intent ${safeText(intent.id, "").slice(0, 8)}</h4>
+                  <p class="item-sub">
+                    Estado: ${status} · estrategia ${safeText(intent.strategy, state.paymentPlan?.strategy || "-")}
+                  </p>
+                </div>
+                <div class="amount">${money(amount)}</div>
+              </div>
+              <div class="row">
+                <span class="chip">${safeText(intent.execution_mode || "manual")}</span>
+                ${intent.created_at ? `<span class="chip">${new Date(intent.created_at).toLocaleString()}</span>` : ""}
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function renderHistory() {
+      const history = Array.isArray(state.history) ? state.history : [];
+      if (!history.length) {
+        els.historyList.innerHTML = `<div class="note">Sin historial reciente.</div>`;
+        return;
+      }
+
+      els.historyList.innerHTML = history
+        .slice(0, 10)
+        .map((item) => {
+          return `
+            <div class="item">
+              <div class="item-top">
+                <div>
+                  <h4 class="item-title">${safeText(item.title || item.type || "Evento")}</h4>
+                  <p class="item-sub">${safeText(item.subtitle || item.status || "")}</p>
+                </div>
+                <div class="amount">${item.amount != null ? money(item.amount) : ""}</div>
+              </div>
+              ${item.created_at ? `<div class="mini">${new Date(item.created_at).toLocaleString()}</div>` : ""}
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function renderPlanForm() {
+      const p = state.paymentPlan || {};
+      els.strategySelect.value = p.strategy || "avalanche";
+      els.automationSelect.value = p.automation_mode || "manual";
+      els.monthlyBudgetInput.value = p.monthly_budget_default ?? "";
+      els.extraPaymentInput.value = p.extra_payment_default ?? "";
+    }
+
+    function renderAll() {
+      updateUserBadge();
+      renderMetrics();
+      renderPlanForm();
+      renderDebts();
+      renderRules();
+      renderAccounts();
+      renderComparison();
+      renderIntents();
+      renderHistory();
+    }
+
+    async function hydrateSession() {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) {
+        setNote(els.authMsg, error.message || "No se pudo leer la sesión.", "danger");
+        return;
+      }
+
+      state.session = data.session || null;
+      state.user = data.session?.user || null;
+      renderAuth(Boolean(state.session));
+      updateUserBadge();
+
+      if (state.session) {
+        await loadAll();
       }
     }
 
-    async function importTransactions() {
+    async function loadDebts() {
+      const data = await api("/debts", { method: "GET" });
+      state.debts = Array.isArray(data?.data) ? data.data : [];
+    }
+
+    async function loadRules() {
       try {
-        showNotice("app", "Importando transacciones...", "info");
-        const data = await api("/plaid/transactions/sync", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({})
-        });
-        showNotice("app", `Transacciones importadas: ${data.imported || 0}`, "success");
+        const data = await api("/rules", { method: "GET" });
+        state.rules = Array.isArray(data?.data) ? data.data : [];
       } catch (error) {
-        showNotice("app", error.message || "Error importando transacciones.", "error");
+        state.rules = [];
+        setNote(els.rulesMsg, `No se pudieron cargar reglas: ${error.message}`, "warning");
       }
     }
 
     async function loadAccounts() {
       try {
-        const data = await api("/accounts");
-        window.__accounts = data.data || [];
-        renderAccounts(window.__accounts);
-        updateStats();
+        const data = await api("/plaid/accounts", { method: "GET" });
+        state.accounts = Array.isArray(data?.data) ? data.data : [];
       } catch (error) {
-        renderAccounts([]);
-        showNotice("app", `Error cargando cuentas: ${error.message}`, "error");
+        state.accounts = [];
       }
     }
 
-    function renderAccounts(items) {
-      if (!items || !items.length) {
-        els.accountsList.innerHTML = `<div class="empty">No hay cuentas cargadas todavía.</div>`;
-        return;
-      }
-
-      els.accountsList.innerHTML = items.map((item) => `
-        <div class="item">
-          <div class="item-top">
-            <div>
-              <h4 class="item-title">${escapeHtml(item.name || "Cuenta")}</h4>
-              <p class="item-sub">${escapeHtml(item.type || "")} ${item.subtype ? "· " + escapeHtml(item.subtype) : ""}</p>
-            </div>
-            <div class="amount">${formatMoney(item.current_balance ?? item.balance_current ?? 0)}</div>
-          </div>
-          <div class="tag-row">
-            <span class="tag blue">Disponible: ${formatMoney(item.available_balance ?? item.balance_available ?? 0)}</span>
-            <span class="tag">Mask: ${escapeHtml(item.mask || "----")}</span>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    async function loadDebts() {
+    async function loadPaymentPlan() {
       try {
-        const data = await api("/debts");
-        window.__debts = data.data || [];
-        renderDebts(window.__debts);
-        fillDebtSelect(window.__debts);
-        updateStats();
-      } catch (error) {
-        renderDebts([]);
-        showNotice("app", `Error cargando deudas: ${error.message}`, "error");
-      }
-    }
-
-    function renderDebts(items) {
-      if (!items || !items.length) {
-        els.debtsList.innerHTML = `<div class="empty">No hay deudas todavía.</div>`;
-        return;
-      }
-
-      els.debtsList.innerHTML = items.map((item) => `
-        <div class="item">
-          <div class="item-top">
-            <div>
-              <h4 class="item-title">${escapeHtml(item.name || "Deuda")}</h4>
-              <p class="item-sub">APR ${safeNum(item.apr).toFixed(2)}% · Mínimo ${formatMoney(item.minimum_payment || 0)}</p>
-            </div>
-            <div class="amount">${formatMoney(item.balance || 0)}</div>
-          </div>
-          <div class="tag-row">
-            <span class="tag ${safeNum(item.apr) >= 25 ? "red" : "yellow"}">Due day: ${escapeHtml(item.due_day || "-")}</span>
-            <span class="tag">${escapeHtml(item.type || "debt")}</span>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    async function saveDebt() {
-      try {
-        const body = {
-          name: els.debtName.value.trim(),
-          balance: Number(els.debtBalance.value || 0),
-          apr: Number(els.debtApr.value || 0),
-          minimum_payment: Number(els.debtMin.value || 0),
-          due_day: els.debtDueDay.value ? Number(els.debtDueDay.value) : null,
-          type: els.debtType.value || "credit_card"
+        const data = await api("/payment-plan", { method: "GET" });
+        state.paymentPlan = data?.data || {
+          strategy: "avalanche",
+          automation_mode: "manual",
+          monthly_budget_default: 0,
+          extra_payment_default: 0
         };
-
-        await api("/debts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        els.debtName.value = "";
-        els.debtBalance.value = "";
-        els.debtApr.value = "";
-        els.debtMin.value = "";
-        els.debtDueDay.value = "";
-
-        await loadDebts();
-        showNotice("app", "Deuda guardada.", "success");
       } catch (error) {
-        showNotice("app", `Error guardando deuda: ${error.message}`, "error");
-      }
-    }
-
-    function fillDebtSelect(items) {
-      const current = els.ruleDebt.value;
-      els.ruleDebt.innerHTML = `<option value="">Sin asignar</option>` + (items || []).map((item) => `
-        <option value="${item.id}">${escapeHtml(item.name || "Deuda")}</option>
-      `).join("");
-      if (current) els.ruleDebt.value = current;
-    }
-
-    async function loadRules() {
-      try {
-        const data = await api("/rules");
-        window.__rules = data.data || [];
-        renderRules(window.__rules);
-        updateStats();
-      } catch (error) {
-        renderRules([]);
-        showNotice("app", `Error cargando reglas: ${error.message}`, "error");
-      }
-    }
-
-    function renderRules(items) {
-      if (!items || !items.length) {
-        els.rulesList.innerHTML = `<div class="empty">No hay reglas todavía.</div>`;
-        return;
-      }
-
-      els.rulesList.innerHTML = items.map((item) => `
-        <div class="item">
-          <div class="item-top">
-            <div>
-              <h4 class="item-title">${escapeHtml(item.mode || "rule")}</h4>
-              <p class="item-sub">${item.enabled ? "Activa" : "Inactiva"} · Auto run: ${item.auto_run ? "Sí" : "No"}</p>
-            </div>
-            <div class="amount">${item.percent ? item.percent + "%" : formatMoney(item.fixed_amount || 0)}</div>
-          </div>
-          <div class="tag-row">
-            <span class="tag blue">Roundup: ${safeNum(item.roundup_to).toFixed(2)}</span>
-            <span class="tag">Min purchase: ${formatMoney(item.min_purchase_amount || 0)}</span>
-            <span class="tag">Cap daily: ${item.cap_daily == null ? "Sin límite" : formatMoney(item.cap_daily)}</span>
-            <span class="tag">Cap weekly: ${item.cap_weekly == null ? "Sin límite" : formatMoney(item.cap_weekly)}</span>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    async function saveRule() {
-      try {
-        const body = {
-          mode: els.ruleMode.value,
-          enabled: els.ruleEnabled.value === "true",
-          percent: Number(els.rulePercent.value || 0),
-          fixed_amount: Number(els.ruleFixed.value || 0),
-          roundup_to: Number(els.ruleRoundupTo.value || 1),
-          min_purchase_amount: Number(els.ruleMinPurchase.value || 0),
-          cap_daily: els.ruleCapDaily.value === "" ? null : Number(els.ruleCapDaily.value),
-          cap_weekly: els.ruleCapWeekly.value === "" ? null : Number(els.ruleCapWeekly.value),
-          auto_run: els.ruleAutoRun.value === "true",
-          target_debt_id: els.ruleDebt.value || null,
-          payout_enabled: false,
-          payout_min_threshold: 0
+        state.paymentPlan = {
+          strategy: "avalanche",
+          automation_mode: "manual",
+          monthly_budget_default: 0,
+          extra_payment_default: 0
         };
-
-        await api("/rules", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        els.rulePercent.value = "";
-        els.ruleFixed.value = "";
-        els.ruleRoundupTo.value = "1";
-        els.ruleMinPurchase.value = "";
-        els.ruleCapDaily.value = "";
-        els.ruleCapWeekly.value = "";
-        els.ruleDebt.value = "";
-        els.ruleAutoRun.value = "false";
-        els.ruleEnabled.value = "true";
-
-        await loadRules();
-        showNotice("app", "Regla guardada.", "success");
-      } catch (error) {
-        showNotice("app", `Error guardando regla: ${error.message}`, "error");
-      }
-    }
-
-    async function loadPlan() {
-      try {
-        const data = await api("/payment-plans");
-        const plan = (data.data || [])[0] || null;
-        renderPlan(plan);
-      } catch (error) {
-        els.planBox.innerHTML = `<div class="empty">No se pudo cargar el plan.</div>`;
-        showNotice("app", `Error cargando plan: ${error.message}`, "error");
-      }
-    }
-
-    function renderPlan(plan) {
-      if (!plan) {
-        els.planBox.innerHTML = `<div class="empty">Aún no tienes plan guardado.</div>`;
-        return;
-      }
-
-      els.planStrategy.value = plan.strategy || "avalanche";
-      els.planBudget.value = plan.monthly_budget ?? "";
-      els.planExtra.value = plan.extra_payment_default ?? "";
-      els.planMode.value = plan.auto_mode || "manual";
-
-      els.planBox.innerHTML = `
-        <div class="item">
-          <div class="item-top">
-            <div>
-              <h4 class="item-title">${escapeHtml(plan.strategy || "Plan")}</h4>
-              <p class="item-sub">Modo: ${escapeHtml(plan.auto_mode || "manual")}</p>
-            </div>
-            <div class="amount">${formatMoney(plan.monthly_budget || 0)}</div>
-          </div>
-          <div class="tag-row">
-            <span class="tag green">Extra: ${formatMoney(plan.extra_payment_default || 0)}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    async function savePlan() {
-      try {
-        const body = {
-          strategy: els.planStrategy.value,
-          monthly_budget: Number(els.planBudget.value || 0),
-          extra_payment_default: Number(els.planExtra.value || 0),
-          auto_mode: els.planMode.value
-        };
-
-        await api("/payment-plans", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        await loadPlan();
-        showNotice("app", "Plan guardado.", "success");
-      } catch (error) {
-        showNotice("app", `Error guardando plan: ${error.message}`, "error");
-      }
-    }
-
-    async function runCompare() {
-      try {
-        const budget = Number(els.compareBudget.value || 0);
-        const extra = Number(els.compareExtra.value || 0);
-
-        const data = await api(`/strategy/compare?monthly_budget=${encodeURIComponent(budget)}&extra_payment=${encodeURIComponent(extra)}`);
-        const result = data.data;
-
-        const better =
-          result.snowball.months < result.avalanche.months ||
-          result.snowball.total_interest < result.avalanche.total_interest
-            ? "Snowball"
-            : "Avalanche";
-
-        els.compareSummary.className = "notice success";
-        els.compareSummary.textContent =
-          `Mejor opción hoy: ${better}. Avalanche: ${result.avalanche.months} meses / ${formatMoney(result.avalanche.total_interest)} de interés. Snowball: ${result.snowball.months} meses / ${formatMoney(result.snowball.total_interest)} de interés.`;
-
-        els.compareAvalanche.classList.remove("hidden");
-        els.compareSnowball.classList.remove("hidden");
-
-        els.compareAvalanche.innerHTML = `
-          <h4>Avalanche</h4>
-          <div class="tag-row">
-            <span class="tag blue">Meses: ${result.avalanche.months}</span>
-            <span class="tag">Interés: ${formatMoney(result.avalanche.total_interest)}</span>
-            <span class="tag">Total: ${formatMoney(result.avalanche.total_paid)}</span>
-          </div>
-        `;
-
-        els.compareSnowball.innerHTML = `
-          <h4>Snowball</h4>
-          <div class="tag-row">
-            <span class="tag green">Meses: ${result.snowball.months}</span>
-            <span class="tag">Interés: ${formatMoney(result.snowball.total_interest)}</span>
-            <span class="tag">Total: ${formatMoney(result.snowball.total_paid)}</span>
-          </div>
-        `;
-      } catch (error) {
-        els.compareSummary.className = "notice error";
-        els.compareSummary.textContent = `Error corriendo comparación: ${error.message}`;
-        els.compareAvalanche.classList.add("hidden");
-        els.compareSnowball.classList.add("hidden");
-      }
-    }
-
-    async function buildIntents() {
-      try {
-        showNotice("app", "Construyendo intents...", "info");
-        await api("/build_intents_v2", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({})
-        });
-        await loadIntents();
-        showNotice("app", "Intents construidos.", "success");
-      } catch (error) {
-        showNotice("app", `Error construyendo intents: ${error.message}`, "error");
       }
     }
 
     async function loadIntents() {
       try {
-        const data = await api("/payment-intents");
-        window.__intents = data.data || [];
-        renderIntents(window.__intents);
-        updateStats();
+        const data = await api("/payment-intents", { method: "GET" });
+        state.intents = Array.isArray(data?.data) ? data.data : [];
       } catch (error) {
-        renderIntents([]);
-        showNotice("app", `Error cargando intents: ${error.message}`, "error");
+        state.intents = [];
       }
     }
 
-    function renderIntents(items) {
-      if (!items || !items.length) {
-        els.intentsList.innerHTML = `<div class="empty">No hay intents todavía.</div>`;
-        return;
-      }
-
-      els.intentsList.innerHTML = items.slice(0, 10).map((item) => `
-        <div class="item">
-          <div class="item-top">
-            <div>
-              <h4 class="item-title">${escapeHtml(item.execution_mode || "intent")}</h4>
-              <p class="item-sub">Status: ${escapeHtml(item.status || "-")}</p>
-            </div>
-            <div class="amount">${formatMoney(item.total_amount ?? item.amount ?? 0)}</div>
-          </div>
-          <div class="tag-row">
-            <span class="tag ${item.status === "executed" ? "green" : item.status === "pending_review" ? "yellow" : "blue"}">${escapeHtml(item.status || "-")}</span>
-            <span class="tag">${escapeHtml(item.execution_frequency || "-")}</span>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    async function loadTrace() {
+    async function loadHistory() {
       try {
-        const data = await api("/payment-trace");
-        const items = data.data || [];
-        renderTrace(items);
-      } catch (_error) {
-        els.traceList.innerHTML = `<div class="empty">No se pudo cargar historial o todavía no hay datos.</div>`;
+        const intents = Array.isArray(state.intents) ? state.intents : [];
+        state.history = intents.map((item) => ({
+          title: `Intent ${safeText(item.id, "").slice(0, 8)}`,
+          subtitle: safeText(item.status, "sin estado"),
+          amount: item.amount || item.total_amount || 0,
+          created_at: item.created_at,
+          type: "payment_intent"
+        }));
+      } catch (error) {
+        state.history = [];
       }
     }
 
-    function renderTrace(items) {
-      if (!items || !items.length) {
-        els.traceList.innerHTML = `<div class="empty">Todavía no hay historial visible.</div>`;
+    async function loadAll() {
+      setNote(els.globalMsg, "Cargando datos...", "note");
+      try {
+        await Promise.all([
+          checkBackendHealth(),
+          loadPaymentPlan(),
+          loadDebts(),
+          loadRules(),
+          loadAccounts(),
+          loadIntents()
+        ]);
+        await loadHistory();
+        renderAll();
+        setNote(els.globalMsg, "Datos cargados correctamente.", "success");
+      } catch (error) {
+        renderAll();
+        setNote(els.globalMsg, error.message || "Error cargando datos.", "danger");
+      }
+    }
+
+    async function signIn() {
+      const email = els.email.value.trim();
+      const password = els.password.value;
+
+      if (!email || !password) {
+        setNote(els.authMsg, "Pon email y contraseña.", "warning");
         return;
       }
 
-      els.traceList.innerHTML = items.slice(0, 8).map((item) => `
-        <div class="item">
-          <div class="item-top">
-            <div>
-              <h4 class="item-title">${escapeHtml(item.debt_name || item.name || "Movimiento")}</h4>
-              <p class="item-sub">${escapeHtml(item.status || "historial")}</p>
-            </div>
-            <div class="amount">${formatMoney(item.amount || item.total_amount || 0)}</div>
-          </div>
-        </div>
-      `).join("");
+      setLoading(els.loginBtn, true, "Entrando...");
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) throw error;
+
+        state.session = data.session || null;
+        state.user = data.user || null;
+        renderAuth(Boolean(state.session));
+        updateUserBadge();
+        setNote(els.authMsg, "Sesión iniciada correctamente.", "success");
+        await loadAll();
+      } catch (error) {
+        setNote(els.authMsg, error.message || "No se pudo iniciar sesión.", "danger");
+      } finally {
+        setLoading(els.loginBtn, false);
+      }
     }
 
-    function updateStats() {
-      const debts = window.__debts || [];
-      const accounts = window.__accounts || [];
-      const rules = window.__rules || [];
-      const intents = window.__intents || [];
+    async function signUp() {
+      const email = els.email.value.trim();
+      const password = els.password.value;
 
-      const totalDebt = debts.reduce((sum, item) => sum + safeNum(item.balance), 0);
+      if (!email || !password) {
+        setNote(els.authMsg, "Pon email y contraseña.", "warning");
+        return;
+      }
 
-      els.statDebt.textContent = formatMoney(totalDebt);
-      els.statAccounts.textContent = String(accounts.length);
-      els.statRules.textContent = String(rules.length);
-      els.statIntents.textContent = String(intents.length);
+      setLoading(els.signupBtn, true, "Creando...");
+      try {
+        const { error } = await supabaseClient.auth.signUp({
+          email,
+          password
+        });
+
+        if (error) throw error;
+
+        setNote(
+          els.authMsg,
+          "Cuenta creada. Revisa tu email si Supabase pide confirmación.",
+          "success"
+        );
+      } catch (error) {
+        setNote(els.authMsg, error.message || "No se pudo crear la cuenta.", "danger");
+      } finally {
+        setLoading(els.signupBtn, false);
+      }
     }
 
-    function safeNum(value) {
-      const n = Number(value);
-      return Number.isFinite(n) ? n : 0;
+    async function resetPassword() {
+      const email = els.email.value.trim();
+
+      if (!email) {
+        setNote(els.authMsg, "Pon tu email para resetear la contraseña.", "warning");
+        return;
+      }
+
+      setLoading(els.resetBtn, true, "Enviando...");
+      try {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin
+        });
+
+        if (error) throw error;
+
+        setNote(els.authMsg, "Se envió el email de reseteo.", "success");
+      } catch (error) {
+        setNote(els.authMsg, error.message || "No se pudo enviar el email.", "danger");
+      } finally {
+        setLoading(els.resetBtn, false);
+      }
     }
 
-    function escapeHtml(value) {
-      return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+    async function signOut() {
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (_) {}
+
+      state.session = null;
+      state.user = null;
+      state.debts = [];
+      state.rules = [];
+      state.accounts = [];
+      state.intents = [];
+      state.paymentPlan = null;
+      state.comparison = null;
+      state.history = [];
+
+      renderAuth(false);
+      renderAll();
+      setNote(els.authMsg, "Sesión cerrada.", "success");
     }
+
+    async function savePaymentPlan() {
+      setLoading(els.savePlanBtn, true, "Guardando...");
+      try {
+        const payload = {
+          strategy: els.strategySelect.value,
+          automation_mode: els.automationSelect.value,
+          monthly_budget_default: Number(els.monthlyBudgetInput.value || 0),
+          extra_payment_default: Number(els.extraPaymentInput.value || 0)
+        };
+
+        const data = await api("/payment-plan", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        state.paymentPlan = data?.data || payload;
+        renderAll();
+        setNote(els.planMsg, "Plan guardado correctamente.", "success");
+      } catch (error) {
+        setNote(els.planMsg, error.message || "No se pudo guardar el plan.", "danger");
+      } finally {
+        setLoading(els.savePlanBtn, false);
+      }
+    }
+
+    async function createDebt() {
+      setLoading(els.saveDebtBtn, true, "Guardando...");
+      try {
+        const payload = {
+          name: els.debtName.value.trim(),
+          type: els.debtType.value,
+          balance: Number(els.debtBalance.value || 0),
+          apr: Number(els.debtApr.value || 0),
+          minimum_payment: Number(els.debtMinimum.value || 0),
+          due_day: Number(els.debtDueDay.value || 0),
+          goal_note: els.debtGoal.value.trim() || null
+        };
+
+        if (!payload.name) {
+          throw new Error("Pon el nombre de la deuda.");
+        }
+
+        await api("/debts", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        els.debtName.value = "";
+        els.debtBalance.value = "";
+        els.debtApr.value = "";
+        els.debtMinimum.value = "";
+        els.debtDueDay.value = "";
+        els.debtGoal.value = "";
+
+        await loadDebts();
+        renderAll();
+        setNote(els.globalMsg, "Deuda guardada correctamente.", "success");
+      } catch (error) {
+        setNote(els.globalMsg, error.message || "No se pudo guardar la deuda.", "danger");
+      } finally {
+        setLoading(els.saveDebtBtn, false);
+      }
+    }
+
+    async function saveRule() {
+      setLoading(els.saveRuleBtn, true, "Guardando...");
+      try {
+        const payload = {
+          name: els.ruleName.value.trim(),
+          debt_id: els.ruleDebtId.value,
+          match_type: els.ruleMatchType.value,
+          match_value: els.ruleMatchValue.value.trim(),
+          mode: els.ruleMode.value,
+          amount: Number(els.ruleAmount.value || 0),
+          monthly_cap: els.ruleCap.value ? Number(els.ruleCap.value) : null
+        };
+
+        if (!payload.name) throw new Error("Pon nombre a la regla.");
+        if (!payload.debt_id) throw new Error("Selecciona la deuda destino.");
+        if (!payload.match_value) throw new Error("Pon el valor que se va a buscar.");
+        if (!payload.amount) throw new Error("Pon la cantidad o porcentaje.");
+
+        await api("/rules", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        els.ruleName.value = "";
+        els.ruleMatchValue.value = "";
+        els.ruleAmount.value = "";
+        els.ruleCap.value = "";
+
+        await loadRules();
+        renderAll();
+        setNote(els.rulesMsg, "Regla guardada correctamente.", "success");
+      } catch (error) {
+        setNote(els.rulesMsg, error.message || "No se pudo guardar la regla.", "danger");
+      } finally {
+        setLoading(els.saveRuleBtn, false);
+      }
+    }
+
+    async function applyRules() {
+      setLoading(els.applyRulesBtn, true, "Aplicando...");
+      try {
+        const data = await api("/rules/apply", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+
+        const created = data?.created || data?.data?.created || 0;
+        setNote(els.rulesMsg, `Reglas aplicadas. Asignaciones creadas: ${created}.`, "success");
+      } catch (error) {
+        setNote(els.rulesMsg, error.message || "No se pudieron aplicar las reglas.", "danger");
+      } finally {
+        setLoading(els.applyRulesBtn, false);
+      }
+    }
+
+    async function compareStrategies() {
+      setLoading(els.compareBtn, true, "Calculando...");
+      try {
+        const payload = {
+          monthly_budget_default: Number(els.monthlyBudgetInput.value || state.paymentPlan?.monthly_budget_default || 0),
+          extra_payment_default: Number(els.extraPaymentInput.value || state.paymentPlan?.extra_payment_default || 0)
+        };
+
+        const data = await api("/strategy/compare", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        state.comparison = data?.data || data;
+        renderComparison();
+        setNote(els.planMsg, "Comparación calculada correctamente.", "success");
+      } catch (error) {
+        setNote(els.planMsg, error.message || "No se pudo calcular la comparación.", "danger");
+      } finally {
+        setLoading(els.compareBtn, false);
+      }
+    }
+
+    async function buildIntents() {
+      setLoading(els.buildIntentsBtn, true, "Construyendo...");
+      try {
+        const payload = {
+          strategy: els.strategySelect.value,
+          automation_mode: els.automationSelect.value
+        };
+
+        await api("/payment-intents/build", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        await loadIntents();
+        await loadHistory();
+        renderAll();
+        setNote(els.intentsMsg, "Intents construidos correctamente.", "success");
+      } catch (error) {
+        setNote(els.intentsMsg, error.message || "No se pudieron construir los intents.", "danger");
+      } finally {
+        setLoading(els.buildIntentsBtn, false);
+      }
+    }
+
+    async function approveAllVisible() {
+      setLoading(els.approveAllBtn, true, "Aprobando...");
+      try {
+        const pending = state.intents.filter((item) => safeText(item.status).toLowerCase() !== "approved");
+        for (const intent of pending) {
+          await api(`/payment-intents/${intent.id}/approve`, {
+            method: "POST",
+            body: JSON.stringify({})
+          });
+        }
+
+        await loadIntents();
+        await loadHistory();
+        renderAll();
+        setNote(els.intentsMsg, "Intents visibles aprobados.", "success");
+      } catch (error) {
+        setNote(els.intentsMsg, error.message || "No se pudieron aprobar los intents.", "danger");
+      } finally {
+        setLoading(els.approveAllBtn, false);
+      }
+    }
+
+    async function executeAllVisible() {
+      setLoading(els.executeAllBtn, true, "Ejecutando...");
+      try {
+        const approved = state.intents.filter((item) => safeText(item.status).toLowerCase() === "approved");
+        for (const intent of approved) {
+          await api(`/payment-intents/${intent.id}/execute`, {
+            method: "POST",
+            body: JSON.stringify({})
+          });
+        }
+
+        await Promise.all([loadDebts(), loadIntents(), loadHistory()]);
+        renderAll();
+        setNote(els.intentsMsg, "Intents visibles ejecutados.", "success");
+      } catch (error) {
+        setNote(els.intentsMsg, error.message || "No se pudieron ejecutar los intents.", "danger");
+      } finally {
+        setLoading(els.executeAllBtn, false);
+      }
+    }
+
+    async function connectBank() {
+      setLoading(els.connectBankBtn, true, "Conectando...");
+      try {
+        const data = await api("/plaid/web", { method: "GET" });
+        const url = data?.link_url || data?.url;
+
+        if (!url) {
+          throw new Error("No llegó la URL de conexión bancaria.");
+        }
+
+        window.open(url, "_blank", "noopener,noreferrer");
+        setNote(els.quickMsg, "Se abrió la conexión bancaria en otra pestaña.", "success");
+      } catch (error) {
+        setNote(els.quickMsg, error.message || "No se pudo abrir Plaid.", "danger");
+      } finally {
+        setLoading(els.connectBankBtn, false);
+      }
+    }
+
+    async function importAccounts() {
+      setLoading(els.importAccountsBtn, true, "Importando...");
+      try {
+        const data = await api("/plaid/accounts/import", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+
+        await loadAccounts();
+        renderAll();
+
+        const count = data?.count || state.accounts.length || 0;
+        setNote(els.quickMsg, `Cuentas importadas: ${count}.`, "success");
+      } catch (error) {
+        setNote(els.quickMsg, error.message || "No se pudieron importar las cuentas.", "danger");
+      } finally {
+        setLoading(els.importAccountsBtn, false);
+      }
+    }
+
+    async function importTransactions() {
+      setLoading(els.importTxBtn, true, "Importando...");
+      try {
+        const data = await api("/plaid/transactions/sync", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+
+        const added = data?.added || data?.data?.added || 0;
+        setNote(els.quickMsg, `Transacciones importadas: ${added}.`, "success");
+      } catch (error) {
+        setNote(els.quickMsg, error.message || "No se pudieron importar las transacciones.", "danger");
+      } finally {
+        setLoading(els.importTxBtn, false);
+      }
+    }
+
+    async function refresh() {
+      setLoading(els.refreshBtn, true, "Refrescando...");
+      try {
+        await Promise.all([loadPaymentPlan(), loadDebts(), loadRules(), loadIntents()]);
+        await loadHistory();
+        renderAll();
+        setNote(els.quickMsg, "Panel refrescado.", "success");
+      } catch (error) {
+        setNote(els.quickMsg, error.message || "No se pudo refrescar.", "danger");
+      } finally {
+        setLoading(els.refreshBtn, false);
+      }
+    }
+
+    async function refreshAll() {
+      setLoading(els.refreshAllBtn, true, "Refrescando...");
+      try {
+        await loadAll();
+        setNote(els.quickMsg, "Todo refrescado.", "success");
+      } catch (error) {
+        setNote(els.quickMsg, error.message || "No se pudo refrescar todo.", "danger");
+      } finally {
+        setLoading(els.refreshAllBtn, false);
+      }
+    }
+
+    function bindEvents() {
+      els.loginBtn.addEventListener("click", signIn);
+      els.signupBtn.addEventListener("click", signUp);
+      els.resetBtn.addEventListener("click", resetPassword);
+
+      els.logoutBtn.addEventListener("click", signOut);
+      els.savePlanBtn.addEventListener("click", savePaymentPlan);
+      els.saveDebtBtn.addEventListener("click", createDebt);
+      els.saveRuleBtn.addEventListener("click", saveRule);
+      els.applyRulesBtn.addEventListener("click", applyRules);
+      els.compareBtn.addEventListener("click", compareStrategies);
+      els.buildIntentsBtn.addEventListener("click", buildIntents);
+      els.approveAllBtn.addEventListener("click", approveAllVisible);
+      els.executeAllBtn.addEventListener("click", executeAllVisible);
+      els.connectBankBtn.addEventListener("click", connectBank);
+      els.importAccountsBtn.addEventListener("click", importAccounts);
+      els.importTxBtn.addEventListener("click", importTransactions);
+      els.refreshBtn.addEventListener("click", refresh);
+      els.refreshAllBtn.addEventListener("click", refreshAll);
+
+      els.password.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          signIn();
+        }
+      });
+
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        state.session = session || null;
+        state.user = session?.user || null;
+        renderAuth(Boolean(session));
+        updateUserBadge();
+
+        if (session) {
+          loadAll();
+        }
+      });
+    }
+
+    async function boot() {
+      bindEvents();
+      await checkBackendHealth();
+      await hydrateSession();
+    }
+
+    boot();
   </script>
 </body>
 </html>
