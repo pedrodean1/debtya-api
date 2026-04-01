@@ -1706,15 +1706,19 @@
     }
 
     async function exchangePublicToken(publicToken, metadata) {
-      const data = await api("/plaid/exchange_public_token", {
-        method: "POST",
-        body: JSON.stringify({
-          public_token: publicToken,
-          metadata: metadata || {}
-        })
-      });
+      try {
+        const data = await api("/plaid/exchange_public_token", {
+          method: "POST",
+          body: JSON.stringify({
+            public_token: publicToken,
+            metadata: metadata || {}
+          })
+        });
 
-      return data;
+        return data;
+      } catch (error) {
+        throw new Error(error.message || "Falló exchange_public_token");
+      }
     }
 
     async function connectBank() {
@@ -1750,12 +1754,15 @@
             try {
               setNote(els.quickMsg, "Banco conectado. Guardando conexión...", "note");
 
-              await exchangePublicToken(public_token, metadata);
+              const exchangeResult = await exchangePublicToken(public_token, metadata);
+              console.log("exchange_public_token OK:", exchangeResult);
+
               await loadAccounts();
               renderAll();
 
               setNote(els.quickMsg, "Banco conectado correctamente.", "success");
             } catch (error) {
+              console.error("exchange_public_token ERROR:", error);
               setNote(
                 els.quickMsg,
                 error.message || "Se conectó Plaid pero falló el intercambio del token.",
