@@ -8,6 +8,7 @@
   />
   <title>DebtYa</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -867,7 +868,8 @@
       intents: [],
       paymentPlan: null,
       comparison: null,
-      history: []
+      history: [],
+      plaidHandler: null
     };
 
     const els = {
@@ -1487,6 +1489,7 @@
       state.paymentPlan = null;
       state.comparison = null;
       state.history = [];
+      state.plaidHandler = null;
 
       renderAuth(false);
       renderAll();
@@ -1702,22 +1705,90 @@
       }
     }
 
+    async function exchangePublicToken(publicToken, metadata) {
+      const data = await api("/plaid/exchange_public_token", {
+        method: "POST",
+        body: JSON.stringify({
+          public_token: publicToken,
+          metadata: metadata || {}
+        })
+      });
+
+      return data;
+    }
+
     async function connectBank() {
       setLoading(els.connectBankBtn, true, "Conectando...");
-      try {
-        const data = await api("/plaid/web", { method: "GET" });
-        const url = data?.link_url || data?.url;
+      setNote(els.quickMsg, "Preparando conexión bancaria...", "note");
 
-        if (!url) {
-          throw new Error("No llegó la URL de conexión bancaria.");
+      let plaidOpened = false;
+
+      try {
+        if (!window.Plaid) {
+          throw new Error("Plaid Link no cargó en el navegador.");
         }
 
-        window.open(url, "_blank", "noopener,noreferrer");
-        setNote(els.quickMsg, "Se abrió la conexión bancaria en otra pestaña.", "success");
+        const tokenResponse = await api("/plaid/create_link_token", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+
+        const linkToken =
+          tokenResponse?.link_token ||
+          tokenResponse?.data?.link_token ||
+          tokenResponse?.token ||
+          tokenResponse?.data?.token;
+
+        if (!linkToken) {
+          throw new Error("No llegó el link_token de Plaid.");
+        }
+
+        state.plaidHandler = window.Plaid.create({
+          token: linkToken,
+
+          onSuccess: async (public_token, metadata) => {
+            try {
+              setNote(els.quickMsg, "Banco conectado. Guardando conexión...", "note");
+
+              await exchangePublicToken(public_token, metadata);
+              await loadAccounts();
+              renderAll();
+
+              setNote(els.quickMsg, "Banco conectado correctamente.", "success");
+            } catch (error) {
+              setNote(
+                els.quickMsg,
+                error.message || "Se conectó Plaid pero falló el intercambio del token.",
+                "danger"
+              );
+            } finally {
+              setLoading(els.connectBankBtn, false);
+            }
+          },
+
+          onExit: (err) => {
+            if (err) {
+              setNote(
+                els.quickMsg,
+                err.display_message || err.error_message || err.error_code || "Se cerró Plaid con error.",
+                "danger"
+              );
+            } else {
+              setNote(els.quickMsg, "Conexión bancaria cancelada.", "warning");
+            }
+
+            setLoading(els.connectBankBtn, false);
+          }
+        });
+
+        plaidOpened = true;
+        state.plaidHandler.open();
       } catch (error) {
-        setNote(els.quickMsg, error.message || "No se pudo abrir Plaid.", "danger");
+        setNote(els.quickMsg, error.message || "No se pudo abrir Plaid Link.", "danger");
       } finally {
-        setLoading(els.connectBankBtn, false);
+        if (!plaidOpened) {
+          setLoading(els.connectBankBtn, false);
+        }
       }
     }
 
@@ -1732,7 +1803,7 @@
         await loadAccounts();
         renderAll();
 
-        const count = data?.count || state.accounts.length || 0;
+        const count = data?.count || data?.data?.count || state.accounts.length || 0;
         setNote(els.quickMsg, `Cuentas importadas: ${count}.`, "success");
       } catch (error) {
         setNote(els.quickMsg, error.message || "No se pudieron importar las cuentas.", "danger");
