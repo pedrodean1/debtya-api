@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v5";
+const SERVER_VERSION = "cron-safe-v6";
 
 const {
   SUPABASE_URL,
@@ -767,13 +767,26 @@ app.post("/plaid/exchange_public_token", requireUser, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(
-      "exchange_public_token ERROR:",
-      error?.response?.data || error?.message || error
-    );
+    const raw =
+      error?.response?.data ||
+      error?.data ||
+      error?.message ||
+      null;
 
-    return jsonError(res, 500, "Error intercambiando public_token", {
-      details: error?.response?.data || error?.message || null
+    const detailedMessage =
+      raw?.error_message ||
+      raw?.message ||
+      raw?.error_code ||
+      raw?.error_type ||
+      (typeof raw === "string" ? raw : null) ||
+      "Error intercambiando public_token";
+
+    console.error("exchange_public_token ERROR RAW:", raw);
+
+    return res.status(500).json({
+      ok: false,
+      error: detailedMessage,
+      details: raw
     });
   }
 });
