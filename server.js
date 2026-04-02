@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v9";
+const SERVER_VERSION = "cron-safe-v10";
 
 const {
   SUPABASE_URL,
@@ -112,6 +112,12 @@ function getIntentAmount(intent) {
 function getIntentMetadata(intent) {
   if (!intent?.metadata || typeof intent.metadata !== "object") return {};
   return intent.metadata;
+}
+
+function isoDaysAgo(days) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString();
 }
 
 async function callRpc(name, params = {}) {
@@ -679,14 +685,21 @@ async function applyExecutedIntentToDebt(userId, intentInput) {
   };
 }
 
-async function reconcileUserDebtBalances(userId) {
-  const { data: intents, error } = await supabaseAdmin
+async function reconcileRecentExecutedIntents(userId, options = {}) {
+  const days = Math.max(0, safeNumber(options.days, 2));
+  const limit = Math.min(50, Math.max(1, safeNumber(options.limit, 10)));
+  const sinceIso = options.since_iso || isoDaysAgo(days);
+
+  let query = supabaseAdmin
     .from("payment_intents")
     .select("*")
     .eq("user_id", userId)
     .eq("status", "executed")
-    .order("executed_at", { ascending: true });
+    .gte("created_at", sinceIso)
+    .order("executed_at", { ascending: false })
+    .limit(limit);
 
+  const { data: intents, error } = await query;
   if (error) throw error;
 
   const pending = (intents || []).filter((intent) => {
@@ -706,6 +719,7 @@ async function reconcileUserDebtBalances(userId) {
   }
 
   return {
+    since_iso: sinceIso,
     checked: (intents || []).length,
     pending: pending.length,
     applied_count: results.filter((x) => x.ok && !x.skipped).length,
@@ -789,15 +803,14 @@ async function executeIntentDirect(userId, intentId) {
   }
 
   if (freshIntent.status === "executed") {
-    const applyResult = await applyExecutedIntentToDebt(userId, freshIntent).catch((e) => ({
-      ok: false,
-      error: e.message
-    }));
-
     return {
       already_executed: true,
       data: freshIntent,
-      debt_apply: applyResult
+      debt_apply: {
+        ok: true,
+        skipped: true,
+        reason: "ya_ejecutado"
+      }
     };
   }
 
@@ -1215,8 +1228,6 @@ app.get("/accounts", requireUser, async (req, res) => {
 
 app.get("/debts", requireUser, async (req, res) => {
   try {
-    const reconcile = await reconcileUserDebtBalances(req.user.id);
-
     const { data, error } = await supabaseAdmin
       .from("debts")
       .select("*")
@@ -1228,7 +1239,6 @@ app.get("/debts", requireUser, async (req, res) => {
 
     return res.json({
       ok: true,
-      reconciled: reconcile,
       data: data || []
     });
   } catch (error) {
@@ -1821,6 +1831,30 @@ app.post("/payment-intents/execute-visible", requireUser, async (req, res) => {
   }
 });
 
+app.post("/payment-intents/reconcile-recent", requireUser, async (req, res) => {
+  try {
+    const days = Math.max(0, safeNumber(req.body?.days, 2));
+    const limit = Math.min(50, Math.max(1, safeNumber(req.body?.limit, 10)));
+    const sinceIso = req.body?.since_iso || isoDaysAgo(days);
+
+    const result = await reconcileRecentExecutedIntents(req.user.id, {
+      days,
+      limit,
+      since_iso: sinceIso
+    });
+
+    return res.json({
+      ok: true,
+      safe_mode: true,
+      data: result
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error reconciliando intents recientes", {
+      details: error.message
+    });
+  }
+});
+
 app.get("/payment-trace", requireUser, async (req, res) => {
   try {
     const { data, error } = await supabaseAdmin
@@ -1979,8 +2013,6 @@ app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
           }
         }
 
-        const reconcile = await reconcileUserDebtBalances(userId).catch(() => null);
-
         const allocationsForUser =
           safeNumber(applyResult?.allocations_created) ||
           safeNumber(applyResult?.count) ||
@@ -1998,8 +2030,7 @@ app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
           allocations_created: allocationsForUser,
           intents_created: createdForUser,
           intents_executed: executedForUser,
-          total_executed: Number(totalExecutedForUser.toFixed(2)),
-          reconcile: reconcile || null
+          total_executed: Number(totalExecutedForUser.toFixed(2))
         });
       } catch (error) {
         failedUsers += 1;
