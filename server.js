@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v6";
+const SERVER_VERSION = "cron-safe-v7";
 
 const {
   SUPABASE_URL,
@@ -547,6 +547,157 @@ async function compareStrategiesForUser(userId, monthlyBudget = 0, extraPayment 
     avalanche,
     snowball
   };
+}
+
+async function approveIntentDirect(userId, intentId) {
+  if (!isUuid(intentId)) {
+    const err = new Error("intent_id inválido");
+    err.status = 400;
+    throw err;
+  }
+
+  const { data: intent, error: intentError } = await supabaseAdmin
+    .from("payment_intents")
+    .select("*")
+    .eq("id", intentId)
+    .eq("user_id", userId)
+    .single();
+
+  if (intentError || !intent) {
+    const err = new Error("Intent no encontrado");
+    err.status = 404;
+    throw err;
+  }
+
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabaseAdmin
+    .from("payment_intents")
+    .update({
+      status: "approved",
+      approved_at: now,
+      updated_at: now
+    })
+    .eq("id", intentId)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+async function executeIntentDirect(userId, intentId) {
+  if (!isUuid(intentId)) {
+    const err = new Error("intent_id inválido");
+    err.status = 400;
+    throw err;
+  }
+
+  const { data: intent, error: intentError } = await supabaseAdmin
+    .from("payment_intents")
+    .select("*")
+    .eq("id", intentId)
+    .eq("user_id", userId)
+    .single();
+
+  if (intentError || !intent) {
+    const err = new Error("Intent no encontrado");
+    err.status = 404;
+    throw err;
+  }
+
+  if (intent.status !== "approved" && intent.status !== "executed") {
+    await approveIntentDirect(userId, intentId);
+  }
+
+  const { data: freshIntent, error: freshError } = await supabaseAdmin
+    .from("payment_intents")
+    .select("*")
+    .eq("id", intentId)
+    .eq("user_id", userId)
+    .single();
+
+  if (freshError || !freshIntent) {
+    throw new Error("No se pudo recargar el intent");
+  }
+
+  if (freshIntent.status === "executed") {
+    return { already_executed: true, data: freshIntent };
+  }
+
+  const amount = safeNumber(
+    freshIntent.amount ??
+      freshIntent.executed_amount ??
+      freshIntent.suggested_amount ??
+      0
+  );
+
+  const now = new Date().toISOString();
+
+  const { data: updatedIntent, error: updateIntentError } = await supabaseAdmin
+    .from("payment_intents")
+    .update({
+      status: "executed",
+      executed_at: now,
+      updated_at: now
+    })
+    .eq("id", intentId)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (updateIntentError) throw updateIntentError;
+
+  const debtId =
+    updatedIntent.debt_id ||
+    updatedIntent.target_debt_id ||
+    null;
+
+  if (debtId && isUuid(debtId) && amount > 0) {
+    const { data: debt, error: debtError } = await supabaseAdmin
+      .from("debts")
+      .select("*")
+      .eq("id", debtId)
+      .eq("user_id", userId)
+      .single();
+
+    if (!debtError && debt) {
+      const nextBalance = Math.max(0, safeNumber(debt.balance) - amount);
+
+      const { error: debtUpdateError } = await supabaseAdmin
+        .from("debts")
+        .update({
+          balance: nextBalance,
+          updated_at: now
+        })
+        .eq("id", debtId)
+        .eq("user_id", userId);
+
+      if (debtUpdateError) {
+        console.warn("No se pudo actualizar balance de deuda:", debtUpdateError.message);
+      }
+    }
+  }
+
+  const executionPayload = {
+    user_id: userId,
+    payment_intent_id: updatedIntent.id,
+    amount,
+    status: "executed",
+    created_at: now,
+    updated_at: now
+  };
+
+  const { error: executionError } = await supabaseAdmin
+    .from("payment_executions")
+    .upsert(executionPayload, { onConflict: "payment_intent_id" });
+
+  if (executionError) {
+    console.warn("No se pudo registrar payment_execution:", executionError.message);
+  }
+
+  return { already_executed: false, data: updatedIntent };
 }
 
 app.get("/health", async (_req, res) => {
@@ -1297,21 +1448,15 @@ app.post("/payment-intents/build", requireUser, async (req, res) => {
 app.post("/approve_intent_v2", requireUser, async (req, res) => {
   try {
     const intentId = req.body.intent_id;
-    if (!isUuid(intentId)) {
-      return jsonError(res, 400, "intent_id inválido");
-    }
-
-    const result = await callRpc("approve_intent_v2", {
-      p_user_id: req.user.id,
-      p_intent_id: intentId
-    });
+    const data = await approveIntentDirect(req.user.id, intentId);
 
     return res.json({
       ok: true,
-      data: result
+      bypass_sql_function: true,
+      data
     });
   } catch (error) {
-    return jsonError(res, 500, "Error ejecutando approve_intent_v2", {
+    return jsonError(res, error.status || 500, "Error ejecutando approve_intent_v2", {
       details: error.message
     });
   }
@@ -1320,21 +1465,15 @@ app.post("/approve_intent_v2", requireUser, async (req, res) => {
 app.post("/execute_intent_v2", requireUser, async (req, res) => {
   try {
     const intentId = req.body.intent_id;
-    if (!isUuid(intentId)) {
-      return jsonError(res, 400, "intent_id inválido");
-    }
-
-    const result = await callRpc("execute_intent_v2", {
-      p_user_id: req.user.id,
-      p_intent_id: intentId
-    });
+    const result = await executeIntentDirect(req.user.id, intentId);
 
     return res.json({
       ok: true,
+      bypass_sql_function: true,
       data: result
     });
   } catch (error) {
-    return jsonError(res, 500, "Error ejecutando execute_intent_v2", {
+    return jsonError(res, error.status || 500, "Error ejecutando execute_intent_v2", {
       details: error.message
     });
   }
@@ -1407,18 +1546,15 @@ app.post("/payment-intents", requireUser, async (req, res) => {
 app.post("/payment-intents/:id/approve", requireUser, async (req, res) => {
   try {
     const intentId = req.params.id;
-    if (!isUuid(intentId)) {
-      return jsonError(res, 400, "ID inválido");
-    }
+    const data = await approveIntentDirect(req.user.id, intentId);
 
-    const result = await callRpc("approve_intent_v2", {
-      p_user_id: req.user.id,
-      p_intent_id: intentId
+    return res.json({
+      ok: true,
+      bypass_sql_function: true,
+      data
     });
-
-    return res.json({ ok: true, data: result });
   } catch (error) {
-    return jsonError(res, 500, "Error aprobando intent", {
+    return jsonError(res, error.status || 500, "Error aprobando intent", {
       details: error.message
     });
   }
@@ -1427,18 +1563,105 @@ app.post("/payment-intents/:id/approve", requireUser, async (req, res) => {
 app.post("/payment-intents/:id/execute", requireUser, async (req, res) => {
   try {
     const intentId = req.params.id;
-    if (!isUuid(intentId)) {
-      return jsonError(res, 400, "ID inválido");
+    const result = await executeIntentDirect(req.user.id, intentId);
+
+    return res.json({
+      ok: true,
+      bypass_sql_function: true,
+      data: result
+    });
+  } catch (error) {
+    return jsonError(res, error.status || 500, "Error ejecutando intent", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/payment-intents/approve-visible", requireUser, async (req, res) => {
+  try {
+    const { data: intents, error } = await supabaseAdmin
+      .from("payment_intents")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .in("status", ["draft", "pending", "built", "proposed", "ready"])
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    const results = [];
+
+    for (const intent of intents || []) {
+      try {
+        const approved = await approveIntentDirect(req.user.id, intent.id);
+        results.push({
+          id: intent.id,
+          ok: true,
+          data: approved
+        });
+      } catch (e) {
+        results.push({
+          id: intent.id,
+          ok: false,
+          error: e.message
+        });
+      }
     }
 
-    const result = await callRpc("execute_intent_v2", {
-      p_user_id: req.user.id,
-      p_intent_id: intentId
+    return res.json({
+      ok: true,
+      bypass_sql_function: true,
+      total_visible: (intents || []).length,
+      approved_count: results.filter((x) => x.ok).length,
+      failed_count: results.filter((x) => !x.ok).length,
+      results
     });
-
-    return res.json({ ok: true, data: result });
   } catch (error) {
-    return jsonError(res, 500, "Error ejecutando intent", {
+    return jsonError(res, 500, "Error aprobando visibles", {
+      details: error.message
+    });
+  }
+});
+
+app.post("/payment-intents/execute-visible", requireUser, async (req, res) => {
+  try {
+    const { data: intents, error } = await supabaseAdmin
+      .from("payment_intents")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .in("status", ["approved"])
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    const results = [];
+
+    for (const intent of intents || []) {
+      try {
+        const executed = await executeIntentDirect(req.user.id, intent.id);
+        results.push({
+          id: intent.id,
+          ok: true,
+          data: executed
+        });
+      } catch (e) {
+        results.push({
+          id: intent.id,
+          ok: false,
+          error: e.message
+        });
+      }
+    }
+
+    return res.json({
+      ok: true,
+      bypass_sql_function: true,
+      total_visible: (intents || []).length,
+      executed_count: results.filter((x) => x.ok).length,
+      failed_count: results.filter((x) => !x.ok).length,
+      results
+    });
+  } catch (error) {
+    return jsonError(res, 500, "Error ejecutando visibles", {
       details: error.message
     });
   }
@@ -1562,24 +1785,19 @@ app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
 
           createdForUser += 1;
 
-          await callRpc("approve_intent_v2", {
-            p_user_id: userId,
-            p_intent_id: intentId
-          }).catch(() => null);
+          await approveIntentDirect(userId, intentId).catch(() => null);
 
-          const executeResult = await callRpc("execute_intent_v2", {
-            p_user_id: userId,
-            p_intent_id: intentId
-          }).catch(() => null);
+          const executeResult = await executeIntentDirect(userId, intentId).catch(() => null);
 
-          executedForUser += 1;
+          if (executeResult && !executeResult.already_executed) {
+            executedForUser += 1;
 
-          const executedAmount =
-            safeNumber(executeResult?.amount) ||
-            safeNumber(executeResult?.executed_amount) ||
-            safeNumber(item?.amount);
+            const executedAmount =
+              safeNumber(executeResult?.data?.amount) ||
+              safeNumber(item?.amount);
 
-          totalExecutedForUser += executedAmount;
+            totalExecutedForUser += executedAmount;
+          }
         }
 
         const allocationsForUser =
