@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v8";
+const SERVER_VERSION = "cron-safe-v9";
 
 const {
   SUPABASE_URL,
@@ -96,6 +96,22 @@ function getBearerToken(req) {
 
 function getBaseUrl(req) {
   return APP_BASE_URL || FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
+}
+
+function getIntentAmount(intent) {
+  return safeNumber(
+    intent?.total_amount ??
+      intent?.amount ??
+      intent?.executed_amount ??
+      intent?.suggested_amount ??
+      intent?.payment_amount ??
+      0
+  );
+}
+
+function getIntentMetadata(intent) {
+  if (!intent?.metadata || typeof intent.metadata !== "object") return {};
+  return intent.metadata;
 }
 
 async function callRpc(name, params = {}) {
@@ -549,15 +565,154 @@ async function compareStrategiesForUser(userId, monthlyBudget = 0, extraPayment 
   };
 }
 
-function getIntentAmount(intent) {
-  return safeNumber(
-    intent?.total_amount ??
-      intent?.amount ??
-      intent?.executed_amount ??
-      intent?.suggested_amount ??
-      intent?.payment_amount ??
-      0
-  );
+async function markIntentMetadata(intentId, userId, patch = {}) {
+  const { data: current, error: currentError } = await supabaseAdmin
+    .from("payment_intents")
+    .select("metadata")
+    .eq("id", intentId)
+    .eq("user_id", userId)
+    .single();
+
+  if (currentError) throw currentError;
+
+  const metadata = {
+    ...(current?.metadata || {}),
+    ...patch
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from("payment_intents")
+    .update({
+      metadata,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", intentId)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+async function applyExecutedIntentToDebt(userId, intentInput) {
+  const intent = intentInput;
+  const intentId = intent?.id || null;
+  const debtId = intent?.debt_id || intent?.target_debt_id || null;
+  const amount = getIntentAmount(intent);
+  const metadata = getIntentMetadata(intent);
+
+  if (!intentId || !isUuid(intentId)) {
+    return { ok: false, skipped: true, reason: "intent_id inválido" };
+  }
+
+  if (!debtId || !isUuid(debtId)) {
+    await markIntentMetadata(intentId, userId, {
+      debt_balance_apply_skipped_at: new Date().toISOString(),
+      debt_balance_apply_reason: "sin_debt_id_valido"
+    }).catch(() => null);
+
+    return { ok: false, skipped: true, reason: "sin debt_id válido" };
+  }
+
+  if (amount <= 0) {
+    await markIntentMetadata(intentId, userId, {
+      debt_balance_apply_skipped_at: new Date().toISOString(),
+      debt_balance_apply_reason: "monto_no_valido"
+    }).catch(() => null);
+
+    return { ok: false, skipped: true, reason: "monto no válido" };
+  }
+
+  if (metadata.debt_balance_applied_at) {
+    return { ok: true, skipped: true, reason: "ya_aplicado", debt_id: debtId, amount };
+  }
+
+  const { data: debt, error: debtError } = await supabaseAdmin
+    .from("debts")
+    .select("*")
+    .eq("id", debtId)
+    .eq("user_id", userId)
+    .single();
+
+  if (debtError || !debt) {
+    await markIntentMetadata(intentId, userId, {
+      debt_balance_apply_skipped_at: new Date().toISOString(),
+      debt_balance_apply_reason: "deuda_no_encontrada",
+      debt_balance_apply_attempted_amount: amount
+    }).catch(() => null);
+
+    return { ok: false, skipped: true, reason: "deuda no encontrada", debt_id: debtId, amount };
+  }
+
+  const now = new Date().toISOString();
+  const currentBalance = safeNumber(debt.balance);
+  const nextBalance = Math.max(0, Number((currentBalance - amount).toFixed(2)));
+
+  const { error: debtUpdateError } = await supabaseAdmin
+    .from("debts")
+    .update({
+      balance: nextBalance,
+      updated_at: now
+    })
+    .eq("id", debtId)
+    .eq("user_id", userId);
+
+  if (debtUpdateError) {
+    throw debtUpdateError;
+  }
+
+  await markIntentMetadata(intentId, userId, {
+    debt_balance_applied_at: now,
+    debt_balance_applied_amount: amount,
+    debt_balance_previous: currentBalance,
+    debt_balance_next: nextBalance
+  });
+
+  return {
+    ok: true,
+    skipped: false,
+    debt_id: debtId,
+    amount,
+    previous_balance: currentBalance,
+    next_balance: nextBalance
+  };
+}
+
+async function reconcileUserDebtBalances(userId) {
+  const { data: intents, error } = await supabaseAdmin
+    .from("payment_intents")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", "executed")
+    .order("executed_at", { ascending: true });
+
+  if (error) throw error;
+
+  const pending = (intents || []).filter((intent) => {
+    const metadata = getIntentMetadata(intent);
+    return !metadata.debt_balance_applied_at;
+  });
+
+  const results = [];
+
+  for (const intent of pending) {
+    try {
+      const applied = await applyExecutedIntentToDebt(userId, intent);
+      results.push({ id: intent.id, ok: true, ...applied });
+    } catch (e) {
+      results.push({ id: intent.id, ok: false, error: e.message });
+    }
+  }
+
+  return {
+    checked: (intents || []).length,
+    pending: pending.length,
+    applied_count: results.filter((x) => x.ok && !x.skipped).length,
+    skipped_count: results.filter((x) => x.ok && x.skipped).length,
+    failed_count: results.filter((x) => !x.ok).length,
+    results
+  };
 }
 
 async function approveIntentDirect(userId, intentId) {
@@ -634,7 +789,16 @@ async function executeIntentDirect(userId, intentId) {
   }
 
   if (freshIntent.status === "executed") {
-    return { already_executed: true, data: freshIntent };
+    const applyResult = await applyExecutedIntentToDebt(userId, freshIntent).catch((e) => ({
+      ok: false,
+      error: e.message
+    }));
+
+    return {
+      already_executed: true,
+      data: freshIntent,
+      debt_apply: applyResult
+    };
   }
 
   const amount = getIntentAmount(freshIntent);
@@ -654,37 +818,6 @@ async function executeIntentDirect(userId, intentId) {
 
   if (updateIntentError) throw updateIntentError;
 
-  const debtId =
-    updatedIntent.debt_id ||
-    updatedIntent.target_debt_id ||
-    null;
-
-  if (debtId && isUuid(debtId) && amount > 0) {
-    const { data: debt, error: debtError } = await supabaseAdmin
-      .from("debts")
-      .select("*")
-      .eq("id", debtId)
-      .eq("user_id", userId)
-      .single();
-
-    if (!debtError && debt) {
-      const nextBalance = Math.max(0, safeNumber(debt.balance) - amount);
-
-      const { error: debtUpdateError } = await supabaseAdmin
-        .from("debts")
-        .update({
-          balance: nextBalance,
-          updated_at: now
-        })
-        .eq("id", debtId)
-        .eq("user_id", userId);
-
-      if (debtUpdateError) {
-        console.warn("No se pudo actualizar balance de deuda:", debtUpdateError.message);
-      }
-    }
-  }
-
   const executionPayload = {
     user_id: userId,
     payment_intent_id: updatedIntent.id,
@@ -703,7 +836,16 @@ async function executeIntentDirect(userId, intentId) {
     console.warn("No se pudo registrar payment_execution:", executionError.message);
   }
 
-  return { already_executed: false, data: updatedIntent };
+  const debtApply = await applyExecutedIntentToDebt(userId, updatedIntent).catch((e) => ({
+    ok: false,
+    error: e.message
+  }));
+
+  return {
+    already_executed: false,
+    data: updatedIntent,
+    debt_apply: debtApply
+  };
 }
 
 app.get("/health", async (_req, res) => {
@@ -1073,6 +1215,8 @@ app.get("/accounts", requireUser, async (req, res) => {
 
 app.get("/debts", requireUser, async (req, res) => {
   try {
+    const reconcile = await reconcileUserDebtBalances(req.user.id);
+
     const { data, error } = await supabaseAdmin
       .from("debts")
       .select("*")
@@ -1082,7 +1226,11 @@ app.get("/debts", requireUser, async (req, res) => {
 
     if (error) throw error;
 
-    return res.json({ ok: true, data: data || [] });
+    return res.json({
+      ok: true,
+      reconciled: reconcile,
+      data: data || []
+    });
   } catch (error) {
     return jsonError(res, 500, "Error cargando deudas", {
       details: error.message
@@ -1831,6 +1979,8 @@ app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
           }
         }
 
+        const reconcile = await reconcileUserDebtBalances(userId).catch(() => null);
+
         const allocationsForUser =
           safeNumber(applyResult?.allocations_created) ||
           safeNumber(applyResult?.count) ||
@@ -1848,7 +1998,8 @@ app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
           allocations_created: allocationsForUser,
           intents_created: createdForUser,
           intents_executed: executedForUser,
-          total_executed: Number(totalExecutedForUser.toFixed(2))
+          total_executed: Number(totalExecutedForUser.toFixed(2)),
+          reconcile: reconcile || null
         });
       } catch (error) {
         failedUsers += 1;
