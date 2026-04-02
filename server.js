@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v7";
+const SERVER_VERSION = "cron-safe-v8";
 
 const {
   SUPABASE_URL,
@@ -92,6 +92,16 @@ function getBearerToken(req) {
   const auth = req.headers.authorization || "";
   if (!auth.startsWith("Bearer ")) return null;
   return auth.slice("Bearer ".length).trim();
+}
+
+function getBaseUrl(req) {
+  return APP_BASE_URL || FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
+}
+
+async function callRpc(name, params = {}) {
+  const { data, error } = await supabaseAdmin.rpc(name, params);
+  if (error) throw error;
+  return data;
 }
 
 async function getUserFromRequest(req) {
@@ -263,16 +273,6 @@ async function insertTransactionsRaw(userId, plaidItemId, transactions) {
 
   if (error) throw error;
   return { inserted: rows.length };
-}
-
-async function callRpc(name, params = {}) {
-  const { data, error } = await supabaseAdmin.rpc(name, params);
-  if (error) throw error;
-  return data;
-}
-
-function getBaseUrl(req) {
-  return APP_BASE_URL || FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
 }
 
 function buildMicroRulePayload(userId, body = {}) {
@@ -549,6 +549,17 @@ async function compareStrategiesForUser(userId, monthlyBudget = 0, extraPayment 
   };
 }
 
+function getIntentAmount(intent) {
+  return safeNumber(
+    intent?.total_amount ??
+      intent?.amount ??
+      intent?.executed_amount ??
+      intent?.suggested_amount ??
+      intent?.payment_amount ??
+      0
+  );
+}
+
 async function approveIntentDirect(userId, intentId) {
   if (!isUuid(intentId)) {
     const err = new Error("intent_id inválido");
@@ -626,13 +637,7 @@ async function executeIntentDirect(userId, intentId) {
     return { already_executed: true, data: freshIntent };
   }
 
-  const amount = safeNumber(
-    freshIntent.amount ??
-      freshIntent.executed_amount ??
-      freshIntent.suggested_amount ??
-      0
-  );
-
+  const amount = getIntentAmount(freshIntent);
   const now = new Date().toISOString();
 
   const { data: updatedIntent, error: updateIntentError } = await supabaseAdmin
@@ -685,6 +690,7 @@ async function executeIntentDirect(userId, intentId) {
     payment_intent_id: updatedIntent.id,
     amount,
     status: "executed",
+    executed_at: now,
     created_at: now,
     updated_at: now
   };
@@ -1583,7 +1589,7 @@ app.post("/payment-intents/approve-visible", requireUser, async (req, res) => {
       .from("payment_intents")
       .select("*")
       .eq("user_id", req.user.id)
-      .in("status", ["draft", "pending", "built", "proposed", "ready"])
+      .in("status", ["draft", "pending", "built", "proposed", "ready", "pending_review"])
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -1675,9 +1681,39 @@ app.get("/payment-trace", requireUser, async (req, res) => {
       .eq("user_id", req.user.id)
       .order("created_at", { ascending: false });
 
-    if (error) throw error;
+    if (!error) {
+      return res.json({ ok: true, source: "v_payment_trace", data: data || [] });
+    }
 
-    return res.json({ ok: true, data: data || [] });
+    console.warn("Fallback payment-trace por error en vista:", error.message);
+
+    const { data: intents, error: fallbackError } = await supabaseAdmin
+      .from("payment_intents")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false });
+
+    if (fallbackError) throw fallbackError;
+
+    const normalized = (intents || []).map((x) => ({
+      id: x.id,
+      user_id: x.user_id,
+      debt_id: x.debt_id,
+      status: x.status,
+      total_amount: getIntentAmount(x),
+      scheduled_for: x.scheduled_for,
+      approved_at: x.approved_at,
+      executed_at: x.executed_at,
+      created_at: x.created_at,
+      updated_at: x.updated_at,
+      metadata: x.metadata || null
+    }));
+
+    return res.json({
+      ok: true,
+      source: "payment_intents_fallback",
+      data: normalized
+    });
   } catch (error) {
     return jsonError(res, 500, "Error cargando trace", {
       details: error.message
@@ -1791,12 +1827,7 @@ app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
 
           if (executeResult && !executeResult.already_executed) {
             executedForUser += 1;
-
-            const executedAmount =
-              safeNumber(executeResult?.data?.amount) ||
-              safeNumber(item?.amount);
-
-            totalExecutedForUser += executedAmount;
+            totalExecutedForUser += getIntentAmount(executeResult.data);
           }
         }
 
