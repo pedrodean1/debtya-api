@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v13";
+const SERVER_VERSION = "cron-safe-v14";
 
 const {
   SUPABASE_URL,
@@ -399,6 +399,7 @@ function normalizePaymentPlan(row) {
   if (!row) {
     return {
       strategy: "avalanche",
+      monthly_budget: 0,
       monthly_budget_default: 0,
       extra_payment_default: 0,
       automation_mode: "manual",
@@ -406,15 +407,27 @@ function normalizePaymentPlan(row) {
     };
   }
 
-  const automationMode = row.auto_mode || "manual";
+  const payload = row.payload_json && typeof row.payload_json === "object" ? row.payload_json : {};
+  const automationMode = payload.automation_mode || "manual";
+  const monthlyBudgetDefault =
+    row.monthly_budget_default !== undefined && row.monthly_budget_default !== null
+      ? safeNumber(row.monthly_budget_default)
+      : payload.monthly_budget_default !== undefined
+      ? safeNumber(payload.monthly_budget_default)
+      : safeNumber(row.monthly_budget);
+
+  const extraPaymentDefault =
+    row.extra_payment_default !== undefined && row.extra_payment_default !== null
+      ? safeNumber(row.extra_payment_default)
+      : payload.extra_payment_default !== undefined
+      ? safeNumber(payload.extra_payment_default)
+      : 0;
 
   return {
     ...row,
-    monthly_budget_default:
-      row.monthly_budget_default !== undefined && row.monthly_budget_default !== null
-        ? safeNumber(row.monthly_budget_default)
-        : safeNumber(row.monthly_budget),
-    extra_payment_default: safeNumber(row.extra_payment_default),
+    monthly_budget: safeNumber(row.monthly_budget),
+    monthly_budget_default: monthlyBudgetDefault,
+    extra_payment_default: extraPaymentDefault,
     automation_mode: automationMode,
     auto_mode: automationMode
   };
@@ -434,26 +447,19 @@ async function getCurrentPaymentPlan(userId) {
 
 async function savePaymentPlanForUser(userId, body = {}) {
   const now = new Date().toISOString();
-  const autoMode = body.auto_mode || body.automation_mode || "manual";
-
-  const payload = {
-    user_id: userId,
-    strategy: body.strategy || "avalanche",
-    monthly_budget:
-      body.monthly_budget !== undefined
-        ? safeNumber(body.monthly_budget)
-        : safeNumber(body.monthly_budget_default),
-    monthly_budget_default:
-      body.monthly_budget_default !== undefined
-        ? safeNumber(body.monthly_budget_default)
-        : safeNumber(body.monthly_budget),
-    extra_payment_default:
-      body.extra_payment_default !== undefined
-        ? safeNumber(body.extra_payment_default)
-        : 0,
-    auto_mode: autoMode,
-    updated_at: now
-  };
+  const automationMode = body.automation_mode || body.auto_mode || "manual";
+  const monthlyBudget =
+    body.monthly_budget !== undefined
+      ? safeNumber(body.monthly_budget)
+      : safeNumber(body.monthly_budget_default);
+  const monthlyBudgetDefault =
+    body.monthly_budget_default !== undefined
+      ? safeNumber(body.monthly_budget_default)
+      : safeNumber(body.monthly_budget);
+  const extraPaymentDefault =
+    body.extra_payment_default !== undefined
+      ? safeNumber(body.extra_payment_default)
+      : 0;
 
   const { data: existingRows, error: existingError } = await supabaseAdmin
     .from("payment_plans")
@@ -465,6 +471,26 @@ async function savePaymentPlanForUser(userId, body = {}) {
   if (existingError) throw existingError;
 
   const existing = existingRows?.[0] || null;
+  const existingPayload =
+    existing?.payload_json && typeof existing.payload_json === "object"
+      ? existing.payload_json
+      : {};
+
+  const mergedPayloadJson = {
+    ...existingPayload,
+    automation_mode: automationMode,
+    monthly_budget_default: monthlyBudgetDefault,
+    extra_payment_default: extraPaymentDefault
+  };
+
+  const payload = {
+    user_id: userId,
+    strategy: body.strategy || existing?.strategy || "avalanche",
+    monthly_budget: monthlyBudget,
+    budget: monthlyBudget,
+    payload_json: mergedPayloadJson,
+    updated_at: now
+  };
 
   if (existing?.id) {
     const { data, error } = await supabaseAdmin
@@ -483,7 +509,6 @@ async function savePaymentPlanForUser(userId, body = {}) {
     ...payload,
     name: "Plan principal",
     plan_type: "monthly",
-    budget: safeNumber(body.monthly_budget, safeNumber(body.monthly_budget_default)),
     is_active: true,
     created_at: now
   };
