@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v12";
+const SERVER_VERSION = "cron-safe-v13";
 
 const {
   SUPABASE_URL,
@@ -406,7 +406,7 @@ function normalizePaymentPlan(row) {
     };
   }
 
-  const automationMode = row.automation_mode || "manual";
+  const automationMode = row.auto_mode || "manual";
 
   return {
     ...row,
@@ -434,7 +434,7 @@ async function getCurrentPaymentPlan(userId) {
 
 async function savePaymentPlanForUser(userId, body = {}) {
   const now = new Date().toISOString();
-  const automationMode = body.automation_mode || body.auto_mode || "manual";
+  const autoMode = body.auto_mode || body.automation_mode || "manual";
 
   const payload = {
     user_id: userId,
@@ -451,7 +451,7 @@ async function savePaymentPlanForUser(userId, body = {}) {
       body.extra_payment_default !== undefined
         ? safeNumber(body.extra_payment_default)
         : 0,
-    automation_mode: automationMode,
+    auto_mode: autoMode,
     updated_at: now
   };
 
