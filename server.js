@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v11";
+const SERVER_VERSION = "cron-safe-v12";
 
 const {
   SUPABASE_URL,
@@ -406,7 +406,7 @@ function normalizePaymentPlan(row) {
     };
   }
 
-  const automationMode = row.automation_mode || row.auto_mode || "manual";
+  const automationMode = row.automation_mode || "manual";
 
   return {
     ...row,
@@ -434,6 +434,7 @@ async function getCurrentPaymentPlan(userId) {
 
 async function savePaymentPlanForUser(userId, body = {}) {
   const now = new Date().toISOString();
+  const automationMode = body.automation_mode || body.auto_mode || "manual";
 
   const payload = {
     user_id: userId,
@@ -442,11 +443,15 @@ async function savePaymentPlanForUser(userId, body = {}) {
       body.monthly_budget !== undefined
         ? safeNumber(body.monthly_budget)
         : safeNumber(body.monthly_budget_default),
+    monthly_budget_default:
+      body.monthly_budget_default !== undefined
+        ? safeNumber(body.monthly_budget_default)
+        : safeNumber(body.monthly_budget),
     extra_payment_default:
       body.extra_payment_default !== undefined
         ? safeNumber(body.extra_payment_default)
         : 0,
-    auto_mode: body.auto_mode || body.automation_mode || "manual",
+    automation_mode: automationMode,
     updated_at: now
   };
 
@@ -476,6 +481,10 @@ async function savePaymentPlanForUser(userId, body = {}) {
 
   const insertPayload = {
     ...payload,
+    name: "Plan principal",
+    plan_type: "monthly",
+    budget: safeNumber(body.monthly_budget, safeNumber(body.monthly_budget_default)),
+    is_active: true,
     created_at: now
   };
 
