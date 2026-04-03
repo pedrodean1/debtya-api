@@ -9,7 +9,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v10";
+const SERVER_VERSION = "cron-safe-v11";
 
 const {
   SUPABASE_URL,
@@ -433,6 +433,8 @@ async function getCurrentPaymentPlan(userId) {
 }
 
 async function savePaymentPlanForUser(userId, body = {}) {
+  const now = new Date().toISOString();
+
   const payload = {
     user_id: userId,
     strategy: body.strategy || "avalanche",
@@ -445,12 +447,41 @@ async function savePaymentPlanForUser(userId, body = {}) {
         ? safeNumber(body.extra_payment_default)
         : 0,
     auto_mode: body.auto_mode || body.automation_mode || "manual",
-    updated_at: new Date().toISOString()
+    updated_at: now
+  };
+
+  const { data: existingRows, error: existingError } = await supabaseAdmin
+    .from("payment_plans")
+    .select("*")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+
+  if (existingError) throw existingError;
+
+  const existing = existingRows?.[0] || null;
+
+  if (existing?.id) {
+    const { data, error } = await supabaseAdmin
+      .from("payment_plans")
+      .update(payload)
+      .eq("id", existing.id)
+      .eq("user_id", userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return normalizePaymentPlan(data);
+  }
+
+  const insertPayload = {
+    ...payload,
+    created_at: now
   };
 
   const { data, error } = await supabaseAdmin
     .from("payment_plans")
-    .upsert(payload, { onConflict: "user_id" })
+    .insert(insertPayload)
     .select()
     .single();
 
@@ -690,7 +721,7 @@ async function reconcileRecentExecutedIntents(userId, options = {}) {
   const limit = Math.min(50, Math.max(1, safeNumber(options.limit, 10)));
   const sinceIso = options.since_iso || isoDaysAgo(days);
 
-  let query = supabaseAdmin
+  const { data: intents, error } = await supabaseAdmin
     .from("payment_intents")
     .select("*")
     .eq("user_id", userId)
@@ -699,7 +730,6 @@ async function reconcileRecentExecutedIntents(userId, options = {}) {
     .order("executed_at", { ascending: false })
     .limit(limit);
 
-  const { data: intents, error } = await query;
   if (error) throw error;
 
   const pending = (intents || []).filter((intent) => {
