@@ -314,6 +314,26 @@
       gap:10px;
     }
 
+    .list-scroll{
+      max-height:420px;
+      overflow-y:auto;
+      padding-right:6px;
+    }
+
+    .list-scroll::-webkit-scrollbar{
+      width:10px;
+    }
+
+    .list-scroll::-webkit-scrollbar-track{
+      background:#eef3f9;
+      border-radius:999px;
+    }
+
+    .list-scroll::-webkit-scrollbar-thumb{
+      background:#c9d7ea;
+      border-radius:999px;
+    }
+
     .item{
       border:1px solid var(--line);
       border-radius:16px;
@@ -1152,7 +1172,7 @@
               </div>
             </div>
 
-            <div id="traceList" class="list"></div>
+            <div id="traceList" class="list list-scroll"></div>
           </section>
 
           <section class="card">
