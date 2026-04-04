@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DebtYa</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <style>
     :root{
       --bg:#f6f8fc;
@@ -110,11 +111,6 @@
       font-size:20px;
     }
 
-    .card h3{
-      margin:0 0 6px;
-      font-size:16px;
-    }
-
     .sub{
       margin:0;
       color:var(--muted);
@@ -179,18 +175,13 @@
       font-weight:700;
     }
 
-    .input,.select,.textarea{
+    .input,.select{
       width:100%;
       border:1px solid var(--line);
       border-radius:12px;
       padding:11px 12px;
       background:#fff;
       color:var(--text);
-    }
-
-    .textarea{
-      min-height:90px;
-      resize:vertical;
     }
 
     .stats{
@@ -300,7 +291,6 @@
     }
 
     .muted{color:var(--muted)}
-    .center{text-align:center}
     .right{text-align:right}
 
     .notice{
@@ -338,16 +328,6 @@
       border-radius:24px;
       padding:24px;
       box-shadow:var(--shadow);
-    }
-
-    .auth-card h2{
-      margin:0 0 8px;
-      font-size:28px;
-    }
-
-    .auth-card p{
-      margin:0 0 18px;
-      color:var(--muted);
     }
 
     .auth-switch{
@@ -404,7 +384,7 @@
       <div class="brand" style="margin-bottom:16px;">
         <div class="brand-badge">D</div>
         <div>
-          <h1 style="font-size:30px;">DebtYa</h1>
+          <h1 style="font-size:30px;margin:0;">DebtYa</h1>
           <p>Paga deudas con más orden y menos estrés.</p>
         </div>
       </div>
@@ -447,7 +427,7 @@
         <div class="brand">
           <div class="brand-badge">D</div>
           <div>
-            <h1>DebtYa</h1>
+            <h1 style="margin:0;">DebtYa</h1>
             <p id="welcomeText">Panel principal</p>
           </div>
         </div>
@@ -722,18 +702,20 @@
               </div>
             </div>
 
-            <div class="grid-2">
-              <div class="notice">
-                <strong>Backend</strong><br />
-                <span id="backendVersionText">...</span>
-              </div>
-              <div class="notice">
-                <strong>Usuario</strong><br />
-                <span id="userEmailText">...</span>
-              </div>
+            <div class="notice">
+              <strong>Backend</strong><br />
+              <span id="backendVersionText">...</span>
             </div>
 
             <div class="divider"></div>
+
+            <div class="notice">
+              <strong>Usuario</strong><br />
+              <span id="userEmailText">...</span>
+            </div>
+
+            <div class="divider"></div>
+
             <div id="debugBox" class="code">Listo.</div>
           </section>
         </div>
@@ -815,25 +797,19 @@
     async function getAccessToken() {
       const { data } = await supabaseClient.auth.getSession();
       const token = data?.session?.access_token || null;
-      if (token) {
-        localStorage.setItem("debtya_access_token", token);
-      }
+      if (token) localStorage.setItem("debtya_access_token", token);
       return token;
     }
 
     async function api(path, options = {}) {
       const token = await getAccessToken();
-      const headers = {
-        ...(options.headers || {})
-      };
+      const headers = { ...(options.headers || {}) };
 
       if (!(options.body instanceof FormData)) {
         headers["Content-Type"] = headers["Content-Type"] || "application/json";
       }
 
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
+      if (token) headers.Authorization = `Bearer ${token}`;
 
       const res = await fetch(`${API_BASE}${path}`, {
         method: options.method || "GET",
@@ -1223,6 +1199,61 @@
       }
     }
 
+    async function connectBankDirect(){
+      const btn = $("btnConnectBank");
+      setLoading(btn, true, "Abriendo Plaid...");
+      try {
+        const token = await getAccessToken();
+        if (!token) throw new Error("Primero inicia sesión.");
+        if (!window.Plaid) throw new Error("Plaid no cargó en la página.");
+
+        const tokenRes = await api("/plaid/create_link_token", {
+          method: "POST",
+          body: "{}"
+        });
+
+        const linkToken = tokenRes.link_token;
+        if (!linkToken) throw new Error("No llegó link_token del backend.");
+
+        const handler = window.Plaid.create({
+          token: linkToken,
+          onSuccess: async (public_token, metadata) => {
+            try {
+              showMessage(globalMessage, "Conectando banco...", "warn");
+
+              const exchangeRes = await api("/plaid/exchange_public_token", {
+                method: "POST",
+                body: JSON.stringify({
+                  public_token,
+                  metadata
+                })
+              });
+
+              setDebug(exchangeRes);
+              showMessage(globalMessage, "Banco conectado correctamente.", "success");
+              await refreshAccounts();
+            } catch (err) {
+              showMessage(globalMessage, err.message, "error");
+            } finally {
+              setLoading(btn, false);
+            }
+          },
+          onExit: (err, metadata) => {
+            if (err) {
+              setDebug({ plaid_exit_error: err, metadata });
+              showMessage(globalMessage, err.display_message || err.error_message || "Plaid se cerró con error.", "error");
+            }
+            setLoading(btn, false);
+          }
+        });
+
+        handler.open();
+      } catch (err) {
+        showMessage(globalMessage, err.message, "error");
+        setLoading(btn, false);
+      }
+    }
+
     async function login(email, password) {
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) throw error;
@@ -1363,6 +1394,7 @@
     $("refreshIntentsBtn").addEventListener("click", refreshIntents);
     $("refreshTraceBtn").addEventListener("click", refreshTrace);
     $("refreshAccountsBtn").addEventListener("click", refreshAccounts);
+    $("btnConnectBank").addEventListener("click", connectBankDirect);
 
     $("debtForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -1433,20 +1465,6 @@
         const res = await api("/strategy/compare", { method: "POST", body: JSON.stringify(payload) });
         renderCompare(res.data);
         showMessage(globalMessage, "Comparación lista.", "success");
-      } catch (err) {
-        showMessage(globalMessage, err.message, "error");
-      }
-    });
-
-    $("btnConnectBank").addEventListener("click", async () => {
-      try {
-        const token = await getAccessToken();
-        if (!token) throw new Error("Primero inicia sesión.");
-
-        const popup = window.open("", "_blank");
-        if (!popup) throw new Error("El navegador bloqueó la ventana emergente. Permite popups para www.debtya.com.");
-
-        popup.location.href = `${API_BASE}/plaid/web`;
       } catch (err) {
         showMessage(globalMessage, err.message, "error");
       }
