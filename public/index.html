@@ -594,6 +594,89 @@
       color:var(--primary);
       border-color:#d7e6ff;
     }
+
+    .pricing-wrap{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:18px;
+    }
+
+    .pricing-card{
+      border:1px solid #dbe6f7;
+      border-radius:20px;
+      padding:22px;
+      background:linear-gradient(180deg,#ffffff,#f8fbff);
+      box-shadow:var(--shadow-soft);
+    }
+
+    .pricing-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .pricing-name{
+      font-size:22px;
+      font-weight:800;
+      margin:0;
+    }
+
+    .pricing-copy{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.55;
+      max-width:700px;
+    }
+
+    .price-box{
+      text-align:right;
+    }
+
+    .price-box .price{
+      font-size:36px;
+      font-weight:900;
+      line-height:1;
+      letter-spacing:-1px;
+    }
+
+    .price-box .freq{
+      color:var(--muted);
+      font-size:13px;
+      margin-top:4px;
+    }
+
+    .pricing-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+
+    @media (max-width: 760px){
+      .pricing-grid{grid-template-columns:1fr}
+    }
+
+    .pricing-item{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      background:#fff;
+      font-size:13px;
+      color:var(--text);
+      line-height:1.5;
+    }
+
+    .pricing-cta{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:16px;
+    }
   </style>
 </head>
 <body>
@@ -690,6 +773,43 @@
           <div class="notice">
             <strong>Ideal para:</strong><br />
             Personas con varias deudas que quieren un sistema claro, repetible y más fácil de sostener.
+          </div>
+        </div>
+      </section>
+
+      <section class="pricing-wrap">
+        <div class="pricing-card">
+          <div class="pricing-top">
+            <div>
+              <p class="pricing-name">DebtYa Beta</p>
+              <p class="pricing-copy">
+                Todo lo necesario para conectar tus cuentas, organizar tus deudas, automatizar reglas útiles y convertir tu estrategia en pagos reales.
+              </p>
+            </div>
+            <div class="price-box">
+              <div class="price">$9.99</div>
+              <div class="freq">al mes</div>
+            </div>
+          </div>
+
+          <div class="pricing-grid">
+            <div class="pricing-item">Conexión bancaria con Plaid</div>
+            <div class="pricing-item">Importación de cuentas y transacciones</div>
+            <div class="pricing-item">Creación y seguimiento de deudas</div>
+            <div class="pricing-item">Reglas automáticas como roundup o monto fijo</div>
+            <div class="pricing-item">Comparación avalanche vs snowball</div>
+            <div class="pricing-item">Construcción, aprobación y ejecución de intents</div>
+            <div class="pricing-item">Historial y trazabilidad de pagos</div>
+            <div class="pricing-item">Base estable lista para uso diario</div>
+          </div>
+
+          <div class="pricing-cta">
+            <button id="pricingStartBtn" class="btn btn-primary" type="button">Empieza ahora</button>
+            <button id="pricingLoginBtn" class="btn btn-light" type="button">Ya tengo cuenta</button>
+          </div>
+
+          <div class="helper-text">
+            Empieza con una cuenta, conecta tu banco y organiza tu sistema en minutos.
           </div>
         </div>
       </section>
@@ -1727,6 +1847,8 @@
     $("landingDemoBtn").addEventListener("click", () => {
       document.querySelector(".steps").scrollIntoView({ behavior: "smooth", block: "start" });
     });
+    $("pricingStartBtn").addEventListener("click", () => showAuth("signup"));
+    $("pricingLoginBtn").addEventListener("click", () => showAuth("login"));
 
     $("showLoginBtn").addEventListener("click", () => {
       state.mode = "login";
