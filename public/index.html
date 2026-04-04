@@ -8,18 +8,21 @@
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <style>
     :root{
-      --bg:#f6f8fc;
+      --bg:#f4f7fb;
       --card:#ffffff;
+      --card-2:#fbfdff;
       --text:#122033;
       --muted:#6c7a90;
-      --line:#e7edf5;
+      --line:#e6edf5;
       --primary:#1f6fff;
       --primary-dark:#1558cc;
-      --green:#14a44d;
-      --red:#d93025;
+      --green:#16a34a;
+      --red:#dc2626;
       --orange:#f59e0b;
       --shadow:0 12px 30px rgba(18,32,51,.08);
+      --shadow-soft:0 8px 24px rgba(18,32,51,.05);
       --radius:18px;
+      --radius-sm:14px;
     }
 
     *{box-sizing:border-box}
@@ -40,7 +43,7 @@
       align-items:center;
       justify-content:space-between;
       gap:14px;
-      margin-bottom:20px;
+      margin-bottom:18px;
       flex-wrap:wrap;
     }
 
@@ -51,23 +54,25 @@
     }
 
     .brand-badge{
-      width:44px;
-      height:44px;
-      border-radius:14px;
-      background:linear-gradient(135deg,#1f6fff,#6aa0ff);
+      width:46px;
+      height:46px;
+      border-radius:15px;
+      background:linear-gradient(135deg,#1f6fff,#73a7ff);
       color:#fff;
       display:flex;
       align-items:center;
       justify-content:center;
       font-weight:800;
-      font-size:18px;
+      font-size:19px;
       box-shadow:var(--shadow);
+      flex:0 0 auto;
     }
 
     .brand h1{
       margin:0;
-      font-size:28px;
+      font-size:30px;
       line-height:1;
+      letter-spacing:-.3px;
     }
 
     .brand p{
@@ -83,30 +88,29 @@
       flex-wrap:wrap;
     }
 
-    .hero{
-      display:grid;
-      grid-template-columns:1.2fr .8fr;
-      gap:18px;
-      margin-bottom:18px;
-    }
-
-    @media (max-width:980px){
-      .hero{grid-template-columns:1fr}
-    }
-
-    .layout{
+    .page-grid{
       display:grid;
       grid-template-columns:1.05fr .95fr;
       gap:18px;
     }
 
-    @media (max-width:980px){
-      .layout{grid-template-columns:1fr}
+    @media (max-width: 1040px){
+      .page-grid{grid-template-columns:1fr}
     }
 
     .stack{
       display:grid;
       gap:18px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:18px;
+    }
+
+    @media (max-width: 1040px){
+      .hero{grid-template-columns:1fr}
     }
 
     .card{
@@ -117,27 +121,33 @@
       padding:18px;
     }
 
-    .hero-card{
+    .card-soft{
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+    }
+
+    .hero-main{
       padding:22px;
     }
 
     .hero-title{
       margin:0 0 10px;
-      font-size:32px;
-      line-height:1.08;
-      letter-spacing:-.4px;
+      font-size:34px;
+      line-height:1.06;
+      letter-spacing:-.55px;
     }
 
     .hero-copy{
       margin:0;
       color:var(--muted);
       font-size:15px;
-      line-height:1.55;
+      line-height:1.6;
+      max-width:760px;
     }
 
     .card h2{
       margin:0 0 6px;
       font-size:20px;
+      letter-spacing:-.2px;
     }
 
     .sub{
@@ -168,6 +178,7 @@
       cursor:pointer;
       font-weight:700;
       transition:.18s ease;
+      box-shadow:none;
     }
 
     .btn:hover{transform:translateY(-1px)}
@@ -188,7 +199,7 @@
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
     .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
 
-    @media (max-width:760px){
+    @media (max-width: 760px){
       .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
     }
 
@@ -211,6 +222,12 @@
       padding:11px 12px;
       background:#fff;
       color:var(--text);
+      outline:none;
+    }
+
+    .input:focus,.select:focus{
+      border-color:#b9d0ff;
+      box-shadow:0 0 0 3px rgba(31,111,255,.10);
     }
 
     .stats{
@@ -220,7 +237,7 @@
       margin-top:16px;
     }
 
-    @media (max-width:900px){
+    @media (max-width: 920px){
       .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
 
@@ -229,6 +246,7 @@
       border:1px solid var(--line);
       border-radius:16px;
       padding:14px;
+      box-shadow:var(--shadow-soft);
     }
 
     .stat .k{
@@ -260,6 +278,31 @@
     .pill.orange{background:#fff7e8;color:#b7791f}
     .pill.blue{background:#eef4ff;color:var(--primary)}
 
+    .mini-summary{
+      display:grid;
+      gap:12px;
+    }
+
+    .mini-card{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      background:var(--card-2);
+    }
+
+    .mini-card .label-top{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:6px;
+    }
+
+    .mini-card .value-top{
+      font-size:18px;
+      font-weight:800;
+      line-height:1.2;
+    }
+
     .list{
       display:grid;
       gap:10px;
@@ -267,9 +310,10 @@
 
     .item{
       border:1px solid var(--line);
-      border-radius:14px;
+      border-radius:16px;
       padding:14px;
       background:#fff;
+      box-shadow:var(--shadow-soft);
     }
 
     .item-top{
@@ -290,7 +334,7 @@
       margin-top:6px;
       color:var(--muted);
       font-size:13px;
-      line-height:1.45;
+      line-height:1.5;
     }
 
     .item-actions{
@@ -406,6 +450,13 @@
       gap:8px;
       margin-top:10px;
     }
+
+    .helper-text{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+      margin-top:8px;
+    }
   </style>
 </head>
 <body>
@@ -470,11 +521,11 @@
       </div>
 
       <section class="hero">
-        <div class="card hero-card">
-          <h2 class="hero-title">Tu sistema para pagar deudas con más claridad, menos estrés y mejor orden.</h2>
+        <div class="card hero-main card-soft">
+          <h2 class="hero-title">Paga tus deudas con una estrategia clara y una operación diaria simple.</h2>
           <p class="hero-copy">
-            DebtYa te ayuda a conectar tus cuentas, crear reglas automáticas, comparar estrategias y ejecutar pagos con trazabilidad.
-            Esta versión ya está validada sobre <strong>www.debtya.com</strong> y lista para uso diario.
+            Conecta tu banco, importa tus movimientos, define reglas automáticas, construye payment intents y ejecuta pagos con trazabilidad.
+            Esta versión mantiene la lógica ya validada en <strong>www.debtya.com</strong> y solo mejora la experiencia visual.
           </p>
 
           <div class="stats">
@@ -500,42 +551,40 @@
         <div class="card">
           <div class="section-head">
             <div>
-              <h2>Resumen rápido</h2>
-              <p class="sub">Lo esencial para operar el día a día.</p>
+              <h2>Resumen</h2>
+              <p class="sub">Lo más importante de tu configuración actual.</p>
             </div>
           </div>
 
-          <div class="notice">
-            <strong>Estrategia</strong><br />
-            <span id="planStrategyText">Cargando...</span>
-          </div>
+          <div class="mini-summary">
+            <div class="mini-card">
+              <div class="label-top">Estrategia</div>
+              <div id="planStrategyText" class="value-top">Cargando...</div>
+            </div>
 
-          <div class="divider"></div>
+            <div class="mini-card">
+              <div class="label-top">Modo</div>
+              <div id="planModeText" class="value-top">Cargando...</div>
+            </div>
 
-          <div class="notice">
-            <strong>Modo</strong><br />
-            <span id="planModeText">Cargando...</span>
-          </div>
+            <div class="mini-card">
+              <div class="label-top">Extra mensual</div>
+              <div id="planExtraText" class="value-top">$0.00</div>
+            </div>
 
-          <div class="divider"></div>
-
-          <div class="notice">
-            <strong>Extra mensual</strong><br />
-            <span id="planExtraText">$0.00</span>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="notice">
-            <strong>Estrategias</strong><br />
-            Avalanche ataca primero la tasa más alta. Snowball ataca primero el balance más pequeño.
+            <div class="mini-card">
+              <div class="label-top">Cómo funciona</div>
+              <div class="helper-text">
+                Avalanche ataca primero la tasa más alta. Snowball ataca primero el balance más pequeño.
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <div id="globalMessage" class="notice hidden" style="margin-bottom:18px;"></div>
 
-      <div class="layout">
+      <div class="page-grid">
         <div class="stack">
           <section class="card">
             <div class="section-head">
@@ -543,11 +592,12 @@
                 <h2>Acciones principales</h2>
                 <p class="sub">Sigue este orden para operar sin complicarte.</p>
               </div>
-              <div class="section-actions">
-                <button id="btnConnectBank" class="btn btn-primary btn-small" type="button">Conectar banco</button>
-                <button id="btnImportAccounts" class="btn btn-light btn-small" type="button">Importar cuentas</button>
-                <button id="btnImportTransactions" class="btn btn-light btn-small" type="button">Importar transacciones</button>
-              </div>
+            </div>
+
+            <div class="grid-3" style="margin-bottom:12px;">
+              <button id="btnConnectBank" class="btn btn-primary" type="button">Conectar banco</button>
+              <button id="btnImportAccounts" class="btn btn-light" type="button">Importar cuentas</button>
+              <button id="btnImportTransactions" class="btn btn-light" type="button">Importar transacciones</button>
             </div>
 
             <div class="grid-4">
@@ -707,7 +757,7 @@
             <div class="section-head">
               <div>
                 <h2>Payment intents</h2>
-                <p class="sub">Revisa, aprueba y ejecuta lo que el sistema construyó.</p>
+                <p class="sub">Revisa, aprueba y ejecuta los pagos construidos.</p>
               </div>
               <div class="section-actions">
                 <button id="refreshIntentsBtn" class="btn btn-light btn-small" type="button">Refrescar</button>
