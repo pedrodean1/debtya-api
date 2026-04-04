@@ -320,16 +320,25 @@
       padding-right:6px;
     }
 
-    .list-scroll::-webkit-scrollbar{
+    .list-scroll-sm{
+      max-height:360px;
+      overflow-y:auto;
+      padding-right:6px;
+    }
+
+    .list-scroll::-webkit-scrollbar,
+    .list-scroll-sm::-webkit-scrollbar{
       width:10px;
     }
 
-    .list-scroll::-webkit-scrollbar-track{
+    .list-scroll::-webkit-scrollbar-track,
+    .list-scroll-sm::-webkit-scrollbar-track{
       background:#eef3f9;
       border-radius:999px;
     }
 
-    .list-scroll::-webkit-scrollbar-thumb{
+    .list-scroll::-webkit-scrollbar-thumb,
+    .list-scroll-sm::-webkit-scrollbar-thumb{
       background:#c9d7ea;
       border-radius:999px;
     }
@@ -1158,7 +1167,7 @@
               <span class="pill">Executed = ya aplicados</span>
             </div>
 
-            <div id="intentsList" class="list"></div>
+            <div id="intentsList" class="list list-scroll-sm"></div>
           </section>
 
           <section class="card">
@@ -1186,7 +1195,7 @@
               </div>
             </div>
 
-            <div id="accountsList" class="list"></div>
+            <div id="accountsList" class="list list-scroll-sm"></div>
           </section>
 
           <section id="debugSection" class="card hidden">
