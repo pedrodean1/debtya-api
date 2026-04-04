@@ -604,7 +604,7 @@
           <div class="brand-badge">D</div>
           <div>
             <h1 style="margin:0;">DebtYa</h1>
-            <p>Paga deudas con más orden y menos estrés.</p>
+            <p>Paga tus deudas con más orden y menos estrés.</p>
           </div>
         </div>
 
@@ -617,29 +617,28 @@
       <section class="landing-grid">
         <div class="card landing-hero card-soft">
           <span class="pill blue">Base estable validada en producción</span>
-          <h2 class="landing-title">Organiza tus deudas, automatiza decisiones y ejecuta pagos con claridad.</h2>
+          <h2 class="landing-title">Paga tus deudas con más orden, menos estrés y un plan que sí puedes seguir.</h2>
           <p class="landing-copy">
-            DebtYa conecta tus cuentas, analiza tu situación, te ayuda a elegir entre avalanche o snowball y convierte tu plan en acciones simples.
-            Todo desde una experiencia enfocada en reducir fricción y darte control real.
+            DebtYa te ayuda a conectar tus cuentas, organizar tus deudas, automatizar reglas útiles y convertir tu estrategia en pagos reales con claridad y control.
           </p>
 
           <div class="landing-actions">
-            <button id="landingStartBtn" class="btn btn-primary" type="button">Empezar ahora</button>
+            <button id="landingStartBtn" class="btn btn-primary" type="button">Empieza ahora</button>
             <button id="landingDemoBtn" class="btn btn-light" type="button">Ver cómo funciona</button>
           </div>
 
           <div class="feature-grid">
             <div class="feature-card">
-              <h3>Conecta tu banco</h3>
-              <p>Usa Plaid para traer cuentas y movimientos reales sin salir de DebtYa.</p>
+              <h3>Conecta tus cuentas</h3>
+              <p>Trae cuentas y movimientos reales para trabajar con información actual.</p>
             </div>
             <div class="feature-card">
-              <h3>Crea reglas útiles</h3>
-              <p>Automatiza aportes con reglas simples como roundup o montos fijos.</p>
+              <h3>Elige tu estrategia</h3>
+              <p>Compara avalanche y snowball para usar la estrategia que mejor encaje contigo.</p>
             </div>
             <div class="feature-card">
-              <h3>Ejecuta con trazabilidad</h3>
-              <p>Construye intents, apruébalos y revisa el historial de ejecución y balances.</p>
+              <h3>Convierte tu plan en acción</h3>
+              <p>Construye intents, apruébalos, ejecútalos y revisa el historial de todo lo que hiciste.</p>
             </div>
           </div>
         </div>
@@ -657,7 +656,7 @@
               <div class="step-num">1</div>
               <div>
                 <h3>Crea tu cuenta o entra</h3>
-                <p>Inicia sesión para guardar tu configuración y operar sobre tu panel privado.</p>
+                <p>Empieza con tu panel personal para guardar tu sistema y operar sobre tu información real.</p>
               </div>
             </div>
 
@@ -665,23 +664,23 @@
               <div class="step-num">2</div>
               <div>
                 <h3>Conecta tu banco</h3>
-                <p>Trae cuentas y movimientos reales para trabajar con información actual.</p>
+                <p>Importa cuentas y transacciones reales para trabajar con datos actualizados.</p>
               </div>
             </div>
 
             <div class="step">
               <div class="step-num">3</div>
               <div>
-                <h3>Guarda tu plan y tus reglas</h3>
-                <p>Define estrategia, presupuesto y automatizaciones básicas para ordenar tu sistema.</p>
+                <h3>Organiza tu plan</h3>
+                <p>Agrega deudas, define estrategia y crea reglas simples para reducir improvisación.</p>
               </div>
             </div>
 
             <div class="step">
               <div class="step-num">4</div>
               <div>
-                <h3>Construye y ejecuta intents</h3>
-                <p>Convierte tu plan en acciones concretas y sigue el rastro de cada pago.</p>
+                <h3>Ejecuta con claridad</h3>
+                <p>Construye intents, apruébalos y sigue el progreso real de tus pagos.</p>
               </div>
             </div>
           </div>
@@ -690,7 +689,7 @@
 
           <div class="notice">
             <strong>Ideal para:</strong><br />
-            Personas que quieren pagar deudas con más disciplina, menos fricción y más visibilidad sobre lo que están haciendo.
+            Personas con varias deudas que quieren un sistema claro, repetible y más fácil de sostener.
           </div>
         </div>
       </section>
@@ -703,7 +702,7 @@
         <div class="brand-badge">D</div>
         <div>
           <h1 style="font-size:30px;margin:0;">DebtYa</h1>
-          <p>Paga deudas con más orden y menos estrés.</p>
+          <p>Paga tus deudas con más orden y menos estrés.</p>
         </div>
       </div>
 
@@ -765,10 +764,9 @@
 
       <section class="hero" id="overviewPanel">
         <div class="card hero-main card-soft">
-          <h2 class="hero-title">Paga tus deudas con una estrategia clara y una operación diaria simple.</h2>
+          <h2 class="hero-title">Menos improvisación. Más control. Más progreso.</h2>
           <p class="hero-copy">
-            Conecta tu banco, importa tus movimientos, define reglas automáticas, construye payment intents y ejecuta pagos con trazabilidad.
-            Esta versión mantiene la lógica ya validada en <strong>www.debtya.com</strong> y añade una experiencia más clara para usuario real.
+            Usa DebtYa para organizar tus deudas, conectar tus cuentas, definir reglas automáticas y convertir tu estrategia en pagos reales con visibilidad y trazabilidad.
           </p>
 
           <div class="hero-actions">
@@ -1795,11 +1793,11 @@
     $("btnConnectBank").addEventListener("click", connectBankDirect);
     $("heroConnectBtn").addEventListener("click", connectBankDirect);
     $("heroImportBtn").addEventListener("click", async () => {
-      await document.getElementById("accountsList").scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("accountsList").scrollIntoView({ behavior: "smooth", block: "start" });
       document.getElementById("btnImportAccounts").click();
     });
     $("heroBuildBtn").addEventListener("click", async () => {
-      await document.getElementById("intentsList").scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("intentsList").scrollIntoView({ behavior: "smooth", block: "start" });
       document.getElementById("btnBuildIntents").click();
     });
 
