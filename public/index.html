@@ -25,7 +25,7 @@
     *{box-sizing:border-box}
     html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
     body{min-height:100vh}
-    button,input,select,textarea{font:inherit}
+    button,input,select{font:inherit}
     a{color:var(--primary);text-decoration:none}
     .hidden{display:none !important}
 
@@ -83,13 +83,24 @@
       flex-wrap:wrap;
     }
 
+    .hero{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    @media (max-width:980px){
+      .hero{grid-template-columns:1fr}
+    }
+
     .layout{
       display:grid;
       grid-template-columns:1.05fr .95fr;
       gap:18px;
     }
 
-    @media (max-width: 980px){
+    @media (max-width:980px){
       .layout{grid-template-columns:1fr}
     }
 
@@ -104,6 +115,24 @@
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       padding:18px;
+    }
+
+    .hero-card{
+      padding:22px;
+    }
+
+    .hero-title{
+      margin:0 0 10px;
+      font-size:32px;
+      line-height:1.08;
+      letter-spacing:-.4px;
+    }
+
+    .hero-copy{
+      margin:0;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.55;
     }
 
     .card h2{
@@ -159,7 +188,7 @@
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
     .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
 
-    @media (max-width: 760px){
+    @media (max-width:760px){
       .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
     }
 
@@ -188,9 +217,10 @@
       display:grid;
       grid-template-columns:repeat(4,minmax(0,1fr));
       gap:12px;
+      margin-top:16px;
     }
 
-    @media (max-width: 900px){
+    @media (max-width:900px){
       .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     }
 
@@ -416,7 +446,7 @@
 
       <div id="authMessage" class="notice hidden" style="margin-top:14px;"></div>
       <p class="mini" style="margin-top:14px;">
-        Esta app usa tu sesión real de Supabase y guarda un token para conectarse al backend y a Plaid.
+        Inicia sesión para conectar tu banco, organizar tu plan y automatizar pagos.
       </p>
     </div>
   </div>
@@ -439,34 +469,79 @@
         </div>
       </div>
 
+      <section class="hero">
+        <div class="card hero-card">
+          <h2 class="hero-title">Tu sistema para pagar deudas con más claridad, menos estrés y mejor orden.</h2>
+          <p class="hero-copy">
+            DebtYa te ayuda a conectar tus cuentas, crear reglas automáticas, comparar estrategias y ejecutar pagos con trazabilidad.
+            Esta versión ya está validada sobre <strong>www.debtya.com</strong> y lista para uso diario.
+          </p>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="k">Total de deudas</div>
+              <div id="statDebtTotal" class="v">$0.00</div>
+            </div>
+            <div class="stat">
+              <div class="k">Cantidad de deudas</div>
+              <div id="statDebtCount" class="v">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">Intents pendientes</div>
+              <div id="statPendingIntents" class="v">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">Intents ejecutados</div>
+              <div id="statExecutedIntents" class="v">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h2>Resumen rápido</h2>
+              <p class="sub">Lo esencial para operar el día a día.</p>
+            </div>
+          </div>
+
+          <div class="notice">
+            <strong>Estrategia</strong><br />
+            <span id="planStrategyText">Cargando...</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="notice">
+            <strong>Modo</strong><br />
+            <span id="planModeText">Cargando...</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="notice">
+            <strong>Extra mensual</strong><br />
+            <span id="planExtraText">$0.00</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="notice">
+            <strong>Estrategias</strong><br />
+            Avalanche ataca primero la tasa más alta. Snowball ataca primero el balance más pequeño.
+          </div>
+        </div>
+      </section>
+
       <div id="globalMessage" class="notice hidden" style="margin-bottom:18px;"></div>
 
-      <div class="stats">
-        <div class="stat">
-          <div class="k">Total de deudas</div>
-          <div id="statDebtTotal" class="v">$0.00</div>
-        </div>
-        <div class="stat">
-          <div class="k">Cantidad de deudas</div>
-          <div id="statDebtCount" class="v">0</div>
-        </div>
-        <div class="stat">
-          <div class="k">Intents pendientes</div>
-          <div id="statPendingIntents" class="v">0</div>
-        </div>
-        <div class="stat">
-          <div class="k">Intents ejecutados</div>
-          <div id="statExecutedIntents" class="v">0</div>
-        </div>
-      </div>
-
-      <div class="layout" style="margin-top:18px;">
+      <div class="layout">
         <div class="stack">
           <section class="card">
             <div class="section-head">
               <div>
-                <h2>Panel rápido</h2>
-                <p class="sub">Usa este flujo para el día a día.</p>
+                <h2>Acciones principales</h2>
+                <p class="sub">Sigue este orden para operar sin complicarte.</p>
               </div>
               <div class="section-actions">
                 <button id="btnConnectBank" class="btn btn-primary btn-small" type="button">Conectar banco</button>
@@ -481,30 +556,13 @@
               <button id="btnApproveVisible" class="btn btn-success" type="button">Aprobar visibles</button>
               <button id="btnExecuteVisible" class="btn btn-primary" type="button">Ejecutar visibles</button>
             </div>
-
-            <div class="divider"></div>
-
-            <div class="grid-3">
-              <div class="notice">
-                <strong>Estrategia</strong><br />
-                <span id="planStrategyText">Cargando...</span>
-              </div>
-              <div class="notice">
-                <strong>Modo</strong><br />
-                <span id="planModeText">Cargando...</span>
-              </div>
-              <div class="notice">
-                <strong>Extra mensual</strong><br />
-                <span id="planExtraText">$0.00</span>
-              </div>
-            </div>
           </section>
 
           <section class="card">
             <div class="section-head">
               <div>
                 <h2>Deudas</h2>
-                <p class="sub">Tus balances actuales del backend.</p>
+                <p class="sub">Crea y revisa tus deudas activas.</p>
               </div>
               <div class="section-actions">
                 <button id="refreshDebtsBtn" class="btn btn-light btn-small" type="button">Refrescar</button>
@@ -542,7 +600,7 @@
                 </select>
               </div>
               <div class="field" style="grid-column:1 / -1;">
-                <button id="createDebtBtn" class="btn btn-primary" type="submit">Crear deuda</button>
+                <button id="createDebtBtn" class="btn btn-primary" type="submit">Guardar deuda</button>
               </div>
             </form>
 
@@ -553,7 +611,7 @@
             <div class="section-head">
               <div>
                 <h2>Reglas</h2>
-                <p class="sub">Micro reglas para mover dinero hacia deudas.</p>
+                <p class="sub">Define cómo se mueve dinero automáticamente hacia tus deudas.</p>
               </div>
               <div class="section-actions">
                 <button id="refreshRulesBtn" class="btn btn-light btn-small" type="button">Refrescar</button>
@@ -589,7 +647,7 @@
                 <select id="ruleTargetDebt" class="select"></select>
               </div>
               <div class="field" style="grid-column:1 / -1;">
-                <button id="createRuleBtn" class="btn btn-primary" type="submit">Crear regla</button>
+                <button id="createRuleBtn" class="btn btn-primary" type="submit">Guardar regla</button>
               </div>
             </form>
 
@@ -602,7 +660,7 @@
             <div class="section-head">
               <div>
                 <h2>Plan de pagos</h2>
-                <p class="sub">Configura avalanche o snowball y tu presupuesto.</p>
+                <p class="sub">Configura estrategia, modo y presupuesto mensual.</p>
               </div>
             </div>
 
@@ -638,7 +696,7 @@
             <div class="divider"></div>
 
             <div class="grid-2">
-              <button id="compareStrategyBtn" class="btn btn-light" type="button">Comparar Avalanche vs Snowball</button>
+              <button id="compareStrategyBtn" class="btn btn-light" type="button">Comparar estrategias</button>
               <button id="refreshPlanBtn" class="btn btn-light" type="button">Refrescar plan</button>
             </div>
 
@@ -648,8 +706,8 @@
           <section class="card">
             <div class="section-head">
               <div>
-                <h2>Intents</h2>
-                <p class="sub">Construidos, aprobados y ejecutados.</p>
+                <h2>Payment intents</h2>
+                <p class="sub">Revisa, aprueba y ejecuta lo que el sistema construyó.</p>
               </div>
               <div class="section-actions">
                 <button id="refreshIntentsBtn" class="btn btn-light btn-small" type="button">Refrescar</button>
@@ -658,7 +716,7 @@
             </div>
 
             <div class="tag-row" style="margin-bottom:14px;">
-              <span class="pill blue">Draft/Pending/Built = visibles para aprobar</span>
+              <span class="pill blue">Draft / Pending / Built = por aprobar</span>
               <span class="pill green">Approved = listos para ejecutar</span>
               <span class="pill">Executed = ya aplicados</span>
             </div>
@@ -669,8 +727,8 @@
           <section class="card">
             <div class="section-head">
               <div>
-                <h2>Historial / Trace</h2>
-                <p class="sub">Trazabilidad de pagos e intents.</p>
+                <h2>Historial</h2>
+                <p class="sub">Rastro de pagos, ejecución y rebaja de balances.</p>
               </div>
               <div class="section-actions">
                 <button id="refreshTraceBtn" class="btn btn-light btn-small" type="button">Refrescar</button>
@@ -694,14 +752,7 @@
             <div id="accountsList" class="list"></div>
           </section>
 
-          <section class="card">
-            <div class="section-head">
-              <div>
-                <h2>Debug rápido</h2>
-                <p class="sub">Útil para validar sesión y backend.</p>
-              </div>
-            </div>
-
+          <section id="debugSection" class="card hidden">
             <div class="notice">
               <strong>Backend</strong><br />
               <span id="backendVersionText">...</span>
@@ -754,6 +805,11 @@
     const authMessage = $("authMessage");
     const globalMessage = $("globalMessage");
     const debugBox = $("debugBox");
+    const debugEnabled = new URLSearchParams(window.location.search).get("debug") === "1";
+
+    if (debugEnabled) {
+      $("debugSection").classList.remove("hidden");
+    }
 
     function fmtMoney(value) {
       return new Intl.NumberFormat("en-US", {
@@ -770,6 +826,7 @@
     }
 
     function setDebug(value) {
+      if (!debugEnabled) return;
       debugBox.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
     }
 
@@ -880,7 +937,7 @@
       box.innerHTML = "";
 
       if (!state.debts.length) {
-        box.innerHTML = `<div class="empty">No hay deudas todavía.</div>`;
+        box.innerHTML = `<div class="empty">Todavía no tienes deudas guardadas.</div>`;
         renderStats();
         renderDebtTargetOptions();
         return;
@@ -922,7 +979,7 @@
       box.innerHTML = "";
 
       if (!state.rules.length) {
-        box.innerHTML = `<div class="empty">No hay reglas todavía.</div>`;
+        box.innerHTML = `<div class="empty">Todavía no tienes reglas guardadas.</div>`;
         return;
       }
 
@@ -965,7 +1022,7 @@
       box.innerHTML = "";
 
       if (!state.intents.length) {
-        box.innerHTML = `<div class="empty">No hay intents todavía.</div>`;
+        box.innerHTML = `<div class="empty">Todavía no hay intents construidos.</div>`;
         renderStats();
         return;
       }
@@ -1015,7 +1072,7 @@
       box.innerHTML = "";
 
       if (!state.trace.length) {
-        box.innerHTML = `<div class="empty">No hay historial todavía.</div>`;
+        box.innerHTML = `<div class="empty">Todavía no hay historial disponible.</div>`;
         return;
       }
 
@@ -1048,7 +1105,7 @@
       box.innerHTML = "";
 
       if (!state.accounts.length) {
-        box.innerHTML = `<div class="empty">No hay cuentas importadas todavía.</div>`;
+        box.innerHTML = `<div class="empty">Todavía no hay cuentas importadas.</div>`;
         return;
       }
 
@@ -1087,11 +1144,11 @@
     }
 
     function renderHealth() {
-      $("backendVersionText").textContent = state.health?.server_version || "-";
+      if (debugEnabled) $("backendVersionText").textContent = state.health?.server_version || "-";
     }
 
     function renderUser() {
-      $("userEmailText").textContent = state.user?.email || "-";
+      if (debugEnabled) $("userEmailText").textContent = state.user?.email || "-";
       $("welcomeText").textContent = state.user?.email ? `Hola, ${state.user.email}` : "Panel principal";
     }
 
@@ -1100,7 +1157,7 @@
       box.innerHTML = "";
 
       if (!data?.avalanche || !data?.snowball) {
-        box.innerHTML = `<div class="empty">Todavía no hay comparación.</div>`;
+        box.innerHTML = `<div class="empty">Todavía no hay comparación disponible.</div>`;
         return;
       }
 
@@ -1408,7 +1465,7 @@
           type: $("debtType").value
         };
         await api("/debts", { method: "POST", body: JSON.stringify(payload) });
-        showMessage(globalMessage, "Deuda creada.", "success");
+        showMessage(globalMessage, "Deuda guardada correctamente.", "success");
         e.target.reset();
         $("debtType").value = "credit_card";
         await refreshDebts();
@@ -1430,7 +1487,7 @@
           enabled: true
         };
         await api("/rules", { method: "POST", body: JSON.stringify(payload) });
-        showMessage(globalMessage, "Regla creada.", "success");
+        showMessage(globalMessage, "Regla guardada correctamente.", "success");
         await refreshRules();
       } catch (err) {
         showMessage(globalMessage, err.message, "error");
@@ -1449,7 +1506,7 @@
           extra_payment_default: Number($("planExtraPayment").value || 0)
         };
         await api("/payment-plan", { method: "POST", body: JSON.stringify(payload) });
-        showMessage(globalMessage, "Plan guardado.", "success");
+        showMessage(globalMessage, "Plan guardado correctamente.", "success");
         await refreshPlan();
       } catch (err) {
         showMessage(globalMessage, err.message, "error");
@@ -1517,7 +1574,7 @@
       setLoading(btn, true, "Construyendo...");
       try {
         const res = await api("/payment-intents/build", { method: "POST", body: "{}" });
-        showMessage(globalMessage, "Intents construidos.", "success");
+        showMessage(globalMessage, "Intents construidos correctamente.", "success");
         setDebug(res);
         await refreshIntents();
       } catch (err) {
