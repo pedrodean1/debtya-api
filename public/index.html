@@ -744,7 +744,7 @@
   <script>
     const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
-    const API_BASE = "https://www.debtya.com";
+    const API_BASE = window.location.origin;
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1442,7 +1442,11 @@
       try {
         const token = await getAccessToken();
         if (!token) throw new Error("Primero inicia sesión.");
-        window.open(`${API_BASE}/plaid/web`, "_blank");
+
+        const popup = window.open("", "_blank");
+        if (!popup) throw new Error("El navegador bloqueó la ventana emergente. Permite popups para www.debtya.com.");
+
+        popup.location.href = `${API_BASE}/plaid/web`;
       } catch (err) {
         showMessage(globalMessage, err.message, "error");
       }
