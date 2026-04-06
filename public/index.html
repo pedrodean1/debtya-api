@@ -798,8 +798,8 @@
             <div class="step">
               <div class="step-num">4</div>
               <div>
-                <h3>Ejecuta con claridad</h3>
-                <p>Construye intents, apruébalos y sigue el progreso real de tus pagos desde un solo lugar.</p>
+                <h3>Activa tu plan</h3>
+                <p>Con “Empieza ahora” entras a Stripe Checkout y luego vuelves a DebtYa con tu suscripción lista.</p>
               </div>
             </div>
           </div>
@@ -845,7 +845,7 @@
           </div>
 
           <div class="helper-text">
-            Empieza con una cuenta, conecta tu banco y organiza tu sistema en minutos.
+            Si ya tienes sesión iniciada, “Empieza ahora” abre Stripe Checkout. Si no, te lleva a entrar o crear tu cuenta primero.
           </div>
         </div>
       </section>
@@ -889,7 +889,7 @@
 
       <div id="authMessage" class="notice hidden" style="margin-top:14px;"></div>
       <p class="mini" style="margin-top:14px;">
-        Inicia sesión para conectar tu banco, organizar tu plan y operar sobre tu sistema real.
+        Inicia sesión para conectar tu banco, activar tu plan y operar sobre tu sistema real.
       </p>
     </div>
   </div>
@@ -907,6 +907,8 @@
 
         <div class="top-actions">
           <span id="sessionBadge" class="pill blue">Sesión activa</span>
+          <button id="topUpgradeBtn" class="btn btn-primary hidden" type="button">Activar plan</button>
+          <button id="topManageBillingBtn" class="btn btn-light hidden" type="button">Administrar plan</button>
           <button id="refreshAllBtn" class="btn btn-light" type="button">Refrescar todo</button>
           <button id="logoutBtn" class="btn btn-danger" type="button">Salir</button>
         </div>
@@ -951,34 +953,74 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="section-head">
-            <div>
-              <h2>Resumen del plan</h2>
-              <p class="sub">Lo más importante de tu configuración actual.</p>
+        <div class="stack">
+          <div class="card">
+            <div class="section-head">
+              <div>
+                <h2>Resumen del plan</h2>
+                <p class="sub">Lo más importante de tu configuración actual.</p>
+              </div>
+            </div>
+
+            <div class="mini-summary">
+              <div class="mini-card">
+                <div class="label-top">Estrategia</div>
+                <div id="planStrategyText" class="value-top">Cargando...</div>
+              </div>
+
+              <div class="mini-card">
+                <div class="label-top">Modo</div>
+                <div id="planModeText" class="value-top">Cargando...</div>
+              </div>
+
+              <div class="mini-card">
+                <div class="label-top">Extra mensual</div>
+                <div id="planExtraText" class="value-top">$0.00</div>
+              </div>
+
+              <div class="mini-card">
+                <div class="label-top">Cómo funciona</div>
+                <div class="helper-text">
+                  Avalanche ataca primero la tasa más alta. Snowball ataca primero el balance más pequeño.
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="mini-summary">
-            <div class="mini-card">
-              <div class="label-top">Estrategia</div>
-              <div id="planStrategyText" class="value-top">Cargando...</div>
+          <div class="card">
+            <div class="section-head">
+              <div>
+                <h2>Suscripción</h2>
+                <p class="sub">Estado actual de tu billing en Stripe.</p>
+              </div>
+              <div class="section-actions">
+                <button id="refreshBillingBtn" class="btn btn-light btn-small" type="button">Refrescar</button>
+              </div>
             </div>
 
-            <div class="mini-card">
-              <div class="label-top">Modo</div>
-              <div id="planModeText" class="value-top">Cargando...</div>
-            </div>
+            <div class="mini-summary">
+              <div class="mini-card">
+                <div class="label-top">Estado</div>
+                <div id="billingStatusText" class="value-top">Cargando...</div>
+              </div>
 
-            <div class="mini-card">
-              <div class="label-top">Extra mensual</div>
-              <div id="planExtraText" class="value-top">$0.00</div>
-            </div>
+              <div class="mini-card">
+                <div class="label-top">Activo</div>
+                <div id="billingActiveText" class="value-top">No</div>
+              </div>
 
-            <div class="mini-card">
-              <div class="label-top">Cómo funciona</div>
-              <div class="helper-text">
-                Avalanche ataca primero la tasa más alta. Snowball ataca primero el balance más pequeño.
+              <div class="mini-card">
+                <div class="label-top">Próxima fecha / periodo</div>
+                <div id="billingPeriodText" class="value-top">-</div>
+              </div>
+
+              <div class="mini-card">
+                <div class="label-top">Acciones</div>
+                <div class="item-actions" style="margin-top:0;">
+                  <button id="billingStartBtn" class="btn btn-primary btn-small" type="button">Empieza ahora</button>
+                  <button id="billingManageBtn" class="btn btn-light btn-small hidden" type="button">Administrar plan</button>
+                </div>
+                <div class="helper-text">Si tu plan está activo, puedes abrir el portal para administrarlo.</div>
               </div>
             </div>
           </div>
@@ -1233,8 +1275,8 @@
 
   <script>
     const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
-    const API_BASE = window.location.origin;
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmVjbGllbnQiLCJyZWYiOiJzcHliZWpsdHNnemZ4bHd6b2JraCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzcyMTM4NzAwLCJleHAiOjIwODc3MTQ3MDB9.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
+    const API_BASE = "https://www.debtya.com";
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1248,7 +1290,8 @@
       plan: null,
       intents: [],
       trace: [],
-      accounts: []
+      accounts: [],
+      billing: null
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1505,7 +1548,10 @@
       const s = String(status || "").toLowerCase();
       if (s === "executed") return `<span class="pill green">executed</span>`;
       if (s === "approved") return `<span class="pill blue">approved</span>`;
-      if (["pending","built","proposed","ready","pending_review","draft"].includes(s)) {
+      if (s === "active") return `<span class="pill green">active</span>`;
+      if (s === "trialing") return `<span class="pill blue">trialing</span>`;
+      if (s === "inactive") return `<span class="pill red">inactive</span>`;
+      if (["pending","built","proposed","ready","pending_review","draft","past_due","canceled","unpaid"].includes(s)) {
         return `<span class="pill orange">${escapeHtml(s)}</span>`;
       }
       return `<span class="pill">${escapeHtml(s || "-")}</span>`;
@@ -1646,6 +1692,38 @@
       $("welcomeText").textContent = state.user?.email ? `Hola, ${state.user.email}` : "Panel principal";
     }
 
+    function renderBilling() {
+      const billing = state.billing || {
+        status: "inactive",
+        active: false,
+        current_period_end: null,
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+        cancel_at_period_end: false
+      };
+
+      $("billingStatusText").textContent = billing.status || "inactive";
+      $("billingActiveText").textContent = billing.active ? "Sí" : "No";
+      $("billingPeriodText").textContent = billing.current_period_end ? fmtDate(billing.current_period_end) : "-";
+
+      if (billing.active) {
+        $("sessionBadge").className = "pill green";
+        $("sessionBadge").textContent = billing.cancel_at_period_end ? "Activa hasta fin de periodo" : "Suscripción activa";
+      } else {
+        $("sessionBadge").className = "pill blue";
+        $("sessionBadge").textContent = "Sesión activa";
+      }
+
+      const canManage = !!billing.stripe_customer_id;
+      const isActive = !!billing.active;
+
+      $("billingManageBtn").classList.toggle("hidden", !canManage);
+      $("topManageBillingBtn").classList.toggle("hidden", !canManage);
+
+      $("billingStartBtn").classList.toggle("hidden", isActive);
+      $("topUpgradeBtn").classList.toggle("hidden", isActive);
+    }
+
     function renderCompare(data) {
       const box = $("compareResult");
       box.innerHTML = "";
@@ -1730,13 +1808,31 @@
       renderAccounts();
     }
 
+    async function refreshBillingStatus() {
+      try {
+        const res = await api("/billing/subscription-status");
+        state.billing = res.data || null;
+      } catch (e) {
+        state.billing = {
+          status: "inactive",
+          active: false,
+          current_period_end: null,
+          stripe_customer_id: null,
+          stripe_subscription_id: null,
+          cancel_at_period_end: false
+        };
+      }
+      renderBilling();
+    }
+
     async function refreshAll() {
       hideMessage(globalMessage);
       try {
         document.body.classList.add("loading");
         await refreshHealth();
-        await refreshPlan();
         await Promise.all([
+          refreshPlan(),
+          refreshBillingStatus(),
           refreshDebts(),
           refreshRules(),
           refreshIntents(),
@@ -1819,7 +1915,7 @@
 
     async function resetPassword(email) {
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin
+        redirectTo: `${window.location.origin}/`
       });
       if (error) throw error;
     }
@@ -1827,7 +1923,93 @@
     async function logout() {
       await supabaseClient.auth.signOut();
       localStorage.removeItem("debtya_access_token");
-      location.reload();
+      window.location.href = "https://www.debtya.com/";
+    }
+
+    async function startCheckout(buttonEl = null) {
+      try {
+        if (buttonEl) setLoading(buttonEl, true, "Abriendo Stripe...");
+
+        const { data } = await supabaseClient.auth.getSession();
+        const session = data?.session || null;
+
+        if (!session) {
+          showAuth("login");
+          showMessage(authMessage, "Primero entra o crea tu cuenta para continuar con Stripe Checkout.", "warn");
+          return;
+        }
+
+        const res = await api("/stripe/create-checkout-session", {
+          method: "POST",
+          body: JSON.stringify({
+            success_url: "https://www.debtya.com/?checkout=success",
+            cancel_url: "https://www.debtya.com/?checkout=cancel"
+          })
+        });
+
+        if (!res?.url) {
+          throw new Error("Stripe no devolvió URL de checkout.");
+        }
+
+        window.location.href = res.url;
+      } catch (e) {
+        if (!appView.classList.contains("hidden")) {
+          showMessage(globalMessage, e.message, "error");
+        } else {
+          showMessage(authMessage, e.message, "error");
+        }
+      } finally {
+        if (buttonEl) setLoading(buttonEl, false);
+      }
+    }
+
+    async function openBillingPortal(buttonEl = null) {
+      try {
+        if (buttonEl) setLoading(buttonEl, true, "Abriendo portal...");
+
+        const res = await api("/stripe/create-portal-session", {
+          method: "POST",
+          body: JSON.stringify({
+            return_url: "https://www.debtya.com/"
+          })
+        });
+
+        if (!res?.url) {
+          throw new Error("Stripe no devolvió URL del portal.");
+        }
+
+        window.location.href = res.url;
+      } catch (e) {
+        showMessage(globalMessage, e.message, "error");
+      } finally {
+        if (buttonEl) setLoading(buttonEl, false);
+      }
+    }
+
+    async function handleCheckoutReturn() {
+      const params = new URLSearchParams(window.location.search);
+      const checkoutState = params.get("checkout");
+      if (!checkoutState) return;
+
+      if (state.session) {
+        showApp();
+        if (checkoutState === "success") {
+          showMessage(globalMessage, "Suscripción completada. Refrescando billing...", "success");
+          await refreshBillingStatus();
+        } else if (checkoutState === "cancel") {
+          showMessage(globalMessage, "Stripe Checkout fue cancelado.", "warn");
+        }
+      } else {
+        showAuth("login");
+        if (checkoutState === "success") {
+          showMessage(authMessage, "Checkout completado. Entra a tu cuenta para ver tu suscripción.", "success");
+        } else if (checkoutState === "cancel") {
+          showMessage(authMessage, "Stripe Checkout fue cancelado.", "warn");
+        }
+      }
+
+      const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+      window.history.replaceState({}, document.title, cleanUrl);
     }
 
     async function loadSession() {
@@ -1847,6 +2029,8 @@
       } else {
         showLanding();
       }
+
+      await handleCheckoutReturn();
     }
 
     function escapeHtml(value) {
@@ -1883,11 +2067,11 @@
 
     $("landingLoginBtn").addEventListener("click", () => showAuth("login"));
     $("landingSignupBtn").addEventListener("click", () => showAuth("signup"));
-    $("landingStartBtn").addEventListener("click", () => showAuth("signup"));
+    $("landingStartBtn").addEventListener("click", () => startCheckout($("landingStartBtn")));
     $("landingDemoBtn").addEventListener("click", () => {
       document.querySelector(".steps").scrollIntoView({ behavior: "smooth", block: "start" });
     });
-    $("pricingStartBtn").addEventListener("click", () => showAuth("signup"));
+    $("pricingStartBtn").addEventListener("click", () => startCheckout($("pricingStartBtn")));
     $("pricingLoginBtn").addEventListener("click", () => showAuth("login"));
 
     $("showLoginBtn").addEventListener("click", () => {
@@ -1918,7 +2102,7 @@
         } else {
           const result = await signup(email, password);
           if (result?.user && !result?.session) {
-            showMessage(authMessage, "Cuenta creada. Revisa tu email si pide confirmación.", "warn");
+            showMessage(authMessage, "Cuenta creada. Revisa tu email si pide confirmación y luego entra.", "warn");
           } else {
             showMessage(authMessage, "Cuenta creada e iniciada.", "success");
           }
@@ -1952,6 +2136,11 @@
     $("refreshIntentsBtn").addEventListener("click", refreshIntents);
     $("refreshTraceBtn").addEventListener("click", refreshTrace);
     $("refreshAccountsBtn").addEventListener("click", refreshAccounts);
+    $("refreshBillingBtn").addEventListener("click", refreshBillingStatus);
+    $("billingStartBtn").addEventListener("click", () => startCheckout($("billingStartBtn")));
+    $("topUpgradeBtn").addEventListener("click", () => startCheckout($("topUpgradeBtn")));
+    $("billingManageBtn").addEventListener("click", () => openBillingPortal($("billingManageBtn")));
+    $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
     $("heroConnectBtn").addEventListener("click", connectBankDirect);
     $("heroImportBtn").addEventListener("click", async () => {
@@ -2164,7 +2353,10 @@
 
       if (session) {
         showApp();
+        await refreshBillingStatus();
       } else {
+        state.billing = null;
+        renderBilling();
         showLanding();
       }
     });
