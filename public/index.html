@@ -706,6 +706,13 @@
       flex-wrap:wrap;
       margin-top:16px;
     }
+
+    .section-note{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
   </style>
 </head>
 <body>
@@ -731,7 +738,7 @@
           <span class="pill blue">Base estable validada en producción</span>
           <h2 class="landing-title">Paga tus deudas con más orden, menos estrés y un plan que sí puedes seguir.</h2>
           <p class="landing-copy">
-            DebtYa te ayuda a conectar tus cuentas, organizar tus deudas, automatizar reglas útiles y convertir tu estrategia en pagos reales con claridad y control.
+            DebtYa te ayuda a conectar tus cuentas, organizar tus deudas, automatizar reglas útiles y convertir tu estrategia en pagos reales con claridad, seguimiento y control.
           </p>
 
           <div class="landing-actions">
@@ -742,15 +749,15 @@
           <div class="feature-grid">
             <div class="feature-card">
               <h3>Conecta tus cuentas</h3>
-              <p>Trae cuentas y movimientos reales para trabajar con información actual.</p>
+              <p>Importa cuentas y movimientos reales para trabajar con información actual.</p>
             </div>
             <div class="feature-card">
               <h3>Elige tu estrategia</h3>
               <p>Compara avalanche y snowball para usar la estrategia que mejor encaje contigo.</p>
             </div>
             <div class="feature-card">
-              <h3>Convierte tu plan en acción</h3>
-              <p>Construye intents, apruébalos, ejecútalos y revisa el historial de todo lo que hiciste.</p>
+              <h3>Pasa del plan a la acción</h3>
+              <p>Construye intents, apruébalos, ejecútalos y revisa el historial completo de tus pagos.</p>
             </div>
           </div>
         </div>
@@ -759,7 +766,7 @@
           <div class="section-head">
             <div>
               <h2>Empieza en 4 pasos</h2>
-              <p class="sub">El camino más corto para arrancar.</p>
+              <p class="sub">La forma más simple de arrancar.</p>
             </div>
           </div>
 
@@ -784,7 +791,7 @@
               <div class="step-num">3</div>
               <div>
                 <h3>Organiza tu plan</h3>
-                <p>Agrega deudas, define estrategia y crea reglas simples para reducir improvisación.</p>
+                <p>Agrega deudas, define estrategia y crea reglas simples para reducir la improvisación.</p>
               </div>
             </div>
 
@@ -792,7 +799,7 @@
               <div class="step-num">4</div>
               <div>
                 <h3>Ejecuta con claridad</h3>
-                <p>Construye intents, apruébalos y sigue el progreso real de tus pagos.</p>
+                <p>Construye intents, apruébalos y sigue el progreso real de tus pagos desde un solo lugar.</p>
               </div>
             </div>
           </div>
@@ -801,7 +808,7 @@
 
           <div class="notice">
             <strong>Ideal para:</strong><br />
-            Personas con varias deudas que quieren un sistema claro, repetible y más fácil de sostener.
+            Personas con varias deudas que quieren un sistema claro, repetible y más fácil de sostener cada mes.
           </div>
         </div>
       </section>
@@ -882,7 +889,7 @@
 
       <div id="authMessage" class="notice hidden" style="margin-top:14px;"></div>
       <p class="mini" style="margin-top:14px;">
-        Inicia sesión para conectar tu banco, organizar tu plan y automatizar pagos.
+        Inicia sesión para conectar tu banco, organizar tu plan y operar sobre tu sistema real.
       </p>
     </div>
   </div>
@@ -926,11 +933,11 @@
 
           <div class="stats">
             <div class="stat">
-              <div class="k">Total de deudas</div>
+              <div class="k">Deuda total</div>
               <div id="statDebtTotal" class="v">$0.00</div>
             </div>
             <div class="stat">
-              <div class="k">Cantidad de deudas</div>
+              <div class="k">Deudas activas</div>
               <div id="statDebtCount" class="v">0</div>
             </div>
             <div class="stat">
@@ -947,7 +954,7 @@
         <div class="card">
           <div class="section-head">
             <div>
-              <h2>Resumen</h2>
+              <h2>Resumen del plan</h2>
               <p class="sub">Lo más importante de tu configuración actual.</p>
             </div>
           </div>
@@ -986,7 +993,7 @@
             <div class="section-head">
               <div>
                 <h2>Operar</h2>
-                <p class="sub">Haz aquí las acciones del día a día.</p>
+                <p class="sub">Acciones del día a día sobre tu sistema.</p>
               </div>
             </div>
 
@@ -1001,6 +1008,10 @@
               <button id="btnBuildIntents" class="btn btn-secondary" type="button">Construir intents</button>
               <button id="btnApproveVisible" class="btn btn-success" type="button">Aprobar visibles</button>
               <button id="btnExecuteVisible" class="btn btn-primary" type="button">Ejecutar visibles</button>
+            </div>
+
+            <div class="section-note">
+              Usa este bloque para correr el flujo operativo principal sin salir del panel.
             </div>
           </section>
 
@@ -1033,7 +1044,7 @@
                 <input id="debtMinPayment" class="input" type="number" step="0.01" placeholder="90.00" required />
               </div>
               <div class="field">
-                <label class="label">Due day</label>
+                <label class="label">Día de pago</label>
                 <input id="debtDueDay" class="input" type="number" min="1" max="31" placeholder="25" />
               </div>
               <div class="field">
@@ -1162,8 +1173,8 @@
             </div>
 
             <div class="tag-row" style="margin-bottom:14px;">
-              <span class="pill blue">Draft / Pending / Built = por aprobar</span>
-              <span class="pill green">Approved = listos para ejecutar</span>
+              <span class="pill blue">Approved = listos para ejecutar</span>
+              <span class="pill orange">Draft / Pending / Built = por aprobar</span>
               <span class="pill">Executed = ya aplicados</span>
             </div>
 
@@ -1439,7 +1450,7 @@
               <div class="item-meta">
                 APR: <strong>${Number(debt.apr || 0).toFixed(2)}%</strong> ·
                 Mínimo: <strong>${fmtMoney(debt.minimum_payment)}</strong> ·
-                Due day: <strong>${debt.due_day ?? "-"}</strong> ·
+                Día: <strong>${debt.due_day ?? "-"}</strong> ·
                 Tipo: <strong>${escapeHtml(debt.type || "-")}</strong>
               </div>
             </div>
