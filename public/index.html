@@ -1275,7 +1275,7 @@
 
   <script>
     const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmVjbGllbnQiLCJyZWYiOiJzcHliZWpsdHNnemZ4bHd6b2JraCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzcyMTM4NzAwLCJleHAiOjIwODc3MTQ3MDB9.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
     const API_BASE = "https://www.debtya.com";
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1915,7 +1915,7 @@
 
     async function resetPassword(email) {
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/`
+        redirectTo: "https://www.debtya.com/"
       });
       if (error) throw error;
     }
