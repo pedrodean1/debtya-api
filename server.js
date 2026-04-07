@@ -10,7 +10,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v16-stripe-webhook-fix";
+const SERVER_VERSION = "cron-safe-v17-stripe-test-stable";
 
 const {
   SUPABASE_URL,
@@ -179,7 +179,8 @@ app.post(
 
       if (
         eventType === "invoice.paid" ||
-        eventType === "invoice.payment_failed"
+        eventType === "invoice.payment_failed" ||
+        eventType === "invoice.payment_succeeded"
       ) {
         const invoice = obj;
         const subscriptionId =
@@ -537,12 +538,21 @@ async function upsertBillingSubscriptionFromStripe(subscription, fallbackUserId 
   const item = subscription?.items?.data?.[0] || null;
   const priceId = item?.price?.id || null;
 
+  const rawCurrentPeriodEnd =
+    subscription?.current_period_end ??
+    item?.current_period_end ??
+    subscription?.cancel_at ??
+    null;
+
   let currentPeriodEndIso = null;
-  if (subscription?.current_period_end) {
-    currentPeriodEndIso = new Date(subscription.current_period_end * 1000).toISOString();
-  } else if (subscription?.current_period_end === 0) {
-    currentPeriodEndIso = null;
+  if (rawCurrentPeriodEnd) {
+    currentPeriodEndIso = new Date(rawCurrentPeriodEnd * 1000).toISOString();
   }
+
+  const inferredCancelAtPeriodEnd =
+    subscription?.cancel_at_period_end === true ||
+    (!!subscription?.cancel_at &&
+      String(subscription?.status || "").toLowerCase() === "active");
 
   const payload = {
     user_id: userId,
@@ -552,7 +562,7 @@ async function upsertBillingSubscriptionFromStripe(subscription, fallbackUserId 
     status: normalizeStripeStatus(subscription?.status),
     active: isSubscriptionActive(subscription?.status),
     current_period_end: currentPeriodEndIso,
-    cancel_at_period_end: !!subscription?.cancel_at_period_end,
+    cancel_at_period_end: inferredCancelAtPeriodEnd,
     last_event_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     raw_json: subscription,
@@ -569,7 +579,10 @@ async function upsertBillingSubscriptionFromStripe(subscription, fallbackUserId 
     current_period_end: payload.current_period_end,
     cancel_at_period_end: payload.cancel_at_period_end,
     last_invoice_id: payload.last_invoice_id || null,
-    last_invoice_status: payload.last_invoice_status || null
+    last_invoice_status: payload.last_invoice_status || null,
+    source_subscription_current_period_end: subscription?.current_period_end ?? null,
+    source_item_current_period_end: item?.current_period_end ?? null,
+    source_cancel_at: subscription?.cancel_at ?? null
   });
 
   if (!payload.stripe_subscription_id) {
