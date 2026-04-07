@@ -10,7 +10,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v15-stripe";
+const SERVER_VERSION = "cron-safe-v16-stripe-webhook-fix";
 
 const {
   SUPABASE_URL,
@@ -41,16 +41,25 @@ app.post(
   express.raw({ type: "application/json" }),
   async (req, res) => {
     try {
+      console.log("[STRIPE_WEBHOOK] hit", {
+        hasStripe: !!stripe,
+        hasWebhookSecret: !!STRIPE_WEBHOOK_SECRET,
+        contentType: req.headers["content-type"] || null
+      });
+
       if (!stripe) {
+        console.error("[STRIPE_WEBHOOK] Stripe no configurado");
         return jsonError(res, 500, "Stripe no configurado");
       }
 
       if (!STRIPE_WEBHOOK_SECRET) {
+        console.error("[STRIPE_WEBHOOK] STRIPE_WEBHOOK_SECRET no configurado");
         return jsonError(res, 500, "STRIPE_WEBHOOK_SECRET no configurado");
       }
 
       const signature = req.headers["stripe-signature"];
       if (!signature) {
+        console.error("[STRIPE_WEBHOOK] falta stripe-signature");
         return jsonError(res, 400, "Falta Stripe-Signature");
       }
 
@@ -62,6 +71,7 @@ app.post(
           STRIPE_WEBHOOK_SECRET
         );
       } catch (err) {
+        console.error("[STRIPE_WEBHOOK] firma inválida", err.message);
         return jsonError(res, 400, "Firma webhook inválida", {
           details: err.message
         });
@@ -70,21 +80,62 @@ app.post(
       const eventType = event.type;
       const obj = event.data?.object || null;
 
+      console.log("[STRIPE_WEBHOOK] event recibido", {
+        type: eventType,
+        eventId: event.id || null
+      });
+
       if (eventType === "checkout.session.completed") {
         const session = obj;
         const subscriptionId =
-          typeof session.subscription === "string"
+          typeof session?.subscription === "string"
             ? session.subscription
-            : session.subscription?.id || null;
+            : session?.subscription?.id || null;
+
+        console.log("[STRIPE_WEBHOOK] checkout.session.completed", {
+          sessionId: session?.id || null,
+          client_reference_id: session?.client_reference_id || null,
+          customerId:
+            typeof session?.customer === "string"
+              ? session.customer
+              : session?.customer?.id || null,
+          subscriptionId
+        });
 
         if (subscriptionId) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          const userId =
-            session.client_reference_id ||
-            subscription.metadata?.supabase_user_id ||
-            null;
+          const customerId =
+            typeof subscription?.customer === "string"
+              ? subscription.customer
+              : subscription?.customer?.id || null;
 
-          await upsertBillingSubscriptionFromStripe(subscription, userId);
+          const userId = await resolveStripeUserId({
+            session,
+            subscription,
+            customerId,
+            fallbackUserId: session?.client_reference_id || null
+          });
+
+          console.log("[STRIPE_WEBHOOK] subscription recuperada desde checkout", {
+            subscriptionId: subscription?.id || null,
+            userId,
+            stripeCustomerId: customerId,
+            status: subscription?.status || null
+          });
+
+          const saved = await upsertBillingSubscriptionFromStripe(subscription, userId);
+
+          if (!saved) {
+            throw new Error("No se pudo persistir billing_subscriptions para checkout.session.completed");
+          }
+
+          console.log("[STRIPE_WEBHOOK] resultado upsert checkout", {
+            saved: !!saved,
+            savedId: saved?.id || null,
+            stripeSubscriptionId: saved?.stripe_subscription_id || null
+          });
+        } else {
+          console.warn("[STRIPE_WEBHOOK] checkout.session.completed sin subscriptionId");
         }
       }
 
@@ -94,8 +145,36 @@ app.post(
         eventType === "customer.subscription.deleted"
       ) {
         const subscription = obj;
-        const userId = subscription.metadata?.supabase_user_id || null;
-        await upsertBillingSubscriptionFromStripe(subscription, userId);
+        const customerId =
+          typeof subscription?.customer === "string"
+            ? subscription.customer
+            : subscription?.customer?.id || null;
+
+        const userId = await resolveStripeUserId({
+          subscription,
+          customerId,
+          fallbackUserId: subscription?.metadata?.supabase_user_id || null
+        });
+
+        console.log("[STRIPE_WEBHOOK] customer.subscription event", {
+          type: eventType,
+          subscriptionId: subscription?.id || null,
+          userId,
+          stripeCustomerId: customerId,
+          status: subscription?.status || null
+        });
+
+        const saved = await upsertBillingSubscriptionFromStripe(subscription, userId);
+
+        if (!saved) {
+          throw new Error(`No se pudo persistir billing_subscriptions para ${eventType}`);
+        }
+
+        console.log("[STRIPE_WEBHOOK] resultado upsert subscription event", {
+          saved: !!saved,
+          savedId: saved?.id || null,
+          stripeSubscriptionId: saved?.stripe_subscription_id || null
+        });
       }
 
       if (
@@ -104,22 +183,56 @@ app.post(
       ) {
         const invoice = obj;
         const subscriptionId =
-          typeof invoice.subscription === "string"
+          typeof invoice?.subscription === "string"
             ? invoice.subscription
-            : invoice.subscription?.id || null;
+            : invoice?.subscription?.id || null;
+
+        console.log("[STRIPE_WEBHOOK] invoice event", {
+          type: eventType,
+          invoiceId: invoice?.id || null,
+          invoiceStatus: invoice?.status || null,
+          subscriptionId
+        });
 
         if (subscriptionId) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          const userId = subscription.metadata?.supabase_user_id || null;
-          await upsertBillingSubscriptionFromStripe(subscription, userId, {
-            last_invoice_id: invoice.id || null,
-            last_invoice_status: invoice.status || null
+          const customerId =
+            typeof subscription?.customer === "string"
+              ? subscription.customer
+              : subscription?.customer?.id || null;
+
+          const userId = await resolveStripeUserId({
+            subscription,
+            customerId,
+            fallbackUserId: subscription?.metadata?.supabase_user_id || null
           });
+
+          const saved = await upsertBillingSubscriptionFromStripe(subscription, userId, {
+            last_invoice_id: invoice?.id || null,
+            last_invoice_status: invoice?.status || null
+          });
+
+          if (!saved) {
+            throw new Error(`No se pudo persistir billing_subscriptions para ${eventType}`);
+          }
+
+          console.log("[STRIPE_WEBHOOK] resultado upsert invoice event", {
+            saved: !!saved,
+            savedId: saved?.id || null,
+            stripeSubscriptionId: saved?.stripe_subscription_id || null
+          });
+        } else {
+          console.warn("[STRIPE_WEBHOOK] invoice event sin subscriptionId");
         }
       }
 
       return res.json({ ok: true, received: true, type: eventType });
     } catch (error) {
+      console.error("[STRIPE_WEBHOOK] error general", {
+        message: error.message,
+        stack: error.stack
+      });
+
       return jsonError(res, 500, "Error procesando webhook Stripe", {
         details: error.message
       });
@@ -324,6 +437,42 @@ async function getLatestBillingSubscriptionForUser(userId) {
   }
 }
 
+async function getStripeCustomerById(customerId) {
+  try {
+    if (!stripe || !customerId) return null;
+    return await stripe.customers.retrieve(customerId);
+  } catch (e) {
+    console.warn("No se pudo leer customer de Stripe:", e.message);
+    return null;
+  }
+}
+
+async function resolveStripeUserId({
+  session = null,
+  subscription = null,
+  customerId = null,
+  fallbackUserId = null
+} = {}) {
+  const fromSession =
+    session?.client_reference_id ||
+    session?.metadata?.supabase_user_id ||
+    null;
+
+  if (fromSession) return fromSession;
+
+  const fromSubscription =
+    subscription?.metadata?.supabase_user_id ||
+    fallbackUserId ||
+    null;
+
+  if (fromSubscription) return fromSubscription;
+
+  const customer = await getStripeCustomerById(customerId);
+  const fromCustomer = customer?.metadata?.supabase_user_id || null;
+
+  return fromCustomer || null;
+}
+
 async function upsertBillingSubscriptionRow(payload) {
   try {
     const { data, error } = await supabaseAdmin
@@ -335,7 +484,14 @@ async function upsertBillingSubscriptionRow(payload) {
     if (error) throw error;
     return data;
   } catch (e) {
-    console.warn("No se pudo guardar billing_subscriptions:", e.message);
+    console.error("No se pudo guardar billing_subscriptions:", {
+      message: e.message,
+      details: e.details || null,
+      hint: e.hint || null,
+      code: e.code || null,
+      stripe_subscription_id: payload?.stripe_subscription_id || null,
+      user_id: payload?.user_id || null
+    });
     return null;
   }
 }
@@ -357,14 +513,26 @@ async function getOrCreateStripeCustomerForUser(user) {
     }
   });
 
+  console.log("[STRIPE_CHECKOUT] customer creado", {
+    userId: user.id,
+    email: user.email || null,
+    customerId: customer.id
+  });
+
   return customer.id;
 }
 
 async function upsertBillingSubscriptionFromStripe(subscription, fallbackUserId = null, extra = {}) {
-  const userId =
-    subscription?.metadata?.supabase_user_id ||
-    fallbackUserId ||
-    null;
+  const customerId =
+    typeof subscription?.customer === "string"
+      ? subscription.customer
+      : subscription?.customer?.id || null;
+
+  const userId = await resolveStripeUserId({
+    subscription,
+    customerId,
+    fallbackUserId
+  });
 
   const item = subscription?.items?.data?.[0] || null;
   const priceId = item?.price?.id || null;
@@ -376,23 +544,47 @@ async function upsertBillingSubscriptionFromStripe(subscription, fallbackUserId 
     currentPeriodEndIso = null;
   }
 
-  return await upsertBillingSubscriptionRow({
+  const payload = {
     user_id: userId,
-    stripe_customer_id:
-      typeof subscription.customer === "string"
-        ? subscription.customer
-        : subscription.customer?.id || null,
-    stripe_subscription_id: subscription.id || null,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscription?.id || null,
     stripe_price_id: priceId,
-    status: normalizeStripeStatus(subscription.status),
-    active: isSubscriptionActive(subscription.status),
+    status: normalizeStripeStatus(subscription?.status),
+    active: isSubscriptionActive(subscription?.status),
     current_period_end: currentPeriodEndIso,
-    cancel_at_period_end: !!subscription.cancel_at_period_end,
+    cancel_at_period_end: !!subscription?.cancel_at_period_end,
     last_event_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     raw_json: subscription,
     ...extra
+  };
+
+  console.log("[BILLING_UPSERT] payload", {
+    user_id: payload.user_id,
+    stripe_customer_id: payload.stripe_customer_id,
+    stripe_subscription_id: payload.stripe_subscription_id,
+    stripe_price_id: payload.stripe_price_id,
+    status: payload.status,
+    active: payload.active,
+    current_period_end: payload.current_period_end,
+    cancel_at_period_end: payload.cancel_at_period_end,
+    last_invoice_id: payload.last_invoice_id || null,
+    last_invoice_status: payload.last_invoice_status || null
   });
+
+  if (!payload.stripe_subscription_id) {
+    throw new Error("stripe_subscription_id faltante al intentar guardar billing_subscriptions");
+  }
+
+  const saved = await upsertBillingSubscriptionRow(payload);
+
+  console.log("[BILLING_UPSERT] resultado", {
+    ok: !!saved,
+    id: saved?.id || null,
+    stripe_subscription_id: saved?.stripe_subscription_id || null
+  });
+
+  return saved;
 }
 
 async function getPlaidItemsForUser(userId) {
@@ -1165,7 +1357,8 @@ app.get("/billing/subscription-status", requireUser, async (req, res) => {
           active: false,
           current_period_end: null,
           stripe_customer_id: null,
-          stripe_subscription_id: null
+          stripe_subscription_id: null,
+          cancel_at_period_end: false
         }
       });
     }
@@ -1234,6 +1427,13 @@ app.post("/stripe/create-checkout-session", requireUser, async (req, res) => {
           plan_code: "debtya_beta_monthly"
         }
       }
+    });
+
+    console.log("[STRIPE_CHECKOUT] session creada", {
+      userId: req.user.id,
+      customerId,
+      sessionId: session.id,
+      checkoutUrl: !!session.url
     });
 
     return res.json({
