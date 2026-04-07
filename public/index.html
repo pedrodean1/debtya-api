@@ -474,11 +474,6 @@
       background:#fbfcff;
     }
 
-    .loading{
-      opacity:.7;
-      pointer-events:none;
-    }
-
     .tag-row{
       display:flex;
       flex-wrap:wrap;
@@ -1277,6 +1272,7 @@
     const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
     const API_BASE = "https://www.debtya.com";
+    const REQUEST_TIMEOUT_MS = 15000;
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1388,11 +1384,49 @@
       btn.textContent = loading ? textLoading : btn.dataset.originalText;
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function getStoredAccessToken() {
+      try {
+        const keys = Object.keys(localStorage);
+        const sbKey = keys.find(k => k.includes("auth-token"));
+        if (!sbKey) return null;
+        const raw = localStorage.getItem(sbKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return (
+          parsed?.access_token ||
+          parsed?.currentSession?.access_token ||
+          parsed?.session?.access_token ||
+          null
+        );
+      } catch {
+        return null;
+      }
+    }
+
     async function getAccessToken() {
-      const { data } = await supabaseClient.auth.getSession();
-      const token = data?.session?.access_token || null;
-      if (token) localStorage.setItem("debtya_access_token", token);
-      return token;
+      const stored = getStoredAccessToken();
+      if (stored) {
+        localStorage.setItem("debtya_access_token", stored);
+        return stored;
+      }
+
+      try {
+        const { data } = await supabaseClient.auth.getSession();
+        const token = data?.session?.access_token || null;
+        if (token) localStorage.setItem("debtya_access_token", token);
+        return token;
+      } catch {
+        return null;
+      }
     }
 
     async function api(path, options = {}) {
@@ -1403,27 +1437,40 @@
         headers["Content-Type"] = headers["Content-Type"] || "application/json";
       }
 
-      if (token) headers.Authorization = `Bearer ${token}`;
+      if (token && path !== "/health") headers.Authorization = `Bearer ${token}`;
 
-      const res = await fetch(`${API_BASE}${path}`, {
-        method: options.method || "GET",
-        headers,
-        body: options.body
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-      const text = await res.text();
-      let json;
       try {
-        json = text ? JSON.parse(text) : {};
-      } catch {
-        json = { ok: false, raw: text };
-      }
+        const res = await fetch(`${API_BASE}${path}`, {
+          method: options.method || "GET",
+          headers,
+          body: options.body,
+          signal: controller.signal
+        });
 
-      if (!res.ok) {
-        throw new Error(json?.error || json?.details || text || `HTTP ${res.status}`);
-      }
+        const text = await res.text();
+        let json;
+        try {
+          json = text ? JSON.parse(text) : {};
+        } catch {
+          json = { ok: false, raw: text };
+        }
 
-      return json;
+        if (!res.ok) {
+          throw new Error(json?.error || json?.details || text || `HTTP ${res.status}`);
+        }
+
+        return json;
+      } catch (err) {
+        if (err.name === "AbortError") {
+          throw new Error(`Timeout en ${path}`);
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
     }
 
     function updateAuthModeUI() {
@@ -1650,6 +1697,8 @@
       }
 
       state.accounts.forEach((acc) => {
+        const current = acc.current_balance ?? acc.balance_current ?? 0;
+        const available = acc.available_balance ?? acc.balance_available ?? 0;
         const item = document.createElement("div");
         item.className = "item";
         item.innerHTML = `
@@ -1662,8 +1711,8 @@
               </div>
             </div>
             <div class="right">
-              <div class="money">${fmtMoney(acc.current_balance)}</div>
-              <div class="muted" style="font-size:12px;margin-top:4px;">Disponible: ${fmtMoney(acc.available_balance)}</div>
+              <div class="money">${fmtMoney(current)}</div>
+              <div class="muted" style="font-size:12px;margin-top:4px;">Disponible: ${fmtMoney(available)}</div>
             </div>
           </div>
         `;
@@ -1812,7 +1861,7 @@
       try {
         const res = await api("/billing/subscription-status");
         state.billing = res.data || null;
-      } catch (e) {
+      } catch {
         state.billing = {
           status: "inactive",
           active: false,
@@ -1828,7 +1877,6 @@
     async function refreshAll() {
       hideMessage(globalMessage);
       try {
-        document.body.classList.add("loading");
         await refreshHealth();
         await Promise.all([
           refreshPlan(),
@@ -1841,8 +1889,6 @@
         ]);
       } catch (e) {
         showMessage(globalMessage, e.message, "error");
-      } finally {
-        document.body.classList.remove("loading");
       }
     }
 
@@ -1930,10 +1976,8 @@
       try {
         if (buttonEl) setLoading(buttonEl, true, "Abriendo Stripe...");
 
-        const { data } = await supabaseClient.auth.getSession();
-        const session = data?.session || null;
-
-        if (!session) {
+        const token = await getAccessToken();
+        if (!token) {
           showAuth("login");
           showMessage(authMessage, "Primero entra o crea tu cuenta para continuar con Stripe Checkout.", "warn");
           return;
@@ -1951,7 +1995,7 @@
           throw new Error("Stripe no devolvió URL de checkout.");
         }
 
-        window.location.href = res.url;
+        window.location.assign(res.url);
       } catch (e) {
         if (!appView.classList.contains("hidden")) {
           showMessage(globalMessage, e.message, "error");
@@ -1978,7 +2022,7 @@
           throw new Error("Stripe no devolvió URL del portal.");
         }
 
-        window.location.href = res.url;
+        window.location.assign(res.url);
       } catch (e) {
         showMessage(globalMessage, e.message, "error");
       } finally {
@@ -2013,17 +2057,23 @@
     }
 
     async function loadSession() {
-      const { data } = await supabaseClient.auth.getSession();
-      state.session = data?.session || null;
-      state.user = state.session?.user || null;
+      try {
+        const { data } = await supabaseClient.auth.getSession();
+        state.session = data?.session || null;
+        state.user = state.session?.user || null;
+      } catch {
+        state.session = null;
+        state.user = null;
+      }
 
-      if (state.session?.access_token) {
-        localStorage.setItem("debtya_access_token", state.session.access_token);
+      const storedToken = getStoredAccessToken();
+      if (storedToken) {
+        localStorage.setItem("debtya_access_token", storedToken);
       }
 
       renderUser();
 
-      if (state.session) {
+      if (state.session || storedToken) {
         showApp();
         await refreshAll();
       } else {
@@ -2031,15 +2081,6 @@
       }
 
       await handleCheckoutReturn();
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
     }
 
     async function approveIntent(id) {
@@ -2345,13 +2386,11 @@
 
       if (session?.access_token) {
         localStorage.setItem("debtya_access_token", session.access_token);
-      } else {
-        localStorage.removeItem("debtya_access_token");
       }
 
       renderUser();
 
-      if (session) {
+      if (session || getStoredAccessToken()) {
         showApp();
         await refreshBillingStatus();
       } else {
