@@ -10,12 +10,19 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v19-payment-trace-safe";
+const SERVER_VERSION = "cron-safe-v20-backend-cleanup-safe";
 
 const DEBUG_STRIPE = false;
+const DEBUG_APP = false;
 
 function stripeDebug(...args) {
   if (DEBUG_STRIPE) {
+    console.log(...args);
+  }
+}
+
+function appDebug(...args) {
+  if (DEBUG_APP) {
     console.log(...args);
   }
 }
@@ -25,6 +32,10 @@ function stripeInfo(...args) {
 }
 
 function stripeError(...args) {
+  console.error(...args);
+}
+
+function appError(...args) {
   console.error(...args);
 }
 
@@ -449,7 +460,7 @@ async function ensureProfile(userId) {
         { onConflict: "id" }
       );
   } catch (e) {
-    console.warn("No se pudo asegurar profile:", e.message);
+    appDebug("No se pudo asegurar profile:", e.message);
   }
 }
 
@@ -465,7 +476,7 @@ async function getLatestBillingSubscriptionForUser(userId) {
     if (error) throw error;
     return data?.[0] || null;
   } catch (e) {
-    console.warn("No se pudo leer billing_subscriptions:", e.message);
+    appDebug("No se pudo leer billing_subscriptions:", e.message);
     return null;
   }
 }
@@ -475,7 +486,7 @@ async function getStripeCustomerById(customerId) {
     if (!stripe || !customerId) return null;
     return await stripe.customers.retrieve(customerId);
   } catch (e) {
-    console.warn("No se pudo leer customer de Stripe:", e.message);
+    appDebug("No se pudo leer customer de Stripe:", e.message);
     return null;
   }
 }
@@ -682,7 +693,7 @@ async function getInstitutionName(institutionId) {
     });
     return response?.data?.institution?.name || null;
   } catch (e) {
-    console.warn("No se pudo obtener institución:", e.message);
+    appDebug("No se pudo obtener institución:", e.message);
     return null;
   }
 }
@@ -1356,7 +1367,7 @@ async function executeIntentDirect(userId, intentId) {
     .upsert(executionPayload, { onConflict: "payment_intent_id" });
 
   if (executionError) {
-    console.warn("No se pudo registrar payment_execution:", executionError.message);
+    appDebug("No se pudo registrar payment_execution:", executionError.message);
   }
 
   const debtApply = await applyExecutedIntentToDebt(userId, updatedIntent).catch((e) => ({
@@ -1705,7 +1716,7 @@ app.post("/plaid/exchange_public_token", requireUser, async (req, res) => {
       try {
         institutionName = await getInstitutionName(institutionId);
       } catch (institutionError) {
-        console.error(
+        appError(
           "getInstitutionName ERROR:",
           institutionError?.response?.data || institutionError?.message || institutionError
         );
@@ -1745,7 +1756,8 @@ app.post("/plaid/exchange_public_token", requireUser, async (req, res) => {
       (typeof raw === "string" ? raw : null) ||
       "Error intercambiando public_token";
 
-    console.error("exchange_public_token ERROR RAW:", raw);
+    appError("exchange_public_token ERROR:", detailedMessage);
+    appDebug("exchange_public_token ERROR RAW:", raw);
 
     return res.status(500).json({
       ok: false,
@@ -2522,7 +2534,7 @@ app.get("/payment-trace", requireUser, async (req, res) => {
       });
     }
 
-    console.warn("Fallback payment-trace por error en vista:", error.message);
+    appDebug("Fallback payment-trace por error en vista:", error.message);
 
     const { data: intents, error: fallbackError } = await supabaseAdmin
       .from("payment_intents")
@@ -2752,7 +2764,7 @@ app.use((req, res, next) => {
 });
 
 app.use((err, _req, res, _next) => {
-  console.error("ERROR NO CONTROLADO:", err);
+  appError("ERROR NO CONTROLADO:", err);
   return jsonError(res, 500, "Error interno del servidor", {
     details: err.message
   });
