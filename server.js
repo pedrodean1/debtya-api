@@ -10,7 +10,7 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v18-stripe-logs-clean";
+const SERVER_VERSION = "cron-safe-v19-payment-trace-safe";
 
 const DEBUG_STRIPE = false;
 
@@ -301,6 +301,28 @@ function safeBoolean(value, fallback = false) {
   if (value === true || value === "true" || value === 1 || value === "1") return true;
   if (value === false || value === "false" || value === 0 || value === "0") return false;
   return fallback;
+}
+
+function safeDateMs(value) {
+  if (!value) return 0;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function traceSortValue(row) {
+  return Math.max(
+    safeDateMs(row?.created_at),
+    safeDateMs(row?.executed_at),
+    safeDateMs(row?.approved_at),
+    safeDateMs(row?.updated_at),
+    safeDateMs(row?.inserted_at),
+    safeDateMs(row?.event_at),
+    safeDateMs(row?.payment_created_at)
+  );
+}
+
+function sortTraceRows(rows = []) {
+  return [...rows].sort((a, b) => traceSortValue(b) - traceSortValue(a));
 }
 
 function jsonError(res, status, message, extra = {}) {
@@ -2490,11 +2512,14 @@ app.get("/payment-trace", requireUser, async (req, res) => {
     const { data, error } = await supabaseAdmin
       .from("v_payment_trace")
       .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
+      .eq("user_id", req.user.id);
 
     if (!error) {
-      return res.json({ ok: true, source: "v_payment_trace", data: data || [] });
+      return res.json({
+        ok: true,
+        source: "v_payment_trace",
+        data: sortTraceRows(data || [])
+      });
     }
 
     console.warn("Fallback payment-trace por error en vista:", error.message);
@@ -2524,7 +2549,7 @@ app.get("/payment-trace", requireUser, async (req, res) => {
     return res.json({
       ok: true,
       source: "payment_intents_fallback",
-      data: normalized
+      data: sortTraceRows(normalized)
     });
   } catch (error) {
     return jsonError(res, 500, "Error cargando trace", {
