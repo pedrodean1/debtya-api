@@ -703,6 +703,91 @@
       color:var(--muted);
       line-height:1.5;
     }
+
+    .legal-banner{
+      margin-top:16px;
+      padding:16px;
+      border:1px solid #d7e6ff;
+      border-radius:16px;
+      background:#eef4ff;
+      color:var(--text);
+    }
+
+    .legal-banner-title{
+      margin:0 0 8px;
+      font-size:15px;
+      font-weight:800;
+    }
+
+    .legal-banner-copy{
+      margin:0;
+      font-size:13px;
+      line-height:1.65;
+      color:#3d4f68;
+    }
+
+    .legal-links{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .legal-link{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 12px;
+      border-radius:12px;
+      background:#fff;
+      border:1px solid #d7e6ff;
+      color:var(--primary);
+      font-size:13px;
+      font-weight:800;
+      text-decoration:none;
+    }
+
+    .legal-link:hover{
+      background:#f8fbff;
+    }
+
+    .legal-note{
+      margin-top:16px;
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fbfdff;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.65;
+    }
+
+    .legal-note strong{
+      color:var(--text);
+    }
+
+    .footer-legal{
+      margin-top:18px;
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.65;
+    }
+
+    .footer-legal-links{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+
+    .footer-legal-links a{
+      color:var(--primary);
+      font-weight:700;
+    }
   </style>
 </head>
 <body>
@@ -836,6 +921,42 @@
 
           <div class="helper-text">
             Si ya tienes sesión iniciada, “Empieza ahora” abre Stripe Checkout. Si no, te lleva a entrar o crear tu cuenta primero.
+          </div>
+
+          <div class="legal-banner">
+            <p class="legal-banner-title">Términos y políticas</p>
+            <p class="legal-banner-copy">
+              DebtYa Beta cuesta $9.99 al mes. La suscripción se renueva automáticamente hasta que canceles.
+              Puedes cancelar en cualquier momento desde el portal de billing o escribiendo a soporte.
+            </p>
+            <div class="legal-links">
+              <a class="legal-link" href="/legal.html#terminos">Términos</a>
+              <a class="legal-link" href="/legal.html#privacidad">Privacidad</a>
+              <a class="legal-link" href="/legal.html#cancelacion">Cancelación</a>
+              <a class="legal-link" href="/legal.html#reembolsos">Reembolsos</a>
+              <a class="legal-link" href="mailto:support@debtya.com">Soporte</a>
+            </div>
+          </div>
+
+          <div class="legal-note">
+            <strong>DebtYa Beta – $9.99 al mes.</strong> Suscripción mensual con renovación automática hasta que canceles.
+            Puedes cancelar en cualquier momento desde el portal de billing o contactando a soporte.
+            Aplican nuestros <a href="/legal.html#terminos" style="color:var(--primary);font-weight:700;">Términos</a>,
+            <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Política de Privacidad</a>,
+            <a href="/legal.html#cancelacion" style="color:var(--primary);font-weight:700;">Política de Cancelación</a> y
+            <a href="/legal.html#reembolsos" style="color:var(--primary);font-weight:700;">Política de Reembolsos</a>.
+          </div>
+        </div>
+
+        <div class="footer-legal">
+          <strong>DebtYa</strong> es una herramienta de organización financiera personal. No es un banco,
+          asesor financiero, agencia de reparación de crédito ni servicio de alivio de deudas.
+          <div class="footer-legal-links">
+            <a href="/legal.html#terminos">Términos</a>
+            <a href="/legal.html#privacidad">Privacidad</a>
+            <a href="/legal.html#cancelacion">Cancelación</a>
+            <a href="/legal.html#reembolsos">Reembolsos</a>
+            <a href="mailto:support@debtya.com">Soporte</a>
           </div>
         </div>
       </section>
@@ -1045,6 +1166,11 @@
             <div class="section-note">
               Usa este bloque para correr el flujo operativo principal sin salir del panel.
             </div>
+
+            <div class="legal-note">
+              Al conectar una cuenta, autorizas a DebtYa a recibir información financiera necesaria para prestar el servicio mediante proveedores de terceros como Plaid.
+              Revisa también nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Términos y Privacidad</a>.
+            </div>
           </section>
 
           <section class="card" id="setupPanel">
@@ -1240,6 +1366,32 @@
 
             <div id="accountsList" class="list list-scroll-sm"></div>
           </section>
+
+          <div class="legal-banner">
+            <p class="legal-banner-title">Links legales visibles</p>
+            <p class="legal-banner-copy">
+              Aquí también tienes acceso rápido a las políticas principales de DebtYa.
+            </p>
+            <div class="legal-links">
+              <a class="legal-link" href="/legal.html#terminos">Términos</a>
+              <a class="legal-link" href="/legal.html#privacidad">Privacidad</a>
+              <a class="legal-link" href="/legal.html#cancelacion">Cancelación</a>
+              <a class="legal-link" href="/legal.html#reembolsos">Reembolsos</a>
+              <a class="legal-link" href="mailto:support@debtya.com">Soporte</a>
+            </div>
+          </div>
+
+          <div class="footer-legal">
+            <strong>DebtYa</strong> es una herramienta de organización financiera personal. No es un banco,
+            asesor financiero, agencia de reparación de crédito ni servicio de alivio de deudas.
+            <div class="footer-legal-links">
+              <a href="/legal.html#terminos">Términos</a>
+              <a href="/legal.html#privacidad">Privacidad</a>
+              <a href="/legal.html#cancelacion">Cancelación</a>
+              <a href="/legal.html#reembolsos">Reembolsos</a>
+              <a href="mailto:support@debtya.com">Soporte</a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
