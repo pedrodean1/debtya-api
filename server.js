@@ -10,7 +10,23 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v17-stripe-test-stable";
+const SERVER_VERSION = "cron-safe-v18-stripe-logs-clean";
+
+const DEBUG_STRIPE = false;
+
+function stripeDebug(...args) {
+  if (DEBUG_STRIPE) {
+    console.log(...args);
+  }
+}
+
+function stripeInfo(...args) {
+  console.log(...args);
+}
+
+function stripeError(...args) {
+  console.error(...args);
+}
 
 const {
   SUPABASE_URL,
@@ -41,25 +57,25 @@ app.post(
   express.raw({ type: "application/json" }),
   async (req, res) => {
     try {
-      console.log("[STRIPE_WEBHOOK] hit", {
+      stripeDebug("[STRIPE_WEBHOOK] hit", {
         hasStripe: !!stripe,
         hasWebhookSecret: !!STRIPE_WEBHOOK_SECRET,
         contentType: req.headers["content-type"] || null
       });
 
       if (!stripe) {
-        console.error("[STRIPE_WEBHOOK] Stripe no configurado");
+        stripeError("[STRIPE_WEBHOOK] Stripe no configurado");
         return jsonError(res, 500, "Stripe no configurado");
       }
 
       if (!STRIPE_WEBHOOK_SECRET) {
-        console.error("[STRIPE_WEBHOOK] STRIPE_WEBHOOK_SECRET no configurado");
+        stripeError("[STRIPE_WEBHOOK] STRIPE_WEBHOOK_SECRET no configurado");
         return jsonError(res, 500, "STRIPE_WEBHOOK_SECRET no configurado");
       }
 
       const signature = req.headers["stripe-signature"];
       if (!signature) {
-        console.error("[STRIPE_WEBHOOK] falta stripe-signature");
+        stripeError("[STRIPE_WEBHOOK] falta stripe-signature");
         return jsonError(res, 400, "Falta Stripe-Signature");
       }
 
@@ -71,7 +87,7 @@ app.post(
           STRIPE_WEBHOOK_SECRET
         );
       } catch (err) {
-        console.error("[STRIPE_WEBHOOK] firma inválida", err.message);
+        stripeError("[STRIPE_WEBHOOK] firma inválida", err.message);
         return jsonError(res, 400, "Firma webhook inválida", {
           details: err.message
         });
@@ -80,10 +96,7 @@ app.post(
       const eventType = event.type;
       const obj = event.data?.object || null;
 
-      console.log("[STRIPE_WEBHOOK] event recibido", {
-        type: eventType,
-        eventId: event.id || null
-      });
+      stripeInfo("[stripe] webhook recibido:", eventType);
 
       if (eventType === "checkout.session.completed") {
         const session = obj;
@@ -92,7 +105,7 @@ app.post(
             ? session.subscription
             : session?.subscription?.id || null;
 
-        console.log("[STRIPE_WEBHOOK] checkout.session.completed", {
+        stripeDebug("[STRIPE_WEBHOOK] checkout.session.completed", {
           sessionId: session?.id || null,
           client_reference_id: session?.client_reference_id || null,
           customerId:
@@ -116,7 +129,7 @@ app.post(
             fallbackUserId: session?.client_reference_id || null
           });
 
-          console.log("[STRIPE_WEBHOOK] subscription recuperada desde checkout", {
+          stripeDebug("[STRIPE_WEBHOOK] subscription recuperada desde checkout", {
             subscriptionId: subscription?.id || null,
             userId,
             stripeCustomerId: customerId,
@@ -129,13 +142,12 @@ app.post(
             throw new Error("No se pudo persistir billing_subscriptions para checkout.session.completed");
           }
 
-          console.log("[STRIPE_WEBHOOK] resultado upsert checkout", {
+          stripeInfo("[stripe] checkout persistido", {
             saved: !!saved,
-            savedId: saved?.id || null,
             stripeSubscriptionId: saved?.stripe_subscription_id || null
           });
         } else {
-          console.warn("[STRIPE_WEBHOOK] checkout.session.completed sin subscriptionId");
+          stripeDebug("[STRIPE_WEBHOOK] checkout.session.completed sin subscriptionId");
         }
       }
 
@@ -156,7 +168,7 @@ app.post(
           fallbackUserId: subscription?.metadata?.supabase_user_id || null
         });
 
-        console.log("[STRIPE_WEBHOOK] customer.subscription event", {
+        stripeDebug("[STRIPE_WEBHOOK] customer.subscription event", {
           type: eventType,
           subscriptionId: subscription?.id || null,
           userId,
@@ -170,9 +182,9 @@ app.post(
           throw new Error(`No se pudo persistir billing_subscriptions para ${eventType}`);
         }
 
-        console.log("[STRIPE_WEBHOOK] resultado upsert subscription event", {
+        stripeInfo("[stripe] subscription persistida", {
+          type: eventType,
           saved: !!saved,
-          savedId: saved?.id || null,
           stripeSubscriptionId: saved?.stripe_subscription_id || null
         });
       }
@@ -188,7 +200,7 @@ app.post(
             ? invoice.subscription
             : invoice?.subscription?.id || null;
 
-        console.log("[STRIPE_WEBHOOK] invoice event", {
+        stripeDebug("[STRIPE_WEBHOOK] invoice event", {
           type: eventType,
           invoiceId: invoice?.id || null,
           invoiceStatus: invoice?.status || null,
@@ -217,22 +229,20 @@ app.post(
             throw new Error(`No se pudo persistir billing_subscriptions para ${eventType}`);
           }
 
-          console.log("[STRIPE_WEBHOOK] resultado upsert invoice event", {
+          stripeInfo("[stripe] invoice sincronizada", {
+            type: eventType,
             saved: !!saved,
-            savedId: saved?.id || null,
             stripeSubscriptionId: saved?.stripe_subscription_id || null
           });
         } else {
-          console.warn("[STRIPE_WEBHOOK] invoice event sin subscriptionId");
+          stripeDebug("[STRIPE_WEBHOOK] invoice event sin subscriptionId");
         }
       }
 
       return res.json({ ok: true, received: true, type: eventType });
     } catch (error) {
-      console.error("[STRIPE_WEBHOOK] error general", {
-        message: error.message,
-        stack: error.stack
-      });
+      stripeError("[STRIPE_WEBHOOK] error general", error.message);
+      stripeDebug("[STRIPE_WEBHOOK] error stack", error.stack);
 
       return jsonError(res, 500, "Error procesando webhook Stripe", {
         details: error.message
@@ -485,7 +495,7 @@ async function upsertBillingSubscriptionRow(payload) {
     if (error) throw error;
     return data;
   } catch (e) {
-    console.error("No se pudo guardar billing_subscriptions:", {
+    stripeError("No se pudo guardar billing_subscriptions:", {
       message: e.message,
       details: e.details || null,
       hint: e.hint || null,
@@ -514,7 +524,7 @@ async function getOrCreateStripeCustomerForUser(user) {
     }
   });
 
-  console.log("[STRIPE_CHECKOUT] customer creado", {
+  stripeDebug("[STRIPE_CHECKOUT] customer creado", {
     userId: user.id,
     email: user.email || null,
     customerId: customer.id
@@ -569,7 +579,7 @@ async function upsertBillingSubscriptionFromStripe(subscription, fallbackUserId 
     ...extra
   };
 
-  console.log("[BILLING_UPSERT] payload", {
+  stripeDebug("[BILLING_UPSERT] payload", {
     user_id: payload.user_id,
     stripe_customer_id: payload.stripe_customer_id,
     stripe_subscription_id: payload.stripe_subscription_id,
@@ -591,9 +601,8 @@ async function upsertBillingSubscriptionFromStripe(subscription, fallbackUserId 
 
   const saved = await upsertBillingSubscriptionRow(payload);
 
-  console.log("[BILLING_UPSERT] resultado", {
+  stripeInfo("[stripe] billing_subscriptions actualizado", {
     ok: !!saved,
-    id: saved?.id || null,
     stripe_subscription_id: saved?.stripe_subscription_id || null
   });
 
@@ -1442,7 +1451,7 @@ app.post("/stripe/create-checkout-session", requireUser, async (req, res) => {
       }
     });
 
-    console.log("[STRIPE_CHECKOUT] session creada", {
+    stripeDebug("[STRIPE_CHECKOUT] session creada", {
       userId: req.user.id,
       customerId,
       sessionId: session.id,
