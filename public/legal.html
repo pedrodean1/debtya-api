@@ -1,0 +1,647 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DebtYa - Legal</title>
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --card:#ffffff;
+      --text:#122033;
+      --muted:#6c7a90;
+      --line:#e6edf5;
+      --primary:#1f6fff;
+      --primary-dark:#1558cc;
+      --shadow:0 12px 30px rgba(18,32,51,.08);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      padding:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    a{color:var(--primary);text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:24px 18px 48px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .brand-badge{
+      width:46px;
+      height:46px;
+      border-radius:15px;
+      background:linear-gradient(135deg,#1f6fff,#73a7ff);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:800;
+      font-size:19px;
+      box-shadow:var(--shadow);
+      flex:0 0 auto;
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:30px;
+      line-height:1;
+      letter-spacing:-.3px;
+    }
+
+    .brand p{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:0;
+      border-radius:12px;
+      padding:11px 14px;
+      cursor:pointer;
+      font-weight:700;
+      background:var(--primary);
+      color:#fff;
+      text-decoration:none;
+    }
+
+    .btn:hover{
+      background:var(--primary-dark);
+      text-decoration:none;
+    }
+
+    .hero{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:24px;
+      margin-bottom:18px;
+    }
+
+    .hero h2{
+      margin:0 0 10px;
+      font-size:34px;
+      line-height:1.05;
+      letter-spacing:-.7px;
+    }
+
+    .hero p{
+      margin:0;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.7;
+      max-width:820px;
+    }
+
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+
+    .nav a{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--text);
+      border-radius:999px;
+      padding:9px 13px;
+      font-size:13px;
+      font-weight:700;
+      text-decoration:none;
+    }
+
+    .nav a:hover{
+      background:#eef4ff;
+      color:var(--primary);
+      text-decoration:none;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      padding:24px;
+      margin-bottom:18px;
+    }
+
+    .card h2{
+      margin:0 0 8px;
+      font-size:26px;
+      letter-spacing:-.3px;
+    }
+
+    .sub{
+      margin:0 0 18px;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    h3{
+      margin:20px 0 8px;
+      font-size:18px;
+    }
+
+    p{
+      margin:0 0 12px;
+      line-height:1.75;
+      font-size:15px;
+    }
+
+    ul{
+      margin:0 0 14px 20px;
+      padding:0;
+    }
+
+    li{
+      margin-bottom:8px;
+      line-height:1.7;
+      font-size:15px;
+    }
+
+    .notice{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      background:#f9fbfe;
+      font-size:14px;
+      line-height:1.6;
+      margin-top:14px;
+    }
+
+    .footer{
+      margin-top:12px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.6;
+    }
+
+    .footer-links{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+
+    .footer-links a{
+      font-weight:700;
+    }
+
+    @media (max-width: 720px){
+      .hero h2{font-size:28px}
+      .card{padding:18px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-badge">D</div>
+        <div>
+          <h1>DebtYa</h1>
+          <p>Legal y políticas del servicio</p>
+        </div>
+      </div>
+
+      <a class="btn" href="/">Volver a DebtYa</a>
+    </div>
+
+    <section class="hero">
+      <h2>Información legal y políticas de DebtYa</h2>
+      <p>
+        Aquí encontrarás los Términos de Servicio, Política de Privacidad, Política de Cancelación,
+        Política de Reembolsos y avisos importantes sobre el uso de DebtYa.
+      </p>
+
+      <div class="nav">
+        <a href="#terminos">Términos</a>
+        <a href="#privacidad">Privacidad</a>
+        <a href="#cancelacion">Cancelación</a>
+        <a href="#reembolsos">Reembolsos</a>
+        <a href="#disclaimer">Aviso importante</a>
+      </div>
+    </section>
+
+    <section id="terminos" class="card">
+      <h2>Términos de Servicio</h2>
+      <p class="sub">Última actualización: 9 de abril de 2026</p>
+
+      <p>
+        Bienvenido a DebtYa. Estos Términos de Servicio regulan el acceso y uso de la plataforma,
+        el sitio web y los servicios relacionados ofrecidos por DebtYa. Al crear una cuenta, acceder
+        o usar DebtYa, aceptas estos Términos.
+      </p>
+
+      <h3>1. Quiénes somos</h3>
+      <p>
+        DebtYa es una plataforma digital diseñada para ayudar a los usuarios a organizar sus deudas,
+        visualizar su situación financiera, automatizar ciertas reglas internas y dar seguimiento
+        a planes de pago.
+      </p>
+
+      <h3>2. Qué hace DebtYa</h3>
+      <p>DebtYa ofrece herramientas para:</p>
+      <ul>
+        <li>organizar deudas y cuentas,</li>
+        <li>importar cierta información financiera mediante integraciones de terceros,</li>
+        <li>comparar estrategias de pago,</li>
+        <li>automatizar reglas internas,</li>
+        <li>construir, aprobar y dar seguimiento a intents o acciones dentro de la plataforma.</li>
+      </ul>
+      <p>DebtYa es una herramienta de organización financiera personal.</p>
+
+      <h3>3. Lo que DebtYa no es</h3>
+      <p>DebtYa no es:</p>
+      <ul>
+        <li>un banco,</li>
+        <li>una cooperativa de crédito,</li>
+        <li>una entidad financiera,</li>
+        <li>un bufete de abogados,</li>
+        <li>una agencia de reparación de crédito,</li>
+        <li>una empresa de liquidación o alivio de deudas,</li>
+        <li>un asesor financiero, contable o legal.</li>
+      </ul>
+      <p>DebtYa no garantiza:</p>
+      <ul>
+        <li>eliminación de deuda,</li>
+        <li>reducción de tasas,</li>
+        <li>aprobación de crédito,</li>
+        <li>mejora de score,</li>
+        <li>ahorros específicos,</li>
+        <li>resultados financieros concretos.</li>
+      </ul>
+      <p>Toda decisión financiera que tomes usando la plataforma es tu responsabilidad.</p>
+
+      <h3>4. Elegibilidad</h3>
+      <p>
+        Debes tener al menos 18 años y capacidad legal para usar DebtYa. Al usar la plataforma,
+        declaras que la información que proporcionas es verdadera y actualizada.
+      </p>
+
+      <h3>5. Cuenta y seguridad</h3>
+      <p>Eres responsable de:</p>
+      <ul>
+        <li>mantener la confidencialidad de tu cuenta,</li>
+        <li>proteger tu contraseña,</li>
+        <li>toda actividad que ocurra bajo tu cuenta.</li>
+      </ul>
+      <p>Debes notificarnos de inmediato si sospechas acceso no autorizado.</p>
+
+      <h3>6. Suscripción y facturación</h3>
+      <p>
+        DebtYa puede ofrecer acceso mediante suscripción mensual. El precio aplicable se mostrará
+        claramente antes de completar el pago.
+      </p>
+      <p>Al suscribirte:</p>
+      <ul>
+        <li>autorizas cargos recurrentes según el plan seleccionado,</li>
+        <li>aceptas que la suscripción se renovará automáticamente al final de cada período, salvo cancelación,</li>
+        <li>aceptas que puedes cancelar conforme a la Política de Cancelación vigente.</li>
+      </ul>
+      <p>
+        Los pagos son procesados por terceros, incluyendo Stripe. DebtYa no almacena números completos
+        de tarjetas de pago.
+      </p>
+
+      <h3>7. Integraciones de terceros</h3>
+      <p>
+        DebtYa puede usar servicios de terceros, incluyendo Plaid, Stripe, Supabase u otros proveedores
+        tecnológicos. El uso de esos servicios puede estar sujeto a sus propios términos y políticas.
+        DebtYa no es responsable por interrupciones, errores o decisiones tomadas por esos terceros.
+      </p>
+
+      <h3>8. Datos financieros e información</h3>
+      <p>
+        Autorizas a DebtYa a mostrar, procesar y almacenar la información que voluntariamente conectes
+        o ingreses en la plataforma para poder prestar el servicio.
+      </p>
+      <p>
+        Eres responsable de revisar la exactitud de tu información. DebtYa no garantiza que toda la
+        información importada desde terceros sea completa, exacta o continua.
+      </p>
+
+      <h3>9. Uso permitido</h3>
+      <p>Aceptas no:</p>
+      <ul>
+        <li>usar DebtYa para fines ilegales,</li>
+        <li>interferir con la seguridad o funcionamiento de la plataforma,</li>
+        <li>intentar acceder a cuentas, datos o sistemas ajenos,</li>
+        <li>copiar, revender o explotar comercialmente la plataforma sin autorización escrita.</li>
+      </ul>
+
+      <h3>10. Suspensión o terminación</h3>
+      <p>
+        Podemos suspender o terminar acceso a DebtYa si incumples estos Términos, si detectamos uso
+        fraudulento, abusivo o riesgoso, o si es necesario por razones técnicas, legales o de seguridad.
+      </p>
+      <p>
+        También puedes dejar de usar la plataforma en cualquier momento y cancelar tu suscripción
+        conforme a la política aplicable.
+      </p>
+
+      <h3>11. Propiedad intelectual</h3>
+      <p>
+        DebtYa y su contenido, diseño, marca, software, textos, estructura y materiales relacionados
+        son propiedad de DebtYa o de sus licenciantes y están protegidos por leyes aplicables.
+        No se te transfiere propiedad sobre la plataforma.
+      </p>
+
+      <h3>12. Descargos de responsabilidad</h3>
+      <p>
+        DebtYa se ofrece “tal cual” y “según disponibilidad”. En la medida permitida por la ley,
+        DebtYa renuncia a garantías expresas e implícitas, incluyendo garantías de comerciabilidad,
+        adecuación para un propósito particular y no infracción.
+      </p>
+      <p>
+        No garantizamos que la plataforma esté libre de errores, interrupciones o resultados no deseados.
+      </p>
+
+      <h3>13. Limitación de responsabilidad</h3>
+      <p>
+        En la medida permitida por la ley, DebtYa no será responsable por daños indirectos, incidentales,
+        especiales, consecuenciales o punitivos, ni por pérdida de datos, ingresos, oportunidades o beneficios,
+        derivados del uso o imposibilidad de uso de la plataforma.
+      </p>
+
+      <h3>14. Indemnización</h3>
+      <p>
+        Aceptas defender, indemnizar y mantener indemne a DebtYa frente a reclamaciones, pérdidas,
+        daños, responsabilidades y gastos derivados de tu uso de la plataforma o de tu incumplimiento
+        de estos Términos.
+      </p>
+
+      <h3>15. Cambios</h3>
+      <p>
+        Podemos actualizar estos Términos en cualquier momento. La versión actualizada entrará en vigor
+        al ser publicada en el sitio. Tu uso continuado de DebtYa implica aceptación de la versión vigente.
+      </p>
+
+      <h3>16. Ley aplicable</h3>
+      <p>
+        Estos Términos se regirán por las leyes del estado de Florida, sin perjuicio de sus principios
+        de conflicto de leyes, salvo que la ley aplicable disponga otra cosa.
+      </p>
+
+      <h3>17. Contacto</h3>
+      <p>
+        Si tienes preguntas sobre estos Términos, puedes contactarnos en:
+        <strong>support@debtya.com</strong>
+      </p>
+    </section>
+
+    <section id="privacidad" class="card">
+      <h2>Política de Privacidad</h2>
+      <p class="sub">Última actualización: 9 de abril de 2026</p>
+
+      <p>
+        DebtYa respeta tu privacidad. Esta Política describe cómo recopilamos, usamos, almacenamos
+        y compartimos información cuando usas nuestro sitio web y plataforma.
+      </p>
+
+      <h3>1. Información que recopilamos</h3>
+      <p>Podemos recopilar:</p>
+      <ul>
+        <li>nombre, email y credenciales de acceso,</li>
+        <li>información que ingresas manualmente sobre deudas, cuentas o planes,</li>
+        <li>información de uso de la plataforma,</li>
+        <li>información técnica del dispositivo y navegador,</li>
+        <li>información financiera que autorizas conectar a través de terceros como Plaid.</li>
+      </ul>
+
+      <h3>2. Cómo usamos la información</h3>
+      <p>Usamos tu información para:</p>
+      <ul>
+        <li>crear y administrar tu cuenta,</li>
+        <li>prestar y mejorar el servicio,</li>
+        <li>mostrarte tu panel, deudas, cuentas, estrategias y trazabilidad,</li>
+        <li>procesar suscripciones y facturación,</li>
+        <li>brindar soporte,</li>
+        <li>proteger la seguridad de la plataforma,</li>
+        <li>cumplir obligaciones legales.</li>
+      </ul>
+
+      <h3>3. Información conectada mediante terceros</h3>
+      <p>
+        Si conectas cuentas financieras mediante Plaid u otros proveedores, autorizas a DebtYa a recibir
+        la información necesaria para mostrarte y operar las funciones del servicio.
+      </p>
+      <p>
+        Esa información puede incluir cuentas, balances, transacciones u otros datos autorizados por ti.
+      </p>
+
+      <h3>4. Compartición de información</h3>
+      <p>No vendemos tu información personal.</p>
+      <p>Podemos compartir información con:</p>
+      <ul>
+        <li>proveedores tecnológicos y de infraestructura,</li>
+        <li>procesadores de pago,</li>
+        <li>integraciones autorizadas por ti,</li>
+        <li>autoridades o terceros cuando sea requerido por ley, proceso legal o para proteger derechos, seguridad o integridad de la plataforma.</li>
+      </ul>
+
+      <h3>5. Retención y seguridad</h3>
+      <p>
+        Tomamos medidas razonables para proteger tu información. Sin embargo, ningún sistema es 100% seguro
+        y no podemos garantizar seguridad absoluta.
+      </p>
+      <p>
+        Conservamos la información durante el tiempo razonablemente necesario para prestar el servicio,
+        cumplir requisitos legales, resolver disputas o hacer cumplir acuerdos.
+      </p>
+
+      <h3>6. Tus opciones</h3>
+      <p>Puedes:</p>
+      <ul>
+        <li>actualizar parte de tu información desde la plataforma,</li>
+        <li>cancelar tu cuenta,</li>
+        <li>dejar de conectar ciertas integraciones,</li>
+        <li>contactarnos para solicitudes razonables sobre tus datos, sujeto a ley aplicable.</li>
+      </ul>
+
+      <h3>7. Cookies y tecnologías similares</h3>
+      <p>
+        Podemos usar cookies y tecnologías similares para funciones esenciales, autenticación, rendimiento,
+        seguridad y análisis básico del servicio.
+      </p>
+
+      <h3>8. Menores</h3>
+      <p>DebtYa no está dirigido a menores de 18 años.</p>
+
+      <h3>9. Cambios a esta Política</h3>
+      <p>
+        Podemos actualizar esta Política de Privacidad. La versión vigente será la publicada en el sitio.
+      </p>
+
+      <h3>10. Contacto</h3>
+      <p>
+        Para preguntas sobre privacidad: <strong>support@debtya.com</strong>
+      </p>
+    </section>
+
+    <section id="cancelacion" class="card">
+      <h2>Política de Cancelación</h2>
+      <p class="sub">Última actualización: 9 de abril de 2026</p>
+
+      <p>Puedes cancelar tu suscripción a DebtYa en cualquier momento.</p>
+
+      <h3>Cómo cancelar</h3>
+      <p>Puedes cancelar:</p>
+      <ul>
+        <li>desde el portal de billing disponible en tu cuenta, o</li>
+        <li>contactando a soporte en <strong>support@debtya.com</strong></li>
+      </ul>
+
+      <h3>Cuándo surte efecto la cancelación</h3>
+      <p>
+        Si cancelas, tu suscripción permanecerá activa hasta el final del período ya pagado,
+        salvo que se indique lo contrario expresamente.
+      </p>
+      <p>
+        No se realizarán nuevos cobros una vez la cancelación quede efectiva para el siguiente ciclo.
+      </p>
+
+      <h3>Qué pasa después</h3>
+      <p>Después de cancelar:</p>
+      <ul>
+        <li>mantendrás acceso hasta el final del período pagado,</li>
+        <li>al terminar ese período, tu suscripción dejará de renovarse,</li>
+        <li>algunas funciones del servicio pueden dejar de estar disponibles.</li>
+      </ul>
+    </section>
+
+    <section id="reembolsos" class="card">
+      <h2>Política de Reembolsos</h2>
+      <p class="sub">Última actualización: 9 de abril de 2026</p>
+
+      <p>
+        Salvo que la ley aplicable exija lo contrario, los pagos de suscripción de DebtYa
+        <strong>no son reembolsables</strong> una vez procesados.
+      </p>
+
+      <h3>Sin prorrateo automático</h3>
+      <p>
+        Cuando cancelas, la cancelación evita renovaciones futuras, pero no genera automáticamente
+        reembolso ni prorrateo del período ya facturado.
+      </p>
+
+      <h3>Excepciones</h3>
+      <p>DebtYa podrá evaluar excepciones caso por caso, por ejemplo:</p>
+      <ul>
+        <li>cobro duplicado,</li>
+        <li>error técnico comprobable,</li>
+        <li>cobro no autorizado sujeto a revisión razonable.</li>
+      </ul>
+
+      <p>
+        Para solicitar revisión, escribe a <strong>support@debtya.com</strong>.
+      </p>
+
+      <p>
+        DebtYa se reserva el derecho de aprobar o negar solicitudes de excepción conforme a esta política
+        y a la información disponible.
+      </p>
+    </section>
+
+    <section id="disclaimer" class="card">
+      <h2>Aviso importante</h2>
+      <p class="sub">Disclaimer legal y financiero</p>
+
+      <p>
+        DebtYa es una herramienta de organización financiera personal.
+      </p>
+      <p>
+        DebtYa no es un banco, prestamista, cooperativa de crédito, asesor financiero, asesor legal,
+        firma de reparación de crédito ni servicio de liquidación o alivio de deudas.
+      </p>
+      <p>
+        DebtYa no garantiza resultados específicos, incluyendo reducción de deuda, disminución de intereses,
+        mejora de puntaje de crédito o ahorro garantizado.
+      </p>
+      <p>
+        La información mostrada por la plataforma es solo para ayudarte a organizar y dar seguimiento
+        a tu situación financiera. Debes evaluar por tu cuenta cualquier decisión financiera antes de actuar.
+      </p>
+
+      <div class="notice">
+        Al usar DebtYa, aceptas que el servicio es una herramienta de organización y seguimiento, y no
+        una promesa de resultado financiero, legal o crediticio.
+      </div>
+    </section>
+
+    <div class="card">
+      <h2>Texto corto para footer</h2>
+      <p class="sub">Úsalo en el footer principal de www.debtya.com</p>
+
+      <p>
+        <strong>DebtYa</strong> es una herramienta de organización financiera personal.
+        No es un banco, asesor financiero, agencia de reparación de crédito ni servicio de alivio de deudas.
+      </p>
+
+      <div class="footer-links">
+        <a href="#terminos">Términos</a>
+        <a href="#privacidad">Privacidad</a>
+        <a href="#cancelacion">Cancelación</a>
+        <a href="#reembolsos">Reembolsos</a>
+        <a href="mailto:support@debtya.com">Soporte</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Texto corto para pricing / checkout</h2>
+      <p class="sub">Úsalo cerca del botón de Stripe</p>
+
+      <p>
+        <strong>DebtYa Beta – $9.99 al mes.</strong> Suscripción mensual con renovación automática
+        hasta que canceles. Puedes cancelar en cualquier momento desde el portal de billing o
+        contactando a soporte. Aplican nuestros Términos, Política de Privacidad, Política de
+        Cancelación y Política de Reembolsos.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Texto corto para Plaid</h2>
+      <p class="sub">Úsalo cerca del botón “Conectar banco”</p>
+
+      <p>
+        Al conectar una cuenta, autorizas a DebtYa a recibir información financiera necesaria para
+        prestar el servicio mediante proveedores de terceros como Plaid. El uso de la plataforma está
+        sujeto a nuestras políticas y a los términos aplicables de esos proveedores.
+      </p>
+
+      <div class="footer">
+        Contacto general: <strong>support@debtya.com</strong>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
