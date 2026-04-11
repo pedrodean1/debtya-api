@@ -828,7 +828,7 @@
             </div>
             <div class="feature-card">
               <h3>Elige tu estrategia</h3>
-              <p>Compara avalanche y snowball para usar la estrategia que mejor encaje contigo.</p>
+              <p>Compara avalanche y snowball para elegir la estrategia que mejor encaje contigo.</p>
             </div>
             <div class="feature-card">
               <h3>Pasa del plan a la accion</h3>
@@ -841,7 +841,7 @@
           <div class="section-head">
             <div>
               <h2>Empieza en 4 pasos</h2>
-              <p class="sub">La forma mas simple de arrancar.</p>
+              <p class="sub">La forma mas simple de comenzar.</p>
             </div>
           </div>
 
@@ -866,7 +866,7 @@
               <div class="step-num">3</div>
               <div>
                 <h3>Organiza tu plan</h3>
-                <p>Agrega deudas, define estrategia y crea reglas simples para reducir la improvisacion.</p>
+                <p>Agrega deudas, define tu estrategia y crea reglas simples para reducir la improvisacion.</p>
               </div>
             </div>
 
@@ -1100,7 +1100,7 @@
               </div>
 
               <div class="mini-card">
-                <div class="label-top">Proxima fecha / periodo</div>
+                <div class="label-top">Proximo periodo</div>
                 <div id="billingPeriodText" class="value-top">-</div>
               </div>
 
@@ -1148,7 +1148,7 @@
 
             <div class="legal-note">
               Al conectar una cuenta, autorizas a DebtYa a recibir informacion financiera necesaria para prestar el servicio mediante proveedores de terceros como Plaid.
-              Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Privacidad</a>.
+              Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.
             </div>
           </section>
 
@@ -1187,10 +1187,10 @@
               <div class="field">
                 <label class="label">Tipo</label>
                 <select id="debtType" class="select">
-                  <option value="credit_card">Credit card</option>
-                  <option value="personal_loan">Personal loan</option>
-                  <option value="loan">Loan</option>
-                  <option value="other">Other</option>
+                  <option value="credit_card">Tarjeta de credito</option>
+                  <option value="personal_loan">Prestamo personal</option>
+                  <option value="loan">Prestamo</option>
+                  <option value="other">Otro</option>
                 </select>
               </div>
               <div class="field" style="grid-column:1 / -1;">
@@ -1216,8 +1216,8 @@
               <div class="field">
                 <label class="label">Modo</label>
                 <select id="ruleMode" class="select">
-                  <option value="roundup_percent">Roundup percent</option>
-                  <option value="fixed_amount">Fixed amount</option>
+                  <option value="roundup_percent">Roundup porcentual</option>
+                  <option value="fixed_amount">Monto fijo</option>
                 </select>
               </div>
               <div class="field">
@@ -1270,8 +1270,8 @@
                 <label class="label">Modo</label>
                 <select id="planMode" class="select">
                   <option value="manual">Manual</option>
-                  <option value="safe_auto">Safe auto</option>
-                  <option value="full_auto">Full auto</option>
+                  <option value="safe_auto">Automatico seguro</option>
+                  <option value="full_auto">Automatico total</option>
                 </select>
               </div>
               <div class="field">
@@ -1300,19 +1300,19 @@
           <section class="card">
             <div class="section-head">
               <div>
-                <h2>Payment intents</h2>
+                <h2>Intents de pago</h2>
                 <p class="sub">Revisa, aprueba y ejecuta los pagos construidos.</p>
               </div>
               <div class="section-actions">
                 <button id="refreshIntentsBtn" class="btn btn-light btn-small" type="button">Refrescar</button>
-                <button id="reconcileRecentBtn" class="btn btn-light btn-small" type="button">Reconcile recent</button>
+                <button id="reconcileRecentBtn" class="btn btn-light btn-small" type="button">Reconciliar recientes</button>
               </div>
             </div>
 
             <div class="tag-row" style="margin-bottom:14px;">
-              <span class="pill blue">Approved = listos para ejecutar</span>
-              <span class="pill orange">Draft / Pending / Built = por aprobar</span>
-              <span class="pill">Executed = ya aplicados</span>
+              <span class="pill blue">Aprobados = listos para ejecutar</span>
+              <span class="pill orange">Borrador / Pendiente / Generado = por aprobar</span>
+              <span class="pill">Ejecutados = ya aplicados</span>
             </div>
 
             <div id="intentsList" class="list list-scroll-sm"></div>
@@ -1444,6 +1444,20 @@
       const d = new Date(value);
       if (Number.isNaN(d.getTime())) return String(value);
       return d.toLocaleString();
+    }
+
+    function translateBillingStatus(status) {
+      const s = String(status || "").toLowerCase();
+      if (s === "active") return "Activa";
+      if (s === "trialing") return "En prueba";
+      if (s === "inactive") return "Inactiva";
+      if (s === "past_due") return "Pago vencido";
+      if (s === "canceled") return "Cancelada";
+      if (s === "unpaid") return "No pagada";
+      if (s === "incomplete") return "Incompleta";
+      if (s === "incomplete_expired") return "Incompleta vencida";
+      if (s === "paused") return "Pausada";
+      return status || "-";
     }
 
     function showMessage(target, text, type = "success") {
@@ -1644,7 +1658,13 @@
                 APR: <strong>${Number(debt.apr || 0).toFixed(2)}%</strong> ·
                 Minimo: <strong>${fmtMoney(debt.minimum_payment)}</strong> ·
                 Dia: <strong>${debt.due_day ?? "-"}</strong> ·
-                Tipo: <strong>${escapeHtml(debt.type || "-")}</strong>
+                Tipo: <strong>${escapeHtml(
+                  debt.type === "credit_card" ? "Tarjeta de credito" :
+                  debt.type === "personal_loan" ? "Prestamo personal" :
+                  debt.type === "loan" ? "Prestamo" :
+                  debt.type === "other" ? "Otro" :
+                  debt.type || "-"
+                )}</strong>
               </div>
             </div>
             <div class="right">
@@ -1672,17 +1692,22 @@
 
       state.rules.forEach((rule) => {
         const pillClass = rule.enabled ? "green" : "red";
+        const modeLabel =
+          rule.mode === "roundup_percent" ? "Roundup porcentual" :
+          rule.mode === "fixed_amount" ? "Monto fijo" :
+          rule.mode || "regla";
+
         const item = document.createElement("div");
         item.className = "item";
         item.innerHTML = `
           <div class="item-top">
             <div>
-              <div class="item-title">${escapeHtml(rule.mode || "rule")}</div>
+              <div class="item-title">${escapeHtml(modeLabel)}</div>
               <div class="item-meta">
-                Percent: <strong>${Number(rule.percent || 0)}%</strong> ·
-                Fixed: <strong>${fmtMoney(rule.fixed_amount)}</strong> ·
+                Porcentaje: <strong>${Number(rule.percent || 0)}%</strong> ·
+                Monto fijo: <strong>${fmtMoney(rule.fixed_amount)}</strong> ·
                 Roundup: <strong>${fmtMoney(rule.roundup_to || 0)}</strong> ·
-                Min purchase: <strong>${fmtMoney(rule.min_purchase_amount || 0)}</strong>
+                Compra minima: <strong>${fmtMoney(rule.min_purchase_amount || 0)}</strong>
               </div>
             </div>
             <div>
@@ -1696,14 +1721,22 @@
 
     function statusPill(status) {
       const s = String(status || "").toLowerCase();
-      if (s === "executed") return `<span class="pill green">executed</span>`;
-      if (s === "approved") return `<span class="pill blue">approved</span>`;
-      if (s === "active") return `<span class="pill green">active</span>`;
-      if (s === "trialing") return `<span class="pill blue">trialing</span>`;
-      if (s === "inactive") return `<span class="pill red">inactive</span>`;
-      if (["pending","built","proposed","ready","pending_review","draft","past_due","canceled","unpaid"].includes(s)) {
-        return `<span class="pill orange">${escapeHtml(s)}</span>`;
-      }
+      if (s === "executed") return `<span class="pill green">ejecutado</span>`;
+      if (s === "approved") return `<span class="pill blue">aprobado</span>`;
+      if (s === "active") return `<span class="pill green">activa</span>`;
+      if (s === "trialing") return `<span class="pill blue">en prueba</span>`;
+      if (s === "inactive") return `<span class="pill red">inactiva</span>`;
+      if (s === "draft") return `<span class="pill orange">borrador</span>`;
+      if (s === "pending") return `<span class="pill orange">pendiente</span>`;
+      if (s === "built") return `<span class="pill orange">generado</span>`;
+      if (s === "proposed") return `<span class="pill orange">propuesto</span>`;
+      if (s === "ready") return `<span class="pill orange">listo</span>`;
+      if (s === "pending_review") return `<span class="pill orange">pendiente de revision</span>`;
+      if (s === "past_due") return `<span class="pill orange">vencido</span>`;
+      if (s === "canceled") return `<span class="pill orange">cancelado</span>`;
+      if (s === "unpaid") return `<span class="pill orange">no pagado</span>`;
+      if (s === "avalanche") return `<span class="pill blue">avalanche</span>`;
+      if (s === "snowball") return `<span class="pill blue">snowball</span>`;
       return `<span class="pill">${escapeHtml(s || "-")}</span>`;
     }
 
@@ -1810,7 +1843,7 @@
               <div class="item-title">${escapeHtml(acc.name || "Cuenta")} ${acc.mask ? `· ****${escapeHtml(acc.mask)}` : ""}</div>
               <div class="item-meta">
                 Tipo: <strong>${escapeHtml(acc.type || "-")}</strong> ·
-                Subtype: <strong>${escapeHtml(acc.subtype || "-")}</strong>
+                Subtipo: <strong>${escapeHtml(acc.subtype || "-")}</strong>
               </div>
             </div>
             <div class="right">
@@ -1830,8 +1863,17 @@
       $("planMonthlyBudget").value = plan.monthly_budget_default ?? plan.monthly_budget ?? "";
       $("planExtraPayment").value = plan.extra_payment_default ?? "";
 
-      $("planStrategyText").textContent = plan.strategy || "manual";
-      $("planModeText").textContent = plan.automation_mode || plan.auto_mode || "manual";
+      $("planStrategyText").textContent =
+        plan.strategy === "avalanche" ? "Avalanche" :
+        plan.strategy === "snowball" ? "Snowball" :
+        (plan.strategy || "Manual");
+
+      $("planModeText").textContent =
+        (plan.automation_mode || plan.auto_mode) === "manual" ? "Manual" :
+        (plan.automation_mode || plan.auto_mode) === "safe_auto" ? "Automatico seguro" :
+        (plan.automation_mode || plan.auto_mode) === "full_auto" ? "Automatico total" :
+        (plan.automation_mode || plan.auto_mode || "Manual");
+
       $("planExtraText").textContent = fmtMoney(plan.extra_payment_default || 0);
     }
 
@@ -1849,7 +1891,7 @@
         cancel_at_period_end: false
       };
 
-      $("billingStatusText").textContent = billing.status || "inactive";
+      $("billingStatusText").textContent = translateBillingStatus(billing.status || "inactive");
       $("billingActiveText").textContent = billing.active ? "Si" : "No";
       $("billingPeriodText").textContent = billing.current_period_end ? fmtDate(billing.current_period_end) : "-";
 
@@ -2458,7 +2500,7 @@
         });
         showMessage(
           globalMessage,
-          `Reconcile recent OK. checked=${res.data?.checked ?? 0}, pending=${res.data?.pending ?? 0}.`,
+          `Reconciliacion reciente OK. revisados=${res.data?.checked ?? 0}, pendientes=${res.data?.pending ?? 0}.`,
           "success"
         );
         await Promise.all([refreshIntents(), refreshDebts(), refreshTrace()]);
