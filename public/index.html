@@ -203,6 +203,72 @@
     .btn-success{background:#ecfbf1;color:var(--green)}
     .btn-small{padding:8px 11px;font-size:13px;border-radius:10px}
 
+    .hero-actions .btn-primary{
+      padding:13px 18px;
+      font-size:15px;
+      box-shadow:0 4px 14px rgba(31,111,255,.28);
+    }
+    .hero-actions .btn-light{
+      background:#eef3f9;
+      color:var(--muted);
+      font-weight:600;
+    }
+
+    .ux-advanced-details{
+      margin-top:0;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:var(--card-2);
+      overflow:hidden;
+    }
+    .ux-advanced-details > summary{
+      cursor:pointer;
+      font-weight:700;
+      font-size:13px;
+      color:var(--muted);
+      padding:11px 14px;
+      list-style:none;
+      user-select:none;
+    }
+    .ux-advanced-details > summary::-webkit-details-marker{display:none}
+    .ux-advanced-inner{padding:0 14px 14px}
+    .ux-advanced-details.ux-operate-advanced{margin-top:12px}
+    #operatePanel .ux-advanced-inner .grid-4{margin:0}
+
+    .ux-topbar-more{
+      display:inline-block;
+      vertical-align:middle;
+    }
+    .ux-topbar-more > summary{
+      cursor:pointer;
+      list-style:none;
+      font-weight:700;
+      font-size:13px;
+      color:var(--muted);
+      padding:9px 12px;
+      border-radius:12px;
+      background:#f3f6fb;
+      border:1px solid var(--line);
+      user-select:none;
+    }
+    .ux-topbar-more > summary::-webkit-details-marker{display:none}
+    .ux-topbar-more[open] > summary{
+      color:var(--primary);
+      border-color:#c9d8f5;
+    }
+    .ux-topbar-more-inner{
+      margin-top:8px;
+      padding:4px 0 2px;
+    }
+
+    .section-head .ux-advanced-details{width:100%;max-width:100%}
+    .ux-advanced-inline-btns{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      padding:0 14px 12px;
+    }
+
     .grid-2,.grid-3,.grid-4{
       display:grid;
       gap:12px;
@@ -1103,7 +1169,12 @@
           <span id="sessionBadge" class="pill blue">Signed in</span>
           <button id="topUpgradeBtn" class="btn btn-primary hidden" type="button" data-i18n="btn_activate_plan">Activate plan</button>
           <button id="topManageBillingBtn" class="btn btn-light hidden" type="button" data-i18n="btn_manage_plan">Manage plan</button>
-          <button id="refreshAllBtn" class="btn btn-light" type="button" data-i18n="btn_refresh_all">Refresh all</button>
+          <details class="ux-topbar-more">
+            <summary data-i18n="advanced_topbar_toggle">More</summary>
+            <div class="ux-topbar-more-inner">
+              <button id="refreshAllBtn" class="btn btn-light" type="button" data-i18n="btn_refresh_all">Refresh all</button>
+            </div>
+          </details>
           <button id="logoutBtn" class="btn btn-danger" type="button" data-i18n="btn_logout">Log out</button>
         </div>
       </div>
@@ -1124,7 +1195,7 @@
           <div class="hero-actions">
             <button id="heroConnectBtn" class="btn btn-primary" type="button" data-i18n="btn_connect_bank">Connect bank</button>
             <button id="heroImportBtn" class="btn btn-light" type="button" data-i18n="btn_import_accounts">Import accounts</button>
-            <button id="heroBuildBtn" class="btn btn-secondary" type="button" data-i18n="btn_build_intents">Build intents</button>
+            <button id="heroBuildBtn" class="btn btn-light" type="button" data-i18n="btn_build_intents">Build intents</button>
           </div>
 
           <div class="stats">
@@ -1239,12 +1310,17 @@
               <button id="btnImportTransactions" class="btn btn-light" type="button" data-i18n="btn_import_tx">Import transactions</button>
             </div>
 
-            <div class="grid-4">
-              <button id="btnApplyRules" class="btn btn-secondary" type="button" data-i18n="btn_apply_rules">Apply rules</button>
-              <button id="btnBuildIntents" class="btn btn-secondary" type="button" data-i18n="btn_build_intents">Build intents</button>
-              <button id="btnApproveVisible" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve visible</button>
-              <button id="btnExecuteVisible" class="btn btn-primary" type="button" data-i18n="btn_execute_visible">Execute visible</button>
-            </div>
+            <details class="ux-advanced-details ux-operate-advanced">
+              <summary data-i18n="advanced_operate_toggle">More options</summary>
+              <div class="ux-advanced-inner">
+                <div class="grid-4">
+                  <button id="btnApplyRules" class="btn btn-secondary" type="button" data-i18n="btn_apply_rules">Apply rules</button>
+                  <button id="btnBuildIntents" class="btn btn-secondary" type="button" data-i18n="btn_build_intents">Build intents</button>
+                  <button id="btnApproveVisible" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve visible</button>
+                  <button id="btnExecuteVisible" class="btn btn-light" type="button" data-i18n="btn_execute_visible">Execute visible</button>
+                </div>
+              </div>
+            </details>
 
             <div class="section-note" data-i18n="operate_note">
               Use this block to run the main operational flow without leaving the dashboard.
@@ -1397,10 +1473,15 @@
 
             <div class="divider"></div>
 
-            <div class="grid-2">
-              <button id="compareStrategyBtn" class="btn btn-light" type="button" data-i18n="btn_compare">Compare strategies</button>
-              <button id="refreshPlanBtn" class="btn btn-light" type="button" data-i18n="btn_refresh_plan">Refresh plan</button>
-            </div>
+            <details class="ux-advanced-details" style="margin-top:14px;">
+              <summary data-i18n="advanced_plan_toggle">More options</summary>
+              <div class="ux-advanced-inner">
+                <div class="grid-2">
+                  <button id="compareStrategyBtn" class="btn btn-light" type="button" data-i18n="btn_compare">Compare strategies</button>
+                  <button id="refreshPlanBtn" class="btn btn-light" type="button" data-i18n="btn_refresh_plan">Refresh plan</button>
+                </div>
+              </div>
+            </details>
 
             <div id="compareResult" class="list" style="margin-top:14px;"></div>
           </section>
@@ -1412,8 +1493,13 @@
                 <p class="sub" data-i18n="intents_sub">Review, approve, and execute built payments.</p>
               </div>
               <div class="section-actions">
-                <button id="refreshIntentsBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
-                <button id="reconcileRecentBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_reconcile">Reconcile recent</button>
+                <details class="ux-advanced-details">
+                  <summary data-i18n="advanced_intents_toggle">More options</summary>
+                  <div class="ux-advanced-inline-btns">
+                    <button id="refreshIntentsBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
+                    <button id="reconcileRecentBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_reconcile">Reconcile recent</button>
+                  </div>
+                </details>
               </div>
             </div>
 
@@ -1485,7 +1571,7 @@
         btn_signup: "Create account",
         btn_start_now: "Get started",
         brand_tagline: "Pay down debt with more structure and less stress.",
-        land_pill: "Stable base validated in testing",
+        land_pill: "Built for real monthly use",
         land_hero_title: "Pay down debt with more structure, less stress, and a plan you can actually sustain.",
         land_hero_copy: "DebtYa helps you connect accounts, organize debts, automate useful rules, and turn your strategy into real payments with clarity, tracking, and control.",
         land_btn_demo: "See how it works",
@@ -1494,7 +1580,7 @@
         land_feat2_t: "Choose your strategy",
         land_feat2_p: "Compare avalanche and snowball to pick the approach that fits you best.",
         land_feat3_t: "Move from plan to action",
-        land_feat3_p: "Build intents, approve them, execute them, and review your full payment history.",
+        land_feat3_p: "Prepare suggested payments, approve them, run them, and keep a clear history.",
         land_steps_title: "Start in 4 steps",
         land_steps_sub: "The simplest way to begin.",
         land_step1_t: "Create your account or log in",
@@ -1504,24 +1590,24 @@
         land_step3_t: "Organize your plan",
         land_step3_p: "Add debts, define your strategy, and create simple rules to reduce guesswork.",
         land_step4_t: "Activate your plan",
-        land_step4_p: 'With "Get started" you enter Stripe Checkout, then return to DebtYa with your subscription ready.',
+        land_step4_p: 'Tap "Get started" to complete payment and return here with your plan active.',
         land_ideal_strong: "Ideal for:",
         land_ideal_body: "People juggling multiple debts who want a clear, repeatable system that is easier to sustain month to month.",
         price_name: "DebtYa Beta",
         price_copy: "Everything you need to connect accounts, organize debts, automate useful rules, and turn your strategy into real payments.",
         price_freq: "per month",
-        price_i1: "Bank connection with Plaid",
+        price_i1: "Secure bank connection",
         price_i2: "Account and transaction import",
         price_i3: "Debt creation and tracking",
         price_i4: "Automatic rules such as roundup or fixed amount",
         price_i5: "Avalanche vs snowball comparison",
-        price_i6: "Build, approve, and execute payment intents",
-        price_i7: "Payment history and traceability",
-        price_i8: "Stable base ready for daily validation",
+        price_i6: "Prepare, approve, and run suggested payments",
+        price_i7: "Payment history you can review anytime",
+        price_i8: "Steady foundation for month-to-month use",
         price_have_account: "I already have an account",
-        price_helper: 'If you are already signed in, "Get started" opens Stripe Checkout. If not, you will be asked to log in or create an account first.',
+        price_helper: 'If you are already signed in, "Get started" continues to secure checkout. Otherwise you will sign in or create an account first.',
         legal_banner_title: "Terms and policies",
-        legal_banner_copy: "DebtYa Beta is $9.99 per month. Your subscription renews automatically until you cancel. You can cancel anytime from the billing portal or by contacting support.",
+        legal_banner_copy: "DebtYa Beta is $9.99 per month. Your subscription renews automatically until you cancel. You can cancel anytime from your account settings or by contacting support.",
         legal_link_terms: "Terms",
         legal_link_privacy: "Privacy",
         legal_link_cancel: "Cancellation",
@@ -1531,7 +1617,7 @@
         lbl_password: "Password",
         ph_email: "you@email.com",
         btn_reset_pw: "Email me a password reset link",
-        auth_footer_hint: "Sign in to connect your bank, activate your plan, and work with your real system.",
+        auth_footer_hint: "Sign in to connect your bank, activate your plan, and use your own numbers.",
         app_welcome_default: "Home",
         badge_session: "Signed in",
         badge_sub_active: "Subscription active",
@@ -1540,19 +1626,23 @@
         btn_manage_plan: "Manage plan",
         btn_refresh_all: "Refresh all",
         btn_logout: "Log out",
+        advanced_topbar_toggle: "More",
+        advanced_operate_toggle: "Advanced — rules & suggested payments",
+        advanced_plan_toggle: "More plan options",
+        advanced_intents_toggle: "More list options",
         nav_overview: "Overview",
-        nav_operate: "Operate",
-        nav_setup: "Setup",
+        nav_operate: "Quick actions",
+        nav_setup: "Debts & plan",
         hero_title: "Less guesswork. More control. More progress.",
-        hero_copy: "Use DebtYa to organize debts, connect accounts, define automatic rules, and turn your strategy into real payments with visibility and traceability.",
+        hero_copy: "Organize your debts, connect your bank, set simple rules, and turn your plan into real payments—with a clear view of what happens next.",
         btn_connect_bank: "Connect bank",
         btn_import_accounts: "Import accounts",
         btn_import_tx: "Import transactions",
-        btn_build_intents: "Build intents",
+        btn_build_intents: "Prepare suggested payments",
         stat_total_debt: "Total debt",
         stat_active_debts: "Active debts",
-        stat_pending_intents: "Pending intents",
-        stat_executed_intents: "Executed intents",
+        stat_pending_intents: "Suggested payments waiting",
+        stat_executed_intents: "Payments completed",
         plan_summary_title: "Plan summary",
         plan_summary_sub: "The most important parts of your current setup.",
         lbl_strategy: "Strategy",
@@ -1561,20 +1651,20 @@
         lbl_how_it_works: "How it works",
         plan_how_hint: "Avalanche targets the highest interest rate first. Snowball targets the smallest balance first.",
         sub_title: "Subscription",
-        sub_sub: "Current billing status in Stripe.",
+        sub_sub: "Your plan and renewal status.",
         btn_refresh: "Refresh",
         lbl_status: "Status",
         lbl_active: "Active",
         lbl_next_period: "Next period",
         lbl_actions: "Actions",
-        sub_portal_hint: "If your plan is active, you can open the portal to manage it.",
-        operate_title: "Operate",
-        operate_sub: "Day-to-day actions on your system.",
+        sub_portal_hint: "If your plan is active, you can open your account page to manage it.",
+        operate_title: "Quick actions",
+        operate_sub: "Connect your bank and refresh your data. Advanced steps stay tucked below.",
         btn_apply_rules: "Apply rules",
-        btn_approve_visible: "Approve visible",
-        btn_execute_visible: "Execute visible",
-        operate_note: "Use this block to run the main operational flow without leaving the dashboard.",
-        operate_legal_html: 'By connecting an account, you authorize DebtYa to receive financial information needed to provide the service through third-party providers such as Plaid. Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
+        btn_approve_visible: "Approve payments",
+        btn_execute_visible: "Run payments",
+        operate_note: "Connect and import first. When you are ready, open Advanced for rules and suggested payments.",
+        operate_legal_html: 'By connecting an account, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers. Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
         debts_title: "Debts",
         debts_sub: "Create and review your active debts.",
         lbl_name: "Name",
@@ -1608,19 +1698,19 @@
         btn_save_plan: "Save plan",
         btn_compare: "Compare strategies",
         btn_refresh_plan: "Refresh plan",
-        intents_title: "Payment intents",
-        intents_sub: "Review, approve, and execute built payments.",
-        btn_reconcile: "Reconcile recent",
-        tag_approved: "Approved = ready to execute",
-        tag_pending: "Draft / Pending / Built = needs approval",
-        tag_executed: "Executed = already applied",
+        intents_title: "Suggested payments",
+        intents_sub: "Review suggested amounts, approve what looks right, then run them when you are ready.",
+        btn_reconcile: "Update recent payments",
+        tag_approved: "Approved — ready to run",
+        tag_pending: "Draft or waiting — needs your OK",
+        tag_executed: "Done — applied to your balances",
         history_title: "History",
-        history_sub: "Payment trail, execution, and balance updates.",
+        history_sub: "See payments and how your balances changed.",
         accounts_title: "Connected accounts",
-        accounts_sub: "Imported from Plaid, grouped by cash and debt accounts.",
-        accounts_sec_cash: "Cash and checking (depository)",
-        accounts_sec_debt: "Credit cards and loans (liabilities)",
-        accounts_sec_other: "Other accounts (investments, brokerage, etc.)",
+        accounts_sub: "Synced from your bank: cash accounts and debts in separate groups.",
+        accounts_sec_cash: "Cash and checking",
+        accounts_sec_debt: "Credit cards and loans",
+        accounts_sec_other: "Other (investments and similar)",
         accounts_empty_section: "No accounts in this category.",
         kind_checking: "Checking",
         kind_savings: "Savings",
@@ -1656,14 +1746,14 @@
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
         empty_rules: "You have no saved rules yet.",
-        empty_intents: "No payment intents have been built yet.",
+        empty_intents: "No suggested payments yet. Open Advanced under Quick actions when you are ready to prepare them.",
         empty_trace: "No history available yet.",
         empty_accounts: "No imported accounts yet.",
         empty_compare: "No comparison available yet.",
-        lbl_link_plaid: "Linked Plaid account (optional)",
-        debt_link_help: "Import accounts from Plaid first, then choose a match.",
+        lbl_link_plaid: "Linked bank account (optional)",
+        debt_link_help: "After you connect your bank and import accounts, you can match one here.",
         debt_link_none: "None",
-        lbl_linked_plaid_block: "Linked bank account (Plaid)",
+        lbl_linked_plaid_block: "Linked bank account",
         debt_link_orphan: "Saved link not found among imported accounts. Pick again or unlink.",
         debt_link_saved: "Link updated.",
         err_debt_link_invalid: "That account cannot be linked. Import it first or pick another.",
@@ -1686,14 +1776,14 @@
         pill_inactive: "inactive",
         pill_draft: "draft",
         pill_pending: "pending",
-        pill_built: "built",
+        pill_built: "suggested",
         pill_proposed: "proposed",
         pill_ready: "ready",
         pill_pending_review: "pending review",
         pill_past_due: "past due",
         pill_canceled: "canceled",
         pill_unpaid: "unpaid",
-        intent_title: "Intent",
+        intent_title: "Payment",
         meta_debt: "Debt",
         meta_total: "Total",
         meta_created: "Created",
@@ -1735,21 +1825,21 @@
         session_ok: "Signed in.",
         acct_created_check: "Account created. Check your email if confirmation is required, then sign in.",
         acct_created_in: "Account created and signed in.",
-        stripe_opening: "Opening Stripe...",
-        portal_opening: "Opening portal...",
-        plaid_opening: "Opening Plaid...",
+        stripe_opening: "Opening secure checkout...",
+        portal_opening: "Opening your account page...",
+        plaid_opening: "Opening bank connection...",
         importing: "Importing...",
         applying: "Applying...",
-        building: "Building...",
+        building: "Preparing...",
         approving: "Approving...",
         executing: "Executing...",
         reconciling: "Reconciling...",
-        checkout_need_auth: "Sign in or create an account first to continue to Stripe Checkout.",
-        checkout_done_refresh: "Subscription completed. Refreshing billing...",
-        checkout_cancel: "Stripe Checkout was canceled.",
+        checkout_need_auth: "Sign in or create an account first to continue.",
+        checkout_done_refresh: "Subscription completed. Refreshing your plan...",
+        checkout_cancel: "Checkout was canceled.",
         checkout_done_signin: "Checkout completed. Sign in to see your subscription.",
-        intent_ok: "Intent approved.",
-        intent_exec_ok: "Intent executed.",
+        intent_ok: "Payment approved.",
+        intent_exec_ok: "Payment completed.",
         debt_saved: "Debt saved successfully.",
         rule_saved: "Rule saved successfully.",
         plan_saved: "Plan saved successfully.",
@@ -1757,26 +1847,26 @@
         accounts_imp: "Accounts imported",
         tx_imp: "Transactions imported",
         rules_applied: "Rules applied. Created",
-        intents_built: "Intents built successfully.",
+        intents_built: "Suggested payments updated.",
         approved_n: "Approved",
         executed_n: "Executed",
-        reconcile_ok: "Recent reconciliation OK",
+        reconcile_ok: "Recent payments updated",
         connecting_bank: "Connecting bank...",
         bank_ok: "Bank connected successfully.",
         sign_in_first: "Please sign in first.",
-        plaid_script: "Plaid did not load on the page.",
-        no_link_token: "link_token was not returned by the server.",
+        plaid_script: "Bank link could not load on this page.",
+        no_link_token: "Connection token was not returned by the server.",
         proc_loading: "Loading...",
-        err_checkout_url: "Stripe did not return a checkout URL.",
-        err_portal_url: "Stripe did not return the portal URL.",
-        err_plaid_exit: "Plaid closed with an error."
+        err_checkout_url: "Checkout link was not available. Try again.",
+        err_portal_url: "Account page link was not available. Try again.",
+        err_plaid_exit: "Bank connection closed with an error."
       },
       es: {
         btn_login: "Entrar",
         btn_signup: "Crear cuenta",
         btn_start_now: "Empieza ahora",
         brand_tagline: "Paga tus deudas con mas orden y menos estres.",
-        land_pill: "Base estable validada en test",
+        land_pill: "Pensado para el dia a dia",
         land_hero_title: "Paga tus deudas con mas orden, menos estres y un plan que si puedes sostener.",
         land_hero_copy: "DebtYa te ayuda a conectar tus cuentas, organizar tus deudas, automatizar reglas utiles y convertir tu estrategia en pagos reales con claridad, seguimiento y control.",
         land_btn_demo: "Ver como funciona",
@@ -1785,7 +1875,7 @@
         land_feat2_t: "Elige tu estrategia",
         land_feat2_p: "Compara avalanche y snowball para elegir la estrategia que mejor encaje contigo.",
         land_feat3_t: "Pasa del plan a la accion",
-        land_feat3_p: "Construye intents, apruebalos, ejecutalos y revisa el historial completo de tus pagos.",
+        land_feat3_p: "Prepara pagos sugeridos, apruebalos, ejecutalos y manten un historial claro.",
         land_steps_title: "Empieza en 4 pasos",
         land_steps_sub: "La forma mas simple de comenzar.",
         land_step1_t: "Crea tu cuenta o entra",
@@ -1795,24 +1885,24 @@
         land_step3_t: "Organiza tu plan",
         land_step3_p: "Agrega deudas, define tu estrategia y crea reglas simples para reducir la improvisacion.",
         land_step4_t: "Activa tu plan",
-        land_step4_p: 'Con "Empieza ahora" entras a Stripe Checkout y luego vuelves a DebtYa con tu suscripcion lista.',
+        land_step4_p: 'Con "Empieza ahora" completas el pago y vuelves aqui con tu plan activo.',
         land_ideal_strong: "Ideal para:",
         land_ideal_body: "Personas con varias deudas que quieren un sistema claro, repetible y mucho mas facil de sostener cada mes.",
         price_name: "DebtYa Beta",
         price_copy: "Todo lo necesario para conectar tus cuentas, organizar tus deudas, automatizar reglas utiles y convertir tu estrategia en pagos reales.",
         price_freq: "al mes",
-        price_i1: "Conexion bancaria con Plaid",
+        price_i1: "Conexion bancaria segura",
         price_i2: "Importacion de cuentas y transacciones",
         price_i3: "Creacion y seguimiento de deudas",
-        price_i4: "Reglas automaticas como roundup o monto fijo",
+        price_i4: "Reglas automaticas como redondeo o monto fijo",
         price_i5: "Comparacion avalanche vs snowball",
-        price_i6: "Construccion, aprobacion y ejecucion de intents",
-        price_i7: "Historial y trazabilidad de pagos",
-        price_i8: "Base estable lista para validacion diaria",
+        price_i6: "Preparar, aprobar y ejecutar pagos sugeridos",
+        price_i7: "Historial de pagos que puedes revisar cuando quieras",
+        price_i8: "Base estable para usar mes a mes",
         price_have_account: "Ya tengo cuenta",
-        price_helper: 'Si ya tienes sesion iniciada, "Empieza ahora" abre Stripe Checkout. Si no, te lleva a entrar o crear tu cuenta primero.',
+        price_helper: 'Si ya tienes sesion iniciada, "Empieza ahora" sigue a un pago seguro. Si no, primero entraras o crearas tu cuenta.',
         legal_banner_title: "Terminos y politicas",
-        legal_banner_copy: "DebtYa Beta cuesta $9.99 al mes. La suscripcion se renueva automaticamente hasta que canceles. Puedes cancelar en cualquier momento desde el portal de billing o escribiendo a soporte.",
+        legal_banner_copy: "DebtYa Beta cuesta $9.99 al mes. La suscripcion se renueva automaticamente hasta que canceles. Puedes cancelar en cualquier momento desde la configuracion de tu cuenta o escribiendo a soporte.",
         legal_link_terms: "Terminos",
         legal_link_privacy: "Privacidad",
         legal_link_cancel: "Cancelacion",
@@ -1822,7 +1912,7 @@
         lbl_password: "Contrasena",
         ph_email: "tu@email.com",
         btn_reset_pw: "Enviar link para cambiar contrasena",
-        auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y operar sobre tu sistema real.",
+        auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y usar tus datos reales.",
         app_welcome_default: "Panel principal",
         badge_session: "Sesion activa",
         badge_sub_active: "Suscripcion activa",
@@ -1831,19 +1921,23 @@
         btn_manage_plan: "Administrar plan",
         btn_refresh_all: "Refrescar todo",
         btn_logout: "Salir",
+        advanced_topbar_toggle: "Mas",
+        advanced_operate_toggle: "Avanzado — reglas y pagos sugeridos",
+        advanced_plan_toggle: "Mas opciones del plan",
+        advanced_intents_toggle: "Mas opciones de la lista",
         nav_overview: "Resumen",
-        nav_operate: "Operar",
-        nav_setup: "Configurar",
+        nav_operate: "Acciones rapidas",
+        nav_setup: "Deudas y plan",
         hero_title: "Menos improvisacion. Mas control. Mas progreso.",
-        hero_copy: "Usa DebtYa para organizar tus deudas, conectar tus cuentas, definir reglas automaticas y convertir tu estrategia en pagos reales con visibilidad y trazabilidad.",
+        hero_copy: "Organiza tus deudas, conecta tu banco, define reglas sencillas y lleva tu plan a pagos reales, con claridad sobre lo que sigue.",
         btn_connect_bank: "Conectar banco",
         btn_import_accounts: "Importar cuentas",
         btn_import_tx: "Importar transacciones",
-        btn_build_intents: "Construir intents",
+        btn_build_intents: "Preparar pagos sugeridos",
         stat_total_debt: "Deuda total",
         stat_active_debts: "Deudas activas",
-        stat_pending_intents: "Intents pendientes",
-        stat_executed_intents: "Intents ejecutados",
+        stat_pending_intents: "Pagos sugeridos en espera",
+        stat_executed_intents: "Pagos realizados",
         plan_summary_title: "Resumen del plan",
         plan_summary_sub: "Lo mas importante de tu configuracion actual.",
         lbl_strategy: "Estrategia",
@@ -1852,20 +1946,20 @@
         lbl_how_it_works: "Como funciona",
         plan_how_hint: "Avalanche ataca primero la tasa mas alta. Snowball ataca primero el balance mas pequeno.",
         sub_title: "Suscripcion",
-        sub_sub: "Estado actual de tu billing en Stripe.",
+        sub_sub: "Estado de tu plan y renovacion.",
         btn_refresh: "Refrescar",
         lbl_status: "Estado",
         lbl_active: "Activo",
         lbl_next_period: "Proximo periodo",
         lbl_actions: "Acciones",
-        sub_portal_hint: "Si tu plan esta activo, puedes abrir el portal para administrarlo.",
-        operate_title: "Operar",
-        operate_sub: "Acciones del dia a dia sobre tu sistema.",
+        sub_portal_hint: "Si tu plan esta activo, puedes abrir la pagina de tu cuenta para administrarlo.",
+        operate_title: "Acciones rapidas",
+        operate_sub: "Conecta tu banco y actualiza datos. Los pasos avanzados van en la seccion desplegable.",
         btn_apply_rules: "Aplicar reglas",
-        btn_approve_visible: "Aprobar visibles",
-        btn_execute_visible: "Ejecutar visibles",
-        operate_note: "Usa este bloque para correr el flujo operativo principal sin salir del panel.",
-        operate_legal_html: 'Al conectar una cuenta, autorizas a DebtYa a recibir informacion financiera necesaria para prestar el servicio mediante proveedores de terceros como Plaid. Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
+        btn_approve_visible: "Aprobar pagos",
+        btn_execute_visible: "Ejecutar pagos",
+        operate_note: "Primero conecta e importa. Cuando quieras reglas o pagos sugeridos, abre Avanzado.",
+        operate_legal_html: 'Al conectar una cuenta, autorizas a DebtYa a recibir la informacion financiera necesaria para el servicio a traves de proveedores de confianza. Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
         debts_title: "Deudas",
         debts_sub: "Crea y revisa tus deudas activas.",
         lbl_name: "Nombre",
@@ -1899,19 +1993,19 @@
         btn_save_plan: "Guardar plan",
         btn_compare: "Comparar estrategias",
         btn_refresh_plan: "Refrescar plan",
-        intents_title: "Intents de pago",
-        intents_sub: "Revisa, aprueba y ejecuta los pagos construidos.",
-        btn_reconcile: "Reconciliar recientes",
-        tag_approved: "Aprobados = listos para ejecutar",
-        tag_pending: "Borrador / Pendiente / Generado = por aprobar",
-        tag_executed: "Ejecutados = ya aplicados",
+        intents_title: "Pagos sugeridos",
+        intents_sub: "Revisa montos sugeridos, aprueba lo que te encaje y ejecuta cuando estes listo.",
+        btn_reconcile: "Actualizar pagos recientes",
+        tag_approved: "Aprobados — listos para ejecutar",
+        tag_pending: "Borrador o en espera — falta tu visto bueno",
+        tag_executed: "Listos — ya aplicados a tus balances",
         history_title: "Historial",
-        history_sub: "Rastro de pagos, ejecucion y rebaja de balances.",
+        history_sub: "Pagos y como cambiaron tus balances.",
         accounts_title: "Cuentas conectadas",
-        accounts_sub: "Importadas desde Plaid, agrupadas en efectivo y deudas.",
-        accounts_sec_cash: "Efectivo y cuentas corrientes (depository)",
-        accounts_sec_debt: "Tarjetas de credito y prestamos (liabilities)",
-        accounts_sec_other: "Otras cuentas (inversiones, brokerage, etc.)",
+        accounts_sub: "Sincronizadas con tu banco: efectivo y deudas en grupos separados.",
+        accounts_sec_cash: "Efectivo y cuentas corrientes",
+        accounts_sec_debt: "Tarjetas y prestamos",
+        accounts_sec_other: "Otras (inversiones y similares)",
         accounts_empty_section: "No hay cuentas en esta categoria.",
         kind_checking: "Cuenta corriente",
         kind_savings: "Ahorros",
@@ -1947,14 +2041,14 @@
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
         empty_rules: "Todavia no tienes reglas guardadas.",
-        empty_intents: "Todavia no hay intents construidos.",
+        empty_intents: "Aun no hay pagos sugeridos. Abre Avanzado en Acciones rapidas cuando quieras prepararlos.",
         empty_trace: "Todavia no hay historial disponible.",
         empty_accounts: "Todavia no hay cuentas importadas.",
         empty_compare: "Todavia no hay comparacion disponible.",
-        lbl_link_plaid: "Cuenta Plaid vinculada (opcional)",
-        debt_link_help: "Primero importa cuentas desde Plaid y luego elige la que corresponda.",
+        lbl_link_plaid: "Cuenta bancaria vinculada (opcional)",
+        debt_link_help: "Despues de conectar tu banco e importar cuentas, puedes elegir la que corresponda.",
         debt_link_none: "Ninguna",
-        lbl_linked_plaid_block: "Cuenta bancaria vinculada (Plaid)",
+        lbl_linked_plaid_block: "Cuenta bancaria vinculada",
         debt_link_orphan: "El vinculo guardado no aparece entre las cuentas importadas. Elige de nuevo o desvincula.",
         debt_link_saved: "Vinculo actualizado.",
         err_debt_link_invalid: "No se puede vincular esa cuenta. Importala primero u otra.",
@@ -1977,14 +2071,14 @@
         pill_inactive: "inactiva",
         pill_draft: "borrador",
         pill_pending: "pendiente",
-        pill_built: "generado",
+        pill_built: "sugerido",
         pill_proposed: "propuesto",
         pill_ready: "listo",
         pill_pending_review: "pendiente de revision",
         pill_past_due: "vencido",
         pill_canceled: "cancelado",
         pill_unpaid: "no pagado",
-        intent_title: "Intent",
+        intent_title: "Pago",
         meta_debt: "Deuda",
         meta_total: "Total",
         meta_created: "Creado",
@@ -2026,21 +2120,21 @@
         session_ok: "Sesion iniciada.",
         acct_created_check: "Cuenta creada. Revisa tu email si pide confirmacion y luego entra.",
         acct_created_in: "Cuenta creada e iniciada.",
-        stripe_opening: "Abriendo Stripe...",
-        portal_opening: "Abriendo portal...",
-        plaid_opening: "Abriendo Plaid...",
+        stripe_opening: "Abriendo pago seguro...",
+        portal_opening: "Abriendo tu cuenta...",
+        plaid_opening: "Abriendo conexion bancaria...",
         importing: "Importando...",
         applying: "Aplicando...",
-        building: "Construyendo...",
+        building: "Preparando...",
         approving: "Aprobando...",
         executing: "Ejecutando...",
-        reconciling: "Reconciliando...",
-        checkout_need_auth: "Primero entra o crea tu cuenta para continuar con Stripe Checkout.",
-        checkout_done_refresh: "Suscripcion completada. Refrescando billing...",
-        checkout_cancel: "Stripe Checkout fue cancelado.",
-        checkout_done_signin: "Checkout completado. Entra a tu cuenta para ver tu suscripcion.",
-        intent_ok: "Intent aprobado.",
-        intent_exec_ok: "Intent ejecutado.",
+        reconciling: "Actualizando...",
+        checkout_need_auth: "Primero entra o crea tu cuenta para continuar.",
+        checkout_done_refresh: "Suscripcion completada. Actualizando tu plan...",
+        checkout_cancel: "El pago fue cancelado.",
+        checkout_done_signin: "Pago completado. Entra a tu cuenta para ver tu suscripcion.",
+        intent_ok: "Pago aprobado.",
+        intent_exec_ok: "Pago completado.",
         debt_saved: "Deuda guardada correctamente.",
         rule_saved: "Regla guardada correctamente.",
         plan_saved: "Plan guardado correctamente.",
@@ -2048,19 +2142,19 @@
         accounts_imp: "Cuentas importadas",
         tx_imp: "Transacciones importadas",
         rules_applied: "Reglas aplicadas. Creados",
-        intents_built: "Intents construidos correctamente.",
+        intents_built: "Pagos sugeridos actualizados.",
         approved_n: "Aprobados",
         executed_n: "Ejecutados",
-        reconcile_ok: "Reconciliacion reciente OK",
+        reconcile_ok: "Pagos recientes actualizados",
         connecting_bank: "Conectando banco...",
         bank_ok: "Banco conectado correctamente.",
         sign_in_first: "Primero inicia sesion.",
-        plaid_script: "Plaid no cargo en la pagina.",
-        no_link_token: "No llego link_token del backend.",
+        plaid_script: "No se pudo cargar el enlace bancario en esta pagina.",
+        no_link_token: "No llego el token de conexion del servidor.",
         proc_loading: "Cargando...",
-        err_checkout_url: "Stripe no devolvio URL de checkout.",
-        err_portal_url: "Stripe no devolvio URL del portal.",
-        err_plaid_exit: "Plaid se cerro con error."
+        err_checkout_url: "El enlace de pago no estuvo disponible. Intentalo de nuevo.",
+        err_portal_url: "El enlace de tu cuenta no estuvo disponible. Intentalo de nuevo.",
+        err_plaid_exit: "La conexion bancaria se cerro con error."
       }
     };
 
