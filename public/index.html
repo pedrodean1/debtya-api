@@ -1089,6 +1089,243 @@
     .debt-sync-balance-wrap{
       margin-top:12px;
     }
+    .debt-form-review-note{
+      margin:0 0 16px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid #d7e6ff;
+      background:linear-gradient(180deg,#f7faff,#fbfdff);
+      font-size:14px;
+      line-height:1.55;
+      color:var(--text);
+    }
+    .debt-field-suggested > .label{
+      color:var(--primary);
+    }
+    .debt-field-suggested .input{
+      border-color:#7ea8ff;
+      box-shadow:0 0 0 3px rgba(31,111,255,.09);
+    }
+
+    .landing-grid .faq-landing-card{
+      grid-column:1 / -1;
+    }
+
+    .faq-landing-card .faq-list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .faq-item{
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fff;
+      padding:0 14px;
+    }
+
+    .faq-item summary{
+      cursor:pointer;
+      font-weight:700;
+      font-size:15px;
+      padding:14px 0;
+      list-style:none;
+    }
+
+    .faq-item summary::-webkit-details-marker{display:none}
+
+    .faq-item .faq-a{
+      margin:0 0 14px;
+      font-size:14px;
+      line-height:1.55;
+      color:var(--muted);
+    }
+
+    .help-fab{
+      position:fixed;
+      right:18px;
+      bottom:18px;
+      z-index:60;
+      width:52px;
+      height:52px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:linear-gradient(180deg,#1f6fff,#1557d6);
+      color:#fff;
+      font-size:22px;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:0 10px 28px rgba(31,111,255,.35);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1;
+    }
+
+    .help-fab:hover{filter:brightness(1.05)}
+
+    .help-modal-root{
+      position:fixed;
+      inset:0;
+      z-index:70;
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      padding:16px;
+      pointer-events:none;
+    }
+
+    .help-modal-root:not(.hidden){pointer-events:auto}
+
+    .help-modal-backdrop{
+      position:absolute;
+      inset:0;
+      background:rgba(15,23,42,.45);
+      pointer-events:auto;
+    }
+
+    .help-modal{
+      position:relative;
+      width:min(440px,calc(100vw - 24px));
+      max-height:min(560px,calc(100vh - 100px));
+      background:#fff;
+      border-radius:18px;
+      border:1px solid var(--border);
+      box-shadow:0 24px 60px rgba(15,23,42,.2);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      pointer-events:auto;
+    }
+
+    .help-modal-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:14px 16px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .help-modal-header h2{
+      margin:0;
+      font-size:18px;
+      letter-spacing:-.3px;
+    }
+
+    .help-tabs{
+      display:flex;
+      gap:6px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--border);
+      background:#fafbff;
+      flex-wrap:wrap;
+    }
+
+    .help-tab{
+      border:1px solid transparent;
+      background:#fff;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      color:var(--muted);
+    }
+
+    .help-tab.active{
+      border-color:#cfe0ff;
+      color:var(--primary);
+      background:#f0f6ff;
+    }
+
+    .help-panel{
+      padding:14px 16px 16px;
+      overflow-y:auto;
+      flex:1;
+      min-height:200px;
+      font-size:14px;
+      line-height:1.55;
+    }
+
+    .help-guide-step{
+      margin-bottom:14px;
+    }
+
+    .help-guide-step h3{
+      margin:0 0 6px;
+      font-size:14px;
+    }
+
+    .help-guide-step p{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .help-chat-log{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:10px;
+      min-height:140px;
+      max-height:220px;
+      overflow-y:auto;
+      background:#fafafa;
+      margin-bottom:10px;
+      font-size:13px;
+    }
+
+    .help-chat-bubble{
+      margin-bottom:10px;
+      padding:8px 10px;
+      border-radius:12px;
+      max-width:100%;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    .help-chat-bubble.user{
+      margin-left:18px;
+      background:#e8f0ff;
+      color:var(--text);
+    }
+
+    .help-chat-bubble.bot{
+      margin-right:18px;
+      background:#fff;
+      border:1px solid var(--border);
+    }
+
+    .help-chat-bubble.err{
+      border-color:#f5b5b5;
+      background:#fff5f5;
+    }
+
+    .help-chat-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+    }
+
+    .help-chat-row textarea{
+      flex:1;
+      min-width:0;
+      min-height:72px;
+      resize:vertical;
+    }
+
+    .help-mini{
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 10px;
+      line-height:1.45;
+    }
+
+    .help-jump-faq{
+      margin-top:12px;
+    }
   </style>
 </head>
 <body>
@@ -1189,6 +1426,41 @@
           <div class="notice">
             <strong data-i18n="land_ideal_strong">Ideal for:</strong><br />
             <span data-i18n="land_ideal_body">People juggling multiple debts who want a clear, repeatable system that is easier to sustain month to month.</span>
+          </div>
+        </div>
+
+        <div id="faqSection" class="card faq-landing-card card-soft">
+          <div class="section-head">
+            <div>
+              <h2 data-i18n="faq_title">Frequently asked questions</h2>
+              <p class="sub" data-i18n="faq_sub">Short answers about how DebtYa fits into your routine.</p>
+            </div>
+          </div>
+          <div class="faq-list">
+            <details class="faq-item">
+              <summary data-i18n="faq_q1">What is DebtYa?</summary>
+              <p class="faq-a" data-i18n="faq_a1"></p>
+            </details>
+            <details class="faq-item">
+              <summary data-i18n="faq_q2">Do I need to connect my bank?</summary>
+              <p class="faq-a" data-i18n="faq_a2"></p>
+            </details>
+            <details class="faq-item">
+              <summary data-i18n="faq_q3">Why review APR and minimum payment?</summary>
+              <p class="faq-a" data-i18n="faq_a3"></p>
+            </details>
+            <details class="faq-item">
+              <summary data-i18n="faq_q4">How does billing work?</summary>
+              <p class="faq-a" data-i18n="faq_a4"></p>
+            </details>
+            <details class="faq-item">
+              <summary data-i18n="faq_q5">Can I cancel anytime?</summary>
+              <p class="faq-a" data-i18n="faq_a5"></p>
+            </details>
+            <details class="faq-item">
+              <summary data-i18n="faq_q6">Who can I contact for help?</summary>
+              <p class="faq-a" data-i18n="faq_a6"></p>
+            </details>
           </div>
         </div>
       </section>
@@ -1495,6 +1767,8 @@
               </div>
             </div>
 
+            <p class="debt-form-review-note" data-i18n="debt_form_review_note">Before you save, review APR and minimum payment. They may be suggested starting values—compare with your statement and edit if needed.</p>
+
             <form id="debtForm" class="grid-3" style="margin-bottom:16px;">
               <div class="field debt-from-account-wrap" style="grid-column:1 / -1;">
                 <label class="label" for="debtFromAccountSelect" data-i18n="lbl_debt_from_account">Create debt from imported account</label>
@@ -1515,6 +1789,7 @@
               <div class="field">
                 <label class="label">APR</label>
                 <input id="debtApr" class="input" type="number" step="0.01" placeholder="24.99" required />
+                <p class="helper-text hidden" id="debtAprSuggestedHint" data-i18n="debt_apr_from_import_hint">From imported account data—confirm on your statement.</p>
               </div>
               <div class="field">
                 <label class="label" data-i18n="lbl_min_payment">Minimum payment</label>
@@ -1719,6 +1994,103 @@
     </div>
   </div>
 
+  <button type="button" id="helpFab" class="help-fab" aria-expanded="false" aria-controls="helpModalPanel" aria-label="Help">
+    ?
+  </button>
+
+  <div id="helpModalRoot" class="help-modal-root hidden" aria-hidden="true">
+    <div class="help-modal-backdrop" id="helpModalBackdrop" tabindex="-1"></div>
+    <div
+      class="help-modal"
+      id="helpModalPanel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="helpModalTitle"
+    >
+      <div class="help-modal-header">
+        <h2 id="helpModalTitle" data-i18n="help_modal_title">Help &amp; guide</h2>
+        <button type="button" id="helpModalClose" class="btn btn-light btn-small" data-i18n="help_close">
+          Close
+        </button>
+      </div>
+      <div class="help-tabs" role="tablist">
+        <button type="button" class="help-tab active" role="tab" data-help-tab="guide" data-i18n="help_tab_guide">
+          Guide
+        </button>
+        <button type="button" class="help-tab" role="tab" data-help-tab="ask" data-i18n="help_tab_ask">
+          Ask assistant
+        </button>
+        <button type="button" class="help-tab" role="tab" data-help-tab="faq" data-i18n="help_tab_faq">FAQ</button>
+      </div>
+
+      <div id="helpPanelGuide" class="help-panel" data-help-panel="guide">
+        <p class="help-mini" data-i18n="help_guide_intro"></p>
+        <div class="help-guide-step">
+          <h3 data-i18n="help_g1_t"></h3>
+          <p data-i18n="help_g1_p"></p>
+        </div>
+        <div class="help-guide-step">
+          <h3 data-i18n="help_g2_t"></h3>
+          <p data-i18n="help_g2_p"></p>
+        </div>
+        <div class="help-guide-step">
+          <h3 data-i18n="help_g3_t"></h3>
+          <p data-i18n="help_g3_p"></p>
+        </div>
+        <div class="help-guide-step">
+          <h3 data-i18n="help_g4_t"></h3>
+          <p data-i18n="help_g4_p"></p>
+        </div>
+        <div class="help-guide-step">
+          <h3 data-i18n="help_g5_t"></h3>
+          <p data-i18n="help_g5_p"></p>
+        </div>
+        <button type="button" id="helpJumpFaqBtn" class="btn btn-light help-jump-faq hidden" data-i18n="help_jump_faq">
+          Open FAQ on this page
+        </button>
+      </div>
+
+      <div id="helpPanelAsk" class="help-panel hidden" data-help-panel="ask">
+        <p id="helpAssistantOff" class="help-mini hidden" data-i18n="guide_assistant_off"></p>
+        <p class="help-mini" data-i18n="help_ask_disclaimer"></p>
+        <div id="helpChatLog" class="help-chat-log" aria-live="polite"></div>
+        <div class="help-chat-row">
+          <textarea id="helpChatInput" class="input" data-i18n-placeholder="help_ask_placeholder"></textarea>
+          <button type="button" id="helpChatSend" class="btn btn-primary" data-i18n="help_ask_send">Send</button>
+        </div>
+      </div>
+
+      <div id="helpPanelFaq" class="help-panel hidden" data-help-panel="faq">
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary data-i18n="faq_q1">What is DebtYa?</summary>
+            <p class="faq-a" data-i18n="faq_a1"></p>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faq_q2">Do I need to connect my bank?</summary>
+            <p class="faq-a" data-i18n="faq_a2"></p>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faq_q3">Why review APR and minimum payment?</summary>
+            <p class="faq-a" data-i18n="faq_a3"></p>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faq_q4">How does billing work?</summary>
+            <p class="faq-a" data-i18n="faq_a4"></p>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faq_q5">Can I cancel anytime?</summary>
+            <p class="faq-a" data-i18n="faq_a5"></p>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faq_q6">Who can I contact for help?</summary>
+            <p class="faq-a" data-i18n="faq_a6"></p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
@@ -1778,6 +2150,53 @@
         legal_link_cancel: "Cancellation",
         legal_link_refund: "Refunds",
         legal_link_support: "Support",
+        faq_title: "Frequently asked questions",
+        faq_sub: "Short answers about how DebtYa fits into your routine.",
+        faq_q1: "What is DebtYa?",
+        faq_a1:
+          "DebtYa is a simple workspace to connect your bank (via Plaid), list your debts, choose a payoff strategy, use light automation with rules, and move from suggested payments to what you actually ran—so you always know what happened.",
+        faq_q2: "Do I need to connect my bank?",
+        faq_a2:
+          "Connecting your bank keeps balances and imports up to date and makes linking debts easier. The product is designed around connected accounts for accurate numbers.",
+        faq_q3: "Why review APR and minimum payment?",
+        faq_a3:
+          "Imports can suggest APR and minimum payment, but your statement is the source of truth. Double-check before saving a debt so your plan matches reality.",
+        faq_q4: "How does billing work?",
+        faq_a4:
+          'DebtYa Beta is billed monthly through Stripe. When you use "Get started" while signed in, you complete checkout securely and return to the app with your subscription status updated.',
+        faq_q5: "Can I cancel anytime?",
+        faq_a5:
+          "Yes. You can manage billing through your customer portal when your plan is active, or reach out to support for help.",
+        faq_q6: "Who can I contact for help?",
+        faq_a6:
+          "Email support@debtya.com. The in-app assistant can answer general how-to questions, but it does not replace your lender, advisor, or official documents.",
+        help_modal_title: "Help & guide",
+        help_close: "Close",
+        help_tab_guide: "Guide",
+        help_tab_ask: "Ask assistant",
+        help_tab_faq: "FAQ",
+        help_guide_intro: "A calm path through the basics. Open this panel any time.",
+        help_g1_t: "1. Sign in",
+        help_g1_p: "Create an account or log in so your bank, debts, and plan are saved.",
+        help_g2_t: "2. Connect and import",
+        help_g2_p: "Use Connect bank, then import the accounts you want DebtYa to use.",
+        help_g3_t: "3. Debts and plan",
+        help_g3_p: "Add each debt (review APR and minimums), then set your payment plan and strategy.",
+        help_g4_t: "4. Rules and suggested payments",
+        help_g4_p: "Apply rules when you are ready, review suggested payments, then approve and run them from Quick actions.",
+        help_g5_t: "5. Need more?",
+        help_g5_p: "Use the FAQ tab, this assistant for general guidance, or email support—we never replace your statement or professional advice.",
+        help_jump_faq: "Scroll to FAQ on this page",
+        guide_assistant_off:
+          "The assistant is not available here yet. Use the FAQ tab or email support@debtya.com.",
+        help_ask_disclaimer:
+          "The assistant explains how DebtYa works. It is not financial or legal advice. For exact numbers, use your statement or your lender.",
+        help_ask_placeholder: "Ask how something works in DebtYa…",
+        help_ask_send: "Send",
+        help_fab_aria: "Open help and guide",
+        guide_assistant_empty: "Type a question first.",
+        guide_assistant_error: "Could not reach the assistant. Try again or use the FAQ.",
+        guide_assistant_rate: "Too many requests. Please wait a bit and try again.",
         lbl_email: "Email",
         lbl_password: "Password",
         ph_email: "you@email.com",
@@ -1937,6 +2356,8 @@
         debt_from_account_hint: "Choose a credit or loan account you already imported to pre-fill this form. APR and minimum payment are starter values—adjust them to match your statement.",
         debt_name_suggested_hint: "We simplified the bank label—you can rename it anytime.",
         debt_min_from_import_hint: "This minimum payment came from your imported account data. Please confirm it on your statement.",
+        debt_apr_from_import_hint: "This APR came from your imported account data. Please confirm it on your statement.",
+        debt_form_review_note: "Before you save, review APR and minimum payment. They may be suggested starting values—compare with your statement and edit if needed. Highlighted fields came from your import and are easy to change.",
         debt_suggest_personal_loan: "Personal loan",
         debt_suggest_loan: "Loan",
         debt_suggest_credit: "Credit card",
@@ -2108,6 +2529,53 @@
         legal_link_cancel: "Cancelacion",
         legal_link_refund: "Reembolsos",
         legal_link_support: "Soporte",
+        faq_title: "Preguntas frecuentes",
+        faq_sub: "Respuestas cortas sobre como encaja DebtYa en tu rutina.",
+        faq_q1: "Que es DebtYa?",
+        faq_a1:
+          "DebtYa es un espacio sencillo para conectar tu banco (con Plaid), listar deudas, elegir una estrategia de pago, usar reglas ligeras y pasar de pagos sugeridos a lo que realmente ejecutaste, con claridad.",
+        faq_q2: "Necesito conectar mi banco?",
+        faq_a2:
+          "Conectar el banco mantiene saldos e importaciones al dia y facilita vincular deudas. El producto esta pensado para trabajar con cuentas conectadas y numeros mas fieles.",
+        faq_q3: "Por que revisar APR y pago minimo?",
+        faq_a3:
+          "La importacion puede sugerir APR y pago minimo, pero tu estado de cuenta manda. Revisa antes de guardar para que el plan refleje la realidad.",
+        faq_q4: "Como funciona la facturacion?",
+        faq_a4:
+          'DebtYa Beta se cobra mes a mes con Stripe. Si usas "Empieza ahora" con sesion iniciada, completas el pago seguro y vuelves a la app con tu suscripcion actualizada.',
+        faq_q5: "Puedo cancelar cuando quiera?",
+        faq_a5:
+          "Si. Con plan activo puedes administrar la facturacion desde el portal de cliente o escribir a soporte.",
+        faq_q6: "A quien contacto si necesito ayuda?",
+        faq_a6:
+          "Escribe a support@debtya.com. El asistente puede orientarte en el uso general, pero no sustituye a tu banco, asesor o documentos oficiales.",
+        help_modal_title: "Ayuda y guia",
+        help_close: "Cerrar",
+        help_tab_guide: "Guia",
+        help_tab_ask: "Preguntar al asistente",
+        help_tab_faq: "FAQ",
+        help_guide_intro: "Un recorrido tranquilo por lo basico. Vuelve a abrir este panel cuando quieras.",
+        help_g1_t: "1. Inicia sesion",
+        help_g1_p: "Crea cuenta o entra para guardar banco, deudas y plan.",
+        help_g2_t: "2. Conecta e importa",
+        help_g2_p: "Usa Conectar banco y luego importa las cuentas que quieras usar en DebtYa.",
+        help_g3_t: "3. Deudas y plan",
+        help_g3_p: "Agrega cada deuda (revisa APR y minimos) y define tu plan y estrategia.",
+        help_g4_t: "4. Reglas y pagos sugeridos",
+        help_g4_p: "Aplica reglas cuando toque, revisa pagos sugeridos y luego aprueba y ejecuta desde Acciones rapidas.",
+        help_g5_t: "5. Necesitas mas?",
+        help_g5_p: "Usa la pestana FAQ, este asistente para dudas generales o correo a soporte: no reemplazamos tu estado de cuenta ni asesoria profesional.",
+        help_jump_faq: "Ir a las FAQ en esta pagina",
+        guide_assistant_off:
+          "El asistente no esta disponible en este servidor todavia. Usa la pestana FAQ o escribe a support@debtya.com.",
+        help_ask_disclaimer:
+          "El asistente explica como funciona DebtYa. No es asesoria financiera ni legal. Para cifras exactas, usa tu estado de cuenta o tu prestamista.",
+        help_ask_placeholder: "Pregunta como funciona algo en DebtYa…",
+        help_ask_send: "Enviar",
+        help_fab_aria: "Abrir ayuda y guia",
+        guide_assistant_empty: "Escribe una pregunta primero.",
+        guide_assistant_error: "No se pudo contactar al asistente. Reintenta o usa el FAQ.",
+        guide_assistant_rate: "Demasiadas solicitudes. Espera un momento e intentalo de nuevo.",
         lbl_email: "Email",
         lbl_password: "Contrasena",
         ph_email: "tu@email.com",
@@ -2267,6 +2735,8 @@
         debt_from_account_hint: "Elige una cuenta de credito o prestamo que ya importaste para autollenar el formulario. El APR y el pago minimo son valores iniciales: ajustalos a tu estado de cuenta.",
         debt_name_suggested_hint: "Simplificamos el nombre del banco; puedes cambiarlo cuando quieras.",
         debt_min_from_import_hint: "Este pago minimo viene de los datos importados de la cuenta. Confirmalo en tu estado de cuenta.",
+        debt_apr_from_import_hint: "Este APR viene de los datos importados de la cuenta. Confirmalo en tu estado de cuenta.",
+        debt_form_review_note: "Antes de guardar, revisa el APR y el pago minimo. Pueden ser valores sugeridos al inicio—comparalos con tu estado de cuenta y editalos si hace falta. Los campos resaltados vinieron del importe y puedes cambiarlos.",
         debt_suggest_personal_loan: "Prestamo personal",
         debt_suggest_loan: "Prestamo",
         debt_suggest_credit: "Tarjeta de credito",
@@ -2423,6 +2893,8 @@
         const key = opt.getAttribute("data-i18n-opt");
         if (key) opt.textContent = t(key);
       });
+      const helpFabEl = $("helpFab");
+      if (helpFabEl) helpFabEl.setAttribute("aria-label", t("help_fab_aria"));
     }
 
     function setUiLang(next) {
@@ -2677,6 +3149,163 @@
         throw err;
       } finally {
         clearTimeout(timeoutId);
+      }
+    }
+
+    async function fetchGuideAssistantStatus() {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        const res = await fetch(`${API_BASE}/guide-assistant/status`, {
+          signal: controller.signal
+        });
+        const json = await res.json().catch(() => ({}));
+        return !!json.enabled;
+      } catch {
+        return false;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    async function postGuideAssistantMessage(message) {
+      const token = await getAccessToken();
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS * 2);
+      try {
+        const res = await fetch(`${API_BASE}/guide-assistant`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ message, lang: uiLang }),
+          signal: controller.signal
+        });
+        const text = await res.text();
+        let json = {};
+        try {
+          json = text ? JSON.parse(text) : {};
+        } catch {
+          json = {};
+        }
+        if (!res.ok) {
+          const err = new Error(
+            json.error || json.details || text || `HTTP ${res.status}`
+          );
+          err.status = res.status;
+          err.disabled = !!json.disabled;
+          throw err;
+        }
+        return json.reply || "";
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    let guideAssistantEnabled = null;
+
+    function updateHelpJumpFaqVisibility() {
+      const btn = $("helpJumpFaqBtn");
+      const land = $("landingView");
+      if (!btn || !land) return;
+      btn.classList.toggle("hidden", land.classList.contains("hidden"));
+    }
+
+    function appendHelpChatBubble(kind, text) {
+      const log = $("helpChatLog");
+      if (!log) return;
+      const div = document.createElement("div");
+      div.className = `help-chat-bubble ${kind}`;
+      div.textContent = text;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    async function refreshGuideAssistantBanner() {
+      const off = $("helpAssistantOff");
+      if (!off) return;
+      if (guideAssistantEnabled === null) {
+        guideAssistantEnabled = await fetchGuideAssistantStatus();
+      }
+      off.classList.toggle("hidden", !!guideAssistantEnabled);
+    }
+
+    function setHelpModalTab(name) {
+      document.querySelectorAll(".help-tab[data-help-tab]").forEach((tab) => {
+        const on = tab.getAttribute("data-help-tab") === name;
+        tab.classList.toggle("active", on);
+        tab.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      document.querySelectorAll(".help-panel[data-help-panel]").forEach((panel) => {
+        const on = panel.getAttribute("data-help-panel") === name;
+        panel.classList.toggle("hidden", !on);
+      });
+      if (name === "ask") {
+        refreshGuideAssistantBanner();
+      }
+      if (name === "guide") {
+        updateHelpJumpFaqVisibility();
+      }
+    }
+
+    function openHelpModal() {
+      const root = $("helpModalRoot");
+      const fab = $("helpFab");
+      if (!root) return;
+      root.classList.remove("hidden");
+      root.setAttribute("aria-hidden", "false");
+      if (fab) fab.setAttribute("aria-expanded", "true");
+      guideAssistantEnabled = null;
+      setHelpModalTab("guide");
+    }
+
+    function closeHelpModal() {
+      const root = $("helpModalRoot");
+      const fab = $("helpFab");
+      if (!root) return;
+      root.classList.add("hidden");
+      root.setAttribute("aria-hidden", "true");
+      if (fab) fab.setAttribute("aria-expanded", "false");
+    }
+
+    async function sendHelpAssistantMessage() {
+      const input = $("helpChatInput");
+      const sendBtn = $("helpChatSend");
+      const log = $("helpChatLog");
+      if (!input || !sendBtn) return;
+      const msg = input.value.trim();
+      if (!msg) {
+        appendHelpChatBubble("err", t("guide_assistant_empty"));
+        return;
+      }
+      appendHelpChatBubble("user", msg);
+      input.value = "";
+      setLoading(sendBtn, true, t("proc_loading"));
+      try {
+        guideAssistantEnabled = await fetchGuideAssistantStatus();
+        const off = $("helpAssistantOff");
+        if (off) off.classList.toggle("hidden", !!guideAssistantEnabled);
+        if (!guideAssistantEnabled) {
+          appendHelpChatBubble("err", t("guide_assistant_off"));
+          return;
+        }
+        const reply = await postGuideAssistantMessage(msg);
+        appendHelpChatBubble("bot", reply || "—");
+      } catch (err) {
+        const st = err.status;
+        if (st === 429) {
+          appendHelpChatBubble("err", t("guide_assistant_rate"));
+        } else if (err.disabled) {
+          appendHelpChatBubble("err", t("guide_assistant_off"));
+          guideAssistantEnabled = false;
+          const off2 = $("helpAssistantOff");
+          if (off2) off2.classList.remove("hidden");
+        } else {
+          appendHelpChatBubble("err", t("guide_assistant_error"));
+        }
+      } finally {
+        setLoading(sendBtn, false);
+        if (log) log.scrollTop = log.scrollHeight;
       }
     }
 
@@ -3029,6 +3658,65 @@
       return { value: rounded, fromImport: true };
     }
 
+    function normalizeImportedAprNumber(n) {
+      if (!Number.isFinite(n) || n <= 0) return null;
+      let pct = n;
+      if (n > 0 && n < 1) pct = n * 100;
+      if (pct < 1 || pct > 80) return null;
+      return Math.round(pct * 100) / 100;
+    }
+
+    function pickAprCandidate(acc) {
+      if (!acc || typeof acc !== "object") return null;
+      const payload = acc.payload_json && typeof acc.payload_json === "object" ? acc.payload_json : {};
+      const rawJson = acc.raw_json && typeof acc.raw_json === "object" ? acc.raw_json : {};
+      const singles = [
+        acc.apr,
+        acc.apr_rate,
+        acc.interest_rate,
+        acc.annual_percentage_rate,
+        acc.annual_percentage_yield,
+        payload.apr,
+        payload.interest_rate,
+        payload.annual_percentage_rate,
+        rawJson.apr,
+        rawJson.interest_rate,
+        rawJson.annual_percentage_rate
+      ];
+      for (const v of singles) {
+        if (v === undefined || v === null || v === "") continue;
+        const num = Number(v);
+        if (Number.isFinite(num) && num > 0) return num;
+      }
+      const aprs = rawJson.aprs || payload.aprs;
+      if (Array.isArray(aprs)) {
+        for (const row of aprs) {
+          if (!row || typeof row !== "object") continue;
+          const p = Number(row.apr_percentage ?? row.apr);
+          if (Number.isFinite(p) && p > 0) return p;
+        }
+      }
+      return null;
+    }
+
+    function suggestAprFromImportedAccount(acc) {
+      const fallback = 19.99;
+      const raw = pickAprCandidate(acc);
+      if (raw === null) return { value: fallback, fromImport: false };
+      const normalized = normalizeImportedAprNumber(raw);
+      if (normalized === null) return { value: fallback, fromImport: false };
+      return { value: normalized, fromImport: true };
+    }
+
+    function updateDebtSuggestedFieldHighlights(aprFromImport, minFromImport) {
+      const aprEl = $("debtApr");
+      const minEl = $("debtMinPayment");
+      const aprField = aprEl && aprEl.closest ? aprEl.closest(".field") : null;
+      const minField = minEl && minEl.closest ? minEl.closest(".field") : null;
+      if (aprField) aprField.classList.toggle("debt-field-suggested", !!aprFromImport);
+      if (minField) minField.classList.toggle("debt-field-suggested", !!minFromImport);
+    }
+
     function fillDebtFormFromPlaidAccount(plaidAccountId) {
       const acc = state.accounts.find((a) => String(a.plaid_account_id || "") === String(plaidAccountId || ""));
       if (!acc) return;
@@ -3041,7 +3729,17 @@
       }
       $("debtBalance").value = String(Math.abs(rawBal));
       $("debtType").value = mapPlaidAccountToDebtType(acc);
-      $("debtApr").value = "19.99";
+      const aprSug = suggestAprFromImportedAccount(acc);
+      $("debtApr").value = String(aprSug.value);
+      const aprHint = $("debtAprSuggestedHint");
+      if (aprHint) {
+        if (aprSug.fromImport) {
+          aprHint.textContent = t("debt_apr_from_import_hint");
+          aprHint.classList.remove("hidden");
+        } else {
+          aprHint.classList.add("hidden");
+        }
+      }
       const minSug = suggestMinPaymentFromImportedAccount(acc);
       $("debtMinPayment").value = String(minSug.value);
       const minHint = $("debtMinPaymentSuggestedHint");
@@ -3053,6 +3751,7 @@
           minHint.classList.add("hidden");
         }
       }
+      updateDebtSuggestedFieldHighlights(aprSug.fromImport, minSug.fromImport);
       $("debtDueDay").value = "";
       populateDebtFormLinkedSelect();
       const pid = acc.plaid_account_id || "";
@@ -3814,10 +4513,49 @@
     $("landingSignupBtn").addEventListener("click", () => showAuth("signup"));
     $("landingStartBtn").addEventListener("click", () => startCheckout($("landingStartBtn")));
     $("landingDemoBtn").addEventListener("click", () => {
-      document.querySelector(".steps").scrollIntoView({ behavior: "smooth", block: "start" });
+      const faq = document.getElementById("faqSection");
+      const target = faq || document.querySelector(".steps");
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     $("pricingStartBtn").addEventListener("click", () => startCheckout($("pricingStartBtn")));
     $("pricingLoginBtn").addEventListener("click", () => showAuth("login"));
+
+    const helpFabBtn = $("helpFab");
+    if (helpFabBtn) helpFabBtn.addEventListener("click", () => openHelpModal());
+    const helpBackdrop = $("helpModalBackdrop");
+    if (helpBackdrop) helpBackdrop.addEventListener("click", closeHelpModal);
+    const helpCloseBtn = $("helpModalClose");
+    if (helpCloseBtn) helpCloseBtn.addEventListener("click", closeHelpModal);
+    document.querySelectorAll(".help-tab[data-help-tab]").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const name = tab.getAttribute("data-help-tab");
+        if (name) setHelpModalTab(name);
+      });
+    });
+    const helpSendBtn = $("helpChatSend");
+    if (helpSendBtn) helpSendBtn.addEventListener("click", () => sendHelpAssistantMessage());
+    const helpChatInput = $("helpChatInput");
+    if (helpChatInput) {
+      helpChatInput.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
+          ev.preventDefault();
+          sendHelpAssistantMessage();
+        }
+      });
+    }
+    const helpJumpFaqBtn = $("helpJumpFaqBtn");
+    if (helpJumpFaqBtn) {
+      helpJumpFaqBtn.addEventListener("click", () => {
+        closeHelpModal();
+        const el = document.getElementById("faqSection");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key !== "Escape") return;
+      const root = $("helpModalRoot");
+      if (root && !root.classList.contains("hidden")) closeHelpModal();
+    });
 
     $("showLoginBtn").addEventListener("click", () => {
       state.mode = "login";
@@ -3910,6 +4648,9 @@
         if (nameHint) nameHint.classList.add("hidden");
         const minH = $("debtMinPaymentSuggestedHint");
         if (minH) minH.classList.add("hidden");
+        const aprH = $("debtAprSuggestedHint");
+        if (aprH) aprH.classList.add("hidden");
+        updateDebtSuggestedFieldHighlights(false, false);
         return;
       }
       fillDebtFormFromPlaidAccount(id);
@@ -3938,6 +4679,9 @@
         if (nameHint) nameHint.classList.add("hidden");
         const minHint = $("debtMinPaymentSuggestedHint");
         if (minHint) minHint.classList.add("hidden");
+        const aprHint2 = $("debtAprSuggestedHint");
+        if (aprHint2) aprHint2.classList.add("hidden");
+        updateDebtSuggestedFieldHighlights(false, false);
         await refreshDebts();
       } catch (err) {
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
