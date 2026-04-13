@@ -694,7 +694,16 @@
       display:flex;
       gap:8px;
       flex-wrap:wrap;
-      margin-bottom:14px;
+      margin-bottom:8px;
+    }
+
+    .top-nav-hint{
+      margin:0 0 16px;
+      padding:0 2px;
+      max-width:820px;
+      font-size:13px;
+      line-height:1.5;
+      color:var(--muted);
     }
 
     .nav-chip{
@@ -702,8 +711,8 @@
       background:#fff;
       color:var(--text);
       border-radius:999px;
-      padding:8px 12px;
-      font-size:12px;
+      padding:10px 14px;
+      font-size:13px;
       font-weight:700;
       cursor:pointer;
     }
@@ -1601,6 +1610,7 @@
         <button id="navOperate" class="nav-chip" type="button" data-i18n="nav_operate">Operate</button>
         <button id="navSetup" class="nav-chip" type="button" data-i18n="nav_setup">Setup</button>
       </div>
+      <p class="top-nav-hint" data-i18n="nav_hint"></p>
 
       <div id="nextActionCard" class="card next-action-card">
         <div class="next-action-row">
@@ -2183,7 +2193,7 @@
         help_g3_t: "3. Debts and plan",
         help_g3_p: "Add each debt (review APR and minimums), then set your payment plan and strategy.",
         help_g4_t: "4. Rules and suggested payments",
-        help_g4_p: "Apply rules when you are ready, review suggested payments, then approve and run them from Quick actions.",
+        help_g4_p: "Apply rules when you are ready, review suggested payments, then approve and run them from Actions.",
         help_g5_t: "5. Need more?",
         help_g5_p: "Use the FAQ tab, this assistant for general guidance, or email support—we never replace your statement or professional advice.",
         help_jump_faq: "Scroll to FAQ on this page",
@@ -2211,7 +2221,7 @@
         btn_refresh_all: "Refresh all",
         btn_logout: "Log out",
         advanced_topbar_toggle: "More",
-        advanced_operate_toggle: "Advanced — rules & suggested payments",
+        advanced_operate_toggle: "More — rules & payments",
         advanced_plan_toggle: "More plan options",
         advanced_intents_toggle: "More list options",
         next_action_connect_title: "Connect your bank",
@@ -2230,44 +2240,46 @@
         next_action_intents_sub: "Some suggested payments are waiting for your approval.",
         next_action_intents_btn: "Review payments",
         next_action_all_good_title: "You are all set for now",
-        next_action_all_good_sub: "When you have new activity, or want to run the next step, use Quick actions below.",
+        next_action_all_good_sub: "When something new comes up, open Actions for bank and payments, or Debts & plan to adjust your setup.",
+        nav_hint:
+          "Overview is your snapshot. Actions syncs your bank and runs payment steps. Debts & plan is where you enter balances, rules, and strategy.",
         nav_overview: "Overview",
-        nav_operate: "Quick actions",
+        nav_operate: "Actions",
         nav_setup: "Debts & plan",
-        hero_title: "Less guesswork. More control. More progress.",
-        hero_copy: "Organize your debts, connect your bank, set simple rules, and turn your plan into real payments—with a clear view of what happens next.",
+        hero_title: "See your plan. Take the next step.",
+        hero_copy: "Connect your bank, list what you owe, and follow suggested payments—all in one calm screen.",
         btn_connect_bank: "Connect bank",
         btn_import_accounts: "Import accounts",
         btn_import_tx: "Import transactions",
-        btn_build_intents: "Prepare suggested payments",
+        btn_build_intents: "Prepare payments",
         stat_total_debt: "Total debt",
         stat_active_debts: "Active debts",
         stat_pending_intents: "Suggested payments waiting",
         stat_executed_intents: "Payments completed",
         plan_summary_title: "Plan summary",
-        plan_summary_sub: "The most important parts of your current setup.",
+        plan_summary_sub: "Strategy, mode, and monthly extra at a glance.",
         lbl_strategy: "Strategy",
         lbl_mode: "Mode",
         lbl_monthly_extra: "Monthly extra",
         lbl_how_it_works: "How it works",
         plan_how_hint: "Avalanche targets the highest interest rate first. Snowball targets the smallest balance first.",
         sub_title: "Subscription",
-        sub_sub: "Your plan and renewal status.",
+        sub_sub: "Plan status and renewal.",
         btn_refresh: "Refresh",
         lbl_status: "Status",
         lbl_active: "Active",
         lbl_next_period: "Next period",
         lbl_actions: "Actions",
         sub_portal_hint: "If your plan is active, you can open your account page to manage it.",
-        operate_title: "Quick actions",
-        operate_sub: "Connect your bank and refresh your data. Advanced steps stay tucked below.",
+        operate_title: "Actions",
+        operate_sub: "Connect the bank, import data, then use More when you need rules or payment prep.",
         btn_apply_rules: "Apply rules",
         btn_approve_visible: "Approve payments",
         btn_execute_visible: "Run payments",
-        operate_note: "Connect and import first. When you are ready, open Advanced for rules and suggested payments.",
+        operate_note: "Most days: Connect → Import. Rules and preparing payments live under More.",
         operate_legal_html: 'By connecting an account, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers. Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
         debts_title: "Debts",
-        debts_sub: "Create and review your active debts.",
+        debts_sub: "Add cards and loans. Link a bank account when it helps.",
         lbl_name: "Name",
         ph_debt_name: "e.g. Chase Freedom",
         lbl_balance: "Balance",
@@ -2347,7 +2359,7 @@
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
         empty_rules: "You have no saved rules yet.",
-        empty_intents: "No suggested payments yet. Open Advanced under Quick actions when you are ready to prepare them.",
+        empty_intents: "No suggested payments yet. Under Actions, open More when you are ready to prepare them.",
         empty_trace: "No history available yet.",
         empty_accounts: "No imported accounts yet.",
         empty_compare: "No comparison available yet.",
@@ -2562,7 +2574,7 @@
         help_g3_t: "3. Deudas y plan",
         help_g3_p: "Agrega cada deuda (revisa APR y minimos) y define tu plan y estrategia.",
         help_g4_t: "4. Reglas y pagos sugeridos",
-        help_g4_p: "Aplica reglas cuando toque, revisa pagos sugeridos y luego aprueba y ejecuta desde Acciones rapidas.",
+        help_g4_p: "Aplica reglas cuando toque, revisa pagos sugeridos y luego aprueba y ejecuta desde Acciones.",
         help_g5_t: "5. Necesitas mas?",
         help_g5_p: "Usa la pestana FAQ, este asistente para dudas generales o correo a soporte: no reemplazamos tu estado de cuenta ni asesoria profesional.",
         help_jump_faq: "Ir a las FAQ en esta pagina",
@@ -2590,7 +2602,7 @@
         btn_refresh_all: "Refrescar todo",
         btn_logout: "Salir",
         advanced_topbar_toggle: "Mas",
-        advanced_operate_toggle: "Avanzado — reglas y pagos sugeridos",
+        advanced_operate_toggle: "Mas — reglas y pagos",
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_intents_toggle: "Mas opciones de la lista",
         next_action_connect_title: "Conecta tu banco",
@@ -2609,44 +2621,46 @@
         next_action_intents_sub: "Hay pagos sugeridos esperando tu visto bueno.",
         next_action_intents_btn: "Revisar pagos",
         next_action_all_good_title: "Todo esta al dia por ahora",
-        next_action_all_good_sub: "Cuando tengas movimiento nuevo o quieras el siguiente paso, usa Acciones rapidas abajo.",
+        next_action_all_good_sub: "Si aparece algo nuevo, abre Acciones para banco y pagos, o Deudas y plan para ajustar tu configuracion.",
+        nav_hint:
+          "Resumen es tu panorama. Acciones sincroniza el banco y los pasos de pago. Deudas y plan es donde cargas saldos, reglas y estrategia.",
         nav_overview: "Resumen",
-        nav_operate: "Acciones rapidas",
+        nav_operate: "Acciones",
         nav_setup: "Deudas y plan",
-        hero_title: "Menos improvisacion. Mas control. Mas progreso.",
-        hero_copy: "Organiza tus deudas, conecta tu banco, define reglas sencillas y lleva tu plan a pagos reales, con claridad sobre lo que sigue.",
+        hero_title: "Ve tu plan. Da el siguiente paso.",
+        hero_copy: "Conecta tu banco, anota lo que debes y sigue los pagos sugeridos, todo en una pantalla clara.",
         btn_connect_bank: "Conectar banco",
         btn_import_accounts: "Importar cuentas",
         btn_import_tx: "Importar transacciones",
-        btn_build_intents: "Preparar pagos sugeridos",
+        btn_build_intents: "Preparar pagos",
         stat_total_debt: "Deuda total",
         stat_active_debts: "Deudas activas",
         stat_pending_intents: "Pagos sugeridos en espera",
         stat_executed_intents: "Pagos realizados",
         plan_summary_title: "Resumen del plan",
-        plan_summary_sub: "Lo mas importante de tu configuracion actual.",
+        plan_summary_sub: "Estrategia, modo y extra mensual de un vistazo.",
         lbl_strategy: "Estrategia",
         lbl_mode: "Modo",
         lbl_monthly_extra: "Extra mensual",
         lbl_how_it_works: "Como funciona",
         plan_how_hint: "Avalanche ataca primero la tasa mas alta. Snowball ataca primero el balance mas pequeno.",
         sub_title: "Suscripcion",
-        sub_sub: "Estado de tu plan y renovacion.",
+        sub_sub: "Estado del plan y renovacion.",
         btn_refresh: "Refrescar",
         lbl_status: "Estado",
         lbl_active: "Activo",
         lbl_next_period: "Proximo periodo",
         lbl_actions: "Acciones",
         sub_portal_hint: "Si tu plan esta activo, puedes abrir la pagina de tu cuenta para administrarlo.",
-        operate_title: "Acciones rapidas",
-        operate_sub: "Conecta tu banco y actualiza datos. Los pasos avanzados van en la seccion desplegable.",
+        operate_title: "Acciones",
+        operate_sub: "Conecta el banco, importa datos y usa Mas cuando necesites reglas o preparar pagos.",
         btn_apply_rules: "Aplicar reglas",
         btn_approve_visible: "Aprobar pagos",
         btn_execute_visible: "Ejecutar pagos",
-        operate_note: "Primero conecta e importa. Cuando quieras reglas o pagos sugeridos, abre Avanzado.",
+        operate_note: "Lo usual: Conectar → Importar. Reglas y preparar pagos estan en Mas.",
         operate_legal_html: 'Al conectar una cuenta, autorizas a DebtYa a recibir la informacion financiera necesaria para el servicio a traves de proveedores de confianza. Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
         debts_title: "Deudas",
-        debts_sub: "Crea y revisa tus deudas activas.",
+        debts_sub: "Agrega tarjetas y prestamos. Vincula el banco cuando ayude.",
         lbl_name: "Nombre",
         ph_debt_name: "Ej: Chase Freedom",
         lbl_balance: "Balance",
@@ -2726,7 +2740,7 @@
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
         empty_rules: "Todavia no tienes reglas guardadas.",
-        empty_intents: "Aun no hay pagos sugeridos. Abre Avanzado en Acciones rapidas cuando quieras prepararlos.",
+        empty_intents: "Aun no hay pagos sugeridos. En Acciones, abre Mas cuando quieras prepararlos.",
         empty_trace: "Todavia no hay historial disponible.",
         empty_accounts: "Todavia no hay cuentas importadas.",
         empty_compare: "Todavia no hay comparacion disponible.",
