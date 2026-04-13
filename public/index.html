@@ -1519,6 +1519,7 @@
               <div class="field">
                 <label class="label" data-i18n="lbl_min_payment">Minimum payment</label>
                 <input id="debtMinPayment" class="input" type="number" step="0.01" placeholder="90.00" required />
+                <p class="helper-text hidden" id="debtMinPaymentSuggestedHint" data-i18n="debt_min_from_import_hint">From imported account data—confirm on your statement.</p>
               </div>
               <div class="field">
                 <label class="label" data-i18n="lbl_due_day">Payment day</label>
@@ -1935,6 +1936,7 @@
         debt_from_account_none: "Manual entry (no pre-fill)",
         debt_from_account_hint: "Choose a credit or loan account you already imported to pre-fill this form. APR and minimum payment are starter values—adjust them to match your statement.",
         debt_name_suggested_hint: "We simplified the bank label—you can rename it anytime.",
+        debt_min_from_import_hint: "This minimum payment came from your imported account data. Please confirm it on your statement.",
         debt_suggest_personal_loan: "Personal loan",
         debt_suggest_loan: "Loan",
         debt_suggest_credit: "Credit card",
@@ -2264,6 +2266,7 @@
         debt_from_account_none: "Entrada manual (sin autollenado)",
         debt_from_account_hint: "Elige una cuenta de credito o prestamo que ya importaste para autollenar el formulario. El APR y el pago minimo son valores iniciales: ajustalos a tu estado de cuenta.",
         debt_name_suggested_hint: "Simplificamos el nombre del banco; puedes cambiarlo cuando quieras.",
+        debt_min_from_import_hint: "Este pago minimo viene de los datos importados de la cuenta. Confirmalo en tu estado de cuenta.",
         debt_suggest_personal_loan: "Prestamo personal",
         debt_suggest_loan: "Prestamo",
         debt_suggest_credit: "Tarjeta de credito",
@@ -2986,6 +2989,46 @@
       return s;
     }
 
+    function pickNumericMinPaymentCandidate(acc) {
+      if (!acc || typeof acc !== "object") return null;
+      const payload = acc.payload_json && typeof acc.payload_json === "object" ? acc.payload_json : {};
+      const rawJson = acc.raw_json && typeof acc.raw_json === "object" ? acc.raw_json : {};
+      const keys = [
+        acc.minimum_payment,
+        acc.minimum_payment_amount,
+        acc.min_payment,
+        acc.min_payment_amount,
+        acc.monthly_payment,
+        acc.next_monthly_payment,
+        payload.minimum_payment,
+        payload.minimum_payment_amount,
+        payload.min_payment,
+        rawJson.minimum_payment,
+        rawJson.minimum_payment_amount,
+        rawJson.min_payment
+      ];
+      for (const v of keys) {
+        if (v === undefined || v === null || v === "") continue;
+        const n = Number(v);
+        if (!Number.isFinite(n) || n <= 0) continue;
+        return n;
+      }
+      return null;
+    }
+
+    function suggestMinPaymentFromImportedAccount(acc) {
+      const fallback = 25;
+      const n = pickNumericMinPaymentCandidate(acc);
+      if (n === null) return { value: fallback, fromImport: false };
+
+      const bal = Math.abs(Number(acc.current_balance ?? acc.balance_current ?? 0));
+      if (n > 200000) return { value: fallback, fromImport: false };
+      if (bal > 0 && n > bal * 5) return { value: fallback, fromImport: false };
+      const rounded = Math.round(n * 100) / 100;
+      if (rounded <= 0) return { value: fallback, fromImport: false };
+      return { value: rounded, fromImport: true };
+    }
+
     function fillDebtFormFromPlaidAccount(plaidAccountId) {
       const acc = state.accounts.find((a) => String(a.plaid_account_id || "") === String(plaidAccountId || ""));
       if (!acc) return;
@@ -2999,7 +3042,17 @@
       $("debtBalance").value = String(Math.abs(rawBal));
       $("debtType").value = mapPlaidAccountToDebtType(acc);
       $("debtApr").value = "19.99";
-      $("debtMinPayment").value = "25";
+      const minSug = suggestMinPaymentFromImportedAccount(acc);
+      $("debtMinPayment").value = String(minSug.value);
+      const minHint = $("debtMinPaymentSuggestedHint");
+      if (minHint) {
+        if (minSug.fromImport) {
+          minHint.textContent = t("debt_min_from_import_hint");
+          minHint.classList.remove("hidden");
+        } else {
+          minHint.classList.add("hidden");
+        }
+      }
       $("debtDueDay").value = "";
       populateDebtFormLinkedSelect();
       const pid = acc.plaid_account_id || "";
@@ -3855,6 +3908,8 @@
       const nameHint = $("debtNameSuggestedHint");
       if (!id) {
         if (nameHint) nameHint.classList.add("hidden");
+        const minH = $("debtMinPaymentSuggestedHint");
+        if (minH) minH.classList.add("hidden");
         return;
       }
       fillDebtFormFromPlaidAccount(id);
@@ -3881,6 +3936,8 @@
         if (fromSel) fromSel.value = "";
         const nameHint = $("debtNameSuggestedHint");
         if (nameHint) nameHint.classList.add("hidden");
+        const minHint = $("debtMinPaymentSuggestedHint");
+        if (minHint) minHint.classList.add("hidden");
         await refreshDebts();
       } catch (err) {
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
