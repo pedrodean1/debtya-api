@@ -820,6 +820,43 @@
       justify-content:flex-end;
       margin-bottom:12px;
     }
+
+    .accounts-split{
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+    .acct-section{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .acct-section-title{
+      margin:0;
+      font-size:14px;
+      font-weight:800;
+      letter-spacing:-.2px;
+      padding:8px 0 6px;
+      border-bottom:1px solid var(--line);
+    }
+    .acct-section-title.cash{
+      color:#166534;
+    }
+    .acct-section-title.debt{
+      color:#b45309;
+    }
+    .acct-section-title.other{
+      color:#5b6475;
+    }
+    .acct-kind-hint{
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+      margin-top:4px;
+    }
+    .acct-section .empty{
+      margin:0;
+    }
   </style>
 </head>
 <body>
@@ -1379,7 +1416,7 @@
             <div class="section-head">
               <div>
                 <h2 data-i18n="accounts_title">Connected accounts</h2>
-                <p class="sub" data-i18n="accounts_sub">Accounts imported from Plaid.</p>
+                <p class="sub" data-i18n="accounts_sub">Imported from Plaid, grouped by cash and debt accounts.</p>
               </div>
               <div class="section-actions">
                 <button id="refreshAccountsBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
@@ -1552,7 +1589,27 @@
         history_title: "History",
         history_sub: "Payment trail, execution, and balance updates.",
         accounts_title: "Connected accounts",
-        accounts_sub: "Accounts imported from Plaid.",
+        accounts_sub: "Imported from Plaid, grouped by cash and debt accounts.",
+        accounts_sec_cash: "Cash and checking (depository)",
+        accounts_sec_debt: "Credit cards and loans (liabilities)",
+        accounts_sec_other: "Other accounts (investments, brokerage, etc.)",
+        accounts_empty_section: "No accounts in this category.",
+        kind_checking: "Checking",
+        kind_savings: "Savings",
+        kind_cd: "Certificate of deposit",
+        kind_mma: "Money market",
+        kind_cash_other: "Depository account",
+        kind_credit_card: "Credit card",
+        kind_credit_line: "Credit line",
+        kind_mortgage: "Mortgage",
+        kind_auto_loan: "Auto loan",
+        kind_student_loan: "Student loan",
+        kind_loc_loan: "Line of credit",
+        kind_loan_other: "Loan",
+        kind_investment: "Investment",
+        kind_brokerage: "Brokerage",
+        kind_other: "Other",
+        acct_credit_limit: "Credit limit",
         footer_disclaimer_html: "<strong>DebtYa</strong> is a personal finance organization tool. It is not a bank, financial advisor, credit repair agency, or debt relief service.",
         loading: "Loading...",
         yes: "Yes",
@@ -1816,7 +1873,27 @@
         history_title: "Historial",
         history_sub: "Rastro de pagos, ejecucion y rebaja de balances.",
         accounts_title: "Cuentas conectadas",
-        accounts_sub: "Cuentas importadas desde Plaid.",
+        accounts_sub: "Importadas desde Plaid, agrupadas en efectivo y deudas.",
+        accounts_sec_cash: "Efectivo y cuentas corrientes (depository)",
+        accounts_sec_debt: "Tarjetas de credito y prestamos (liabilities)",
+        accounts_sec_other: "Otras cuentas (inversiones, brokerage, etc.)",
+        accounts_empty_section: "No hay cuentas en esta categoria.",
+        kind_checking: "Cuenta corriente",
+        kind_savings: "Ahorros",
+        kind_cd: "Deposito a plazo",
+        kind_mma: "Mercado monetario",
+        kind_cash_other: "Cuenta de deposito",
+        kind_credit_card: "Tarjeta de credito",
+        kind_credit_line: "Linea de credito",
+        kind_mortgage: "Hipoteca",
+        kind_auto_loan: "Prestamo de auto",
+        kind_student_loan: "Prestamo estudiantil",
+        kind_loc_loan: "Linea de credito (prestamo)",
+        kind_loan_other: "Prestamo",
+        kind_investment: "Inversion",
+        kind_brokerage: "Brokerage",
+        kind_other: "Otra",
+        acct_credit_limit: "Limite de credito",
         footer_disclaimer_html: "<strong>DebtYa</strong> es una herramienta de organizacion financiera personal. No es un banco, asesor financiero, agencia de reparacion de credito ni servicio de alivio de deudas.",
         loading: "Cargando...",
         yes: "Si",
@@ -2468,6 +2545,95 @@
       });
     }
 
+    function categorizePlaidAccounts(rows) {
+      const dep = [];
+      const liab = [];
+      const oth = [];
+      for (const acc of rows) {
+        const ty = String(acc.type || "").toLowerCase();
+        if (ty === "depository") dep.push(acc);
+        else if (ty === "credit" || ty === "loan") liab.push(acc);
+        else oth.push(acc);
+      }
+      return { dep, liab, oth };
+    }
+
+    function plaidAccountKindLabel(acc) {
+      const ty = String(acc.type || "").toLowerCase();
+      const st = String(acc.subtype || "").toLowerCase();
+      if (ty === "depository") {
+        if (st === "checking") return t("kind_checking");
+        if (st === "savings") return t("kind_savings");
+        if (st === "cd") return t("kind_cd");
+        if (st === "money market") return t("kind_mma");
+        return t("kind_cash_other");
+      }
+      if (ty === "credit") {
+        if (st === "credit card" || st === "paypal") return t("kind_credit_card");
+        return t("kind_credit_line");
+      }
+      if (ty === "loan") {
+        if (st === "mortgage") return t("kind_mortgage");
+        if (st === "auto") return t("kind_auto_loan");
+        if (st === "student") return t("kind_student_loan");
+        if (st === "line of credit") return t("kind_loc_loan");
+        return t("kind_loan_other");
+      }
+      if (ty === "investment") return t("kind_investment");
+      if (ty === "brokerage") return t("kind_brokerage");
+      if (ty === "other") return t("kind_other");
+      return "";
+    }
+
+    function renderAccountCardHTML(acc) {
+      const current = acc.current_balance ?? acc.balance_current ?? 0;
+      const available = acc.available_balance ?? acc.balance_available ?? 0;
+      const limitRaw = acc.limit_balance ?? acc.limit ?? null;
+      const limitNum = limitRaw != null && limitRaw !== "" ? Number(limitRaw) : null;
+      const tyLower = String(acc.type || "").toLowerCase();
+      const kind = plaidAccountKindLabel(acc);
+      const kindLine = kind
+        ? `<div class="acct-kind-hint">${escapeHtml(kind)}</div>`
+        : "";
+      const limitLine =
+        limitNum != null &&
+        !Number.isNaN(limitNum) &&
+        limitNum > 0 &&
+        tyLower === "credit"
+          ? `<div class="muted" style="font-size:12px;margin-top:4px;">${escapeHtml(t("acct_credit_limit"))}: ${fmtMoney(limitNum)}</div>`
+          : "";
+      return `
+        <div class="item">
+          <div class="item-top">
+            <div>
+              <div class="item-title">${escapeHtml(acc.name || t("acct_default"))} ${acc.mask ? `· ****${escapeHtml(acc.mask)}` : ""}</div>
+              ${kindLine}
+              <div class="item-meta">
+                ${escapeHtml(t("acct_type"))}: <strong>${escapeHtml(acc.type || "-")}</strong> ·
+                ${escapeHtml(t("acct_subtype"))}: <strong>${escapeHtml(acc.subtype || "-")}</strong>
+              </div>
+            </div>
+            <div class="right">
+              <div class="money">${fmtMoney(current)}</div>
+              <div class="muted" style="font-size:12px;margin-top:4px;">${escapeHtml(t("available_lbl"))}: ${fmtMoney(available)}</div>
+              ${limitLine}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAccountSection(titleClass, titleKey, accounts) {
+      let html = `<div class="acct-section"><h3 class="acct-section-title ${titleClass}">${escapeHtml(t(titleKey))}</h3>`;
+      if (!accounts.length) {
+        html += `<div class="empty">${escapeHtml(t("accounts_empty_section"))}</div>`;
+      } else {
+        html += accounts.map((acc) => renderAccountCardHTML(acc)).join("");
+      }
+      html += `</div>`;
+      return html;
+    }
+
     function renderAccounts() {
       const box = $("accountsList");
       box.innerHTML = "";
@@ -2477,28 +2643,14 @@
         return;
       }
 
-      state.accounts.forEach((acc) => {
-        const current = acc.current_balance ?? acc.balance_current ?? 0;
-        const available = acc.available_balance ?? acc.balance_available ?? 0;
-        const item = document.createElement("div");
-        item.className = "item";
-        item.innerHTML = `
-          <div class="item-top">
-            <div>
-              <div class="item-title">${escapeHtml(acc.name || t("acct_default"))} ${acc.mask ? `· ****${escapeHtml(acc.mask)}` : ""}</div>
-              <div class="item-meta">
-                ${escapeHtml(t("acct_type"))}: <strong>${escapeHtml(acc.type || "-")}</strong> ·
-                ${escapeHtml(t("acct_subtype"))}: <strong>${escapeHtml(acc.subtype || "-")}</strong>
-              </div>
-            </div>
-            <div class="right">
-              <div class="money">${fmtMoney(current)}</div>
-              <div class="muted" style="font-size:12px;margin-top:4px;">${escapeHtml(t("available_lbl"))}: ${fmtMoney(available)}</div>
-            </div>
-          </div>
-        `;
-        box.appendChild(item);
-      });
+      const { dep, liab, oth } = categorizePlaidAccounts(state.accounts);
+      box.innerHTML = `
+        <div class="accounts-split">
+          ${renderAccountSection("cash", "accounts_sec_cash", dep)}
+          ${renderAccountSection("debt", "accounts_sec_debt", liab)}
+          ${renderAccountSection("other", "accounts_sec_other", oth)}
+        </div>
+      `;
     }
 
     function renderPlan() {
