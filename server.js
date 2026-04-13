@@ -344,6 +344,22 @@ function jsonError(res, status, message, extra = {}) {
   });
 }
 
+async function assertLinkedPlaidAccountForUser(userId, plaidAccountId) {
+  const id = String(plaidAccountId || "").trim();
+  if (!id) return;
+  const { data, error } = await supabaseAdmin
+    .from("accounts")
+    .select("plaid_account_id")
+    .eq("user_id", userId)
+    .eq("plaid_account_id", id)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) {
+    throw new Error("Invalid linked Plaid account for this user.");
+  }
+}
+
 function getBearerToken(req) {
   const auth = req.headers.authorization || "";
   if (!auth.startsWith("Bearer ")) return null;
@@ -1927,6 +1943,17 @@ app.post("/debts", requireUser, async (req, res) => {
       updated_at: new Date().toISOString()
     };
 
+    if (req.body.linked_plaid_account_id !== undefined) {
+      const raw = req.body.linked_plaid_account_id;
+      if (raw === null || raw === "") {
+        payload.linked_plaid_account_id = null;
+      } else {
+        const lid = String(raw).trim();
+        await assertLinkedPlaidAccountForUser(req.user.id, lid);
+        payload.linked_plaid_account_id = lid;
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .from("debts")
       .insert(payload)
@@ -1962,6 +1989,17 @@ app.patch("/debts/:id", requireUser, async (req, res) => {
     if (req.body.type !== undefined) patch.type = req.body.type;
     if (req.body.goal_note !== undefined) patch.goal_note = req.body.goal_note || null;
     if (req.body.is_active !== undefined) patch.is_active = !!req.body.is_active;
+
+    if (req.body.linked_plaid_account_id !== undefined) {
+      const raw = req.body.linked_plaid_account_id;
+      if (raw === null || raw === "") {
+        patch.linked_plaid_account_id = null;
+      } else {
+        const lid = String(raw).trim();
+        await assertLinkedPlaidAccountForUser(req.user.id, lid);
+        patch.linked_plaid_account_id = lid;
+      }
+    }
 
     const { data, error } = await supabaseAdmin
       .from("debts")

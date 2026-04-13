@@ -857,6 +857,27 @@
     .acct-section .empty{
       margin:0;
     }
+
+    .debt-plaid-info{
+      margin-top:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid #d7e6ff;
+      background:#f8fbff;
+      font-size:13px;
+      line-height:1.55;
+    }
+    .debt-plaid-info .debt-plaid-line{
+      margin:4px 0 0;
+      color:var(--text);
+    }
+    .debt-plaid-row{
+      margin-top:12px;
+    }
+    .debt-plaid-row .label{
+      display:block;
+      margin-bottom:6px;
+    }
   </style>
 </head>
 <body>
@@ -1274,6 +1295,13 @@
                 </select>
               </div>
               <div class="field" style="grid-column:1 / -1;">
+                <label class="label" data-i18n="lbl_link_plaid">Linked Plaid account (optional)</label>
+                <select id="debtLinkedPlaid" class="select">
+                  <option value="">—</option>
+                </select>
+                <p class="helper-text" data-i18n="debt_link_help">Import accounts from Plaid first, then choose a match.</p>
+              </div>
+              <div class="field" style="grid-column:1 / -1;">
                 <button id="createDebtBtn" class="btn btn-primary" type="submit" data-i18n="btn_save_debt">Save debt</button>
               </div>
             </form>
@@ -1632,6 +1660,13 @@
         empty_trace: "No history available yet.",
         empty_accounts: "No imported accounts yet.",
         empty_compare: "No comparison available yet.",
+        lbl_link_plaid: "Linked Plaid account (optional)",
+        debt_link_help: "Import accounts from Plaid first, then choose a match.",
+        debt_link_none: "None",
+        lbl_linked_plaid_block: "Linked bank account (Plaid)",
+        debt_link_orphan: "Saved link not found among imported accounts. Pick again or unlink.",
+        debt_link_saved: "Link updated.",
+        err_debt_link_invalid: "That account cannot be linked. Import it first or pick another.",
         debt_label: "Debt",
         apr_label: "APR",
         min_label: "Minimum",
@@ -1916,6 +1951,13 @@
         empty_trace: "Todavia no hay historial disponible.",
         empty_accounts: "Todavia no hay cuentas importadas.",
         empty_compare: "Todavia no hay comparacion disponible.",
+        lbl_link_plaid: "Cuenta Plaid vinculada (opcional)",
+        debt_link_help: "Primero importa cuentas desde Plaid y luego elige la que corresponda.",
+        debt_link_none: "Ninguna",
+        lbl_linked_plaid_block: "Cuenta bancaria vinculada (Plaid)",
+        debt_link_orphan: "El vinculo guardado no aparece entre las cuentas importadas. Elige de nuevo o desvincula.",
+        debt_link_saved: "Vinculo actualizado.",
+        err_debt_link_invalid: "No se puede vincular esa cuenta. Importala primero u otra.",
         debt_label: "Deuda",
         apr_label: "APR",
         min_label: "Minimo",
@@ -2242,6 +2284,7 @@
       if (text.includes("Falta Authorization Bearer token")) return t("err_no_auth");
       if (text.includes("Stripe no configurado")) return t("err_stripe_cfg");
       if (text.includes("Plaid no configurado")) return t("err_plaid_cfg");
+      if (text.includes("Invalid linked Plaid account")) return t("err_debt_link_invalid");
 
       return text;
     }
@@ -2355,6 +2398,52 @@
       });
     }
 
+    function findAccountForDebt(debt) {
+      const pid = debt.linked_plaid_account_id;
+      if (!pid) return null;
+      return state.accounts.find((a) => a.plaid_account_id === pid) || null;
+    }
+
+    function buildAccountOptionLabel(acc) {
+      const mask = acc.mask ? ` · ****${escapeHtml(acc.mask)}` : "";
+      return `${escapeHtml(acc.name || t("acct_default"))}${mask} (${escapeHtml(acc.type || "-")})`;
+    }
+
+    function buildDebtPlaidSelectOptionsHtml(selectedPlaidId) {
+      let html = `<option value="">${escapeHtml(t("debt_link_none"))}</option>`;
+      state.accounts.forEach((acc) => {
+        const id = acc.plaid_account_id || "";
+        const sel = selectedPlaidId && id === selectedPlaidId ? " selected" : "";
+        html += `<option value="${escapeHtml(id)}"${sel}>${buildAccountOptionLabel(acc)}</option>`;
+      });
+      return html;
+    }
+
+    function linkedPlaidInfoHtml(debt) {
+      const linked = findAccountForDebt(debt);
+      if (debt.linked_plaid_account_id && !linked) {
+        return `<div class="notice warn" style="margin-top:10px;">${escapeHtml(t("debt_link_orphan"))}</div>`;
+      }
+      if (!linked) return "";
+      const cur = linked.current_balance ?? linked.balance_current ?? 0;
+      return `
+        <div class="debt-plaid-info">
+          <div class="label" style="margin:0 0 6px;">${escapeHtml(t("lbl_linked_plaid_block"))}</div>
+          <div class="debt-plaid-line"><strong>${escapeHtml(linked.name || t("acct_default"))}</strong>${linked.mask ? ` · ****${escapeHtml(linked.mask)}` : ""}</div>
+          <div class="debt-plaid-line">${escapeHtml(t("acct_type"))}: <strong>${escapeHtml(linked.type || "-")}</strong> · ${escapeHtml(t("acct_subtype"))}: <strong>${escapeHtml(linked.subtype || "-")}</strong></div>
+          <div class="debt-plaid-line">${escapeHtml(t("lbl_balance"))}: <strong>${fmtMoney(cur)}</strong></div>
+        </div>`;
+    }
+
+    function populateDebtFormLinkedSelect() {
+      const sel = $("debtLinkedPlaid");
+      if (!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = buildDebtPlaidSelectOptionsHtml(null);
+      if (prev && state.accounts.some((a) => a.plaid_account_id === prev)) sel.value = prev;
+      else sel.value = "";
+    }
+
     function renderDebts() {
       const box = $("debtsList");
       box.innerHTML = "";
@@ -2363,6 +2452,7 @@
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_debts"))}</div>`;
         renderStats();
         renderDebtTargetOptions();
+        populateDebtFormLinkedSelect();
         return;
       }
 
@@ -2372,6 +2462,8 @@
         const progress = Math.max(5, Math.min(100, (Number(debt.balance || 0) / highestBalance) * 100));
         const el = document.createElement("div");
         el.className = "item";
+        const linkInfo = linkedPlaidInfoHtml(debt);
+        const selPlaid = debt.linked_plaid_account_id || "";
         el.innerHTML = `
           <div class="item-top">
             <div>
@@ -2394,13 +2486,26 @@
               <div class="muted" style="font-size:12px;margin-top:4px;">${escapeHtml(t("updated_label"))}: ${fmtDate(debt.updated_at)}</div>
             </div>
           </div>
+          ${linkInfo}
           <div class="progress"><span style="width:${progress}%"></span></div>
+          <div class="debt-plaid-row">
+            <span class="label" data-i18n="lbl_link_plaid">Linked Plaid account (optional)</span>
+            <select class="select debt-plaid-select" data-debt-id="${escapeHtml(debt.id)}">
+              ${buildDebtPlaidSelectOptionsHtml(selPlaid)}
+            </select>
+          </div>
         `;
         box.appendChild(el);
       });
 
+      document.querySelectorAll("#debtsList [data-i18n]").forEach((node) => {
+        const k = node.getAttribute("data-i18n");
+        if (k) node.textContent = t(k);
+      });
+
       renderStats();
       renderDebtTargetOptions();
+      populateDebtFormLinkedSelect();
     }
 
     function renderRules() {
@@ -2640,6 +2745,7 @@
 
       if (!state.accounts.length) {
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_accounts"))}</div>`;
+        populateDebtFormLinkedSelect();
         return;
       }
 
@@ -2651,6 +2757,7 @@
           ${renderAccountSection("other", "accounts_sec_other", oth)}
         </div>
       `;
+      populateDebtFormLinkedSelect();
     }
 
     function renderPlan() {
@@ -2818,12 +2925,12 @@
         await Promise.all([
           refreshPlan(),
           refreshBillingStatus(),
-          refreshDebts(),
           refreshRules(),
           refreshIntents(),
-          refreshTrace(),
-          refreshAccounts()
+          refreshTrace()
         ]);
+        await refreshAccounts();
+        await refreshDebts();
       } catch (e) {
         showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
       }
@@ -3144,6 +3251,8 @@
           due_day: $("debtDueDay").value ? Number($("debtDueDay").value) : null,
           type: $("debtType").value
         };
+        const linkPick = $("debtLinkedPlaid")?.value?.trim();
+        if (linkPick) payload.linked_plaid_account_id = linkPick;
         await api("/debts", { method: "POST", body: JSON.stringify(payload) });
         showMessage(globalMessage, t("debt_saved"), "success");
         e.target.reset();
@@ -3308,6 +3417,28 @@
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
       } finally {
         setLoading(btn, false);
+      }
+    });
+
+    $("debtsList").addEventListener("change", async (e) => {
+      const el = e.target;
+      if (!el.classList || !el.classList.contains("debt-plaid-select")) return;
+      const debtId = el.getAttribute("data-debt-id");
+      if (!debtId) return;
+      const val = el.value.trim();
+      el.disabled = true;
+      try {
+        await api(`/debts/${debtId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ linked_plaid_account_id: val || null })
+        });
+        showMessage(globalMessage, t("debt_link_saved"), "success");
+        await refreshDebts();
+      } catch (err) {
+        showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        await refreshDebts();
+      } finally {
+        el.disabled = false;
       }
     });
 
