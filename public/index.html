@@ -118,6 +118,132 @@
       .hero{grid-template-columns:1fr}
     }
 
+    .hero.hero-overview-compact{
+      gap:12px;
+    }
+
+    @media (min-width: 1041px){
+      .hero.hero-overview-compact{
+        grid-template-columns:1.05fr .95fr;
+      }
+    }
+
+    .hero-overview-compact .hero-main{
+      padding:16px 18px;
+    }
+
+    .hero-overview-compact .hero-title{
+      margin:0 0 6px;
+      font-size:24px;
+      letter-spacing:-.45px;
+      line-height:1.12;
+    }
+
+    .hero-overview-compact .hero-copy{
+      font-size:13px;
+      line-height:1.45;
+      max-width:100%;
+    }
+
+    .hero-overview-compact .hero-actions{
+      margin-top:12px;
+    }
+
+    .hero-overview-compact .hero-actions .btn-primary{
+      padding:10px 16px;
+      font-size:14px;
+    }
+
+    .hero-overview-compact .stats{
+      margin-top:12px;
+      gap:8px;
+    }
+
+    .hero-overview-compact .stat{
+      padding:10px 12px;
+      border-radius:12px;
+    }
+
+    .hero-overview-compact .stat .k{
+      font-size:11px;
+      margin-bottom:4px;
+    }
+
+    .hero-overview-compact .stat .v{
+      font-size:18px;
+    }
+
+    .hero-overview-compact .stack{
+      gap:12px;
+    }
+
+    .overview-at-a-glance > .card{
+      padding:14px 16px;
+    }
+
+    .overview-at-a-glance .section-head{
+      margin-bottom:10px;
+    }
+
+    .overview-at-a-glance .card h2{
+      font-size:17px;
+    }
+
+    .overview-at-a-glance .sub{
+      font-size:12px;
+    }
+
+    .mini-summary-dense{
+      display:grid;
+      gap:8px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    @media (min-width: 900px){
+      .overview-at-a-glance .mini-summary-dense{
+        grid-template-columns:repeat(4,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width: 520px){
+      .mini-summary-dense{grid-template-columns:1fr}
+    }
+
+    .mini-summary-dense .mini-card{
+      padding:10px 12px;
+      border-radius:12px;
+    }
+
+    .mini-summary-dense .mini-card .label-top{
+      font-size:11px;
+      margin-bottom:4px;
+    }
+
+    .mini-summary-dense .mini-card .value-top{
+      font-size:15px;
+    }
+
+    .mini-summary-dense .mini-card .helper-text{
+      margin-top:0;
+      font-size:11px;
+      line-height:1.4;
+    }
+
+    .overview-at-a-glance .plan-sub-divider{
+      height:1px;
+      background:var(--line);
+      margin:12px 0 10px;
+    }
+
+    .overview-inline-label{
+      margin:0 0 8px;
+      font-size:11px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      color:var(--muted);
+    }
+
     .card{
       background:var(--card);
       border:1px solid var(--line);
@@ -270,7 +396,8 @@
     }
 
     .next-action-card{
-      margin-bottom:18px;
+      margin-bottom:12px;
+      padding:14px 16px !important;
       border:1px solid #cfe0ff;
       background:linear-gradient(135deg,#f7faff 0%,#ffffff 58%);
       box-shadow:var(--shadow-soft);
@@ -284,16 +411,16 @@
     }
     .next-action-text{flex:1;min-width:220px}
     .next-action-title{
-      margin:0 0 6px;
-      font-size:20px;
+      margin:0 0 4px;
+      font-size:17px;
       font-weight:800;
-      letter-spacing:-.3px;
+      letter-spacing:-.25px;
       line-height:1.2;
     }
     .next-action-sub{
       margin:0;
-      font-size:14px;
-      line-height:1.55;
+      font-size:13px;
+      line-height:1.45;
       color:var(--muted);
     }
 
@@ -595,36 +722,68 @@
     }
 
     .landing-hero{
-      padding:24px;
+      padding:18px 20px;
     }
 
     .landing-title{
-      margin:0 0 10px;
-      font-size:40px;
-      line-height:1.02;
-      letter-spacing:-.9px;
+      margin:0 0 8px;
+      font-size:30px;
+      line-height:1.08;
+      letter-spacing:-.65px;
     }
 
     .landing-copy{
       margin:0;
       color:var(--muted);
-      font-size:16px;
-      line-height:1.7;
-      max-width:760px;
+      font-size:14px;
+      line-height:1.55;
+      max-width:640px;
     }
 
     .landing-actions{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      margin-top:18px;
+      margin-top:14px;
+    }
+
+    .landing-fold{
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:var(--card-2);
+      overflow:hidden;
+    }
+
+    .landing-fold > summary{
+      cursor:pointer;
+      list-style:none;
+      padding:12px 14px;
+      font-weight:800;
+      font-size:14px;
+      color:var(--text);
+      user-select:none;
+    }
+
+    .landing-fold > summary::-webkit-details-marker{display:none}
+
+    .landing-fold > summary::after{
+      content:"+";
+      float:right;
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    .landing-fold[open] > summary::after{content:"–"}
+
+    .landing-fold-body{
+      padding:0 14px 14px;
     }
 
     .feature-grid{
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:12px;
-      margin-top:18px;
+      gap:10px;
     }
 
     @media (max-width: 900px){
@@ -652,16 +811,16 @@
 
     .steps{
       display:grid;
-      gap:12px;
+      gap:10px;
     }
 
     .step{
       border:1px solid var(--line);
-      border-radius:16px;
-      padding:14px;
+      border-radius:14px;
+      padding:12px;
       background:#fff;
       display:flex;
-      gap:12px;
+      gap:10px;
       align-items:flex-start;
     }
 
@@ -698,11 +857,11 @@
     }
 
     .top-nav-hint{
-      margin:0 0 16px;
+      margin:0 0 12px;
       padding:0 2px;
       max-width:820px;
-      font-size:13px;
-      line-height:1.5;
+      font-size:12px;
+      line-height:1.45;
       color:var(--muted);
     }
 
@@ -1361,7 +1520,6 @@
 
       <section class="landing-grid">
         <div class="card landing-hero card-soft">
-          <span class="pill blue" data-i18n="land_pill">Stable base validated in testing</span>
           <h2 class="landing-title" data-i18n="land_hero_title">Pay down debt with more structure, less stress, and a plan you can actually sustain.</h2>
           <p class="landing-copy" data-i18n="land_hero_copy">
             DebtYa helps you connect accounts, organize debts, automate useful rules, and turn your strategy into real payments with clarity, tracking, and control.
@@ -1372,70 +1530,74 @@
             <button id="landingDemoBtn" class="btn btn-light" type="button" data-i18n="land_btn_demo">See how it works</button>
           </div>
 
-          <div class="feature-grid">
-            <div class="feature-card">
-              <h3 data-i18n="land_feat1_t">Connect your accounts</h3>
-              <p data-i18n="land_feat1_p">Import real accounts and transactions so you always work with up-to-date information.</p>
+          <details class="landing-fold">
+            <summary data-i18n="land_features_toggle">What DebtYa gives you</summary>
+            <div class="landing-fold-body">
+              <div class="feature-grid">
+                <div class="feature-card">
+                  <h3 data-i18n="land_feat1_t">Connect your accounts</h3>
+                  <p data-i18n="land_feat1_p">Import real accounts and transactions so you always work with up-to-date information.</p>
+                </div>
+                <div class="feature-card">
+                  <h3 data-i18n="land_feat2_t">Choose your strategy</h3>
+                  <p data-i18n="land_feat2_p">Compare avalanche and snowball to pick the approach that fits you best.</p>
+                </div>
+                <div class="feature-card">
+                  <h3 data-i18n="land_feat3_t">Move from plan to action</h3>
+                  <p data-i18n="land_feat3_p">Build intents, approve them, execute them, and review your full payment history.</p>
+                </div>
+              </div>
             </div>
-            <div class="feature-card">
-              <h3 data-i18n="land_feat2_t">Choose your strategy</h3>
-              <p data-i18n="land_feat2_p">Compare avalanche and snowball to pick the approach that fits you best.</p>
-            </div>
-            <div class="feature-card">
-              <h3 data-i18n="land_feat3_t">Move from plan to action</h3>
-              <p data-i18n="land_feat3_p">Build intents, approve them, execute them, and review your full payment history.</p>
-            </div>
-          </div>
+          </details>
         </div>
 
         <div class="card">
-          <div class="section-head">
-            <div>
-              <h2 data-i18n="land_steps_title">Start in 4 steps</h2>
-              <p class="sub" data-i18n="land_steps_sub">The simplest way to begin.</p>
-            </div>
-          </div>
+          <details class="landing-fold">
+            <summary data-i18n="land_steps_toggle">Start in 4 steps</summary>
+            <div class="landing-fold-body">
+              <p class="sub" style="margin:0 0 12px;" data-i18n="land_steps_sub">The simplest way to begin.</p>
+              <div class="steps">
+                <div class="step">
+                  <div class="step-num">1</div>
+                  <div>
+                    <h3 data-i18n="land_step1_t">Create your account or log in</h3>
+                    <p data-i18n="land_step1_p">Start with your personal dashboard to save your system and work with your real data.</p>
+                  </div>
+                </div>
 
-          <div class="steps">
-            <div class="step">
-              <div class="step-num">1</div>
-              <div>
-                <h3 data-i18n="land_step1_t">Create your account or log in</h3>
-                <p data-i18n="land_step1_p">Start with your personal dashboard to save your system and work with your real data.</p>
+                <div class="step">
+                  <div class="step-num">2</div>
+                  <div>
+                    <h3 data-i18n="land_step2_t">Connect your bank</h3>
+                    <p data-i18n="land_step2_p">Import real accounts and transactions so your numbers stay current.</p>
+                  </div>
+                </div>
+
+                <div class="step">
+                  <div class="step-num">3</div>
+                  <div>
+                    <h3 data-i18n="land_step3_t">Organize your plan</h3>
+                    <p data-i18n="land_step3_p">Add debts, define your strategy, and create simple rules to reduce guesswork.</p>
+                  </div>
+                </div>
+
+                <div class="step">
+                  <div class="step-num">4</div>
+                  <div>
+                    <h3 data-i18n="land_step4_t">Activate your plan</h3>
+                    <p data-i18n="land_step4_p">With Get started you enter Stripe Checkout, then return to DebtYa with your subscription ready.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="notice">
+                <strong data-i18n="land_ideal_strong">Ideal for:</strong><br />
+                <span data-i18n="land_ideal_body">People juggling multiple debts who want a clear, repeatable system that is easier to sustain month to month.</span>
               </div>
             </div>
-
-            <div class="step">
-              <div class="step-num">2</div>
-              <div>
-                <h3 data-i18n="land_step2_t">Connect your bank</h3>
-                <p data-i18n="land_step2_p">Import real accounts and transactions so your numbers stay current.</p>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="step-num">3</div>
-              <div>
-                <h3 data-i18n="land_step3_t">Organize your plan</h3>
-                <p data-i18n="land_step3_p">Add debts, define your strategy, and create simple rules to reduce guesswork.</p>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="step-num">4</div>
-              <div>
-                <h3 data-i18n="land_step4_t">Activate your plan</h3>
-                <p data-i18n="land_step4_p">With Get started you enter Stripe Checkout, then return to DebtYa with your subscription ready.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="notice">
-            <strong data-i18n="land_ideal_strong">Ideal for:</strong><br />
-            <span data-i18n="land_ideal_body">People juggling multiple debts who want a clear, repeatable system that is easier to sustain month to month.</span>
-          </div>
+          </details>
         </div>
 
         <div id="faqSection" class="card faq-landing-card card-soft">
@@ -1622,7 +1784,7 @@
         </div>
       </div>
 
-      <section class="hero" id="overviewPanel">
+      <section class="hero hero-overview-compact" id="overviewPanel">
         <div class="card hero-main card-soft">
           <h2 class="hero-title" data-i18n="hero_title">Less guesswork. More control. More progress.</h2>
           <p class="hero-copy" data-i18n="hero_copy">
@@ -1655,16 +1817,20 @@
           </div>
         </div>
 
-        <div class="stack">
+        <div class="stack overview-at-a-glance">
           <div class="card">
             <div class="section-head">
               <div>
-                <h2 data-i18n="plan_summary_title">Plan summary</h2>
-                <p class="sub" data-i18n="plan_summary_sub">The most important parts of your current setup.</p>
+                <h2 data-i18n="overview_at_glance_title">Plan &amp; billing</h2>
+                <p class="sub" data-i18n="overview_at_glance_sub">A quick read of your setup.</p>
+              </div>
+              <div class="section-actions">
+                <button id="refreshBillingBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
               </div>
             </div>
 
-            <div class="mini-summary">
+            <h3 class="overview-inline-label" data-i18n="overview_plan_label">Your plan</h3>
+            <div class="mini-summary mini-summary-dense">
               <div class="mini-card">
                 <div class="label-top" data-i18n="lbl_strategy">Strategy</div>
                 <div id="planStrategyText" class="value-top">Loading...</div>
@@ -1687,20 +1853,11 @@
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="card">
-            <div class="section-head">
-              <div>
-                <h2 data-i18n="sub_title">Subscription</h2>
-                <p class="sub" data-i18n="sub_sub">Current billing status in Stripe.</p>
-              </div>
-              <div class="section-actions">
-                <button id="refreshBillingBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
-              </div>
-            </div>
+            <div class="plan-sub-divider"></div>
 
-            <div class="mini-summary">
+            <h3 class="overview-inline-label" data-i18n="overview_sub_label">Subscription</h3>
+            <div class="mini-summary mini-summary-dense">
               <div class="mini-card">
                 <div class="label-top" data-i18n="lbl_status">Status</div>
                 <div id="billingStatusText" class="value-top">Loading...</div>
@@ -2119,8 +2276,10 @@
         btn_start_now: "Get started",
         brand_tagline: "Pay down debt with more structure and less stress.",
         land_pill: "Built for real monthly use",
-        land_hero_title: "Pay down debt with more structure, less stress, and a plan you can actually sustain.",
-        land_hero_copy: "DebtYa helps you connect accounts, organize debts, automate useful rules, and turn your strategy into real payments with clarity, tracking, and control.",
+        land_hero_title: "A calmer way to tackle debt.",
+        land_hero_copy: "Connect your bank, list what you owe, and follow a simple plan—all in one place.",
+        land_features_toggle: "What DebtYa gives you",
+        land_steps_toggle: "Start in 4 steps",
         land_btn_demo: "See how it works",
         land_feat1_t: "Connect your accounts",
         land_feat1_p: "Import real accounts and transactions so you always work with up-to-date information.",
@@ -2140,6 +2299,10 @@
         land_step4_p: 'Tap "Get started" to complete payment and return here with your plan active.',
         land_ideal_strong: "Ideal for:",
         land_ideal_body: "People juggling multiple debts who want a clear, repeatable system that is easier to sustain month to month.",
+        overview_at_glance_title: "Plan & billing",
+        overview_at_glance_sub: "A quick read of your setup.",
+        overview_plan_label: "Your plan",
+        overview_sub_label: "Subscription",
         price_name: "DebtYa Beta",
         price_copy: "Everything you need to connect accounts, organize debts, automate useful rules, and turn your strategy into real payments.",
         price_freq: "per month",
@@ -2247,7 +2410,7 @@
         nav_operate: "Actions",
         nav_setup: "Debts & plan",
         hero_title: "See your plan. Take the next step.",
-        hero_copy: "Connect your bank, list what you owe, and follow suggested payments—all in one calm screen.",
+        hero_copy: "Your bank, your debts, and the next payment—here in one view.",
         btn_connect_bank: "Connect bank",
         btn_import_accounts: "Import accounts",
         btn_import_tx: "Import transactions",
@@ -2500,8 +2663,10 @@
         btn_start_now: "Empieza ahora",
         brand_tagline: "Paga tus deudas con mas orden y menos estres.",
         land_pill: "Pensado para el dia a dia",
-        land_hero_title: "Paga tus deudas con mas orden, menos estres y un plan que si puedes sostener.",
-        land_hero_copy: "DebtYa te ayuda a conectar tus cuentas, organizar tus deudas, automatizar reglas utiles y convertir tu estrategia en pagos reales con claridad, seguimiento y control.",
+        land_hero_title: "Una forma mas tranquila de atender tus deudas.",
+        land_hero_copy: "Conecta tu banco, anota lo que debes y sigue un plan sencillo, todo en un solo lugar.",
+        land_features_toggle: "Que hace DebtYa por ti",
+        land_steps_toggle: "Empieza en 4 pasos",
         land_btn_demo: "Ver como funciona",
         land_feat1_t: "Conecta tus cuentas",
         land_feat1_p: "Importa cuentas y movimientos reales para trabajar con informacion actual.",
@@ -2521,6 +2686,10 @@
         land_step4_p: 'Con "Empieza ahora" completas el pago y vuelves aqui con tu plan activo.',
         land_ideal_strong: "Ideal para:",
         land_ideal_body: "Personas con varias deudas que quieren un sistema claro, repetible y mucho mas facil de sostener cada mes.",
+        overview_at_glance_title: "Plan y facturacion",
+        overview_at_glance_sub: "Lectura rapida de tu configuracion.",
+        overview_plan_label: "Tu plan",
+        overview_sub_label: "Suscripcion",
         price_name: "DebtYa Beta",
         price_copy: "Todo lo necesario para conectar tus cuentas, organizar tus deudas, automatizar reglas utiles y convertir tu estrategia en pagos reales.",
         price_freq: "al mes",
@@ -2628,7 +2797,7 @@
         nav_operate: "Acciones",
         nav_setup: "Deudas y plan",
         hero_title: "Ve tu plan. Da el siguiente paso.",
-        hero_copy: "Conecta tu banco, anota lo que debes y sigue los pagos sugeridos, todo en una pantalla clara.",
+        hero_copy: "Tu banco, tus deudas y el siguiente pago, en una sola vista.",
         btn_connect_bank: "Conectar banco",
         btn_import_accounts: "Importar cuentas",
         btn_import_tx: "Importar transacciones",
