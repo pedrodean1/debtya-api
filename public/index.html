@@ -297,6 +297,12 @@
       color:var(--muted);
     }
 
+    .debt-from-account-wrap{
+      margin-bottom:4px;
+      padding-bottom:12px;
+      border-bottom:1px solid var(--line);
+    }
+
     .grid-2,.grid-3,.grid-4{
       display:grid;
       gap:12px;
@@ -1379,6 +1385,13 @@
             </div>
 
             <form id="debtForm" class="grid-3" style="margin-bottom:16px;">
+              <div class="field debt-from-account-wrap" style="grid-column:1 / -1;">
+                <label class="label" for="debtFromAccountSelect" data-i18n="lbl_debt_from_account">Create debt from imported account</label>
+                <select id="debtFromAccountSelect" class="select" aria-describedby="debtFromAccountHint">
+                  <option value="">—</option>
+                </select>
+                <p class="helper-text" id="debtFromAccountHint" data-i18n="debt_from_account_hint">Choose a credit or loan account you already imported to pre-fill this form. You can edit any field before saving.</p>
+              </div>
               <div class="field">
                 <label class="label" data-i18n="lbl_name">Name</label>
                 <input id="debtName" class="input" data-i18n-placeholder="ph_debt_name" placeholder="e.g. Chase Freedom" required />
@@ -1806,6 +1819,9 @@
         empty_trace: "No history available yet.",
         empty_accounts: "No imported accounts yet.",
         empty_compare: "No comparison available yet.",
+        lbl_debt_from_account: "Create debt from imported account",
+        debt_from_account_none: "Manual entry (no pre-fill)",
+        debt_from_account_hint: "Choose a credit or loan account you already imported to pre-fill this form. APR and minimum payment are starter values—adjust them to match your statement.",
         lbl_link_plaid: "Linked bank account (optional)",
         debt_link_help: "After you connect your bank and import accounts, you can match one here.",
         debt_link_none: "None",
@@ -2118,6 +2134,9 @@
         empty_trace: "Todavia no hay historial disponible.",
         empty_accounts: "Todavia no hay cuentas importadas.",
         empty_compare: "Todavia no hay comparacion disponible.",
+        lbl_debt_from_account: "Crear deuda desde cuenta importada",
+        debt_from_account_none: "Entrada manual (sin autollenado)",
+        debt_from_account_hint: "Elige una cuenta de credito o prestamo que ya importaste para autollenar el formulario. El APR y el pago minimo son valores iniciales: ajustalos a tu estado de cuenta.",
         lbl_link_plaid: "Cuenta bancaria vinculada (opcional)",
         debt_link_help: "Despues de conectar tu banco e importar cuentas, puedes elegir la que corresponda.",
         debt_link_none: "Ninguna",
@@ -2702,6 +2721,64 @@
       else sel.value = "";
     }
 
+    function getPlaidAccountsEligibleForDebt() {
+      return (state.accounts || []).filter((a) => {
+        const ty = String(a.type || "").toLowerCase();
+        return (ty === "credit" || ty === "loan") && !!a.plaid_account_id;
+      });
+    }
+
+    function mapPlaidAccountToDebtType(acc) {
+      const ty = String(acc.type || "").toLowerCase();
+      const st = String(acc.subtype || "").toLowerCase();
+      if (ty === "credit") {
+        if (st === "credit card" || st === "paypal") return "credit_card";
+        return "other";
+      }
+      if (ty === "loan") {
+        if (st.includes("personal") || st === "consumer") return "personal_loan";
+        return "loan";
+      }
+      return "other";
+    }
+
+    function fillDebtFormFromPlaidAccount(plaidAccountId) {
+      const acc = state.accounts.find((a) => String(a.plaid_account_id || "") === String(plaidAccountId || ""));
+      if (!acc) return;
+      const rawBal = Number(acc.current_balance ?? acc.balance_current ?? 0);
+      $("debtName").value = acc.name || "";
+      $("debtBalance").value = String(Math.abs(rawBal));
+      $("debtType").value = mapPlaidAccountToDebtType(acc);
+      $("debtApr").value = "19.99";
+      $("debtMinPayment").value = "25";
+      $("debtDueDay").value = "";
+      populateDebtFormLinkedSelect();
+      const pid = acc.plaid_account_id || "";
+      const linkSel = $("debtLinkedPlaid");
+      if (linkSel && pid) linkSel.value = pid;
+    }
+
+    function populateDebtFromAccountSelect() {
+      const sel = $("debtFromAccountSelect");
+      if (!sel) return;
+      const prev = sel.value;
+      const eligible = getPlaidAccountsEligibleForDebt()
+        .slice()
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" }));
+      let html = `<option value="">${escapeHtml(t("debt_from_account_none"))}</option>`;
+      eligible.forEach((acc) => {
+        const id = acc.plaid_account_id || "";
+        if (!id) return;
+        const maskBit = acc.mask ? ` · ****${escapeHtml(String(acc.mask))}` : "";
+        const label = `${escapeHtml(acc.name || t("acct_default"))}${maskBit}`;
+        const pick = prev === id ? " selected" : "";
+        html += `<option value="${escapeHtml(id)}"${pick}>${label}</option>`;
+      });
+      sel.innerHTML = html;
+      if (prev && eligible.some((a) => String(a.plaid_account_id) === String(prev))) sel.value = prev;
+      else sel.value = "";
+    }
+
     function renderDebts() {
       const box = $("debtsList");
       box.innerHTML = "";
@@ -2711,6 +2788,7 @@
         renderStats();
         renderDebtTargetOptions();
         populateDebtFormLinkedSelect();
+        populateDebtFromAccountSelect();
         updateNextActionGuide();
         return;
       }
@@ -2765,6 +2843,7 @@
       renderStats();
       renderDebtTargetOptions();
       populateDebtFormLinkedSelect();
+      populateDebtFromAccountSelect();
       updateNextActionGuide();
     }
 
@@ -3008,6 +3087,7 @@
       if (!state.accounts.length) {
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_accounts"))}</div>`;
         populateDebtFormLinkedSelect();
+        populateDebtFromAccountSelect();
         updateNextActionGuide();
         return;
       }
@@ -3021,6 +3101,7 @@
         </div>
       `;
       populateDebtFormLinkedSelect();
+      populateDebtFromAccountSelect();
       updateNextActionGuide();
     }
 
@@ -3512,6 +3593,12 @@
     $("navOperate").addEventListener("click", () => setNav("operate"));
     $("navSetup").addEventListener("click", () => setNav("setup"));
 
+    $("debtFromAccountSelect").addEventListener("change", () => {
+      const id = $("debtFromAccountSelect").value;
+      if (!id) return;
+      fillDebtFormFromPlaidAccount(id);
+    });
+
     $("debtForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
@@ -3529,6 +3616,8 @@
         showMessage(globalMessage, t("debt_saved"), "success");
         e.target.reset();
         $("debtType").value = "credit_card";
+        const fromSel = $("debtFromAccountSelect");
+        if (fromSel) fromSel.value = "";
         await refreshDebts();
       } catch (err) {
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
