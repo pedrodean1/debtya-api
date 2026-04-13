@@ -269,6 +269,34 @@
       padding:0 14px 12px;
     }
 
+    .next-action-card{
+      margin-bottom:18px;
+      border:1px solid #cfe0ff;
+      background:linear-gradient(135deg,#f7faff 0%,#ffffff 58%);
+      box-shadow:var(--shadow-soft);
+    }
+    .next-action-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .next-action-text{flex:1;min-width:220px}
+    .next-action-title{
+      margin:0 0 6px;
+      font-size:20px;
+      font-weight:800;
+      letter-spacing:-.3px;
+      line-height:1.2;
+    }
+    .next-action-sub{
+      margin:0;
+      font-size:14px;
+      line-height:1.55;
+      color:var(--muted);
+    }
+
     .grid-2,.grid-3,.grid-4{
       display:grid;
       gap:12px;
@@ -1185,6 +1213,16 @@
         <button id="navSetup" class="nav-chip" type="button" data-i18n="nav_setup">Setup</button>
       </div>
 
+      <div id="nextActionCard" class="card next-action-card">
+        <div class="next-action-row">
+          <div class="next-action-text">
+            <h2 class="next-action-title" id="nextActionTitle"></h2>
+            <p class="next-action-sub" id="nextActionSub"></p>
+          </div>
+          <button type="button" class="btn btn-primary" id="nextActionBtn"></button>
+        </div>
+      </div>
+
       <section class="hero" id="overviewPanel">
         <div class="card hero-main card-soft">
           <h2 class="hero-title" data-i18n="hero_title">Less guesswork. More control. More progress.</h2>
@@ -1434,7 +1472,7 @@
         </div>
 
         <div class="stack">
-          <section class="card">
+          <section class="card" id="paymentPlanSection">
             <div class="section-head">
               <div>
                 <h2 data-i18n="payplan_title">Payment plan</h2>
@@ -1486,7 +1524,7 @@
             <div id="compareResult" class="list" style="margin-top:14px;"></div>
           </section>
 
-          <section class="card">
+          <section class="card" id="suggestedPaymentsPanel">
             <div class="section-head">
               <div>
                 <h2 data-i18n="intents_title">Payment intents</h2>
@@ -1562,6 +1600,7 @@
     const REQUEST_TIMEOUT_MS = 15000;
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
+    const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
     let uiLang = localStorage.getItem(I18N_STORAGE_KEY) || "en";
     if (uiLang !== "en" && uiLang !== "es") uiLang = "en";
 
@@ -1630,6 +1669,23 @@
         advanced_operate_toggle: "Advanced — rules & suggested payments",
         advanced_plan_toggle: "More plan options",
         advanced_intents_toggle: "More list options",
+        next_action_connect_title: "Connect your bank",
+        next_action_connect_sub: "Link your institution so DebtYa can sync your accounts and balances.",
+        next_action_connect_btn: "Connect bank",
+        next_action_import_title: "Import your accounts",
+        next_action_import_sub: "Bring in the accounts you want to see and use in DebtYa.",
+        next_action_import_btn: "Import accounts",
+        next_action_debts_title: "Add your debts",
+        next_action_debts_sub: "List what you owe, or link a debt to an account you already imported.",
+        next_action_debts_btn: "Go to debts",
+        next_action_plan_title: "Save your payment plan",
+        next_action_plan_sub: "Choose a strategy and the monthly numbers that fit your budget.",
+        next_action_plan_btn: "Open payment plan",
+        next_action_intents_title: "Review suggested payments",
+        next_action_intents_sub: "Some suggested payments are waiting for your approval.",
+        next_action_intents_btn: "Review payments",
+        next_action_all_good_title: "You are all set for now",
+        next_action_all_good_sub: "When you have new activity, or want to run the next step, use Quick actions below.",
         nav_overview: "Overview",
         nav_operate: "Quick actions",
         nav_setup: "Debts & plan",
@@ -1925,6 +1981,23 @@
         advanced_operate_toggle: "Avanzado — reglas y pagos sugeridos",
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_intents_toggle: "Mas opciones de la lista",
+        next_action_connect_title: "Conecta tu banco",
+        next_action_connect_sub: "Vincula tu banco para que DebtYa pueda sincronizar cuentas y saldos.",
+        next_action_connect_btn: "Conectar banco",
+        next_action_import_title: "Importa tus cuentas",
+        next_action_import_sub: "Trae las cuentas que quieres ver y usar en DebtYa.",
+        next_action_import_btn: "Importar cuentas",
+        next_action_debts_title: "Crea o vincula tus deudas",
+        next_action_debts_sub: "Anota lo que debes o vincula una deuda con una cuenta ya importada.",
+        next_action_debts_btn: "Ir a deudas",
+        next_action_plan_title: "Configura tu plan",
+        next_action_plan_sub: "Elige una estrategia y los numeros mensuales que te encajen.",
+        next_action_plan_btn: "Abrir plan de pagos",
+        next_action_intents_title: "Revisa tus pagos sugeridos",
+        next_action_intents_sub: "Hay pagos sugeridos esperando tu visto bueno.",
+        next_action_intents_btn: "Revisar pagos",
+        next_action_all_good_title: "Todo esta al dia por ahora",
+        next_action_all_good_sub: "Cuando tengas movimiento nuevo o quieras el siguiente paso, usa Acciones rapidas abajo.",
         nav_overview: "Resumen",
         nav_operate: "Acciones rapidas",
         nav_setup: "Deudas y plan",
@@ -2207,6 +2280,7 @@
         renderAccounts();
         renderPlan();
         if (state.lastCompare) renderCompare(state.lastCompare);
+        updateNextActionGuide();
       } else {
         $("sessionBadge").className = "pill blue";
         $("sessionBadge").textContent = t("badge_session");
@@ -2463,6 +2537,96 @@
       authSubmitBtn.dataset.originalText = authSubmitBtn.textContent;
     }
 
+    let nextActionKind = "all_good";
+
+    function bankExchangeFlag() {
+      try {
+        return localStorage.getItem(LS_BANK_EXCHANGED) === "1";
+      } catch {
+        return false;
+      }
+    }
+
+    function setBankExchangeFlag() {
+      try {
+        localStorage.setItem(LS_BANK_EXCHANGED, "1");
+      } catch (e) {}
+    }
+
+    function computeNextActionKind() {
+      const hasAccounts = (state.accounts || []).length > 0;
+      if (!hasAccounts) {
+        if (!bankExchangeFlag()) return "connect";
+        return "import";
+      }
+      if (!(state.debts || []).length) return "debts";
+      const plan = state.plan;
+      if (!plan || !plan.id) return "plan";
+      const needsApproval = (state.intents || []).some((x) => {
+        const s = String(x.status || "").toLowerCase();
+        return ["draft", "pending", "built", "proposed", "ready", "pending_review"].includes(s);
+      });
+      if (needsApproval) return "intents";
+      return "all_good";
+    }
+
+    function updateNextActionGuide() {
+      if (!appView || appView.classList.contains("hidden")) return;
+      const card = $("nextActionCard");
+      const titleEl = $("nextActionTitle");
+      const subEl = $("nextActionSub");
+      const btn = $("nextActionBtn");
+      if (!card || !titleEl || !subEl || !btn) return;
+
+      nextActionKind = computeNextActionKind();
+
+      const map = {
+        connect: ["next_action_connect_title", "next_action_connect_sub", "next_action_connect_btn"],
+        import: ["next_action_import_title", "next_action_import_sub", "next_action_import_btn"],
+        debts: ["next_action_debts_title", "next_action_debts_sub", "next_action_debts_btn"],
+        plan: ["next_action_plan_title", "next_action_plan_sub", "next_action_plan_btn"],
+        intents: ["next_action_intents_title", "next_action_intents_sub", "next_action_intents_btn"],
+        all_good: ["next_action_all_good_title", "next_action_all_good_sub", null]
+      };
+      const pack = map[nextActionKind] || map.all_good;
+      const [tk, sk, bk] = pack;
+      titleEl.textContent = t(tk);
+      subEl.textContent = t(sk);
+      if (!bk) {
+        btn.classList.add("hidden");
+        btn.textContent = "";
+      } else {
+        btn.classList.remove("hidden");
+        btn.textContent = t(bk);
+      }
+    }
+
+    function runNextActionGuide() {
+      const kind = nextActionKind;
+      if (kind === "connect") {
+        connectBankDirect();
+        return;
+      }
+      if (kind === "import") {
+        setNav("operate");
+        $("operatePanel").scrollIntoView({ behavior: "smooth", block: "start" });
+        $("btnImportAccounts").click();
+        return;
+      }
+      if (kind === "debts") {
+        setNav("setup");
+        $("debtForm").scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      if (kind === "plan") {
+        $("paymentPlanSection").scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      if (kind === "intents") {
+        $("suggestedPaymentsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
     function renderStats() {
       const totalDebt = state.debts.reduce((sum, d) => sum + Number(d.balance || 0), 0);
       const pending = state.intents.filter(x =>
@@ -2547,6 +2711,7 @@
         renderStats();
         renderDebtTargetOptions();
         populateDebtFormLinkedSelect();
+        updateNextActionGuide();
         return;
       }
 
@@ -2600,6 +2765,7 @@
       renderStats();
       renderDebtTargetOptions();
       populateDebtFormLinkedSelect();
+      updateNextActionGuide();
     }
 
     function renderRules() {
@@ -2668,6 +2834,7 @@
       if (!state.intents.length) {
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_intents"))}</div>`;
         renderStats();
+        updateNextActionGuide();
         return;
       }
 
@@ -2709,6 +2876,7 @@
       });
 
       renderStats();
+      updateNextActionGuide();
     }
 
     function renderTrace() {
@@ -2840,6 +3008,7 @@
       if (!state.accounts.length) {
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_accounts"))}</div>`;
         populateDebtFormLinkedSelect();
+        updateNextActionGuide();
         return;
       }
 
@@ -2852,6 +3021,7 @@
         </div>
       `;
       populateDebtFormLinkedSelect();
+      updateNextActionGuide();
     }
 
     function renderPlan() {
@@ -2873,6 +3043,7 @@
         (plan.automation_mode || plan.auto_mode || t("plan_mode_manual"));
 
       $("planExtraText").textContent = fmtMoney(plan.extra_payment_default || 0);
+      updateNextActionGuide();
     }
 
     function renderUser() {
@@ -2992,6 +3163,7 @@
     async function refreshAccounts() {
       const res = await api("/accounts");
       state.accounts = res.data || [];
+      if (state.accounts.length > 0) setBankExchangeFlag();
       renderAccounts();
     }
 
@@ -3060,6 +3232,7 @@
                 })
               });
 
+              setBankExchangeFlag();
               showMessage(globalMessage, t("bank_ok"), "success");
               await refreshAccounts();
             } catch (err) {
@@ -3105,6 +3278,9 @@
     async function logout() {
       await supabaseClient.auth.signOut();
       localStorage.removeItem("debtya_access_token");
+      try {
+        localStorage.removeItem(LS_BANK_EXCHANGED);
+      } catch (e) {}
       window.location.href = "https://www.debtya.com/";
     }
 
@@ -3320,6 +3496,8 @@
     $("billingManageBtn").addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
+    $("nextActionBtn").addEventListener("click", () => runNextActionGuide());
+
     $("heroConnectBtn").addEventListener("click", connectBankDirect);
     $("heroImportBtn").addEventListener("click", async () => {
       document.getElementById("accountsList").scrollIntoView({ behavior: "smooth", block: "start" });
