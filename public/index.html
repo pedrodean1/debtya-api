@@ -978,6 +978,117 @@
       display:block;
       margin-bottom:6px;
     }
+
+    .debt-item-linked{
+      border-color:#b9d0ff;
+      box-shadow:0 10px 28px rgba(31,111,255,.09);
+    }
+    .item-title-wrap{
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .debt-linked-title-pill{
+      font-size:11px;
+      padding:5px 10px;
+    }
+    .debt-plaid-panel{
+      margin-top:14px;
+      padding:16px 16px 14px;
+      border-radius:16px;
+      border:2px solid #a8c6ff;
+      background:linear-gradient(165deg,#f0f6ff 0%,#ffffff 42%);
+      font-size:13px;
+      line-height:1.5;
+    }
+    .debt-plaid-panel-top{
+      margin-bottom:12px;
+    }
+    .debt-plaid-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 12px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      background:#1f6fff;
+      color:#fff;
+      letter-spacing:.02em;
+    }
+    .debt-plaid-details{
+      display:grid;
+      gap:8px;
+      margin-bottom:14px;
+      padding-bottom:12px;
+      border-bottom:1px solid var(--line);
+    }
+    .debt-plaid-kv{
+      display:grid;
+      grid-template-columns:minmax(100px,120px) 1fr;
+      gap:10px;
+      align-items:start;
+    }
+    @media (max-width:520px){
+      .debt-plaid-kv{grid-template-columns:1fr}
+    }
+    .debt-plaid-k{
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+    }
+    .debt-plaid-v{
+      font-size:14px;
+      color:var(--text);
+      word-break:break-word;
+    }
+    .debt-balance-compare{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    @media (max-width:520px){
+      .debt-balance-compare{grid-template-columns:1fr}
+    }
+    .debt-balance-box{
+      border-radius:14px;
+      padding:12px 14px;
+      background:#fff;
+      border:1px solid var(--line);
+    }
+    .debt-balance-box-import{
+      border-color:#93b8ff;
+      background:linear-gradient(180deg,#f8fbff,#fff);
+    }
+    .debt-balance-k{
+      font-size:11px;
+      font-weight:800;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      margin-bottom:6px;
+    }
+    .debt-balance-amt{
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:-.4px;
+      line-height:1.1;
+    }
+    .debt-balance-mismatch{
+      margin-top:12px;
+      font-size:14px;
+      line-height:1.45;
+    }
+    .debt-balance-match-note{
+      margin-top:10px;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .debt-sync-balance-wrap{
+      margin-top:12px;
+    }
   </style>
 </head>
 <body>
@@ -1826,6 +1937,16 @@
         debt_link_help: "After you connect your bank and import accounts, you can match one here.",
         debt_link_none: "None",
         lbl_linked_plaid_block: "Linked bank account",
+        debt_link_badge_short: "Linked",
+        debt_link_badge: "Linked to imported bank account",
+        debt_link_account_label: "Account",
+        debt_link_mask_label: "Mask",
+        debt_balance_manual_label: "Balance in DebtYa (manual)",
+        debt_balance_imported_label: "Current from bank import",
+        debt_balance_mismatch_hint: "These two amounts are different. Plans and payments still use your manual DebtYa balance until you change it yourself.",
+        debt_balance_match_hint: "Imported balance matches your manual balance (within one cent).",
+        btn_sync_imported_balance: "Update to imported balance",
+        debt_balance_synced_ok: "Debt balance updated to match the imported amount.",
         debt_link_orphan: "Saved link not found among imported accounts. Pick again or unlink.",
         debt_link_saved: "Link updated.",
         err_debt_link_invalid: "That account cannot be linked. Import it first or pick another.",
@@ -2141,6 +2262,16 @@
         debt_link_help: "Despues de conectar tu banco e importar cuentas, puedes elegir la que corresponda.",
         debt_link_none: "Ninguna",
         lbl_linked_plaid_block: "Cuenta bancaria vinculada",
+        debt_link_badge_short: "Vinculada",
+        debt_link_badge: "Vinculada a cuenta importada del banco",
+        debt_link_account_label: "Cuenta",
+        debt_link_mask_label: "Ultimos digitos",
+        debt_balance_manual_label: "Balance en DebtYa (manual)",
+        debt_balance_imported_label: "Actual desde importacion",
+        debt_balance_mismatch_hint: "Los dos montos no coinciden. El plan y los pagos siguen usando el balance manual en DebtYa hasta que tu lo cambies.",
+        debt_balance_match_hint: "El saldo importado coincide con tu balance manual (margen de un centavo).",
+        btn_sync_imported_balance: "Actualizar al saldo importado",
+        debt_balance_synced_ok: "Balance de la deuda actualizado al monto importado.",
         debt_link_orphan: "El vinculo guardado no aparece entre las cuentas importadas. Elige de nuevo o desvincula.",
         debt_link_saved: "Vinculo actualizado.",
         err_debt_link_invalid: "No se puede vincular esa cuenta. Importala primero u otra.",
@@ -2702,13 +2833,50 @@
         return `<div class="notice warn" style="margin-top:10px;">${escapeHtml(t("debt_link_orphan"))}</div>`;
       }
       if (!linked) return "";
-      const cur = linked.current_balance ?? linked.balance_current ?? 0;
+
+      const manual = Number(debt.balance || 0);
+      const rawImported = Number(linked.current_balance ?? linked.balance_current ?? 0);
+      const importedOwed = Math.abs(rawImported);
+      const diff = Math.abs(manual - importedOwed);
+      const same = diff < 0.015;
+
+      const maskRow = linked.mask
+        ? `<div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("debt_link_mask_label"))}</span><span class="debt-plaid-v">****${escapeHtml(String(linked.mask))}</span></div>`
+        : "";
+
+      const compareNote = same
+        ? `<div class="debt-balance-match-note">${escapeHtml(t("debt_balance_match_hint"))}</div>`
+        : `<div class="notice warn debt-balance-mismatch">${escapeHtml(t("debt_balance_mismatch_hint"))}</div>`;
+
+      const syncBtn = same
+        ? ""
+        : `<div class="debt-sync-balance-wrap">
+            <button type="button" class="btn btn-primary btn-small debt-sync-balance-btn" data-debt-id="${escapeHtml(debt.id)}" data-target-balance="${escapeHtml(String(importedOwed))}">${escapeHtml(t("btn_sync_imported_balance"))}</button>
+          </div>`;
+
       return `
-        <div class="debt-plaid-info">
-          <div class="label" style="margin:0 0 6px;">${escapeHtml(t("lbl_linked_plaid_block"))}</div>
-          <div class="debt-plaid-line"><strong>${escapeHtml(linked.name || t("acct_default"))}</strong>${linked.mask ? ` · ****${escapeHtml(linked.mask)}` : ""}</div>
-          <div class="debt-plaid-line">${escapeHtml(t("acct_type"))}: <strong>${escapeHtml(linked.type || "-")}</strong> · ${escapeHtml(t("acct_subtype"))}: <strong>${escapeHtml(linked.subtype || "-")}</strong></div>
-          <div class="debt-plaid-line">${escapeHtml(t("lbl_balance"))}: <strong>${fmtMoney(cur)}</strong></div>
+        <div class="debt-plaid-panel">
+          <div class="debt-plaid-panel-top">
+            <span class="debt-plaid-badge">${escapeHtml(t("debt_link_badge"))}</span>
+          </div>
+          <div class="debt-plaid-details">
+            <div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("debt_link_account_label"))}</span><span class="debt-plaid-v"><strong>${escapeHtml(linked.name || t("acct_default"))}</strong></span></div>
+            ${maskRow}
+            <div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("acct_type"))}</span><span class="debt-plaid-v">${escapeHtml(linked.type || "—")}</span></div>
+            <div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("acct_subtype"))}</span><span class="debt-plaid-v">${escapeHtml(linked.subtype || "—")}</span></div>
+          </div>
+          <div class="debt-balance-compare">
+            <div class="debt-balance-box">
+              <div class="debt-balance-k">${escapeHtml(t("debt_balance_manual_label"))}</div>
+              <div class="debt-balance-amt">${fmtMoney(manual)}</div>
+            </div>
+            <div class="debt-balance-box debt-balance-box-import">
+              <div class="debt-balance-k">${escapeHtml(t("debt_balance_imported_label"))}</div>
+              <div class="debt-balance-amt">${fmtMoney(importedOwed)}</div>
+            </div>
+          </div>
+          ${compareNote}
+          ${syncBtn}
         </div>`;
     }
 
@@ -2798,13 +2966,21 @@
       state.debts.forEach((debt) => {
         const progress = Math.max(5, Math.min(100, (Number(debt.balance || 0) / highestBalance) * 100));
         const el = document.createElement("div");
-        el.className = "item";
+        const linkedAcc = findAccountForDebt(debt);
+        const hasGoodLink = !!(debt.linked_plaid_account_id && linkedAcc);
+        el.className = hasGoodLink ? "item debt-item-linked" : "item";
         const linkInfo = linkedPlaidInfoHtml(debt);
         const selPlaid = debt.linked_plaid_account_id || "";
+        const linkPill = hasGoodLink
+          ? `<span class="pill blue debt-linked-title-pill">${escapeHtml(t("debt_link_badge_short"))}</span>`
+          : "";
         el.innerHTML = `
           <div class="item-top">
             <div>
-              <div class="item-title">${escapeHtml(debt.name || t("debt_label"))}</div>
+              <div class="item-title-wrap">
+                <div class="item-title">${escapeHtml(debt.name || t("debt_label"))}</div>
+                ${linkPill}
+              </div>
               <div class="item-meta">
                 ${escapeHtml(t("apr_label"))}: <strong>${Number(debt.apr || 0).toFixed(2)}%</strong> ·
                 ${escapeHtml(t("min_label"))}: <strong>${fmtMoney(debt.minimum_payment)}</strong> ·
@@ -3778,6 +3954,30 @@
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
       } finally {
         setLoading(btn, false);
+      }
+    });
+
+    $("debtsList").addEventListener("click", async (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest(".debt-sync-balance-btn") : null;
+      if (!btn) return;
+      const debtId = btn.getAttribute("data-debt-id");
+      const balStr = btn.getAttribute("data-target-balance");
+      if (!debtId || balStr === null || balStr === "") return;
+      const newBal = Number(balStr);
+      if (Number.isNaN(newBal)) return;
+      btn.disabled = true;
+      try {
+        await api(`/debts/${debtId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ balance: newBal })
+        });
+        showMessage(globalMessage, t("debt_balance_synced_ok"), "success");
+        await refreshDebts();
+      } catch (err) {
+        showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        await refreshDebts();
+      } finally {
+        btn.disabled = false;
       }
     });
 
