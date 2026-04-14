@@ -749,6 +749,42 @@ async function getInstitutionName(institutionId) {
   }
 }
 
+const institutionLogoCache = new Map();
+
+function stripPlaidItemSecretsForClient(row) {
+  if (!row || typeof row !== "object") return row;
+  const { access_token: _accessToken, ...safe } = row;
+  return safe;
+}
+
+async function fetchInstitutionLogoDataUrl(institutionId) {
+  if (!plaidClient || !institutionId) return null;
+  const ttlMs = 7 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  if (institutionLogoCache.has(institutionId)) {
+    const hit = institutionLogoCache.get(institutionId);
+    if (now - hit.ts < ttlMs) return hit.dataUrl;
+  }
+  try {
+    const response = await plaidClient.institutionsGetById({
+      institution_id: institutionId,
+      country_codes: PLAID_COUNTRY_CODES.split(",").map((x) => x.trim()),
+      options: { include_display_data: true }
+    });
+    const logo = response?.data?.institution?.logo;
+    const dataUrl =
+      logo && typeof logo === "string" && logo.length > 2
+        ? `data:image/png;base64,${logo}`
+        : null;
+    institutionLogoCache.set(institutionId, { dataUrl, ts: now });
+    return dataUrl;
+  } catch (e) {
+    appDebug("No se pudo obtener logo de institución:", e.message);
+    institutionLogoCache.set(institutionId, { dataUrl: null, ts: now });
+    return null;
+  }
+}
+
 async function insertAccountsFromPlaid(userId, accounts, item) {
   if (!accounts?.length) return [];
 
@@ -1938,7 +1974,26 @@ app.post("/plaid/exchange_public_token", requireUser, async (req, res) => {
 app.get("/plaid/items", requireUser, async (req, res) => {
   try {
     const items = await getPlaidItemsForUser(req.user.id);
-    return res.json({ ok: true, data: items });
+    const stripped = (items || []).map(stripPlaidItemSecretsForClient);
+    const uniqueInstitutionIds = [
+      ...new Set(
+        stripped.map((row) => row?.institution_id).filter((id) => !!id)
+      )
+    ];
+    const logoByInstitution = new Map();
+    await Promise.all(
+      uniqueInstitutionIds.map(async (institutionId) => {
+        const dataUrl = await fetchInstitutionLogoDataUrl(institutionId);
+        logoByInstitution.set(institutionId, dataUrl);
+      })
+    );
+    const data = stripped.map((row) => ({
+      ...row,
+      institution_logo_data_url: row?.institution_id
+        ? logoByInstitution.get(row.institution_id) ?? null
+        : null
+    }));
+    return res.json({ ok: true, data });
   } catch (error) {
     return jsonError(res, 500, "Error cargando plaid items", {
       details: error.message

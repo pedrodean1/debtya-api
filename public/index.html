@@ -960,6 +960,23 @@
       flex:0 0 auto;
     }
 
+    .sync-bank-icon-img{
+      width:20px;
+      height:20px;
+      border-radius:6px;
+      object-fit:contain;
+      background:#fff;
+      flex:0 0 auto;
+      border:1px solid rgba(31,111,255,.14);
+    }
+
+    .plan-field-hint{
+      margin:6px 0 0;
+      font-size:13px;
+      line-height:1.45;
+      color:var(--muted);
+    }
+
     .nav-chip{
       border:1px solid var(--line);
       background:#fff;
@@ -2066,18 +2083,20 @@
             <form id="planForm" class="grid-2">
               <div class="field">
                 <label class="label" data-i18n="lbl_strategy">Strategy</label>
-                <select id="planStrategy" class="select">
+                <select id="planStrategy" class="select" aria-describedby="planStrategyHint">
                   <option value="avalanche" data-i18n-opt="strategy_avalanche">Avalanche</option>
                   <option value="snowball" data-i18n-opt="strategy_snowball">Snowball</option>
                 </select>
+                <p id="planStrategyHint" class="plan-field-hint" aria-live="polite"></p>
               </div>
               <div class="field">
                 <label class="label" data-i18n="lbl_mode">Mode</label>
-                <select id="planMode" class="select">
+                <select id="planMode" class="select" aria-describedby="planModeHint">
                   <option value="manual" data-i18n-opt="plan_manual">Manual</option>
                   <option value="safe_auto" data-i18n-opt="plan_safe_auto">Safe auto</option>
                   <option value="full_auto" data-i18n-opt="plan_full_auto">Full auto</option>
                 </select>
+                <p id="planModeHint" class="plan-field-hint" aria-live="polite"></p>
               </div>
               <div class="field">
                 <div class="field-label-row">
@@ -2472,6 +2491,16 @@
         plan_manual: "Manual",
         plan_safe_auto: "Safe auto",
         plan_full_auto: "Full auto",
+        hint_strategy_avalanche:
+          "Puts extra payments toward the highest APR first. Usually saves the most interest overall.",
+        hint_strategy_snowball:
+          "Puts extra payments toward the smallest balance first. Can feel faster because accounts drop off sooner.",
+        hint_mode_manual:
+          "You review and run suggested payments yourself. DebtYa prepares amounts; you stay in control.",
+        hint_mode_safe_auto:
+          "DebtYa can prepare payments with extra guardrails. You still confirm important steps in the app.",
+        hint_mode_full_auto:
+          "DebtYa prepares payments with the most automation this product supports. You should still monitor your accounts.",
         lbl_monthly_budget: "Monthly budget",
         hint_monthly_budget:
           "Roughly how much you plan to put toward debt payments each month in this plan (minimums plus your strategy). You can change it anytime.",
@@ -2491,6 +2520,7 @@
         accounts_title: "Connected accounts",
         accounts_sub: "Synced from your bank: cash accounts and debts in separate groups.",
         sync_banks_title: "Synced banks",
+        sync_bank_default: "Bank",
         accounts_sec_cash: "Cash and checking",
         accounts_sec_debt: "Credit cards and loans",
         accounts_sec_other: "Other (investments and similar)",
@@ -2845,6 +2875,16 @@
         plan_manual: "Manual",
         plan_safe_auto: "Automatico seguro",
         plan_full_auto: "Automatico total",
+        hint_strategy_avalanche:
+          "Destina los pagos extra a la tasa mas alta primero. Suele ahorrar mas intereses en total.",
+        hint_strategy_snowball:
+          "Destina los pagos extra al saldo mas pequeno primero. A veces se siente mas rapido porque cierras cuentas antes.",
+        hint_mode_manual:
+          "Tu revisas y ejecutas los pagos sugeridos. DebtYa prepara montos; tu mantienes el control.",
+        hint_mode_safe_auto:
+          "DebtYa puede preparar pagos con mas limites de seguridad. Sigues confirmando pasos importantes en la app.",
+        hint_mode_full_auto:
+          "DebtYa prepara pagos con la automatizacion mas alta que ofrece el producto. De todos modos conviene revisar tus cuentas.",
         lbl_monthly_budget: "Presupuesto mensual",
         hint_monthly_budget:
           "Aproximadamente cuanto planeas destinar a pagos de deuda cada mes en este plan (minimos mas tu estrategia). Puedes cambiarlo cuando quieras.",
@@ -2864,6 +2904,7 @@
         accounts_title: "Cuentas conectadas",
         accounts_sub: "Sincronizadas con tu banco: efectivo y deudas en grupos separados.",
         sync_banks_title: "Bancos sincronizados",
+        sync_bank_default: "Banco",
         accounts_sec_cash: "Efectivo y cuentas corrientes",
         accounts_sec_debt: "Tarjetas y prestamos",
         accounts_sec_other: "Otras (inversiones y similares)",
@@ -4174,7 +4215,7 @@
         const itemId = String(it?.plaid_item_id || "").trim();
         if (!itemId) return;
         const name = String(it?.institution_name || "").trim();
-        map.set(itemId, name || "Bank");
+        map.set(itemId, name || t("sync_bank_default"));
       });
       return map;
     }
@@ -4184,7 +4225,7 @@
       const strip = $("syncedBanksStrip");
       if (!wrap || !strip) return;
 
-      const names = [];
+      const entries = [];
       const seen = new Set();
       const byItem = getSyncedInstitutionNameMap();
 
@@ -4192,31 +4233,78 @@
         const itemId = String(it?.plaid_item_id || "").trim();
         if (!itemId || seen.has(itemId)) return;
         seen.add(itemId);
-        names.push(String(it?.institution_name || "").trim() || "Bank");
+        const name =
+          String(it?.institution_name || "").trim() || t("sync_bank_default");
+        const logo =
+          typeof it?.institution_logo_data_url === "string" &&
+          it.institution_logo_data_url.startsWith("data:image/")
+            ? it.institution_logo_data_url
+            : null;
+        entries.push({ name, logo });
       });
 
-      if (!names.length) {
+      if (!entries.length) {
         (state.accounts || []).forEach((acc) => {
           const itemId = String(acc?.plaid_item_id || "").trim();
           if (!itemId || seen.has(itemId)) return;
           seen.add(itemId);
-          names.push(byItem.get(itemId) || "Bank");
+          entries.push({
+            name: byItem.get(itemId) || t("sync_bank_default"),
+            logo: null
+          });
         });
       }
 
-      if (!names.length) {
+      if (!entries.length) {
         wrap.classList.add("hidden");
-        strip.innerHTML = "";
+        strip.replaceChildren();
         return;
       }
 
-      strip.innerHTML = names
-        .map((name) => {
+      strip.replaceChildren();
+      entries.forEach(({ name, logo }) => {
+        const pill = document.createElement("span");
+        pill.className = "sync-bank-pill";
+        if (logo) {
+          const img = document.createElement("img");
+          img.className = "sync-bank-icon-img";
+          img.src = logo;
+          img.alt = name;
+          img.loading = "lazy";
+          pill.appendChild(img);
+        } else {
           const initial = (String(name).trim()[0] || "B").toUpperCase();
-          return `<span class="sync-bank-pill"><span class="sync-bank-icon">${escapeHtml(initial)}</span>${escapeHtml(name)}</span>`;
-        })
-        .join("");
+          const ic = document.createElement("span");
+          ic.className = "sync-bank-icon";
+          ic.textContent = initial;
+          pill.appendChild(ic);
+        }
+        const label = document.createElement("span");
+        label.textContent = name;
+        pill.appendChild(label);
+        strip.appendChild(pill);
+      });
       wrap.classList.remove("hidden");
+    }
+
+    function updatePlanFieldHints() {
+      const stratEl = $("planStrategy");
+      const modeEl = $("planMode");
+      const sh = $("planStrategyHint");
+      const mh = $("planModeHint");
+      if (!stratEl || !sh) return;
+      const strat = stratEl.value === "snowball" ? "snowball" : "avalanche";
+      sh.textContent = t(strat === "snowball" ? "hint_strategy_snowball" : "hint_strategy_avalanche");
+      if (modeEl && mh) {
+        const m = modeEl.value;
+        const modeKey =
+          m === "safe_auto"
+            ? "hint_mode_safe_auto"
+            : m === "full_auto"
+              ? "hint_mode_full_auto"
+              : "hint_mode_manual";
+        mh.textContent = t(modeKey);
+      }
     }
 
     function renderAccountCardHTML(acc) {
@@ -4303,6 +4391,7 @@
       $("planExtraPayment").value = plan.extra_payment_default ?? "";
 
       updateNextActionGuide();
+      updatePlanFieldHints();
     }
 
     function renderUser() {
@@ -4801,6 +4890,8 @@
     $("refreshDebtsBtn").addEventListener("click", refreshDebts);
     $("refreshRulesBtn").addEventListener("click", refreshRules);
     $("refreshPlanBtn").addEventListener("click", refreshPlan);
+    $("planStrategy").addEventListener("change", updatePlanFieldHints);
+    $("planMode").addEventListener("change", updatePlanFieldHints);
     $("refreshIntentsBtn").addEventListener("click", refreshIntents);
     $("refreshTraceBtn").addEventListener("click", refreshTrace);
     $("refreshAccountsBtn").addEventListener("click", refreshAccounts);
@@ -5090,6 +5181,7 @@
 
     syncLangButtons();
     applyDomI18n();
+    updatePlanFieldHints();
     wireLangButtons();
     updateAuthModeUI();
     loadSession();
