@@ -2099,6 +2099,24 @@
                 <p id="planModeHint" class="plan-field-hint" aria-live="polite"></p>
               </div>
               <div class="field">
+                <label class="label" for="planFundingAccount" data-i18n="lbl_plan_pay_from">Pay from (account)</label>
+                <select id="planFundingAccount" class="select" aria-describedby="planFundingHint">
+                  <option value="">—</option>
+                </select>
+                <p id="planFundingHint" class="plan-field-hint" data-i18n="plan_pay_from_hint">
+                  Choose the checking or savings account you pay from. It is stored on new suggested payments when you prepare them.
+                </p>
+              </div>
+              <div class="field">
+                <label class="label" for="planPaydownDebt" data-i18n="lbl_plan_pay_toward">Pay toward (debt)</label>
+                <select id="planPaydownDebt" class="select" aria-describedby="planPaydownHint">
+                  <option value="">—</option>
+                </select>
+                <p id="planPaydownHint" class="plan-field-hint" data-i18n="plan_pay_toward_hint">
+                  Optional: highlight which debt you consider the main target. Suggested payments can still follow your strategy across multiple debts.
+                </p>
+              </div>
+              <div class="field">
                 <div class="field-label-row">
                   <label class="label" for="planMonthlyBudget" data-i18n="lbl_monthly_budget">Monthly budget</label>
                   <button type="button" class="info-bubble-btn" data-i18n-title="hint_monthly_budget" title="" aria-label="">?</button>
@@ -2501,6 +2519,17 @@
           "DebtYa can prepare payments with extra guardrails. You still confirm important steps in the app.",
         hint_mode_full_auto:
           "DebtYa prepares payments with the most automation this product supports. You should still monitor your accounts.",
+        lbl_plan_pay_from: "Pay from (account)",
+        lbl_plan_pay_toward: "Pay toward (debt)",
+        plan_pay_from_hint:
+          "Choose the checking or savings account you pay from. It is stored on new suggested payments when you prepare them.",
+        plan_pay_toward_hint:
+          "Optional: highlight which debt you consider the main target. Suggested payments can still follow your strategy across multiple debts.",
+        plan_pay_from_none: "Not set",
+        plan_pay_toward_none: "All debts (strategy)",
+        meta_pay_from: "Pay from",
+        meta_pay_toward: "Pay toward",
+        intent_pay_from_unknown: "Not set in plan yet",
         lbl_monthly_budget: "Monthly budget",
         hint_monthly_budget:
           "Roughly how much you plan to put toward debt payments each month in this plan (minimums plus your strategy). You can change it anytime.",
@@ -2590,6 +2619,10 @@
         debt_link_orphan: "Saved link not found among imported accounts. Pick again or unlink.",
         debt_link_saved: "Link updated.",
         err_debt_link_invalid: "That account cannot be linked. Import it first or pick another.",
+        err_plan_funding_missing: "Pay-from account not found among your imported accounts.",
+        err_plan_funding_type: "Pay-from account must be a deposit account (for example checking or savings).",
+        err_plan_debt_invalid: "Target debt is not valid.",
+        err_plan_debt_missing: "Target debt was not found.",
         debt_label: "Debt",
         apr_label: "APR",
         min_label: "Minimum",
@@ -2885,6 +2918,17 @@
           "DebtYa puede preparar pagos con mas limites de seguridad. Sigues confirmando pasos importantes en la app.",
         hint_mode_full_auto:
           "DebtYa prepara pagos con la automatizacion mas alta que ofrece el producto. De todos modos conviene revisar tus cuentas.",
+        lbl_plan_pay_from: "Pagar desde (cuenta)",
+        lbl_plan_pay_toward: "Pagar hacia (deuda)",
+        plan_pay_from_hint:
+          "Elige la cuenta corriente o de ahorros desde la que pagas. Se guarda en los pagos sugeridos nuevos cuando los preparas.",
+        plan_pay_toward_hint:
+          "Opcional: indica que deuda consideras el foco principal. Los montos sugeridos pueden seguir repartiendose segun tu estrategia.",
+        plan_pay_from_none: "Sin definir",
+        plan_pay_toward_none: "Todas las deudas (estrategia)",
+        meta_pay_from: "Pagar desde",
+        meta_pay_toward: "Pagar hacia",
+        intent_pay_from_unknown: "Sin cuenta en el plan aun",
         lbl_monthly_budget: "Presupuesto mensual",
         hint_monthly_budget:
           "Aproximadamente cuanto planeas destinar a pagos de deuda cada mes en este plan (minimos mas tu estrategia). Puedes cambiarlo cuando quieras.",
@@ -2974,6 +3018,10 @@
         debt_link_orphan: "El vinculo guardado no aparece entre las cuentas importadas. Elige de nuevo o desvincula.",
         debt_link_saved: "Vinculo actualizado.",
         err_debt_link_invalid: "No se puede vincular esa cuenta. Importala primero u otra.",
+        err_plan_funding_missing: "La cuenta de origen no aparece entre tus cuentas importadas.",
+        err_plan_funding_type: "La cuenta de origen debe ser de deposito (por ejemplo cheques o ahorros).",
+        err_plan_debt_invalid: "La deuda destino no es valida.",
+        err_plan_debt_missing: "No se encontro la deuda destino.",
         debt_label: "Deuda",
         apr_label: "APR",
         min_label: "Minimo",
@@ -3304,6 +3352,10 @@
       if (text.includes("Stripe no configurado")) return t("err_stripe_cfg");
       if (text.includes("Plaid no configurado")) return t("err_plaid_cfg");
       if (text.includes("Invalid linked Plaid account")) return t("err_debt_link_invalid");
+      if (text.includes("Cuenta de origen no encontrada")) return t("err_plan_funding_missing");
+      if (text.includes("La cuenta de origen debe ser de deposito")) return t("err_plan_funding_type");
+      if (text.includes("Deuda destino no valida")) return t("err_plan_debt_invalid");
+      if (text.includes("Deuda destino no encontrada")) return t("err_plan_debt_missing");
 
       return text;
     }
@@ -3959,6 +4011,7 @@
         renderDebtTargetOptions();
         populateDebtFormLinkedSelect();
         populateDebtFromAccountSelect();
+        populatePlanRoutingSelects();
         updateNextActionGuide();
         return;
       }
@@ -4022,6 +4075,7 @@
       renderDebtTargetOptions();
       populateDebtFormLinkedSelect();
       populateDebtFromAccountSelect();
+      populatePlanRoutingSelects();
       updateNextActionGuide();
     }
 
@@ -4104,6 +4158,8 @@
             <div>
               <div class="item-title">${escapeHtml(t("intent_title"))} ${escapeHtml((intent.id || "").slice(0, 8))}</div>
               <div class="item-meta">
+                ${escapeHtml(t("meta_pay_from"))}: <strong>${escapeHtml(describeIntentPayFrom(intent))}</strong><br />
+                ${escapeHtml(t("meta_pay_toward"))}: <strong>${escapeHtml(describeIntentPayToward(intent))}</strong><br />
                 ${escapeHtml(t("meta_debt"))}: <strong>${escapeHtml(intent.debt_id || "-")}</strong><br />
                 ${escapeHtml(t("meta_total"))}: <strong>${fmtMoney(intent.total_amount ?? intent.amount ?? 0)}</strong><br />
                 ${escapeHtml(t("meta_created"))}: <strong>${fmtDate(intent.created_at)}</strong><br />
@@ -4365,6 +4421,7 @@
         renderSyncedBanksStrip();
         populateDebtFormLinkedSelect();
         populateDebtFromAccountSelect();
+        populatePlanRoutingSelects();
         updateNextActionGuide();
         return;
       }
@@ -4380,7 +4437,72 @@
       renderSyncedBanksStrip();
       populateDebtFormLinkedSelect();
       populateDebtFromAccountSelect();
+      populatePlanRoutingSelects();
       updateNextActionGuide();
+    }
+
+    function accountLabelPlain(acc) {
+      if (!acc) return "";
+      const mask = acc.mask ? ` · ****${acc.mask}` : "";
+      return `${acc.name || t("acct_default")}${mask}`;
+    }
+
+    function describeIntentPayFrom(intent) {
+      const pid = String(intent.source_account_id || "").trim();
+      if (!pid) return t("intent_pay_from_unknown");
+      const acc = (state.accounts || []).find((a) => String(a.plaid_account_id) === pid);
+      if (acc) return accountLabelPlain(acc);
+      return pid.length > 10 ? `${pid.slice(0, 8)}…` : pid;
+    }
+
+    function describeIntentPayToward(intent) {
+      const did = String(intent.debt_id || "").trim();
+      if (!did) return "—";
+      const d = (state.debts || []).find((x) => String(x.id) === did);
+      if (d) return d.name || t("debt_label");
+      return did.length > 12 ? `${did.slice(0, 8)}…` : did;
+    }
+
+    function populatePlanRoutingSelects() {
+      const fundSel = $("planFundingAccount");
+      const debtSel = $("planPaydownDebt");
+      if (!fundSel || !debtSel) return;
+
+      const savedFund = String(state.plan?.funding_plaid_account_id || "").trim();
+      const savedDebt = String(state.plan?.payment_target_debt_id || "").trim();
+
+      fundSel.innerHTML = "";
+      const fe = document.createElement("option");
+      fe.value = "";
+      fe.textContent = t("plan_pay_from_none");
+      fundSel.appendChild(fe);
+      (state.accounts || []).forEach((acc) => {
+        if (String(acc.type || "").toLowerCase() !== "depository") return;
+        const id = String(acc.plaid_account_id || "").trim();
+        if (!id) return;
+        const op = document.createElement("option");
+        op.value = id;
+        op.textContent = accountLabelPlain(acc);
+        fundSel.appendChild(op);
+      });
+
+      debtSel.innerHTML = "";
+      const de = document.createElement("option");
+      de.value = "";
+      de.textContent = t("plan_pay_toward_none");
+      debtSel.appendChild(de);
+      (state.debts || []).forEach((d) => {
+        if (!d?.id) return;
+        const op = document.createElement("option");
+        op.value = d.id;
+        op.textContent = `${d.name || t("debt_label")} · ${fmtMoney(d.balance)}`;
+        debtSel.appendChild(op);
+      });
+
+      fundSel.value = savedFund;
+      debtSel.value = savedDebt;
+      if (savedFund && ![...fundSel.options].some((o) => o.value === savedFund)) fundSel.value = "";
+      if (savedDebt && ![...debtSel.options].some((o) => o.value === savedDebt)) debtSel.value = "";
     }
 
     function renderPlan() {
@@ -4389,6 +4511,8 @@
       $("planMode").value = plan.automation_mode || plan.auto_mode || "manual";
       $("planMonthlyBudget").value = plan.monthly_budget_default ?? plan.monthly_budget ?? "";
       $("planExtraPayment").value = plan.extra_payment_default ?? "";
+
+      populatePlanRoutingSelects();
 
       updateNextActionGuide();
       updatePlanFieldHints();
@@ -4985,7 +5109,9 @@
           auto_mode: $("planMode").value,
           monthly_budget_default: Number($("planMonthlyBudget").value || 0),
           monthly_budget: Number($("planMonthlyBudget").value || 0),
-          extra_payment_default: Number($("planExtraPayment").value || 0)
+          extra_payment_default: Number($("planExtraPayment").value || 0),
+          funding_plaid_account_id: $("planFundingAccount").value.trim() || null,
+          payment_target_debt_id: $("planPaydownDebt").value.trim() || null
         };
         await api("/payment-plan", { method: "POST", body: JSON.stringify(payload) });
         showMessage(globalMessage, t("plan_saved"), "success");

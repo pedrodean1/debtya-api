@@ -947,7 +947,9 @@ function normalizePaymentPlan(row) {
       monthly_budget_default: 0,
       extra_payment_default: 0,
       automation_mode: "manual",
-      auto_mode: "manual"
+      auto_mode: "manual",
+      funding_plaid_account_id: null,
+      payment_target_debt_id: null
     };
   }
 
@@ -967,14 +969,107 @@ function normalizePaymentPlan(row) {
       ? safeNumber(payload.extra_payment_default)
       : 0;
 
+  const fundingPlaid =
+    typeof payload.funding_plaid_account_id === "string" &&
+    payload.funding_plaid_account_id.trim()
+      ? payload.funding_plaid_account_id.trim()
+      : null;
+  const targetDebtId =
+    payload.payment_target_debt_id && isUuid(String(payload.payment_target_debt_id).trim())
+      ? String(payload.payment_target_debt_id).trim()
+      : null;
+
   return {
     ...row,
     monthly_budget: safeNumber(row.monthly_budget),
     monthly_budget_default: monthlyBudgetDefault,
     extra_payment_default: extraPaymentDefault,
     automation_mode: automationMode,
-    auto_mode: automationMode
+    auto_mode: automationMode,
+    funding_plaid_account_id: fundingPlaid,
+    payment_target_debt_id: targetDebtId
   };
+}
+
+async function assertUserOwnsDepositoryPlaidAccount(userId, plaidAccountId) {
+  const id = String(plaidAccountId || "").trim();
+  if (!id) return;
+
+  const { data, error } = await supabaseAdmin
+    .from("accounts")
+    .select("plaid_account_id,type")
+    .eq("user_id", userId)
+    .eq("plaid_account_id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!data?.plaid_account_id) {
+    const err = new Error(
+      "Cuenta de origen no encontrada entre tus cuentas importadas."
+    );
+    err.status = 400;
+    throw err;
+  }
+
+  if (String(data.type || "").toLowerCase() !== "depository") {
+    const err = new Error(
+      "La cuenta de origen debe ser de deposito (por ejemplo cheques o ahorros)."
+    );
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertUserOwnsDebt(userId, debtId) {
+  const id = String(debtId || "").trim();
+  if (!id || !isUuid(id)) {
+    const err = new Error("Deuda destino no valida.");
+    err.status = 400;
+    throw err;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("debts")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!data?.id) {
+    const err = new Error("Deuda destino no encontrada.");
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function stampRecentIntentsFundingFromPlan(userId) {
+  const plan = await getCurrentPaymentPlan(userId);
+  const funding = plan?.funding_plaid_account_id || null;
+  if (!funding) return;
+
+  const since = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+  const { data: intents, error } = await supabaseAdmin
+    .from("payment_intents")
+    .select("id,source_account_id")
+    .eq("user_id", userId)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(40);
+
+  if (error) throw error;
+
+  const now = new Date().toISOString();
+  for (const intent of intents || []) {
+    if (intent.source_account_id) continue;
+    await supabaseAdmin
+      .from("payment_intents")
+      .update({ source_account_id: funding, updated_at: now })
+      .eq("id", intent.id)
+      .eq("user_id", userId);
+  }
 }
 
 async function getCurrentPaymentPlan(userId) {
@@ -1026,6 +1121,29 @@ async function savePaymentPlanForUser(userId, body = {}) {
     monthly_budget_default: monthlyBudgetDefault,
     extra_payment_default: extraPaymentDefault
   };
+
+  if (body.funding_plaid_account_id !== undefined) {
+    const raw = body.funding_plaid_account_id;
+    mergedPayloadJson.funding_plaid_account_id =
+      raw && String(raw).trim() ? String(raw).trim() : null;
+  }
+
+  if (body.payment_target_debt_id !== undefined) {
+    const raw = body.payment_target_debt_id;
+    const s = raw && String(raw).trim() ? String(raw).trim() : "";
+    mergedPayloadJson.payment_target_debt_id = s && isUuid(s) ? s : null;
+  }
+
+  if (mergedPayloadJson.funding_plaid_account_id) {
+    await assertUserOwnsDepositoryPlaidAccount(
+      userId,
+      mergedPayloadJson.funding_plaid_account_id
+    );
+  }
+
+  if (mergedPayloadJson.payment_target_debt_id) {
+    await assertUserOwnsDebt(userId, mergedPayloadJson.payment_target_debt_id);
+  }
 
   const payload = {
     user_id: userId,
@@ -2490,6 +2608,10 @@ app.post("/build_intents_v2", requireUser, async (req, res) => {
       p_user_id: req.user.id
     });
 
+    await stampRecentIntentsFundingFromPlan(req.user.id).catch((e) => {
+      appDebug("stampRecentIntentsFundingFromPlan:", e.message);
+    });
+
     return res.json({
       ok: true,
       data: result
@@ -2505,6 +2627,10 @@ app.post("/payment-intents/build", requireUser, async (req, res) => {
   try {
     const result = await callRpc("build_intents_v2", {
       p_user_id: req.user.id
+    });
+
+    await stampRecentIntentsFundingFromPlan(req.user.id).catch((e) => {
+      appDebug("stampRecentIntentsFundingFromPlan:", e.message);
     });
 
     return res.json({
