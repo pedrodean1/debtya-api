@@ -1844,73 +1844,6 @@
           </div>
         </div>
 
-        <div class="stack overview-at-a-glance">
-          <div class="card">
-            <div class="section-head">
-              <div>
-                <h2 data-i18n="overview_at_glance_title">Plan &amp; billing</h2>
-                <p class="sub" data-i18n="overview_at_glance_sub">A quick read of your setup.</p>
-              </div>
-              <div class="section-actions">
-                <button id="refreshBillingBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
-              </div>
-            </div>
-
-            <h3 class="overview-inline-label" data-i18n="overview_plan_label">Your plan</h3>
-            <div class="mini-summary mini-summary-dense">
-              <div class="mini-card">
-                <div class="label-top" data-i18n="lbl_strategy">Strategy</div>
-                <div id="planStrategyText" class="value-top">Loading...</div>
-              </div>
-
-              <div class="mini-card">
-                <div class="label-top" data-i18n="lbl_mode">Mode</div>
-                <div id="planModeText" class="value-top">Loading...</div>
-              </div>
-
-              <div class="mini-card">
-                <div class="label-top" data-i18n="lbl_monthly_extra">Monthly extra</div>
-                <div id="planExtraText" class="value-top">$0.00</div>
-              </div>
-
-              <div class="mini-card">
-                <div class="label-top" data-i18n="lbl_how_it_works">How it works</div>
-                <div class="helper-text" data-i18n="plan_how_hint">
-                  Avalanche targets the highest interest rate first. Snowball targets the smallest balance first.
-                </div>
-              </div>
-            </div>
-
-            <div class="plan-sub-divider"></div>
-
-            <h3 class="overview-inline-label" data-i18n="overview_sub_label">Subscription</h3>
-            <div class="mini-summary mini-summary-dense">
-              <div class="mini-card">
-                <div class="label-top" data-i18n="lbl_status">Status</div>
-                <div id="billingStatusText" class="value-top">Loading...</div>
-              </div>
-
-              <div class="mini-card">
-                <div class="label-top" data-i18n="lbl_active">Active</div>
-                <div id="billingActiveText" class="value-top">No</div>
-              </div>
-
-              <div class="mini-card">
-                <div class="label-top" data-i18n="lbl_next_period">Next period</div>
-                <div id="billingPeriodText" class="value-top">-</div>
-              </div>
-
-              <div class="mini-card">
-                <div class="label-top" data-i18n="lbl_actions">Actions</div>
-                <div class="item-actions" style="margin-top:0;">
-                  <button id="billingStartBtn" class="btn btn-primary btn-small" type="button" data-i18n="btn_start_now">Get started</button>
-                  <button id="billingManageBtn" class="btn btn-light btn-small hidden" type="button" data-i18n="btn_manage_plan">Manage plan</button>
-                </div>
-                <div class="helper-text" data-i18n="sub_portal_hint">If your plan is active, you can open your account page to manage it.</div>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       <div id="globalMessage" class="notice hidden" style="margin-bottom:18px;"></div>
@@ -2331,10 +2264,6 @@
         land_step4_p: 'Tap "Get started" to complete payment and return here with your plan active.',
         land_ideal_strong: "Ideal for:",
         land_ideal_body: "People juggling multiple debts who want a clear, repeatable system that is easier to sustain month to month.",
-        overview_at_glance_title: "Plan & billing",
-        overview_at_glance_sub: "A quick read of your setup.",
-        overview_plan_label: "Your plan",
-        overview_sub_label: "Subscription",
         price_name: "DebtYa Beta",
         price_copy: "Everything you need to connect accounts, organize debts, automate useful rules, and turn your strategy into real payments.",
         price_freq: "per month",
@@ -2702,10 +2631,6 @@
         land_step4_p: 'Con "Empieza ahora" completas el pago y vuelves aqui con tu plan activo.',
         land_ideal_strong: "Ideal para:",
         land_ideal_body: "Personas con varias deudas que quieren un sistema claro, repetible y mucho mas facil de sostener cada mes.",
-        overview_at_glance_title: "Plan y facturacion",
-        overview_at_glance_sub: "Lectura rapida de tu configuracion.",
-        overview_plan_label: "Tu plan",
-        overview_sub_label: "Suscripcion",
         price_name: "DebtYa Beta",
         price_copy: "Todo lo necesario para conectar tus cuentas, organizar tus deudas, automatizar reglas utiles y convertir tu estrategia en pagos reales.",
         price_freq: "al mes",
@@ -4310,18 +4235,6 @@
       $("planMonthlyBudget").value = plan.monthly_budget_default ?? plan.monthly_budget ?? "";
       $("planExtraPayment").value = plan.extra_payment_default ?? "";
 
-      $("planStrategyText").textContent =
-        plan.strategy === "avalanche" ? "Avalanche" :
-        plan.strategy === "snowball" ? "Snowball" :
-        (plan.strategy || t("plan_mode_manual"));
-
-      $("planModeText").textContent =
-        (plan.automation_mode || plan.auto_mode) === "manual" ? t("plan_mode_manual") :
-        (plan.automation_mode || plan.auto_mode) === "safe_auto" ? t("plan_mode_safe") :
-        (plan.automation_mode || plan.auto_mode) === "full_auto" ? t("plan_mode_full") :
-        (plan.automation_mode || plan.auto_mode || t("plan_mode_manual"));
-
-      $("planExtraText").textContent = fmtMoney(plan.extra_payment_default || 0);
       updateNextActionGuide();
     }
 
@@ -4341,9 +4254,12 @@
         cancel_at_period_end: false
       };
 
-      $("billingStatusText").textContent = translateBillingStatus(billing.status || "inactive");
-      $("billingActiveText").textContent = billing.active ? t("yes") : t("no");
-      $("billingPeriodText").textContent = billing.current_period_end ? fmtDate(billing.current_period_end) : "-";
+      const billingStatusText = $("billingStatusText");
+      const billingActiveText = $("billingActiveText");
+      const billingPeriodText = $("billingPeriodText");
+      if (billingStatusText) billingStatusText.textContent = translateBillingStatus(billing.status || "inactive");
+      if (billingActiveText) billingActiveText.textContent = billing.active ? t("yes") : t("no");
+      if (billingPeriodText) billingPeriodText.textContent = billing.current_period_end ? fmtDate(billing.current_period_end) : "-";
 
       if (billing.active) {
         $("sessionBadge").className = "pill green";
@@ -4356,11 +4272,14 @@
       const canManage = !!billing.stripe_customer_id;
       const isActive = !!billing.active;
 
-      $("billingManageBtn").classList.toggle("hidden", !canManage);
-      $("topManageBillingBtn").classList.toggle("hidden", !canManage);
-
-      $("billingStartBtn").classList.toggle("hidden", isActive);
-      $("topUpgradeBtn").classList.toggle("hidden", isActive);
+      const billingManageBtn = $("billingManageBtn");
+      const topManageBillingBtn = $("topManageBillingBtn");
+      const billingStartBtn = $("billingStartBtn");
+      const topUpgradeBtn = $("topUpgradeBtn");
+      if (billingManageBtn) billingManageBtn.classList.toggle("hidden", !canManage);
+      if (topManageBillingBtn) topManageBillingBtn.classList.toggle("hidden", !canManage);
+      if (billingStartBtn) billingStartBtn.classList.toggle("hidden", isActive);
+      if (topUpgradeBtn) topUpgradeBtn.classList.toggle("hidden", isActive);
     }
 
     function renderCompare(data) {
@@ -4821,10 +4740,13 @@
     $("refreshIntentsBtn").addEventListener("click", refreshIntents);
     $("refreshTraceBtn").addEventListener("click", refreshTrace);
     $("refreshAccountsBtn").addEventListener("click", refreshAccounts);
-    $("refreshBillingBtn").addEventListener("click", refreshBillingStatus);
-    $("billingStartBtn").addEventListener("click", () => startCheckout($("billingStartBtn")));
+    const refreshBillingBtn = $("refreshBillingBtn");
+    if (refreshBillingBtn) refreshBillingBtn.addEventListener("click", refreshBillingStatus);
+    const billingStartBtn = $("billingStartBtn");
+    if (billingStartBtn) billingStartBtn.addEventListener("click", () => startCheckout($("billingStartBtn")));
     $("topUpgradeBtn").addEventListener("click", () => startCheckout($("topUpgradeBtn")));
-    $("billingManageBtn").addEventListener("click", () => openBillingPortal($("billingManageBtn")));
+    const billingManageBtn = $("billingManageBtn");
+    if (billingManageBtn) billingManageBtn.addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
     $("heroConnectBtn").addEventListener("click", connectBankDirect);
