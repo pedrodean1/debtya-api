@@ -95,8 +95,9 @@
 
     .page-grid{
       display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
+      grid-template-columns:1fr;
       gap:18px;
+      max-width:100%;
     }
 
     .page-grid > .stack{display:contents}
@@ -109,11 +110,6 @@
     #historyPanel{order:6}
     #accountsPanel{order:7}
     .footer-legal{order:8}
-
-    @media (max-width: 1040px){
-      .page-grid{grid-template-columns:1fr}
-      .page-grid > .stack{display:grid}
-    }
 
     .stack{
       display:grid;
@@ -418,6 +414,7 @@
       gap:12px;
     }
     .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    #planForm.grid-2{grid-template-columns:1fr}
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
     .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
 
@@ -429,6 +426,41 @@
       display:flex;
       flex-direction:column;
       gap:6px;
+    }
+
+    .field-label-row{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .field-label-row .label{margin:0}
+
+    .info-bubble-btn{
+      flex-shrink:0;
+      border:1px solid var(--line);
+      background:var(--card);
+      color:var(--muted);
+      width:22px;
+      height:22px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      cursor:help;
+      line-height:1;
+      padding:0;
+    }
+
+    .info-bubble-btn:hover,
+    .info-bubble-btn:focus-visible{
+      color:var(--text);
+      border-color:#b9d0ff;
+    }
+
+    .info-bubble-btn:focus-visible{
+      outline:2px solid var(--primary);
+      outline-offset:2px;
     }
 
     .label{
@@ -630,6 +662,18 @@
     .notice.success{background:#ecfbf1;border-color:#cdeed7;color:#17663b}
     .notice.error{background:#fff1f1;border-color:#ffd0cb;color:#9e2e24}
     .notice.warn{background:#fff7e8;border-color:#ffe0a8;color:#8a5a00}
+
+    /* Toast fijo: evita que al mostrar el aviso se mueva el layout y el scroll “salte” arriba */
+    #globalMessage.global-message-toast:not(.hidden){
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      top:max(12px, env(safe-area-inset-top, 0px));
+      z-index:400;
+      width:min(720px, calc(100vw - 32px));
+      margin:0;
+      box-shadow:var(--shadow-soft);
+    }
 
     .divider{
       height:1px;
@@ -1852,7 +1896,7 @@
 
       </section>
 
-      <div id="globalMessage" class="notice hidden" style="margin-bottom:18px;"></div>
+      <div id="globalMessage" class="notice global-message-toast hidden" role="status" aria-live="polite"></div>
 
       <div class="page-grid">
         <div class="stack">
@@ -2023,8 +2067,8 @@
               <div class="field">
                 <label class="label" data-i18n="lbl_strategy">Strategy</label>
                 <select id="planStrategy" class="select">
-                  <option value="avalanche">Avalanche</option>
-                  <option value="snowball">Snowball</option>
+                  <option value="avalanche" data-i18n-opt="strategy_avalanche">Avalanche</option>
+                  <option value="snowball" data-i18n-opt="strategy_snowball">Snowball</option>
                 </select>
               </div>
               <div class="field">
@@ -2036,11 +2080,17 @@
                 </select>
               </div>
               <div class="field">
-                <label class="label" data-i18n="lbl_monthly_budget">Monthly budget</label>
+                <div class="field-label-row">
+                  <label class="label" for="planMonthlyBudget" data-i18n="lbl_monthly_budget">Monthly budget</label>
+                  <button type="button" class="info-bubble-btn" data-i18n-title="hint_monthly_budget" title="" aria-label="">?</button>
+                </div>
                 <input id="planMonthlyBudget" class="input" type="number" step="0.01" placeholder="0.00" />
               </div>
               <div class="field">
-                <label class="label" data-i18n="lbl_monthly_extra">Monthly extra</label>
+                <div class="field-label-row">
+                  <label class="label" for="planExtraPayment" data-i18n="lbl_monthly_extra">Monthly extra</label>
+                  <button type="button" class="info-bubble-btn" data-i18n-title="hint_monthly_extra" title="" aria-label="">?</button>
+                </div>
                 <input id="planExtraPayment" class="input" type="number" step="0.01" placeholder="0.00" />
               </div>
               <div class="field" style="grid-column:1 / -1;">
@@ -2373,6 +2423,8 @@
         plan_summary_sub: "Strategy, mode, and monthly extra at a glance.",
         lbl_strategy: "Strategy",
         lbl_mode: "Mode",
+        strategy_avalanche: "Avalanche",
+        strategy_snowball: "Snowball",
         lbl_monthly_extra: "Monthly extra",
         lbl_how_it_works: "How it works",
         plan_how_hint: "Avalanche targets the highest interest rate first. Snowball targets the smallest balance first.",
@@ -2421,6 +2473,10 @@
         plan_safe_auto: "Safe auto",
         plan_full_auto: "Full auto",
         lbl_monthly_budget: "Monthly budget",
+        hint_monthly_budget:
+          "Roughly how much you plan to put toward debt payments each month in this plan (minimums plus your strategy). You can change it anytime.",
+        hint_monthly_extra:
+          "Extra dollars on top of minimums that go to your priority debt first. It works together with your monthly budget.",
         btn_save_plan: "Save plan",
         btn_compare: "Compare strategies",
         btn_refresh_plan: "Refresh plan",
@@ -2622,7 +2678,7 @@
         land_feat1_t: "Conecta tus cuentas",
         land_feat1_p: "Importa cuentas y movimientos reales para trabajar con informacion actual.",
         land_feat2_t: "Elige tu estrategia",
-        land_feat2_p: "Compara avalanche y snowball para elegir la estrategia que mejor encaje contigo.",
+        land_feat2_p: "Compara avalancha y bola de nieve para elegir la estrategia que mejor encaje contigo.",
         land_feat3_t: "Pasa del plan a la accion",
         land_feat3_p: "Prepara pagos sugeridos, apruebalos, ejecutalos y manten un historial claro.",
         land_steps_title: "Empieza en 4 pasos",
@@ -2644,7 +2700,7 @@
         price_i2: "Importacion de cuentas y transacciones",
         price_i3: "Creacion y seguimiento de deudas",
         price_i4: "Reglas automaticas como redondeo o monto fijo",
-        price_i5: "Comparacion avalanche vs snowball",
+        price_i5: "Comparacion avalancha vs bola de nieve",
         price_i6: "Preparar, aprobar y ejecutar pagos sugeridos",
         price_i7: "Historial de pagos que puedes revisar cuando quieras",
         price_i8: "Base estable para usar mes a mes",
@@ -2740,9 +2796,11 @@
         plan_summary_sub: "Estrategia, modo y extra mensual de un vistazo.",
         lbl_strategy: "Estrategia",
         lbl_mode: "Modo",
+        strategy_avalanche: "Avalancha",
+        strategy_snowball: "Bola de nieve",
         lbl_monthly_extra: "Extra mensual",
         lbl_how_it_works: "Como funciona",
-        plan_how_hint: "Avalanche ataca primero la tasa mas alta. Snowball ataca primero el balance mas pequeno.",
+        plan_how_hint: "Avalancha ataca primero la tasa mas alta. Bola de nieve ataca primero el saldo mas pequeno.",
         sub_title: "Suscripcion",
         sub_sub: "Estado del plan y renovacion.",
         btn_refresh: "Refrescar",
@@ -2774,11 +2832,11 @@
         rules_title: "Reglas",
         rules_sub: "Define como se mueve dinero automaticamente hacia tus deudas.",
         lbl_mode_rule: "Modo",
-        rule_roundup_pct: "Roundup porcentual",
+        rule_roundup_pct: "Redondeo porcentual",
         rule_fixed: "Monto fijo",
         lbl_percent: "Porcentaje",
         lbl_fixed_amount: "Monto fijo",
-        lbl_roundup_to: "Roundup a",
+        lbl_roundup_to: "Redondear a",
         lbl_min_purchase: "Compra minima",
         lbl_target_debt: "Deuda objetivo",
         btn_save_rule: "Guardar regla",
@@ -2788,6 +2846,10 @@
         plan_safe_auto: "Automatico seguro",
         plan_full_auto: "Automatico total",
         lbl_monthly_budget: "Presupuesto mensual",
+        hint_monthly_budget:
+          "Aproximadamente cuanto planeas destinar a pagos de deuda cada mes en este plan (minimos mas tu estrategia). Puedes cambiarlo cuando quieras.",
+        hint_monthly_extra:
+          "Dinero extra por encima de los minimos que va primero a tu deuda prioritaria. Se usa junto con el presupuesto mensual.",
         btn_save_plan: "Guardar plan",
         btn_compare: "Comparar estrategias",
         btn_refresh_plan: "Refrescar plan",
@@ -2879,7 +2941,7 @@
         updated_label: "Actualizado",
         rule_pct_label: "Porcentaje",
         rule_fixed_lbl: "Monto fijo",
-        rule_roundup_lbl: "Roundup",
+        rule_roundup_lbl: "Redondeo",
         rule_min_purchase_lbl: "Compra minima",
         rule_active: "Activa",
         rule_inactive: "Inactiva",
@@ -3007,6 +3069,14 @@
         const key = opt.getAttribute("data-i18n-opt");
         if (key) opt.textContent = t(key);
       });
+      document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+        const key = el.getAttribute("data-i18n-title");
+        if (key) {
+          const txt = t(key);
+          el.setAttribute("title", txt);
+          el.setAttribute("aria-label", txt);
+        }
+      });
       const helpFabEl = $("helpFab");
       if (helpFabEl) helpFabEl.setAttribute("aria-label", t("help_fab_aria"));
     }
@@ -3129,15 +3199,14 @@
 
     function showMessage(target, text, type = "success") {
       target.textContent = text;
-      target.className = `notice ${type}`;
-      target.classList.remove("hidden");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      target.classList.remove("hidden", "success", "error", "warn");
+      target.classList.add(type);
     }
 
     function hideMessage(target) {
-      target.classList.add("hidden");
       target.textContent = "";
-      target.className = "notice hidden";
+      target.classList.remove("success", "error", "warn");
+      target.classList.add("hidden");
     }
 
     function setLoading(btn, loading, textLoading = null) {
@@ -3969,8 +4038,8 @@
       if (s === "past_due") return `<span class="pill orange">${escapeHtml(t("pill_past_due"))}</span>`;
       if (s === "canceled") return `<span class="pill orange">${escapeHtml(t("pill_canceled"))}</span>`;
       if (s === "unpaid") return `<span class="pill orange">${escapeHtml(t("pill_unpaid"))}</span>`;
-      if (s === "avalanche") return `<span class="pill blue">avalanche</span>`;
-      if (s === "snowball") return `<span class="pill blue">snowball</span>`;
+      if (s === "avalanche") return `<span class="pill blue">${escapeHtml(t("strategy_avalanche"))}</span>`;
+      if (s === "snowball") return `<span class="pill blue">${escapeHtml(t("strategy_snowball"))}</span>`;
       return `<span class="pill">${escapeHtml(s || "-")}</span>`;
     }
 
@@ -4296,7 +4365,7 @@
         <div class="item">
           <div class="item-top">
             <div>
-              <div class="item-title">Avalanche</div>
+              <div class="item-title">${escapeHtml(t("strategy_avalanche"))}</div>
               <div class="item-meta">
                 ${escapeHtml(t("months_lbl"))}: <strong>${av.months_to_payoff}</strong><br />
                 ${escapeHtml(t("interest_total_lbl"))}: <strong>${fmtMoney(av.total_interest)}</strong><br />
@@ -4309,7 +4378,7 @@
         <div class="item">
           <div class="item-top">
             <div>
-              <div class="item-title">Snowball</div>
+              <div class="item-title">${escapeHtml(t("strategy_snowball"))}</div>
               <div class="item-meta">
                 ${escapeHtml(t("months_lbl"))}: <strong>${sn.months_to_payoff}</strong><br />
                 ${escapeHtml(t("interest_total_lbl"))}: <strong>${fmtMoney(sn.total_interest)}</strong><br />
