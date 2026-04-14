@@ -61,7 +61,42 @@ const {
 
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
-app.use(cors());
+const DEFAULT_CORS_ORIGINS = [
+  "https://www.debtya.com",
+  "https://debtya.com",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173"
+];
+
+function getAllowedCorsOrigins() {
+  const raw = process.env.ALLOWED_ORIGINS;
+  if (raw && String(raw).trim()) {
+    return String(raw)
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return DEFAULT_CORS_ORIGINS;
+}
+
+const allowedCorsOrigins = getAllowedCorsOrigins();
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (allowedCorsOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      appError("[cors] origen no permitido:", origin);
+      return callback(null, false);
+    }
+  })
+);
 
 app.post(
   "/stripe/webhook",
@@ -1399,12 +1434,19 @@ async function executeIntentDirect(userId, intentId) {
 }
 
 app.get("/health", async (_req, res) => {
-  return res.json({
+  const payload = {
     ok: true,
     message: "DebtYa API funcionando",
     server_version: SERVER_VERSION,
-    now: new Date().toISOString(),
-    env_debug: {
+    now: new Date().toISOString()
+  };
+
+  const exposeEnvDebug =
+    process.env.NODE_ENV !== "production" ||
+    process.env.HEALTH_EXPOSE_DEBUG === "1";
+
+  if (exposeEnvDebug) {
+    payload.env_debug = {
       has_supabase_url: !!SUPABASE_URL,
       has_anon_key: !!SUPABASE_ANON_KEY,
       has_service_role_key: !!SUPABASE_SERVICE_ROLE_KEY,
@@ -1414,8 +1456,10 @@ app.get("/health", async (_req, res) => {
       has_stripe_webhook_secret: !!STRIPE_WEBHOOK_SECRET,
       has_openai_guide: !!process.env.OPENAI_API_KEY,
       guide_assistant_disabled: process.env.OPENAI_GUIDE_DISABLED === "1"
-    }
-  });
+    };
+  }
+
+  return res.json(payload);
 });
 
 const guideRateByIp = new Map();
