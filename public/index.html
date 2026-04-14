@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DebtYa</title>
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/logo.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <style>
@@ -58,19 +60,14 @@
       gap:12px;
     }
 
-    .brand-badge{
+    .brand-logo{
       width:46px;
       height:46px;
       border-radius:15px;
-      background:linear-gradient(135deg,#1f6fff,#73a7ff);
-      color:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:800;
-      font-size:19px;
-      box-shadow:var(--shadow);
+      object-fit:cover;
+      display:block;
       flex:0 0 auto;
+      box-shadow:var(--shadow);
     }
 
     .brand h1{
@@ -1613,7 +1610,7 @@
     <div class="app">
       <div class="topbar">
         <div class="brand">
-          <div class="brand-badge">D</div>
+          <img class="brand-logo" src="/logo.png" width="46" height="46" alt="DebtYa" />
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -1810,7 +1807,7 @@
         </div>
       </div>
       <div class="brand" style="margin-bottom:16px;">
-        <div class="brand-badge">D</div>
+        <img class="brand-logo" src="/logo.png" width="46" height="46" alt="DebtYa" />
         <div>
           <h1 style="font-size:30px;margin:0;">DebtYa</h1>
           <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -1853,7 +1850,7 @@
     <div class="app">
       <div class="topbar">
         <div class="brand">
-          <div class="brand-badge">D</div>
+          <img class="brand-logo" src="/logo.png" width="46" height="46" alt="DebtYa" />
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p id="welcomeText">Home</p>

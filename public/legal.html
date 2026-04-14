@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DebtYa - Terms and policies</title>
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/logo.png" />
   <style>
     :root{
       --bg:#f4f7fb;
@@ -60,19 +62,14 @@
       gap:12px;
     }
 
-    .brand-badge{
+    .brand-logo{
       width:46px;
       height:46px;
       border-radius:15px;
-      background:linear-gradient(135deg,#1f6fff,#73a7ff);
-      color:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:800;
-      font-size:19px;
-      box-shadow:var(--shadow);
+      object-fit:cover;
+      display:block;
       flex:0 0 auto;
+      box-shadow:var(--shadow);
     }
 
     .brand h1{
@@ -257,7 +254,7 @@
   <div class="wrap">
     <div class="topbar">
       <div class="brand">
-        <div class="brand-badge">D</div>
+        <img class="brand-logo" src="/logo.png" width="46" height="46" alt="DebtYa" />
         <div>
           <h1 style="margin:0;">DebtYa</h1>
           <p class="legal-i18n" data-lang="en">Terms, privacy, cancellation, and refunds.</p>
