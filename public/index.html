@@ -395,39 +395,6 @@
       padding:0 14px 12px;
     }
 
-    .next-action-card{
-      margin-bottom:12px;
-      padding:14px 16px !important;
-      border:1px solid #cfe0ff;
-      background:linear-gradient(135deg,#f7faff 0%,#ffffff 58%);
-      box-shadow:var(--shadow-soft);
-    }
-    .next-action-row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
-      flex-wrap:wrap;
-    }
-    .next-action-text{flex:1;min-width:220px}
-    .next-action-title{
-      margin:0 0 4px;
-      font-size:17px;
-      font-weight:800;
-      letter-spacing:-.25px;
-      line-height:1.2;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .next-action-sub{
-      margin:0;
-      font-size:13px;
-      line-height:1.45;
-      color:var(--muted);
-    }
-
     .debt-from-account-wrap{
       margin-bottom:4px;
       padding-bottom:12px;
@@ -1844,16 +1811,6 @@
         <button id="navSetup" class="nav-chip" type="button" data-i18n="nav_setup">Debts &amp; plan</button>
       </div>
 
-      <div id="nextActionCard" class="card next-action-card">
-        <div class="next-action-row">
-          <div class="next-action-text">
-            <h2 class="next-action-title" id="nextActionTitle"></h2>
-            <p class="next-action-sub" id="nextActionSub"></p>
-          </div>
-          <button type="button" class="btn btn-primary" id="nextActionBtn"></button>
-        </div>
-      </div>
-
       <section class="hero hero-overview-compact" id="overviewPanel">
         <div class="card hero-main card-soft">
           <h2 class="hero-title" data-i18n="hero_title">See your plan. Take the next step.</h2>
@@ -2462,23 +2419,6 @@
         advanced_operate_toggle: "More — rules & payments",
         advanced_plan_toggle: "More plan options",
         advanced_intents_toggle: "More list options",
-        next_action_connect_title: "Connect your bank",
-        next_action_connect_sub: "Link your institution so DebtYa can sync your accounts and balances.",
-        next_action_connect_btn: "Connect bank",
-        next_action_import_title: "Import your accounts",
-        next_action_import_sub: "Bring in the accounts you want to see and use in DebtYa.",
-        next_action_import_btn: "Import accounts",
-        next_action_debts_title: "Add your debts",
-        next_action_debts_sub: "List what you owe, or link a debt to an account you already imported.",
-        next_action_debts_btn: "Go to debts",
-        next_action_plan_title: "Save your payment plan",
-        next_action_plan_sub: "Choose a strategy and the monthly numbers that fit your budget.",
-        next_action_plan_btn: "Open payment plan",
-        next_action_intents_title: "Review suggested payments",
-        next_action_intents_sub: "Some suggested payments are waiting for your approval.",
-        next_action_intents_btn: "Review payments",
-        next_action_all_good_title: "You are all set for now",
-        next_action_all_good_sub: "When something new comes up, open Actions for bank and payments, or Debts & plan to adjust your setup.",
         nav_hint:
           "Overview is your snapshot. Actions syncs your bank and runs payment steps. Debts & plan is where you enter balances, rules, and strategy.",
         nav_overview: "Overview",
@@ -2850,23 +2790,6 @@
         advanced_operate_toggle: "Mas — reglas y pagos",
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_intents_toggle: "Mas opciones de la lista",
-        next_action_connect_title: "Conecta tu banco",
-        next_action_connect_sub: "Vincula tu banco para que DebtYa pueda sincronizar cuentas y saldos.",
-        next_action_connect_btn: "Conectar banco",
-        next_action_import_title: "Importa tus cuentas",
-        next_action_import_sub: "Trae las cuentas que quieres ver y usar en DebtYa.",
-        next_action_import_btn: "Importar cuentas",
-        next_action_debts_title: "Crea o vincula tus deudas",
-        next_action_debts_sub: "Anota lo que debes o vincula una deuda con una cuenta ya importada.",
-        next_action_debts_btn: "Ir a deudas",
-        next_action_plan_title: "Configura tu plan",
-        next_action_plan_sub: "Elige una estrategia y los numeros mensuales que te encajen.",
-        next_action_plan_btn: "Abrir plan de pagos",
-        next_action_intents_title: "Revisa tus pagos sugeridos",
-        next_action_intents_sub: "Hay pagos sugeridos esperando tu visto bueno.",
-        next_action_intents_btn: "Revisar pagos",
-        next_action_all_good_title: "Todo esta al dia por ahora",
-        next_action_all_good_sub: "Si aparece algo nuevo, abre Acciones para banco y pagos, o Deudas y plan para ajustar tu configuracion.",
         nav_hint:
           "Resumen es tu panorama. Acciones sincroniza el banco y los pasos de pago. Deudas y plan es donde cargas saldos, reglas y estrategia.",
         nav_overview: "Resumen",
@@ -3596,37 +3519,10 @@
       authSubmitBtn.dataset.originalText = authSubmitBtn.textContent;
     }
 
-    let nextActionKind = "all_good";
-
-    function bankExchangeFlag() {
-      try {
-        return localStorage.getItem(LS_BANK_EXCHANGED) === "1";
-      } catch {
-        return false;
-      }
-    }
-
     function setBankExchangeFlag() {
       try {
         localStorage.setItem(LS_BANK_EXCHANGED, "1");
       } catch (e) {}
-    }
-
-    function computeNextActionKind() {
-      const hasAccounts = (state.accounts || []).length > 0;
-      if (!hasAccounts) {
-        if (!bankExchangeFlag()) return "connect";
-        return "import";
-      }
-      if (!(state.debts || []).length) return "debts";
-      const plan = state.plan;
-      if (!plan || !plan.id) return "plan";
-      const needsApproval = (state.intents || []).some((x) => {
-        const s = String(x.status || "").toLowerCase();
-        return ["draft", "pending", "built", "proposed", "ready", "pending_review"].includes(s);
-      });
-      if (needsApproval) return "intents";
-      return "all_good";
     }
 
     function hasPendingIntents() {
@@ -3653,83 +3549,9 @@
       });
     }
 
-    function nextActionStepNumber(kind) {
-      if (kind === "connect" || kind === "import") return "1";
-      if (kind === "debts") return "2";
-      if (kind === "plan") return "3";
-      if (kind === "intents") return "4";
-      return "";
-    }
-
-    function setNextActionTitle(titleEl, titleText, stepNum) {
-      titleEl.textContent = "";
-      if (stepNum) {
-        const badge = document.createElement("span");
-        badge.className = "section-step-badge";
-        badge.textContent = stepNum;
-        titleEl.appendChild(badge);
-      }
-      const text = document.createElement("span");
-      text.textContent = titleText;
-      titleEl.appendChild(text);
-    }
-
     function updateNextActionGuide() {
       if (!appView || appView.classList.contains("hidden")) return;
-      const card = $("nextActionCard");
-      const titleEl = $("nextActionTitle");
-      const subEl = $("nextActionSub");
-      const btn = $("nextActionBtn");
-      if (!card || !titleEl || !subEl || !btn) return;
-
-      nextActionKind = computeNextActionKind();
       renderGuideStepProgress();
-
-      const map = {
-        connect: ["next_action_connect_title", "next_action_connect_sub", "next_action_connect_btn"],
-        import: ["next_action_import_title", "next_action_import_sub", "next_action_import_btn"],
-        debts: ["next_action_debts_title", "next_action_debts_sub", "next_action_debts_btn"],
-        plan: ["next_action_plan_title", "next_action_plan_sub", "next_action_plan_btn"],
-        intents: ["next_action_intents_title", "next_action_intents_sub", "next_action_intents_btn"],
-        all_good: ["next_action_all_good_title", "next_action_all_good_sub", null]
-      };
-      const pack = map[nextActionKind] || map.all_good;
-      const [tk, sk, bk] = pack;
-      setNextActionTitle(titleEl, t(tk), nextActionStepNumber(nextActionKind));
-      subEl.textContent = t(sk);
-      if (!bk) {
-        btn.classList.add("hidden");
-        btn.textContent = "";
-      } else {
-        btn.classList.remove("hidden");
-        btn.textContent = t(bk);
-      }
-    }
-
-    function runNextActionGuide() {
-      const kind = nextActionKind;
-      if (kind === "connect") {
-        connectBankDirect();
-        return;
-      }
-      if (kind === "import") {
-        setNav("operate");
-        $("operatePanel").scrollIntoView({ behavior: "smooth", block: "start" });
-        $("btnImportAccounts").click();
-        return;
-      }
-      if (kind === "debts") {
-        setNav("setup");
-        $("debtForm").scrollIntoView({ behavior: "smooth", block: "start" });
-        return;
-      }
-      if (kind === "plan") {
-        $("paymentPlanSection").scrollIntoView({ behavior: "smooth", block: "start" });
-        return;
-      }
-      if (kind === "intents") {
-        $("suggestedPaymentsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
-      }
     }
 
     function renderStats() {
@@ -5005,8 +4827,6 @@
     $("billingManageBtn").addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
-    $("nextActionBtn").addEventListener("click", () => runNextActionGuide());
-
     $("heroConnectBtn").addEventListener("click", connectBankDirect);
     $("heroImportBtn").addEventListener("click", async () => {
       document.getElementById("accountsList").scrollIntoView({ behavior: "smooth", block: "start" });
