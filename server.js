@@ -841,11 +841,42 @@ async function insertTransactionsRaw(userId, plaidItemId, transactions) {
   return { inserted: rows.length };
 }
 
+function normalizeMicroRuleModeInput(mode) {
+  const m = String(mode || "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  if (["monthly_fixed", "fixed_amount", "fixed"].includes(m)) return "fixed_amount";
+  if (
+    [
+      "purchase_percent",
+      "spend_percent",
+      "percent_of_spend",
+      "roundup_percent"
+    ].includes(m)
+  ) {
+    return "roundup_percent";
+  }
+  if (
+    [
+      "spare_change",
+      "roundup_change",
+      "roundup_next",
+      "round_up",
+      "roundup_dollar"
+    ].includes(m)
+  ) {
+    return "roundup_change";
+  }
+  if (["fixed_amount", "roundup_percent", "roundup_change"].includes(m)) return m;
+  return "fixed_amount";
+}
+
 function buildMicroRulePayload(userId, body = {}) {
-  const mode = body.mode || body.rule_type || "roundup_percent";
+  const mode = normalizeMicroRuleModeInput(body.mode || body.rule_type);
   const config = body.config_json || body.config || {};
 
-  const percent =
+  let percent =
     body.percent !== undefined
       ? safeNumber(body.percent)
       : config.percent !== undefined
@@ -854,7 +885,7 @@ function buildMicroRulePayload(userId, body = {}) {
       ? 10
       : 0;
 
-  const fixedAmount =
+  let fixedAmount =
     body.fixed_amount !== undefined
       ? safeNumber(body.fixed_amount)
       : config.fixed_amount !== undefined
@@ -863,12 +894,26 @@ function buildMicroRulePayload(userId, body = {}) {
       ? safeNumber(config.amount)
       : 0;
 
-  const roundupTo =
+  let roundupTo =
     body.roundup_to !== undefined
       ? safeNumber(body.roundup_to)
       : config.roundup_to !== undefined
       ? safeNumber(config.roundup_to)
       : 1;
+
+  if (mode === "fixed_amount") {
+    percent = body.percent !== undefined || config.percent !== undefined ? percent : 0;
+  }
+
+  if (mode === "roundup_percent") {
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+  }
+
+  if (mode === "roundup_change") {
+    percent = body.percent !== undefined || config.percent !== undefined ? percent : 0;
+    if (!roundupTo || roundupTo <= 0) roundupTo = 1;
+  }
 
   const minPurchaseAmount =
     body.min_purchase_amount !== undefined
@@ -2476,8 +2521,10 @@ app.patch("/rules/:id", requireUser, async (req, res) => {
 
     if (req.body.enabled !== undefined) patch.enabled = safeBoolean(req.body.enabled, true);
     if (req.body.is_active !== undefined) patch.enabled = safeBoolean(req.body.is_active, true);
-    if (req.body.mode !== undefined) patch.mode = req.body.mode;
-    if (req.body.rule_type !== undefined) patch.mode = req.body.rule_type;
+    if (req.body.mode !== undefined) patch.mode = normalizeMicroRuleModeInput(req.body.mode);
+    if (req.body.rule_type !== undefined) {
+      patch.mode = normalizeMicroRuleModeInput(req.body.rule_type);
+    }
 
     if (req.body.fixed_amount !== undefined) patch.fixed_amount = safeNumber(req.body.fixed_amount);
     else if (config.fixed_amount !== undefined) patch.fixed_amount = safeNumber(config.fixed_amount);

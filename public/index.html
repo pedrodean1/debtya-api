@@ -2027,43 +2027,72 @@
             <div class="section-head">
               <div>
                 <h2 data-i18n="rules_title">Rules</h2>
-                <p class="sub" data-i18n="rules_sub">Define how money moves automatically toward your debts.</p>
+                <p class="sub" data-i18n="rules_sub">Three ways to steer extra money toward your debts when you apply rules.</p>
               </div>
               <div class="section-actions">
                 <button id="refreshRulesBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
               </div>
             </div>
 
-            <form id="ruleForm" class="grid-3" style="margin-bottom:16px;">
+            <p class="helper-text" style="margin:0 0 14px;" data-i18n="rules_intro_three_ways">
+              Pick one style per rule: a fixed add-on, a percent of each purchase, or rounding up spare change. Then use Apply rules under Actions after importing transactions.
+            </p>
+
+            <form id="ruleForm" class="stack" style="margin-bottom:16px;">
               <div class="field">
-                <label class="label" data-i18n="lbl_mode_rule">Mode</label>
-                <select id="ruleMode" class="select">
-                  <option value="roundup_percent" data-i18n-opt="rule_roundup_pct">Percentage roundup</option>
-                  <option value="fixed_amount" data-i18n-opt="rule_fixed">Fixed amount</option>
+                <label class="label" data-i18n="lbl_rule_way">Pay-down style</label>
+                <select id="ruleMode" class="select" aria-describedby="ruleModeHint">
+                  <option value="fixed_amount" data-i18n-opt="rule_way_monthly_fixed">1 — Fixed extra when rules run</option>
+                  <option value="roundup_percent" data-i18n-opt="rule_way_purchase_percent">2 — Percent of each purchase</option>
+                  <option value="roundup_change" data-i18n-opt="rule_way_spare_change">3 — Round up spare change</option>
                 </select>
+                <p id="ruleModeHint" class="plan-field-hint" data-i18n="rule_mode_hint_default" aria-live="polite"></p>
               </div>
-              <div class="field">
-                <label class="label" data-i18n="lbl_percent">Percent</label>
-                <input id="rulePercent" class="input" type="number" step="0.01" value="10" />
+
+              <div id="ruleFieldsFixed" class="grid-3">
+                <div class="field" style="grid-column:1 / -1;">
+                  <label class="label" data-i18n="lbl_fixed_amount">Fixed amount</label>
+                  <input id="ruleFixedAmount" class="input" type="number" step="0.01" value="25" />
+                  <p class="helper-text" data-i18n="rule_hint_monthly_fixed">Same extra amount applied when you run Apply rules (for example after each import), toward the debt you choose below.</p>
+                </div>
               </div>
-              <div class="field">
-                <label class="label" data-i18n="lbl_fixed_amount">Fixed amount</label>
-                <input id="ruleFixedAmount" class="input" type="number" step="0.01" value="0" />
+
+              <div id="ruleFieldsPercent" class="grid-3 hidden">
+                <div class="field">
+                  <label class="label" data-i18n="lbl_percent">Percent of purchase</label>
+                  <input id="rulePercent" class="input" type="number" step="0.01" value="10" min="0" max="100" />
+                </div>
+                <div class="field">
+                  <label class="label" data-i18n="lbl_min_purchase">Minimum purchase</label>
+                  <input id="ruleMinPurchasePercent" class="input" type="number" step="0.01" value="0" />
+                </div>
+                <div class="field" style="grid-column:1 / -1;">
+                  <p class="helper-text" data-i18n="rule_hint_purchase_percent">Example: 10% on a $10 purchase adds $1 toward your target debt. Your bank rules engine in Supabase must use this percent on eligible spending.</p>
+                </div>
               </div>
-              <div class="field">
-                <label class="label" data-i18n="lbl_roundup_to">Round up to</label>
-                <input id="ruleRoundupTo" class="input" type="number" step="0.01" value="1" />
+
+              <div id="ruleFieldsRoundup" class="grid-3 hidden">
+                <div class="field">
+                  <label class="label" data-i18n="lbl_roundup_step">Round up step ($)</label>
+                  <input id="ruleRoundupTo" class="input" type="number" step="0.01" value="1" min="0.01" />
+                </div>
+                <div class="field">
+                  <label class="label" data-i18n="lbl_min_purchase">Minimum purchase</label>
+                  <input id="ruleMinPurchaseRoundup" class="input" type="number" step="0.01" value="0" />
+                </div>
+                <div class="field" style="grid-column:1 / -1;">
+                  <p class="helper-text" data-i18n="rule_hint_spare_change">Example: spend $10.30 with a $1 step — the spare change is $0.70 toward your debt (next whole dollar is $11). Use step 1 for classic “round to next dollar.”</p>
+                </div>
               </div>
-              <div class="field">
-                <label class="label" data-i18n="lbl_min_purchase">Minimum purchase</label>
-                <input id="ruleMinPurchase" class="input" type="number" step="0.01" value="0" />
-              </div>
-              <div class="field">
-                <label class="label" data-i18n="lbl_target_debt">Target debt</label>
-                <select id="ruleTargetDebt" class="select"></select>
-              </div>
-              <div class="field" style="grid-column:1 / -1;">
-                <button id="createRuleBtn" class="btn btn-primary" type="submit" data-i18n="btn_save_rule">Save rule</button>
+
+              <div class="grid-3">
+                <div class="field" style="grid-column:1 / -1;">
+                  <label class="label" data-i18n="lbl_target_debt">Target debt</label>
+                  <select id="ruleTargetDebt" class="select"></select>
+                </div>
+                <div class="field" style="grid-column:1 / -1;">
+                  <button id="createRuleBtn" class="btn btn-primary" type="submit" data-i18n="btn_save_rule">Save rule</button>
+                </div>
               </div>
             </form>
 
@@ -2494,11 +2523,29 @@
         debt_type_other: "Other",
         btn_save_debt: "Save debt",
         rules_title: "Rules",
-        rules_sub: "Define how money moves automatically toward your debts.",
+        rules_sub: "Three ways to steer extra money toward your debts when you apply rules.",
+        rules_intro_three_ways:
+          "Pick one style per rule: a fixed add-on, a percent of each purchase, or rounding up spare change. Then use Apply rules under Actions after importing transactions.",
+        lbl_rule_way: "Pay-down style",
         lbl_mode_rule: "Mode",
-        rule_roundup_pct: "Percentage roundup",
-        rule_fixed: "Fixed amount",
-        lbl_percent: "Percent",
+        rule_way_monthly_fixed: "1 — Fixed extra when rules run",
+        rule_way_purchase_percent: "2 — Percent of each purchase",
+        rule_way_spare_change: "3 — Round up spare change",
+        rule_mode_hint_fixed: "Adds the same dollar amount each time you apply rules, toward one debt.",
+        rule_mode_hint_percent: "Takes a percent of each eligible purchase and sends it toward your target debt.",
+        rule_mode_hint_roundup: "Sends the “spare change” needed to reach the next step (for example the next dollar).",
+        rule_mode_hint_default: "Choose how this rule builds paydown amounts from your spending.",
+        rule_hint_monthly_fixed:
+          "Same extra amount applied when you run Apply rules (for example after each import), toward the debt you choose below.",
+        rule_hint_purchase_percent:
+          "Example: 10% on a $10 purchase adds $1 toward your target debt. Your Supabase apply_rules_v2 logic must use this percent on eligible spending.",
+        rule_hint_spare_change:
+          "Example: spend $10.30 with a $1 step — the spare change is $0.70 toward your debt (next whole dollar is $11). Use step 1 for classic “round to next dollar.”",
+        lbl_roundup_step: "Round up step ($)",
+        rule_roundup_pct: "Percent of purchase",
+        rule_fixed: "Fixed extra",
+        rule_roundup_change: "Spare change round-up",
+        lbl_percent: "Percent of purchase",
         lbl_fixed_amount: "Fixed amount",
         lbl_roundup_to: "Round up to",
         lbl_min_purchase: "Minimum purchase",
@@ -2893,11 +2940,29 @@
         debt_type_other: "Otro",
         btn_save_debt: "Guardar deuda",
         rules_title: "Reglas",
-        rules_sub: "Define como se mueve dinero automaticamente hacia tus deudas.",
+        rules_sub: "Tres formas de enviar dinero extra a tus deudas al aplicar reglas.",
+        rules_intro_three_ways:
+          "Elige un estilo por regla: monto fijo, porcentaje de cada compra o redondear vueltos. Luego usa Aplicar reglas en Acciones despues de importar movimientos.",
+        lbl_rule_way: "Forma de abonar",
         lbl_mode_rule: "Modo",
-        rule_roundup_pct: "Redondeo porcentual",
-        rule_fixed: "Monto fijo",
-        lbl_percent: "Porcentaje",
+        rule_way_monthly_fixed: "1 — Monto fijo al aplicar reglas",
+        rule_way_purchase_percent: "2 — Porcentaje de cada compra",
+        rule_way_spare_change: "3 — Redondear vueltos",
+        rule_mode_hint_fixed: "Suma el mismo monto cada vez que aplicas reglas, hacia una deuda.",
+        rule_mode_hint_percent: "Toma un porcentaje de cada compra elegible y lo envia a la deuda objetivo.",
+        rule_mode_hint_roundup: "Envia el cambio que falta para llegar al siguiente paso (por ejemplo el siguiente dolar).",
+        rule_mode_hint_default: "Elige como esta regla arma montos desde tus gastos.",
+        rule_hint_monthly_fixed:
+          "El mismo monto extra cuando ejecutas Aplicar reglas (por ejemplo tras cada importacion), hacia la deuda que elijas abajo.",
+        rule_hint_purchase_percent:
+          "Ejemplo: 10% sobre $10 de compra suma $1 hacia tu deuda. Tu apply_rules_v2 en Supabase debe usar este porcentaje sobre gastos elegibles.",
+        rule_hint_spare_change:
+          "Ejemplo: gastas $10.30 con paso $1 — el vueltito es $0.70 hacia la deuda (el siguiente entero es $11). Paso 1 = redondear al siguiente dolar.",
+        lbl_roundup_step: "Paso de redondeo ($)",
+        rule_roundup_pct: "Porcentaje de la compra",
+        rule_fixed: "Extra fijo",
+        rule_roundup_change: "Redondeo de vueltos",
+        lbl_percent: "Porcentaje de la compra",
         lbl_fixed_amount: "Monto fijo",
         lbl_roundup_to: "Redondear a",
         lbl_min_purchase: "Compra minima",
@@ -3186,6 +3251,8 @@
         renderTrace();
         renderAccounts();
         renderPlan();
+        syncRuleModeFields();
+        updateRuleModeHint();
         if (state.lastCompare) renderCompare(state.lastCompare);
         updateNextActionGuide();
       } else {
@@ -4079,6 +4146,81 @@
       updateNextActionGuide();
     }
 
+    function ruleModeListTitle(mode) {
+      const m = String(mode || "");
+      if (m === "fixed_amount") return t("rule_way_monthly_fixed");
+      if (m === "roundup_percent") return t("rule_way_purchase_percent");
+      if (m === "roundup_change") return t("rule_way_spare_change");
+      return m || "rule";
+    }
+
+    function ruleListMetaLines(rule) {
+      const m = String(rule.mode || "");
+      const parts = [];
+      if (m === "fixed_amount") {
+        parts.push(`${escapeHtml(t("rule_fixed_lbl"))}: <strong>${fmtMoney(rule.fixed_amount)}</strong>`);
+      }
+      if (m === "roundup_percent") {
+        parts.push(`${escapeHtml(t("rule_pct_label"))}: <strong>${Number(rule.percent || 0)}%</strong>`);
+        if (Number(rule.min_purchase_amount || 0) > 0) {
+          parts.push(
+            `${escapeHtml(t("rule_min_purchase_lbl"))}: <strong>${fmtMoney(rule.min_purchase_amount)}</strong>`
+          );
+        }
+      }
+      if (m === "roundup_change") {
+        parts.push(
+          `${escapeHtml(t("lbl_roundup_step"))}: <strong>${fmtMoney(rule.roundup_to || 1)}</strong>`
+        );
+        if (Number(rule.min_purchase_amount || 0) > 0) {
+          parts.push(
+            `${escapeHtml(t("rule_min_purchase_lbl"))}: <strong>${fmtMoney(rule.min_purchase_amount)}</strong>`
+          );
+        }
+      }
+      if (!parts.length) {
+        parts.push(`${escapeHtml(t("rule_pct_label"))}: <strong>${Number(rule.percent || 0)}%</strong>`);
+        parts.push(`${escapeHtml(t("rule_fixed_lbl"))}: <strong>${fmtMoney(rule.fixed_amount)}</strong>`);
+        parts.push(`${escapeHtml(t("rule_roundup_lbl"))}: <strong>${fmtMoney(rule.roundup_to || 0)}</strong>`);
+        parts.push(
+          `${escapeHtml(t("rule_min_purchase_lbl"))}: <strong>${fmtMoney(rule.min_purchase_amount || 0)}</strong>`
+        );
+      }
+      return parts.join(" · ");
+    }
+
+    function syncRuleModeFields() {
+      const modeEl = $("ruleMode");
+      if (!modeEl) return;
+      const m = modeEl.value;
+      const fixed = $("ruleFieldsFixed");
+      const pct = $("ruleFieldsPercent");
+      const ru = $("ruleFieldsRoundup");
+      if (fixed) fixed.classList.toggle("hidden", m !== "fixed_amount");
+      if (pct) pct.classList.toggle("hidden", m !== "roundup_percent");
+      if (ru) ru.classList.toggle("hidden", m !== "roundup_change");
+    }
+
+    function updateRuleModeHint() {
+      const el = $("ruleModeHint");
+      if (!el) return;
+      const m = $("ruleMode")?.value || "fixed_amount";
+      const key =
+        m === "roundup_percent"
+          ? "rule_mode_hint_percent"
+          : m === "roundup_change"
+            ? "rule_mode_hint_roundup"
+            : "rule_mode_hint_fixed";
+      el.textContent = t(key);
+    }
+
+    function getRuleMinPurchaseForSubmit() {
+      const m = $("ruleMode")?.value || "fixed_amount";
+      if (m === "roundup_percent") return Number($("ruleMinPurchasePercent")?.value || 0);
+      if (m === "roundup_change") return Number($("ruleMinPurchaseRoundup")?.value || 0);
+      return 0;
+    }
+
     function renderRules() {
       const box = $("rulesList");
       box.innerHTML = "";
@@ -4090,10 +4232,7 @@
 
       state.rules.forEach((rule) => {
         const pillClass = rule.enabled ? "green" : "red";
-        const modeLabel =
-          rule.mode === "roundup_percent" ? t("rule_roundup_pct") :
-          rule.mode === "fixed_amount" ? t("rule_fixed") :
-          rule.mode || "rule";
+        const modeLabel = ruleModeListTitle(rule.mode);
 
         const item = document.createElement("div");
         item.className = "item";
@@ -4101,12 +4240,7 @@
           <div class="item-top">
             <div>
               <div class="item-title">${escapeHtml(modeLabel)}</div>
-              <div class="item-meta">
-                ${escapeHtml(t("rule_pct_label"))}: <strong>${Number(rule.percent || 0)}%</strong> ·
-                ${escapeHtml(t("rule_fixed_lbl"))}: <strong>${fmtMoney(rule.fixed_amount)}</strong> ·
-                ${escapeHtml(t("rule_roundup_lbl"))}: <strong>${fmtMoney(rule.roundup_to || 0)}</strong> ·
-                ${escapeHtml(t("rule_min_purchase_lbl"))}: <strong>${fmtMoney(rule.min_purchase_amount || 0)}</strong>
-              </div>
+              <div class="item-meta">${ruleListMetaLines(rule)}</div>
             </div>
             <div>
               <span class="pill ${pillClass}">${rule.enabled ? t("rule_active") : t("rule_inactive")}</span>
@@ -5083,12 +5217,20 @@
     $("ruleForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
+        const mode = $("ruleMode").value;
+        let roundupTo = Number($("ruleRoundupTo").value || 0);
+        if (mode === "roundup_change" && (!roundupTo || roundupTo <= 0)) roundupTo = 1;
         const payload = {
-          mode: $("ruleMode").value,
-          percent: Number($("rulePercent").value || 0),
-          fixed_amount: Number($("ruleFixedAmount").value || 0),
-          roundup_to: Number($("ruleRoundupTo").value || 0),
-          min_purchase_amount: Number($("ruleMinPurchase").value || 0),
+          mode,
+          percent: mode === "roundup_percent" ? Number($("rulePercent").value || 0) : 0,
+          fixed_amount: mode === "fixed_amount" ? Number($("ruleFixedAmount").value || 0) : 0,
+          roundup_to:
+            mode === "roundup_change"
+              ? roundupTo
+              : mode === "roundup_percent"
+                ? 0
+                : 1,
+          min_purchase_amount: getRuleMinPurchaseForSubmit(),
           target_debt_id: $("ruleTargetDebt").value || null,
           enabled: true
         };
@@ -5308,6 +5450,15 @@
     syncLangButtons();
     applyDomI18n();
     updatePlanFieldHints();
+    const ruleModeEl = $("ruleMode");
+    if (ruleModeEl) {
+      ruleModeEl.addEventListener("change", () => {
+        syncRuleModeFields();
+        updateRuleModeHint();
+      });
+      syncRuleModeFields();
+      updateRuleModeHint();
+    }
     wireLangButtons();
     updateAuthModeUI();
     loadSession();

@@ -1,0 +1,20 @@
+-- Referencia para alinear apply_rules_v2 (Supabase) con los tres modos de micro_rules.mode
+-- que usa la API Node: fixed_amount, roundup_percent, roundup_change.
+--
+-- 1) fixed_amount
+--    Asignar hacia la deuda objetivo un monto fijo (rule.fixed_amount) por ejecucion / periodo,
+--    segun como definas tu pipeline (por lote de transacciones o mensual).
+--
+-- 2) roundup_percent  (% del gasto)
+--    Por cada transaccion de gasto elegible (importe absoluto A):
+--    allocation = A * (rule.percent / 100.0)
+--    Ejemplo: compra $10 y percent=10 -> $1.00 hacia la deuda.
+--
+-- 3) roundup_change  (redondeo / vueltos hacia la siguiente unidad)
+--    Por cada transaccion de gasto elegible, con importe absoluto A y rule.roundup_to = paso (ej. 1.00):
+--    allocation = ceil(A / step) * step - A
+--    Ejemplo USD: A=10.30, step=1 -> ceil(10.30)*1 - 10.30 = 11 - 10.30 = 0.70
+--    Si en tu esquema Plaid los gastos vienen con signo distinto, usa abs(A) de forma consistente.
+--
+-- Comprueba que la tabla micro_rules acepte el texto 'roundup_change' en la columna mode
+-- (sin CHECK restrictivo) antes de desplegar el frontend.
