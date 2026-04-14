@@ -95,12 +95,24 @@
 
     .page-grid{
       display:grid;
-      grid-template-columns:1.05fr .95fr;
+      grid-template-columns:repeat(2,minmax(0,1fr));
       gap:18px;
     }
 
+    .page-grid > .stack{display:contents}
+
+    #operatePanel{order:1}
+    #setupPanel{order:2}
+    #paymentPlanSection{order:3}
+    #suggestedPaymentsPanel{order:4}
+    #rulesPanel{order:5}
+    #historyPanel{order:6}
+    #accountsPanel{order:7}
+    .footer-legal{order:8}
+
     @media (max-width: 1040px){
       .page-grid{grid-template-columns:1fr}
+      .page-grid > .stack{display:grid}
     }
 
     .stack{
@@ -1818,12 +1830,6 @@
             Your bank, your debts, and the next payment—here in one view.
           </p>
 
-          <div class="hero-actions">
-            <button id="heroConnectBtn" class="btn btn-primary" type="button" data-i18n="btn_connect_bank">Connect bank</button>
-            <button id="heroImportBtn" class="btn btn-light" type="button" data-i18n="btn_import_accounts">Import accounts</button>
-            <button id="heroBuildBtn" class="btn btn-light" type="button" data-i18n="btn_build_intents">Prepare payments</button>
-          </div>
-
           <div class="stats">
             <div class="stat">
               <div class="k" data-i18n="stat_total_debt">Total debt</div>
@@ -1956,7 +1962,7 @@
             <div id="debtsList" class="list"></div>
           </section>
 
-          <section class="card">
+          <section class="card" id="rulesPanel">
             <div class="section-head">
               <div>
                 <h2 data-i18n="rules_title">Rules</h2>
@@ -2083,7 +2089,7 @@
             <div id="intentsList" class="list list-scroll-sm"></div>
           </section>
 
-          <section class="card">
+          <section class="card" id="historyPanel">
             <div class="section-head">
               <div>
                 <h2 data-i18n="history_title">History</h2>
@@ -2097,7 +2103,7 @@
             <div id="traceList" class="list list-scroll"></div>
           </section>
 
-          <section class="card">
+          <section class="card" id="accountsPanel">
             <div class="section-head">
               <div>
                 <h2 data-i18n="accounts_title">Connected accounts</h2>
@@ -3091,14 +3097,6 @@
       if (active === "overview") $("navOverview").classList.add("active");
       if (active === "operate") $("navOperate").classList.add("active");
       if (active === "setup") $("navSetup").classList.add("active");
-
-      if (active === "overview") {
-        document.getElementById("overviewPanel").scrollIntoView({ behavior: "smooth", block: "start" });
-      } else if (active === "operate") {
-        document.getElementById("operatePanel").scrollIntoView({ behavior: "smooth", block: "start" });
-      } else if (active === "setup") {
-        document.getElementById("setupPanel").scrollIntoView({ behavior: "smooth", block: "start" });
-      }
     }
 
     function fmtMoney(value) {
@@ -4634,9 +4632,8 @@
     $("landingSignupBtn").addEventListener("click", () => showAuth("signup"));
     $("landingStartBtn").addEventListener("click", () => startCheckout($("landingStartBtn")));
     $("landingDemoBtn").addEventListener("click", () => {
-      const faq = document.getElementById("faqSection");
-      const target = faq || document.querySelector(".steps");
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      openHelpModal();
+      setHelpModalTab("faq");
     });
     $("pricingStartBtn").addEventListener("click", () => startCheckout($("pricingStartBtn")));
     $("pricingLoginBtn").addEventListener("click", () => showAuth("login"));
@@ -4668,8 +4665,6 @@
     if (helpJumpFaqBtn) {
       helpJumpFaqBtn.addEventListener("click", () => {
         closeHelpModal();
-        const el = document.getElementById("faqSection");
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     }
     document.addEventListener("keydown", (ev) => {
@@ -4749,15 +4744,6 @@
     if (billingManageBtn) billingManageBtn.addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
-    $("heroConnectBtn").addEventListener("click", connectBankDirect);
-    $("heroImportBtn").addEventListener("click", async () => {
-      document.getElementById("accountsList").scrollIntoView({ behavior: "smooth", block: "start" });
-      document.getElementById("btnImportAccounts").click();
-    });
-    $("heroBuildBtn").addEventListener("click", async () => {
-      document.getElementById("intentsList").scrollIntoView({ behavior: "smooth", block: "start" });
-      document.getElementById("btnBuildIntents").click();
-    });
 
     $("navOverview").addEventListener("click", () => setNav("overview"));
     $("navOperate").addEventListener("click", () => setNav("operate"));
