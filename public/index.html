@@ -881,6 +881,13 @@
       flex:0 0 auto;
     }
 
+    .section-step-badge.is-complete{
+      color:#15683a;
+      background:#e9f9ef;
+      border-color:#b7e8c8;
+      box-shadow:inset 0 0 0 1px rgba(21,104,58,.08);
+    }
+
     .sync-banks-wrap{
       margin:0 0 12px;
       padding:10px 12px;
@@ -1956,7 +1963,7 @@
           <section class="card" id="operatePanel">
             <div class="section-head">
               <div>
-                <h2 class="section-title-step"><span class="section-step-badge">1</span><span data-i18n="operate_title">Actions</span></h2>
+                <h2 class="section-title-step"><span class="section-step-badge" data-step="1">1</span><span data-i18n="operate_title">Actions</span></h2>
                 <p class="sub" data-i18n="operate_sub">Connect the bank, import data, then use More when you need rules or payment prep.</p>
               </div>
             </div>
@@ -1994,7 +2001,7 @@
           <section class="card" id="setupPanel">
             <div class="section-head">
               <div>
-                <h2 class="section-title-step"><span class="section-step-badge">2</span><span data-i18n="debts_title">Debts</span></h2>
+                <h2 class="section-title-step"><span class="section-step-badge" data-step="2">2</span><span data-i18n="debts_title">Debts</span></h2>
                 <p class="sub" data-i18n="debts_sub">Add cards and loans. Link a bank account when it helps.</p>
               </div>
               <div class="section-actions">
@@ -2111,7 +2118,7 @@
           <section class="card" id="paymentPlanSection">
             <div class="section-head">
               <div>
-                <h2 class="section-title-step"><span class="section-step-badge">3</span><span data-i18n="payplan_title">Payment plan</span></h2>
+                <h2 class="section-title-step"><span class="section-step-badge" data-step="3">3</span><span data-i18n="payplan_title">Payment plan</span></h2>
                 <p class="sub" data-i18n="payplan_sub">Set strategy, mode, and monthly budget.</p>
               </div>
             </div>
@@ -2163,7 +2170,7 @@
           <section class="card" id="suggestedPaymentsPanel">
             <div class="section-head">
               <div>
-                <h2 class="section-title-step"><span class="section-step-badge">4</span><span data-i18n="intents_title">Suggested payments</span></h2>
+                <h2 class="section-title-step"><span class="section-step-badge" data-step="4">4</span><span data-i18n="intents_title">Suggested payments</span></h2>
                 <p class="sub" data-i18n="intents_sub">Review suggested amounts, approve what looks right, then run them when you are ready.</p>
               </div>
               <div class="section-actions">
@@ -3622,6 +3629,30 @@
       return "all_good";
     }
 
+    function hasPendingIntents() {
+      return (state.intents || []).some((x) => {
+        const s = String(x.status || "").toLowerCase();
+        return ["draft", "pending", "built", "proposed", "ready", "pending_review"].includes(s);
+      });
+    }
+
+    function completedGuideSteps() {
+      const done = new Set();
+      if ((state.accounts || []).length > 0) done.add("1");
+      if ((state.debts || []).length > 0) done.add("2");
+      if (state.plan && state.plan.id) done.add("3");
+      if ((state.intents || []).length > 0 && !hasPendingIntents()) done.add("4");
+      return done;
+    }
+
+    function renderGuideStepProgress() {
+      const done = completedGuideSteps();
+      document.querySelectorAll(".section-step-badge[data-step]").forEach((el) => {
+        const step = el.getAttribute("data-step") || "";
+        el.classList.toggle("is-complete", done.has(step));
+      });
+    }
+
     function nextActionStepNumber(kind) {
       if (kind === "connect" || kind === "import") return "1";
       if (kind === "debts") return "2";
@@ -3652,6 +3683,7 @@
       if (!card || !titleEl || !subEl || !btn) return;
 
       nextActionKind = computeNextActionKind();
+      renderGuideStepProgress();
 
       const map = {
         connect: ["next_action_connect_title", "next_action_connect_sub", "next_action_connect_btn"],
