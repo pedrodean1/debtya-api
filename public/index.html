@@ -416,6 +416,10 @@
       font-weight:800;
       letter-spacing:-.25px;
       line-height:1.2;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
     }
     .next-action-sub{
       margin:0;
@@ -856,13 +860,74 @@
       margin-bottom:8px;
     }
 
-    .top-nav-hint{
-      margin:0 0 12px;
-      padding:0 2px;
-      max-width:820px;
+    .section-title-step{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .section-step-badge{
+      width:22px;
+      height:22px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
       font-size:12px;
-      line-height:1.45;
+      font-weight:800;
+      color:var(--primary);
+      background:#eef4ff;
+      border:1px solid #d6e5ff;
+      flex:0 0 auto;
+    }
+
+    .sync-banks-wrap{
+      margin:0 0 12px;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fbfdff;
+    }
+
+    .sync-banks-title{
+      margin:0 0 8px;
+      font-size:12px;
+      font-weight:800;
       color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    .sync-banks-strip{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .sync-bank-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid #d7e6ff;
+      background:#f6faff;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .sync-bank-icon{
+      width:20px;
+      height:20px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      font-weight:800;
+      color:#fff;
+      background:#1f6fff;
+      flex:0 0 auto;
     }
 
     .nav-chip{
@@ -1771,7 +1836,6 @@
         <button id="navOperate" class="nav-chip" type="button" data-i18n="nav_operate">Actions</button>
         <button id="navSetup" class="nav-chip" type="button" data-i18n="nav_setup">Debts &amp; plan</button>
       </div>
-      <p class="top-nav-hint" data-i18n="nav_hint">Overview is your snapshot. Actions syncs your bank and runs payment steps. Debts &amp; plan is where you enter balances, rules, and strategy.</p>
 
       <div id="nextActionCard" class="card next-action-card">
         <div class="next-action-row">
@@ -1892,9 +1956,14 @@
           <section class="card" id="operatePanel">
             <div class="section-head">
               <div>
-                <h2 data-i18n="operate_title">Actions</h2>
+                <h2 class="section-title-step"><span class="section-step-badge">1</span><span data-i18n="operate_title">Actions</span></h2>
                 <p class="sub" data-i18n="operate_sub">Connect the bank, import data, then use More when you need rules or payment prep.</p>
               </div>
+            </div>
+
+            <div id="syncedBanksWrap" class="sync-banks-wrap hidden">
+              <p class="sync-banks-title" data-i18n="sync_banks_title">Synced banks</p>
+              <div id="syncedBanksStrip" class="sync-banks-strip"></div>
             </div>
 
             <div class="grid-3" style="margin-bottom:12px;">
@@ -1925,7 +1994,7 @@
           <section class="card" id="setupPanel">
             <div class="section-head">
               <div>
-                <h2 data-i18n="debts_title">Debts</h2>
+                <h2 class="section-title-step"><span class="section-step-badge">2</span><span data-i18n="debts_title">Debts</span></h2>
                 <p class="sub" data-i18n="debts_sub">Add cards and loans. Link a bank account when it helps.</p>
               </div>
               <div class="section-actions">
@@ -2042,7 +2111,7 @@
           <section class="card" id="paymentPlanSection">
             <div class="section-head">
               <div>
-                <h2 data-i18n="payplan_title">Payment plan</h2>
+                <h2 class="section-title-step"><span class="section-step-badge">3</span><span data-i18n="payplan_title">Payment plan</span></h2>
                 <p class="sub" data-i18n="payplan_sub">Set strategy, mode, and monthly budget.</p>
               </div>
             </div>
@@ -2094,7 +2163,7 @@
           <section class="card" id="suggestedPaymentsPanel">
             <div class="section-head">
               <div>
-                <h2 data-i18n="intents_title">Suggested payments</h2>
+                <h2 class="section-title-step"><span class="section-step-badge">4</span><span data-i18n="intents_title">Suggested payments</span></h2>
                 <p class="sub" data-i18n="intents_sub">Review suggested amounts, approve what looks right, then run them when you are ready.</p>
               </div>
               <div class="section-actions">
@@ -2483,6 +2552,7 @@
         history_sub: "See payments and how your balances changed.",
         accounts_title: "Connected accounts",
         accounts_sub: "Synced from your bank: cash accounts and debts in separate groups.",
+        sync_banks_title: "Synced banks",
         accounts_sec_cash: "Cash and checking",
         accounts_sec_debt: "Credit cards and loans",
         accounts_sec_other: "Other (investments and similar)",
@@ -2870,6 +2940,7 @@
         history_sub: "Pagos y como cambiaron tus balances.",
         accounts_title: "Cuentas conectadas",
         accounts_sub: "Sincronizadas con tu banco: efectivo y deudas en grupos separados.",
+        sync_banks_title: "Bancos sincronizados",
         accounts_sec_cash: "Efectivo y cuentas corrientes",
         accounts_sec_debt: "Tarjetas y prestamos",
         accounts_sec_other: "Otras (inversiones y similares)",
@@ -3122,6 +3193,7 @@
       intents: [],
       trace: [],
       accounts: [],
+      plaidItems: [],
       billing: null,
       lastCompare: null
     };
@@ -3550,6 +3622,27 @@
       return "all_good";
     }
 
+    function nextActionStepNumber(kind) {
+      if (kind === "connect" || kind === "import") return "1";
+      if (kind === "debts") return "2";
+      if (kind === "plan") return "3";
+      if (kind === "intents") return "4";
+      return "";
+    }
+
+    function setNextActionTitle(titleEl, titleText, stepNum) {
+      titleEl.textContent = "";
+      if (stepNum) {
+        const badge = document.createElement("span");
+        badge.className = "section-step-badge";
+        badge.textContent = stepNum;
+        titleEl.appendChild(badge);
+      }
+      const text = document.createElement("span");
+      text.textContent = titleText;
+      titleEl.appendChild(text);
+    }
+
     function updateNextActionGuide() {
       if (!appView || appView.classList.contains("hidden")) return;
       const card = $("nextActionCard");
@@ -3570,7 +3663,7 @@
       };
       const pack = map[nextActionKind] || map.all_good;
       const [tk, sk, bk] = pack;
-      titleEl.textContent = t(tk);
+      setNextActionTitle(titleEl, t(tk), nextActionStepNumber(nextActionKind));
       subEl.textContent = t(sk);
       if (!bk) {
         btn.classList.add("hidden");
@@ -4229,6 +4322,57 @@
       return "";
     }
 
+    function getSyncedInstitutionNameMap() {
+      const map = new Map();
+      (state.plaidItems || []).forEach((it) => {
+        const itemId = String(it?.plaid_item_id || "").trim();
+        if (!itemId) return;
+        const name = String(it?.institution_name || "").trim();
+        map.set(itemId, name || "Bank");
+      });
+      return map;
+    }
+
+    function renderSyncedBanksStrip() {
+      const wrap = $("syncedBanksWrap");
+      const strip = $("syncedBanksStrip");
+      if (!wrap || !strip) return;
+
+      const names = [];
+      const seen = new Set();
+      const byItem = getSyncedInstitutionNameMap();
+
+      (state.plaidItems || []).forEach((it) => {
+        const itemId = String(it?.plaid_item_id || "").trim();
+        if (!itemId || seen.has(itemId)) return;
+        seen.add(itemId);
+        names.push(String(it?.institution_name || "").trim() || "Bank");
+      });
+
+      if (!names.length) {
+        (state.accounts || []).forEach((acc) => {
+          const itemId = String(acc?.plaid_item_id || "").trim();
+          if (!itemId || seen.has(itemId)) return;
+          seen.add(itemId);
+          names.push(byItem.get(itemId) || "Bank");
+        });
+      }
+
+      if (!names.length) {
+        wrap.classList.add("hidden");
+        strip.innerHTML = "";
+        return;
+      }
+
+      strip.innerHTML = names
+        .map((name) => {
+          const initial = (String(name).trim()[0] || "B").toUpperCase();
+          return `<span class="sync-bank-pill"><span class="sync-bank-icon">${escapeHtml(initial)}</span>${escapeHtml(name)}</span>`;
+        })
+        .join("");
+      wrap.classList.remove("hidden");
+    }
+
     function renderAccountCardHTML(acc) {
       const current = acc.current_balance ?? acc.balance_current ?? 0;
       const available = acc.available_balance ?? acc.balance_available ?? 0;
@@ -4284,6 +4428,7 @@
 
       if (!state.accounts.length) {
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_accounts"))}</div>`;
+        renderSyncedBanksStrip();
         populateDebtFormLinkedSelect();
         populateDebtFromAccountSelect();
         updateNextActionGuide();
@@ -4298,6 +4443,7 @@
           ${renderAccountSection("other", "accounts_sec_other", oth)}
         </div>
       `;
+      renderSyncedBanksStrip();
       populateDebtFormLinkedSelect();
       populateDebtFromAccountSelect();
       updateNextActionGuide();
@@ -4439,9 +4585,21 @@
       renderTrace();
     }
 
+    async function refreshPlaidItems() {
+      try {
+        const res = await api("/plaid/items");
+        state.plaidItems = res.data || [];
+      } catch {
+        state.plaidItems = [];
+      }
+    }
+
     async function refreshAccounts() {
-      const res = await api("/accounts");
-      state.accounts = res.data || [];
+      const [accountsRes] = await Promise.all([
+        api("/accounts"),
+        refreshPlaidItems()
+      ]);
+      state.accounts = accountsRes.data || [];
       if (state.accounts.length > 0) setBankExchangeFlag();
       renderAccounts();
     }
@@ -4472,7 +4630,8 @@
           refreshBillingStatus(),
           refreshRules(),
           refreshIntents(),
-          refreshTrace()
+          refreshTrace(),
+          refreshPlaidItems()
         ]);
         await refreshAccounts();
         await refreshDebts();
