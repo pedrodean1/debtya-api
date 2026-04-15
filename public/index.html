@@ -246,6 +246,31 @@
       font-size:14px;
     }
 
+    .next-step-callout{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:linear-gradient(135deg,#fbfdff,#f0f6ff);
+    }
+
+    .next-step-callout-inner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .next-step-text{
+      margin:0;
+      font-size:14px;
+      line-height:1.45;
+      color:var(--text);
+      flex:1;
+      min-width:min(100%,200px);
+    }
+
     .hero-overview-compact .stats{
       margin-top:12px;
       gap:8px;
@@ -1954,6 +1979,13 @@
             </div>
           </div>
 
+          <div id="nextStepCallout" class="next-step-callout hidden">
+            <div class="next-step-callout-inner">
+              <p id="nextStepText" class="next-step-text"></p>
+              <button id="nextStepBtn" class="btn btn-primary" type="button"></button>
+            </div>
+          </div>
+
           <div class="stats">
             <div class="stat">
               <div class="k" data-i18n="stat_total_debt">Total debt</div>
@@ -2540,6 +2572,20 @@
         nav_setup: "Debts & plan",
         hero_title: "See your plan. Take the next step.",
         hero_copy: "Your bank, your debts, and the next payment—here in one view.",
+        next_step_bank: "Next: connect your bank and import accounts so DebtYa can use real balances.",
+        next_step_bank_btn: "Go to Actions",
+        next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
+        next_step_debts_btn: "Go to Debts & plan",
+        next_step_plan: "Next: save your payment plan (strategy, mode, and monthly budget).",
+        next_step_plan_btn: "Open payment plan",
+        next_step_rules: "Next: create one paydown rule when you are ready.",
+        next_step_rules_btn: "Go to rules",
+        next_step_prepare: "Next: prepare suggested payments from your plan (Actions → More).",
+        next_step_prepare_btn: "Open Actions",
+        next_step_review: "Next: you have suggested payments waiting for approval or execution.",
+        next_step_review_btn: "Review payments",
+        next_step_done: "You are set up for now. After new imports, use Actions to apply rules or refresh payments.",
+        next_step_done_btn: "Scroll to Actions",
         btn_connect_bank: "Connect bank",
         btn_import_accounts: "Import accounts",
         btn_import_tx: "Import transactions",
@@ -2969,6 +3015,20 @@
         nav_setup: "Deudas y plan",
         hero_title: "Ve tu plan. Da el siguiente paso.",
         hero_copy: "Tu banco, tus deudas y el siguiente pago, en una sola vista.",
+        next_step_bank: "Siguiente: conecta tu banco e importa cuentas para usar saldos reales.",
+        next_step_bank_btn: "Ir a Acciones",
+        next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
+        next_step_debts_btn: "Ir a Deudas y plan",
+        next_step_plan: "Siguiente: guarda tu plan de pago (estrategia, modo y presupuesto).",
+        next_step_plan_btn: "Abrir plan de pago",
+        next_step_rules: "Siguiente: crea una regla de abono cuando quieras.",
+        next_step_rules_btn: "Ir a reglas",
+        next_step_prepare: "Siguiente: prepara pagos sugeridos desde tu plan (Acciones → Mas).",
+        next_step_prepare_btn: "Abrir Acciones",
+        next_step_review: "Siguiente: tienes pagos sugeridos pendientes de aprobacion o ejecucion.",
+        next_step_review_btn: "Ver pagos sugeridos",
+        next_step_done: "Por ahora vas al dia. Tras nuevas importaciones, usa Acciones para reglas o pagos.",
+        next_step_done_btn: "Ir a Acciones",
         btn_connect_bank: "Conectar banco",
         btn_import_accounts: "Importar cuentas",
         btn_import_tx: "Importar transacciones",
@@ -3839,9 +3899,113 @@
       });
     }
 
+    function scrollToAppSection(id) {
+      const el = typeof id === "string" ? $(id) : id;
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function computeNextStepAction() {
+      const accounts = state.accounts || [];
+      const debts = state.debts || [];
+      const plan = state.plan;
+      const rules = state.rules || [];
+      const intents = state.intents || [];
+
+      if (accounts.length === 0) {
+        return {
+          textKey: "next_step_bank",
+          btnKey: "next_step_bank_btn",
+          nav: "operate",
+          scrollId: "operatePanel",
+          openOperateMore: false
+        };
+      }
+      if (debts.length === 0) {
+        return {
+          textKey: "next_step_debts",
+          btnKey: "next_step_debts_btn",
+          nav: "setup",
+          scrollId: "setupPanel",
+          openOperateMore: false
+        };
+      }
+      if (!plan || !plan.id) {
+        return {
+          textKey: "next_step_plan",
+          btnKey: "next_step_plan_btn",
+          nav: "setup",
+          scrollId: "paymentPlanSection",
+          openOperateMore: false
+        };
+      }
+      if (rules.length === 0) {
+        return {
+          textKey: "next_step_rules",
+          btnKey: "next_step_rules_btn",
+          nav: "setup",
+          scrollId: "rulesPanel",
+          openOperateMore: false
+        };
+      }
+      if (hasPendingIntents()) {
+        return {
+          textKey: "next_step_review",
+          btnKey: "next_step_review_btn",
+          nav: "setup",
+          scrollId: "suggestedPaymentsPanel",
+          openOperateMore: false
+        };
+      }
+      if (intents.length === 0) {
+        return {
+          textKey: "next_step_prepare",
+          btnKey: "next_step_prepare_btn",
+          nav: "operate",
+          scrollId: "operatePanel",
+          openOperateMore: true
+        };
+      }
+      return {
+        textKey: "next_step_done",
+        btnKey: "next_step_done_btn",
+        nav: "operate",
+        scrollId: "operatePanel",
+        openOperateMore: false
+      };
+    }
+
+    function renderNextStepCallout() {
+      const wrap = $("nextStepCallout");
+      const txt = $("nextStepText");
+      const btn = $("nextStepBtn");
+      if (!wrap || !txt || !btn) return;
+      if (!appView || appView.classList.contains("hidden")) {
+        wrap.classList.add("hidden");
+        return;
+      }
+
+      const step = computeNextStepAction();
+      txt.textContent = t(step.textKey);
+      btn.textContent = t(step.btnKey);
+      btn.classList.remove("hidden");
+      btn.onclick = () => {
+        setNav(step.nav);
+        window.requestAnimationFrame(() => {
+          scrollToAppSection(step.scrollId);
+          if (step.openOperateMore) {
+            const det = document.querySelector("details.ux-operate-advanced");
+            if (det) det.open = true;
+          }
+        });
+      };
+      wrap.classList.remove("hidden");
+    }
+
     function updateNextActionGuide() {
       if (!appView || appView.classList.contains("hidden")) return;
       renderGuideStepProgress();
+      renderNextStepCallout();
     }
 
     function renderStats() {
@@ -4984,6 +5148,7 @@
       const res = await api("/rules");
       state.rules = res.data || [];
       renderRules();
+      updateNextActionGuide();
     }
 
     async function refreshPlan() {
