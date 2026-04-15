@@ -2034,6 +2034,7 @@
             <p class="helper-text" style="margin:0 0 14px;" data-i18n="rules_intro_three_ways">
               Pick one style per rule: a fixed add-on, a percent of each purchase, or rounding up spare change. Then use Apply rules under Actions after importing transactions.
             </p>
+            <p id="ruleLimitHint" class="helper-text hidden" style="margin:0 0 14px;" data-i18n="rules_one_only_hint"></p>
 
             <form id="ruleForm" class="stack" style="margin-bottom:16px;">
               <div class="field">
@@ -2523,6 +2524,8 @@
         rules_sub: "Three ways to steer extra money toward your debts when you apply rules.",
         rules_intro_three_ways:
           "Pick one style per rule: a fixed add-on, a percent of each purchase, or rounding up spare change. Then use Apply rules under Actions after importing transactions.",
+        rules_one_only_hint:
+          "You can only keep one rule. Delete it below if you want to create a different one.",
         lbl_rule_way: "Pay-down style",
         lbl_mode_rule: "Mode",
         rule_way_monthly_fixed: "1 — Fixed extra when rules run",
@@ -2679,6 +2682,7 @@
         rule_min_purchase_lbl: "Minimum purchase",
         rule_active: "Active",
         rule_inactive: "Inactive",
+        btn_delete_rule: "Delete rule",
         pill_executed: "executed",
         pill_approved: "approved",
         pill_active: "active",
@@ -2752,6 +2756,7 @@
         intent_exec_ok: "Payment completed.",
         debt_saved: "Debt saved successfully.",
         rule_saved: "Rule saved successfully.",
+        rule_deleted: "Rule deleted successfully.",
         plan_saved: "Plan saved successfully.",
         compare_ok: "Comparison ready.",
         accounts_imp: "Accounts imported",
@@ -2769,7 +2774,9 @@
         proc_loading: "Loading...",
         err_checkout_url: "Checkout link was not available. Try again.",
         err_portal_url: "Account page link was not available. Try again.",
-        err_plaid_exit: "Bank connection closed with an error."
+        err_plaid_exit: "Bank connection closed with an error.",
+        rule_delete_confirm: "Delete this rule? This action cannot be undone.",
+        err_rule_one_only: "You can only save one rule. Delete your current rule first."
       },
       es: {
         btn_login: "Entrar",
@@ -2940,6 +2947,8 @@
         rules_sub: "Tres formas de enviar dinero extra a tus deudas al aplicar reglas.",
         rules_intro_three_ways:
           "Elige un estilo por regla: monto fijo, porcentaje de cada compra o redondear vueltos. Luego usa Aplicar reglas en Acciones despues de importar movimientos.",
+        rules_one_only_hint:
+          "Solo puedes tener una regla. Borrala abajo si quieres crear otra distinta.",
         lbl_rule_way: "Forma de abonar",
         lbl_mode_rule: "Modo",
         rule_way_monthly_fixed: "1 — Monto fijo al aplicar reglas",
@@ -3096,6 +3105,7 @@
         rule_min_purchase_lbl: "Compra minima",
         rule_active: "Activa",
         rule_inactive: "Inactiva",
+        btn_delete_rule: "Borrar regla",
         pill_executed: "ejecutado",
         pill_approved: "aprobado",
         pill_active: "activa",
@@ -3169,6 +3179,7 @@
         intent_exec_ok: "Pago completado.",
         debt_saved: "Deuda guardada correctamente.",
         rule_saved: "Regla guardada correctamente.",
+        rule_deleted: "Regla borrada correctamente.",
         plan_saved: "Plan guardado correctamente.",
         compare_ok: "Comparacion lista.",
         accounts_imp: "Cuentas importadas",
@@ -3186,7 +3197,9 @@
         proc_loading: "Cargando...",
         err_checkout_url: "El enlace de pago no estuvo disponible. Intentalo de nuevo.",
         err_portal_url: "El enlace de tu cuenta no estuvo disponible. Intentalo de nuevo.",
-        err_plaid_exit: "La conexion bancaria se cerro con error."
+        err_plaid_exit: "La conexion bancaria se cerro con error.",
+        rule_delete_confirm: "Quieres borrar esta regla? Esta accion no se puede deshacer.",
+        err_rule_one_only: "Solo puedes guardar una regla. Primero borra la regla actual."
       }
     };
 
@@ -4218,18 +4231,33 @@
       return 0;
     }
 
+    function updateRuleFormLock() {
+      const form = $("ruleForm");
+      if (!form) return;
+      const hasRule = Array.isArray(state.rules) && state.rules.length > 0;
+      const hint = $("ruleLimitHint");
+      if (hint) hint.classList.toggle("hidden", !hasRule);
+      form.querySelectorAll("input, select, textarea, button").forEach((el) => {
+        el.disabled = hasRule;
+      });
+    }
+
     function renderRules() {
       const box = $("rulesList");
+      if (!box) return;
       box.innerHTML = "";
 
       if (!state.rules.length) {
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_rules"))}</div>`;
+        updateRuleFormLock();
         return;
       }
 
       state.rules.forEach((rule) => {
         const pillClass = rule.enabled ? "green" : "red";
         const modeLabel = ruleModeListTitle(rule.mode);
+        const ruleId = String(rule.id || "").trim();
+        const ruleIdJs = ruleId.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 
         const item = document.createElement("div");
         item.className = "item";
@@ -4243,9 +4271,13 @@
               <span class="pill ${pillClass}">${rule.enabled ? t("rule_active") : t("rule_inactive")}</span>
             </div>
           </div>
+          <div class="item-actions">
+            <button class="btn btn-danger btn-small" type="button" onclick="deleteRule('${ruleIdJs}')">${escapeHtml(t("btn_delete_rule"))}</button>
+          </div>
         `;
         box.appendChild(item);
       });
+      updateRuleFormLock();
     }
 
     function statusPill(status) {
@@ -5038,8 +5070,22 @@
       }
     }
 
+    async function deleteRule(id) {
+      if (!id) return;
+      const confirmed = window.confirm(t("rule_delete_confirm"));
+      if (!confirmed) return;
+      try {
+        await api(`/rules/${id}`, { method: "DELETE" });
+        showMessage(globalMessage, t("rule_deleted"), "success");
+        await refreshRules();
+      } catch (err) {
+        showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+      }
+    }
+
     window.approveIntent = approveIntent;
     window.executeIntent = executeIntent;
+    window.deleteRule = deleteRule;
 
     $("landingLoginBtn").addEventListener("click", () => showAuth("login"));
     $("landingSignupBtn").addEventListener("click", () => showAuth("signup"));
@@ -5214,6 +5260,10 @@
     $("ruleForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
+        if (Array.isArray(state.rules) && state.rules.length > 0) {
+          showMessage(globalMessage, t("err_rule_one_only"), "error");
+          return;
+        }
         const mode = $("ruleMode").value;
         let roundupTo = Number($("ruleRoundupTo").value || 0);
         if (mode === "roundup_change" && (!roundupTo || roundupTo <= 0)) roundupTo = 1;
@@ -5235,7 +5285,12 @@
         showMessage(globalMessage, t("rule_saved"), "success");
         await refreshRules();
       } catch (err) {
-        showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        const raw = err?.message || "";
+        if (raw === "ERR_ONE_RULE_MAX") {
+          showMessage(globalMessage, t("err_rule_one_only"), "error");
+        } else {
+          showMessage(globalMessage, normalizeErrorMessage(raw), "error");
+        }
       }
     });
 
@@ -5447,6 +5502,7 @@
     syncLangButtons();
     applyDomI18n();
     updatePlanFieldHints();
+    updateRuleFormLock();
     const ruleModeEl = $("ruleMode");
     if (ruleModeEl) {
       ruleModeEl.addEventListener("change", () => {

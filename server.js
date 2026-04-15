@@ -299,7 +299,18 @@ app.post(
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    setHeaders(res, filePath) {
+      const normalized = String(filePath || "").replace(/\\/g, "/");
+      if (normalized.endsWith("/index.html") || normalized.endsWith("/legal.html")) {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+      }
+    }
+  })
+);
 
 const supabaseAnon =
   SUPABASE_URL && SUPABASE_ANON_KEY
@@ -2489,6 +2500,17 @@ app.get("/rules", requireUser, async (req, res) => {
 
 app.post("/rules", requireUser, async (req, res) => {
   try {
+    const { data: existingRows, error: existingErr } = await supabaseAdmin
+      .from("micro_rules")
+      .select("id")
+      .eq("user_id", req.user.id)
+      .limit(1);
+
+    if (existingErr) throw existingErr;
+    if (Array.isArray(existingRows) && existingRows.length >= 1) {
+      return jsonError(res, 409, "ERR_ONE_RULE_MAX");
+    }
+
     const payload = buildMicroRulePayload(req.user.id, req.body);
 
     const { data, error } = await supabaseAdmin
@@ -3176,6 +3198,9 @@ app.use((req, res, next) => {
     !req.path.startsWith("/strategy") &&
     !req.path.startsWith("/cron")
   ) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
     return res.sendFile(path.join(__dirname, "public", "index.html"));
   }
   next();
