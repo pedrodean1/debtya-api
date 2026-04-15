@@ -2725,6 +2725,7 @@
         acct_credit_limit: "Credit limit",
         footer_disclaimer_html: "<strong>DebtYa</strong> is a personal finance organization tool. It is not a bank, financial advisor, credit repair agency, or debt relief service.",
         loading: "Loading...",
+        toast_click_to_close: "Click to close",
         yes: "Yes",
         no: "No",
         err_generic: "Something went wrong. Please try again.",
@@ -3267,6 +3268,7 @@
         bill_paused: "Pausada",
         welcome_hello: "Hola",
         proc: "Procesando...",
+        toast_click_to_close: "Clic para cerrar",
         signing_in: "Entrando...",
         creating_acct: "Creando...",
         fill_email_pw: "Completa email y contrasena.",
@@ -3477,16 +3479,64 @@
       return status || "-";
     }
 
-    function showMessage(target, text, type = "success") {
-      target.textContent = text;
-      target.classList.remove("hidden", "success", "error", "warn");
-      target.classList.add(type);
+    const toastHideTimers = new WeakMap();
+
+    function resolveToastEl(target) {
+      if (!target) return null;
+      if (target.isConnected) return target;
+      const id = target.id;
+      return id ? document.getElementById(id) : null;
+    }
+
+    function clearToastTimer(el) {
+      if (!el) return;
+      const prev = toastHideTimers.get(el);
+      if (prev) {
+        window.clearTimeout(prev);
+        toastHideTimers.delete(el);
+      }
+    }
+
+    /** Toasts: se ocultan solos (éxito ~4.5s, aviso ~5.5s, error ~8s). Clic en el cartel también cierra. `persist` evita auto-cierre. */
+    function showMessage(target, text, type = "success", persist = false) {
+      const el = resolveToastEl(target);
+      if (!el) return;
+      clearToastTimer(el);
+      el.onclick = null;
+      el.textContent = text;
+      el.classList.remove("hidden", "success", "error", "warn");
+      el.classList.add(type);
+      el.style.cursor = "pointer";
+      el.title = t("toast_click_to_close");
+      el.onclick = () => {
+        el.onclick = null;
+        hideMessage(el);
+      };
+      if (persist) return;
+      const ty = String(type || "success").toLowerCase();
+      const ms = ty === "error" ? 8000 : ty === "warn" ? 5500 : 4500;
+      const tid = window.setTimeout(() => {
+        toastHideTimers.delete(el);
+        el.onclick = null;
+        el.removeAttribute("title");
+        el.style.cursor = "";
+        el.textContent = "";
+        el.classList.remove("success", "error", "warn");
+        el.classList.add("hidden");
+      }, ms);
+      toastHideTimers.set(el, tid);
     }
 
     function hideMessage(target) {
-      target.textContent = "";
-      target.classList.remove("success", "error", "warn");
-      target.classList.add("hidden");
+      const el = resolveToastEl(target);
+      if (!el) return;
+      clearToastTimer(el);
+      el.onclick = null;
+      el.removeAttribute("title");
+      el.style.cursor = "";
+      el.textContent = "";
+      el.classList.remove("success", "error", "warn");
+      el.classList.add("hidden");
     }
 
     function setLoading(btn, loading, textLoading = null) {
