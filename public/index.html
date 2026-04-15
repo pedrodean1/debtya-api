@@ -453,32 +453,6 @@
     .ux-advanced-details.ux-operate-advanced{margin-top:12px}
     #operatePanel .ux-advanced-inner .grid-4{margin:0}
 
-    .ux-topbar-more{
-      display:inline-block;
-      vertical-align:middle;
-    }
-    .ux-topbar-more > summary{
-      cursor:pointer;
-      list-style:none;
-      font-weight:700;
-      font-size:13px;
-      color:var(--muted);
-      padding:9px 12px;
-      border-radius:12px;
-      background:#f3f6fb;
-      border:1px solid var(--line);
-      user-select:none;
-    }
-    .ux-topbar-more > summary::-webkit-details-marker{display:none}
-    .ux-topbar-more[open] > summary{
-      color:var(--primary);
-      border-color:#c9d8f5;
-    }
-    .ux-topbar-more-inner{
-      margin-top:8px;
-      padding:4px 0 2px;
-    }
-
     .section-head .ux-advanced-details{width:100%;max-width:100%}
     .ux-advanced-inline-btns{
       display:flex;
@@ -1952,12 +1926,6 @@
           <span id="sessionBadge" class="pill blue">Signed in</span>
           <button id="topUpgradeBtn" class="btn btn-primary hidden" type="button" data-i18n="btn_activate_plan">Activate plan</button>
           <button id="topManageBillingBtn" class="btn btn-light hidden" type="button" data-i18n="btn_manage_plan">Manage plan</button>
-          <details class="ux-topbar-more">
-            <summary data-i18n="advanced_topbar_toggle">More</summary>
-            <div class="ux-topbar-more-inner">
-              <button id="refreshAllBtn" class="btn btn-light" type="button" data-i18n="btn_refresh_all">Refresh all</button>
-            </div>
-          </details>
           <button id="logoutBtn" class="btn btn-danger" type="button" data-i18n="btn_logout">Log out</button>
         </div>
       </div>
@@ -2561,9 +2529,7 @@
         badge_sub_until_end: "Active until period ends",
         btn_activate_plan: "Activate plan",
         btn_manage_plan: "Manage plan",
-        btn_refresh_all: "Refresh all",
         btn_logout: "Log out",
-        advanced_topbar_toggle: "More",
         advanced_operate_toggle: "More — rules & payments",
         advanced_plan_toggle: "More plan options",
         advanced_intents_toggle: "More list options",
@@ -2992,9 +2958,7 @@
         badge_sub_until_end: "Activa hasta fin de periodo",
         btn_activate_plan: "Activar plan",
         btn_manage_plan: "Administrar plan",
-        btn_refresh_all: "Refrescar todo",
         btn_logout: "Salir",
-        advanced_topbar_toggle: "Mas",
         advanced_operate_toggle: "Mas — reglas y pagos",
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_intents_toggle: "Mas opciones de la lista",
@@ -5470,7 +5434,6 @@
     });
 
     $("logoutBtn").addEventListener("click", logout);
-    $("refreshAllBtn").addEventListener("click", refreshAll);
     $("refreshDebtsBtn").addEventListener("click", refreshDebts);
     $("refreshRulesBtn").addEventListener("click", refreshRules);
     $("refreshPlanBtn").addEventListener("click", refreshPlan);
