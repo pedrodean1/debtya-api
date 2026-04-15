@@ -150,6 +150,93 @@
       max-width:100%;
     }
 
+    .hero-title-row{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .hero-title-block{
+      flex:1;
+      min-width:min(100%, 220px);
+    }
+
+    .hero-rule-switch-wrap{
+      flex:0 0 auto;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+      padding-top:2px;
+    }
+
+    .hero-rule-switch-title{
+      font-size:11px;
+      font-weight:800;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      max-width:160px;
+      text-align:right;
+      line-height:1.25;
+    }
+
+    .ux-switch{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .ux-switch input{
+      position:absolute;
+      opacity:0;
+      width:1px;
+      height:1px;
+      margin:0;
+    }
+
+    .ux-switch-track{
+      position:relative;
+      display:block;
+      width:46px;
+      height:28px;
+      border-radius:999px;
+      background:#dfe6f2;
+      border:1px solid var(--line);
+      transition:background .18s ease, border-color .18s ease;
+    }
+
+    .ux-switch input:focus-visible + .ux-switch-track{
+      outline:2px solid var(--primary);
+      outline-offset:2px;
+    }
+
+    .ux-switch input:checked + .ux-switch-track{
+      background:var(--primary);
+      border-color:var(--primary-dark);
+    }
+
+    .ux-switch-track::after{
+      content:"";
+      position:absolute;
+      top:3px;
+      left:4px;
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      background:#fff;
+      box-shadow:0 1px 3px rgba(0,0,0,.12);
+      transition:transform .18s ease;
+    }
+
+    .ux-switch input:checked + .ux-switch-track::after{
+      transform:translateX(18px);
+    }
+
     .hero-overview-compact .hero-actions{
       margin-top:12px;
     }
@@ -1883,10 +1970,21 @@
 
       <section class="hero hero-overview-compact" id="overviewPanel">
         <div class="card hero-main card-soft">
-          <h2 class="hero-title" data-i18n="hero_title">See your plan. Take the next step.</h2>
-          <p class="hero-copy" data-i18n="hero_copy">
-            Your bank, your debts, and the next payment—here in one view.
-          </p>
+          <div class="hero-title-row">
+            <div class="hero-title-block">
+              <h2 class="hero-title" data-i18n="hero_title">See your plan. Take the next step.</h2>
+              <p class="hero-copy" data-i18n="hero_copy">
+                Your bank, your debts, and the next payment—here in one view.
+              </p>
+            </div>
+            <div id="heroRuleSwitchWrap" class="hero-rule-switch-wrap hidden">
+              <span class="hero-rule-switch-title" data-i18n="lbl_rules_master_switch">Rules</span>
+              <label class="ux-switch" for="heroRulesEnabledSwitch">
+                <input type="checkbox" id="heroRulesEnabledSwitch" />
+                <span class="ux-switch-track" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
 
           <div class="stats">
             <div class="stat">
@@ -2088,8 +2186,9 @@
                   <label class="label" data-i18n="lbl_target_debt">Target debt</label>
                   <select id="ruleTargetDebt" class="select"></select>
                 </div>
-                <div class="field" style="grid-column:1 / -1;">
+                <div class="field" style="grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
                   <button id="createRuleBtn" class="btn btn-primary" type="submit" data-i18n="btn_save_rule">Save rule</button>
+                  <button id="ruleCancelEditBtn" class="btn btn-light hidden" type="button" data-i18n="btn_cancel_rule_edit">Cancel edit</button>
                 </div>
               </div>
             </form>
@@ -2525,7 +2624,14 @@
         rules_intro_three_ways:
           "Pick one style per rule: a fixed add-on, a percent of each purchase, or rounding up spare change. Then use Apply rules under Actions after importing transactions.",
         rules_one_only_hint:
-          "You can only keep one rule. Delete it below if you want to create a different one.",
+          "You can only keep one rule. Use Edit to change it, the switch above to pause it, or Delete to replace it.",
+        lbl_rules_master_switch: "Rules on/off",
+        btn_edit_rule: "Edit rule",
+        btn_cancel_rule_edit: "Cancel edit",
+        btn_save_rule_changes: "Save changes",
+        rule_updated: "Rule updated.",
+        rule_enabled_ok: "Rules turned on.",
+        rule_disabled_ok: "Rules turned off.",
         lbl_rule_way: "Pay-down style",
         lbl_mode_rule: "Mode",
         rule_way_monthly_fixed: "1 — Fixed extra when rules run",
@@ -2948,7 +3054,14 @@
         rules_intro_three_ways:
           "Elige un estilo por regla: monto fijo, porcentaje de cada compra o redondear vueltos. Luego usa Aplicar reglas en Acciones despues de importar movimientos.",
         rules_one_only_hint:
-          "Solo puedes tener una regla. Borrala abajo si quieres crear otra distinta.",
+          "Solo puedes tener una regla. Usa Editar para cambiarla, el interruptor arriba para pausarla, o Borrar para reemplazarla.",
+        lbl_rules_master_switch: "Reglas activas",
+        btn_edit_rule: "Editar regla",
+        btn_cancel_rule_edit: "Cancelar edicion",
+        btn_save_rule_changes: "Guardar cambios",
+        rule_updated: "Regla actualizada.",
+        rule_enabled_ok: "Reglas activadas.",
+        rule_disabled_ok: "Reglas desactivadas.",
         lbl_rule_way: "Forma de abonar",
         lbl_mode_rule: "Modo",
         rule_way_monthly_fixed: "1 — Monto fijo al aplicar reglas",
@@ -3292,7 +3405,8 @@
       accounts: [],
       plaidItems: [],
       billing: null,
-      lastCompare: null
+      lastCompare: null,
+      editingRuleId: null
     };
 
     const $ = (id) => document.getElementById(id);
@@ -4089,6 +4203,7 @@
         populateDebtFormLinkedSelect();
         populateDebtFromAccountSelect();
         populatePlanRoutingSelects();
+        syncRuleFormFromSavedRule();
         updateNextActionGuide();
         return;
       }
@@ -4153,6 +4268,7 @@
       populateDebtFormLinkedSelect();
       populateDebtFromAccountSelect();
       populatePlanRoutingSelects();
+      syncRuleFormFromSavedRule();
       updateNextActionGuide();
     }
 
@@ -4231,15 +4347,83 @@
       return 0;
     }
 
+    function syncRuleSubmitLabel() {
+      const btn = $("createRuleBtn");
+      if (!btn) return;
+      if (state.editingRuleId) {
+        btn.removeAttribute("data-i18n");
+        btn.textContent = t("btn_save_rule_changes");
+      } else {
+        btn.setAttribute("data-i18n", "btn_save_rule");
+        btn.textContent = t("btn_save_rule");
+      }
+    }
+
+    function normalizeRuleModeForForm(mode) {
+      const m = String(mode || "").toLowerCase();
+      if (m === "roundup_percent" || m === "fixed_amount" || m === "roundup_change") return m;
+      if (["monthly_fixed", "fixed"].includes(m)) return "fixed_amount";
+      if (["purchase_percent", "spend_percent", "percent_of_spend"].includes(m)) return "roundup_percent";
+      if (["spare_change", "roundup_next", "round_up", "roundup_dollar"].includes(m)) return "roundup_change";
+      return "fixed_amount";
+    }
+
+    function syncRuleFormFromSavedRule() {
+      if ((state.rules || []).length !== 1 || state.editingRuleId) return;
+      renderDebtTargetOptions();
+      populateRuleFormFromRule(state.rules[0]);
+    }
+
+    function populateRuleFormFromRule(rule) {
+      if (!rule) return;
+      const modeEl = $("ruleMode");
+      if (modeEl) modeEl.value = normalizeRuleModeForForm(rule.mode);
+      const fa = $("ruleFixedAmount");
+      if (fa) fa.value = String(rule.fixed_amount ?? 0);
+      const pct = $("rulePercent");
+      if (pct) pct.value = String(rule.percent ?? 0);
+      const ru = $("ruleRoundupTo");
+      if (ru) ru.value = String(rule.roundup_to && Number(rule.roundup_to) > 0 ? rule.roundup_to : 1);
+      const mpPct = $("ruleMinPurchasePercent");
+      if (mpPct) mpPct.value = String(rule.min_purchase_amount ?? 0);
+      const mpRu = $("ruleMinPurchaseRoundup");
+      if (mpRu) mpRu.value = String(rule.min_purchase_amount ?? 0);
+      const td = $("ruleTargetDebt");
+      if (td) td.value = rule.target_debt_id || "";
+    }
+
+    function syncHeroRulesSwitch() {
+      const wrap = $("heroRuleSwitchWrap");
+      const sw = $("heroRulesEnabledSwitch");
+      if (!wrap || !sw) return;
+      const rules = state.rules || [];
+      if (rules.length !== 1) {
+        wrap.classList.add("hidden");
+        return;
+      }
+      wrap.classList.remove("hidden");
+      const r = rules[0];
+      sw.checked = !!r.enabled;
+    }
+
     function updateRuleFormLock() {
       const form = $("ruleForm");
       if (!form) return;
       const hasRule = Array.isArray(state.rules) && state.rules.length > 0;
+      const editing = !!state.editingRuleId;
+      const locked = hasRule && !editing;
       const hint = $("ruleLimitHint");
       if (hint) hint.classList.toggle("hidden", !hasRule);
+      const cancelBtn = $("ruleCancelEditBtn");
+      if (cancelBtn) cancelBtn.classList.toggle("hidden", !editing);
       form.querySelectorAll("input, select, textarea, button").forEach((el) => {
-        el.disabled = hasRule;
+        if (el.id === "ruleCancelEditBtn") {
+          el.disabled = false;
+          return;
+        }
+        el.disabled = locked;
       });
+      syncRuleSubmitLabel();
     }
 
     function renderRules() {
@@ -4248,8 +4432,10 @@
       box.innerHTML = "";
 
       if (!state.rules.length) {
+        state.editingRuleId = null;
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_rules"))}</div>`;
         updateRuleFormLock();
+        syncHeroRulesSwitch();
         return;
       }
 
@@ -4272,12 +4458,15 @@
             </div>
           </div>
           <div class="item-actions">
+            <button class="btn btn-light btn-small" type="button" onclick="beginEditRule('${ruleIdJs}')">${escapeHtml(t("btn_edit_rule"))}</button>
             <button class="btn btn-danger btn-small" type="button" onclick="deleteRule('${ruleIdJs}')">${escapeHtml(t("btn_delete_rule"))}</button>
           </div>
         `;
         box.appendChild(item);
       });
       updateRuleFormLock();
+      syncHeroRulesSwitch();
+      syncRuleFormFromSavedRule();
     }
 
     function statusPill(status) {
@@ -5075,6 +5264,7 @@
       const confirmed = window.confirm(t("rule_delete_confirm"));
       if (!confirmed) return;
       try {
+        if (String(state.editingRuleId) === String(id)) state.editingRuleId = null;
         await api(`/rules/${id}`, { method: "DELETE" });
         showMessage(globalMessage, t("rule_deleted"), "success");
         await refreshRules();
@@ -5083,9 +5273,52 @@
       }
     }
 
+    function beginEditRule(id) {
+      const rule = (state.rules || []).find((r) => String(r.id) === String(id));
+      if (!rule) return;
+      renderDebtTargetOptions();
+      state.editingRuleId = rule.id;
+      populateRuleFormFromRule(rule);
+      syncRuleModeFields();
+      updateRuleModeHint();
+      updateRuleFormLock();
+    }
+
+    async function cancelEditRule() {
+      state.editingRuleId = null;
+      await refreshRules();
+      const rules = state.rules || [];
+      if (rules.length === 1) {
+        renderDebtTargetOptions();
+        populateRuleFormFromRule(rules[0]);
+      }
+      updateRuleFormLock();
+    }
+
+    async function onHeroRulesSwitchChange(ev) {
+      const sw = ev.target;
+      if (!sw || sw.id !== "heroRulesEnabledSwitch") return;
+      const rule = (state.rules || [])[0];
+      if (!rule) {
+        sw.checked = false;
+        return;
+      }
+      const want = !!sw.checked;
+      const prev = !!rule.enabled;
+      try {
+        await api(`/rules/${rule.id}`, { method: "PATCH", body: JSON.stringify({ enabled: want }) });
+        showMessage(globalMessage, want ? t("rule_enabled_ok") : t("rule_disabled_ok"), "success");
+        await refreshRules();
+      } catch (err) {
+        sw.checked = prev;
+        showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+      }
+    }
+
     window.approveIntent = approveIntent;
     window.executeIntent = executeIntent;
     window.deleteRule = deleteRule;
+    window.beginEditRule = beginEditRule;
 
     $("landingLoginBtn").addEventListener("click", () => showAuth("login"));
     $("landingSignupBtn").addEventListener("click", () => showAuth("signup"));
@@ -5210,6 +5443,11 @@
     $("navOperate").addEventListener("click", () => setNav("operate"));
     $("navSetup").addEventListener("click", () => setNav("setup"));
 
+    const heroRulesSwitchEl = $("heroRulesEnabledSwitch");
+    if (heroRulesSwitchEl) heroRulesSwitchEl.addEventListener("change", onHeroRulesSwitchChange);
+    const ruleCancelEditBtn = $("ruleCancelEditBtn");
+    if (ruleCancelEditBtn) ruleCancelEditBtn.addEventListener("click", () => cancelEditRule());
+
     $("debtFromAccountSelect").addEventListener("change", () => {
       const id = $("debtFromAccountSelect").value;
       const nameHint = $("debtNameSuggestedHint");
@@ -5260,13 +5498,15 @@
     $("ruleForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
-        if (Array.isArray(state.rules) && state.rules.length > 0) {
+        const editingId = state.editingRuleId;
+        if (!editingId && Array.isArray(state.rules) && state.rules.length > 0) {
           showMessage(globalMessage, t("err_rule_one_only"), "error");
           return;
         }
         const mode = $("ruleMode").value;
         let roundupTo = Number($("ruleRoundupTo").value || 0);
         if (mode === "roundup_change" && (!roundupTo || roundupTo <= 0)) roundupTo = 1;
+        const existing = editingId ? (state.rules || []).find((r) => String(r.id) === String(editingId)) : null;
         const payload = {
           mode,
           percent: mode === "roundup_percent" ? Number($("rulePercent").value || 0) : 0,
@@ -5279,10 +5519,16 @@
                 : 1,
           min_purchase_amount: getRuleMinPurchaseForSubmit(),
           target_debt_id: $("ruleTargetDebt").value || null,
-          enabled: true
+          enabled: existing ? !!existing.enabled : true
         };
-        await api("/rules", { method: "POST", body: JSON.stringify(payload) });
-        showMessage(globalMessage, t("rule_saved"), "success");
+        if (editingId) {
+          await api(`/rules/${editingId}`, { method: "PATCH", body: JSON.stringify(payload) });
+          showMessage(globalMessage, t("rule_updated"), "success");
+          state.editingRuleId = null;
+        } else {
+          await api("/rules", { method: "POST", body: JSON.stringify({ ...payload, enabled: true }) });
+          showMessage(globalMessage, t("rule_saved"), "success");
+        }
         await refreshRules();
       } catch (err) {
         const raw = err?.message || "";
