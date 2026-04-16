@@ -43,7 +43,7 @@ Plan de ejecucion para avanzar en paralelo con foco en impacto y estabilidad.
 
 Configurar en **Settings → Secrets and variables → Actions** (mismos nombres que en el host):
 
-- `SUPABASE_URL` — si falta, CI **omite** el paso `validate:env` (forks o repo sin configurar).
+- Los seis anteriores deben estar definidos **todos** para que CI ejecute `validate:env`. Si falta cualquiera (o en forks sin secrets), el paso se **omite** y el workflow sigue verde.
 - `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `CRON_SECRET`
