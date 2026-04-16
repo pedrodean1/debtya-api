@@ -9,6 +9,9 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const { registerCoreRoutes } = require("./routes/core-routes");
 const { registerPaymentIntentRoutes } = require("./routes/payment-intents-routes");
 const { registerPlanningRoutes } = require("./routes/planning-routes");
+const { attachStripeWebhook } = require("./routes/stripe-webhook-routes");
+const { registerGuideRoutes } = require("./routes/guide-routes");
+const { registerBillingRoutes } = require("./routes/billing-routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -101,204 +104,16 @@ app.use(
   })
 );
 
-app.post(
-  "/stripe/webhook",
-  express.raw({ type: "application/json" }),
-  async (req, res) => {
-    try {
-      stripeDebug("[STRIPE_WEBHOOK] hit", {
-        hasStripe: !!stripe,
-        hasWebhookSecret: !!STRIPE_WEBHOOK_SECRET,
-        contentType: req.headers["content-type"] || null
-      });
-
-      if (!stripe) {
-        stripeError("[STRIPE_WEBHOOK] Stripe no configurado");
-        return jsonError(res, 500, "Stripe no configurado");
-      }
-
-      if (!STRIPE_WEBHOOK_SECRET) {
-        stripeError("[STRIPE_WEBHOOK] STRIPE_WEBHOOK_SECRET no configurado");
-        return jsonError(res, 500, "STRIPE_WEBHOOK_SECRET no configurado");
-      }
-
-      const signature = req.headers["stripe-signature"];
-      if (!signature) {
-        stripeError("[STRIPE_WEBHOOK] falta stripe-signature");
-        return jsonError(res, 400, "Falta Stripe-Signature");
-      }
-
-      let event;
-      try {
-        event = stripe.webhooks.constructEvent(
-          req.body,
-          signature,
-          STRIPE_WEBHOOK_SECRET
-        );
-      } catch (err) {
-        stripeError("[STRIPE_WEBHOOK] firma inválida", err.message);
-        return jsonError(res, 400, "Firma webhook inválida", {
-          details: err.message
-        });
-      }
-
-      const eventType = event.type;
-      const obj = event.data?.object || null;
-
-      stripeInfo("[stripe] webhook recibido:", eventType);
-
-      if (eventType === "checkout.session.completed") {
-        const session = obj;
-        const subscriptionId =
-          typeof session?.subscription === "string"
-            ? session.subscription
-            : session?.subscription?.id || null;
-
-        stripeDebug("[STRIPE_WEBHOOK] checkout.session.completed", {
-          sessionId: session?.id || null,
-          client_reference_id: session?.client_reference_id || null,
-          customerId:
-            typeof session?.customer === "string"
-              ? session.customer
-              : session?.customer?.id || null,
-          subscriptionId
-        });
-
-        if (subscriptionId) {
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          const customerId =
-            typeof subscription?.customer === "string"
-              ? subscription.customer
-              : subscription?.customer?.id || null;
-
-          const userId = await resolveStripeUserId({
-            session,
-            subscription,
-            customerId,
-            fallbackUserId: session?.client_reference_id || null
-          });
-
-          stripeDebug("[STRIPE_WEBHOOK] subscription recuperada desde checkout", {
-            subscriptionId: subscription?.id || null,
-            userId,
-            stripeCustomerId: customerId,
-            status: subscription?.status || null
-          });
-
-          const saved = await upsertBillingSubscriptionFromStripe(subscription, userId);
-
-          if (!saved) {
-            throw new Error("No se pudo persistir billing_subscriptions para checkout.session.completed");
-          }
-
-          stripeInfo("[stripe] checkout persistido", {
-            saved: !!saved,
-            stripeSubscriptionId: saved?.stripe_subscription_id || null
-          });
-        } else {
-          stripeDebug("[STRIPE_WEBHOOK] checkout.session.completed sin subscriptionId");
-        }
-      }
-
-      if (
-        eventType === "customer.subscription.created" ||
-        eventType === "customer.subscription.updated" ||
-        eventType === "customer.subscription.deleted"
-      ) {
-        const subscription = obj;
-        const customerId =
-          typeof subscription?.customer === "string"
-            ? subscription.customer
-            : subscription?.customer?.id || null;
-
-        const userId = await resolveStripeUserId({
-          subscription,
-          customerId,
-          fallbackUserId: subscription?.metadata?.supabase_user_id || null
-        });
-
-        stripeDebug("[STRIPE_WEBHOOK] customer.subscription event", {
-          type: eventType,
-          subscriptionId: subscription?.id || null,
-          userId,
-          stripeCustomerId: customerId,
-          status: subscription?.status || null
-        });
-
-        const saved = await upsertBillingSubscriptionFromStripe(subscription, userId);
-
-        if (!saved) {
-          throw new Error(`No se pudo persistir billing_subscriptions para ${eventType}`);
-        }
-
-        stripeInfo("[stripe] subscription persistida", {
-          type: eventType,
-          saved: !!saved,
-          stripeSubscriptionId: saved?.stripe_subscription_id || null
-        });
-      }
-
-      if (
-        eventType === "invoice.paid" ||
-        eventType === "invoice.payment_failed" ||
-        eventType === "invoice.payment_succeeded"
-      ) {
-        const invoice = obj;
-        const subscriptionId =
-          typeof invoice?.subscription === "string"
-            ? invoice.subscription
-            : invoice?.subscription?.id || null;
-
-        stripeDebug("[STRIPE_WEBHOOK] invoice event", {
-          type: eventType,
-          invoiceId: invoice?.id || null,
-          invoiceStatus: invoice?.status || null,
-          subscriptionId
-        });
-
-        if (subscriptionId) {
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          const customerId =
-            typeof subscription?.customer === "string"
-              ? subscription.customer
-              : subscription?.customer?.id || null;
-
-          const userId = await resolveStripeUserId({
-            subscription,
-            customerId,
-            fallbackUserId: subscription?.metadata?.supabase_user_id || null
-          });
-
-          const saved = await upsertBillingSubscriptionFromStripe(subscription, userId, {
-            last_invoice_id: invoice?.id || null,
-            last_invoice_status: invoice?.status || null
-          });
-
-          if (!saved) {
-            throw new Error(`No se pudo persistir billing_subscriptions para ${eventType}`);
-          }
-
-          stripeInfo("[stripe] invoice sincronizada", {
-            type: eventType,
-            saved: !!saved,
-            stripeSubscriptionId: saved?.stripe_subscription_id || null
-          });
-        } else {
-          stripeDebug("[STRIPE_WEBHOOK] invoice event sin subscriptionId");
-        }
-      }
-
-      return res.json({ ok: true, received: true, type: eventType });
-    } catch (error) {
-      stripeError("[STRIPE_WEBHOOK] error general", error.message);
-      stripeDebug("[STRIPE_WEBHOOK] error stack", error.stack);
-
-      return jsonError(res, 500, "Error procesando webhook Stripe", {
-        details: error.message
-      });
-    }
-  }
-);
+attachStripeWebhook(app, express, () => ({
+  stripe,
+  STRIPE_WEBHOOK_SECRET,
+  stripeDebug,
+  stripeError,
+  stripeInfo,
+  jsonError,
+  resolveStripeUserId,
+  upsertBillingSubscriptionFromStripe
+}));
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -1685,249 +1500,22 @@ registerPlanningRoutes(app, {
   jsonError
 });
 
-const guideRateByIp = new Map();
-const GUIDE_RATE_MAX = 24;
-const GUIDE_RATE_WINDOW_MS = 60 * 60 * 1000;
-
-function guideCheckRate(ip) {
-  const now = Date.now();
-  let row = guideRateByIp.get(ip);
-  if (!row || now - row.windowStart > GUIDE_RATE_WINDOW_MS) {
-    row = { count: 0, windowStart: now };
-  }
-  if (row.count >= GUIDE_RATE_MAX) {
-    guideRateByIp.set(ip, row);
-    return false;
-  }
-  row.count += 1;
-  guideRateByIp.set(ip, row);
-  return true;
-}
-
-app.get("/guide-assistant/status", (_req, res) => {
-  const enabled =
-    Boolean(process.env.OPENAI_API_KEY) &&
-    process.env.OPENAI_GUIDE_DISABLED !== "1";
-  return res.json({ ok: true, enabled });
+registerGuideRoutes(app, {
+  jsonError,
+  appError
 });
 
-app.post("/guide-assistant", async (req, res) => {
-  try {
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_GUIDE_DISABLED === "1") {
-      return res.status(503).json({
-        ok: false,
-        disabled: true,
-        error: "Assistant not configured"
-      });
-    }
-
-    const rawIp = String(req.headers["x-forwarded-for"] || "");
-    const ip =
-      rawIp.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
-    if (!guideCheckRate(ip)) {
-      return jsonError(
-        res,
-        429,
-        "Too many questions right now. Try again a bit later."
-      );
-    }
-
-    const lang = req.body?.lang === "es" ? "es" : "en";
-    const message = String(req.body?.message || "").trim().slice(0, 2500);
-    if (!message) {
-      return jsonError(res, 400, "Message is required");
-    }
-
-    const axios = require("axios");
-    const model = process.env.OPENAI_GUIDE_MODEL || "gpt-4o-mini";
-    const langLine =
-      lang === "es"
-        ? "Respond entirely in Spanish."
-        : "Respond entirely in English.";
-
-    const system = `You are the in-app guide for DebtYa, a web app that helps people organize paying down debt. Users connect their bank with Plaid, import accounts, add debts (balance, APR, minimum payment), choose avalanche or snowball strategy, set simple rules, prepare and approve suggested payment intents, execute them, and review history. Subscriptions are handled with Stripe.
-
-Answer only about signing up, connecting the bank, using the DebtYa screens, and general product questions.
-
-Never give personalized financial, legal, tax, or investment advice. Do not promise results. Remind users to verify APR and minimum payments on their statements when relevant.
-
-If you are unsure or the question is outside DebtYa, suggest contacting support@debtya.com.
-
-Keep answers concise (roughly under 180 words unless the user asks for more detail).
-
-${langLine}`;
-
-    const r = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: message }
-        ],
-        max_tokens: 650,
-        temperature: 0.35
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        timeout: 45000
-      }
-    );
-
-    const reply = r.data?.choices?.[0]?.message?.content?.trim();
-    if (!reply) {
-      return jsonError(res, 502, "Assistant returned an empty answer");
-    }
-
-    return res.json({ ok: true, reply });
-  } catch (err) {
-    appError("[guide-assistant]", err.response?.data || err.message);
-    const msg =
-      err.response?.data?.error?.message || err.message || "Unknown error";
-    return jsonError(res, 500, "Assistant request failed", { details: msg });
-  }
-});
-
-app.get("/billing/subscription-status", requireUser, async (req, res) => {
-  try {
-    const row = await getLatestBillingSubscriptionForUser(req.user.id);
-
-    if (!row) {
-      return res.json({
-        ok: true,
-        data: {
-          status: "inactive",
-          active: false,
-          current_period_end: null,
-          stripe_customer_id: null,
-          stripe_subscription_id: null,
-          cancel_at_period_end: false
-        }
-      });
-    }
-
-    return res.json({
-      ok: true,
-      data: {
-        status: row.status || "inactive",
-        active: !!row.active,
-        current_period_end: row.current_period_end || null,
-        stripe_customer_id: row.stripe_customer_id || null,
-        stripe_subscription_id: row.stripe_subscription_id || null,
-        cancel_at_period_end: !!row.cancel_at_period_end
-      }
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error cargando suscripción", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/stripe/create-checkout-session", requireUser, async (req, res) => {
-  try {
-    if (!stripe) {
-      return jsonError(res, 500, "Stripe no configurado");
-    }
-
-    if (!STRIPE_PRICE_ID_BETA_MONTHLY) {
-      return jsonError(res, 500, "STRIPE_PRICE_ID_BETA_MONTHLY no configurado");
-    }
-
-    await ensureProfile(req.user.id);
-
-    const customerId = await getOrCreateStripeCustomerForUser(req.user);
-    const baseUrl = getBaseUrl(req);
-
-    const successUrl =
-      req.body?.success_url ||
-      `${baseUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-
-    const cancelUrl =
-      req.body?.cancel_url ||
-      `${baseUrl}/?checkout=cancel`;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [
-        {
-          price: STRIPE_PRICE_ID_BETA_MONTHLY,
-          quantity: 1
-        }
-      ],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      client_reference_id: req.user.id,
-      allow_promotion_codes: true,
-      metadata: {
-        supabase_user_id: req.user.id,
-        plan_code: "debtya_beta_monthly"
-      },
-      subscription_data: {
-        metadata: {
-          supabase_user_id: req.user.id,
-          plan_code: "debtya_beta_monthly"
-        }
-      }
-    });
-
-    stripeDebug("[STRIPE_CHECKOUT] session creada", {
-      userId: req.user.id,
-      customerId,
-      sessionId: session.id,
-      checkoutUrl: !!session.url
-    });
-
-    return res.json({
-      ok: true,
-      session_id: session.id,
-      url: session.url
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error creando checkout Stripe", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/stripe/create-portal-session", requireUser, async (req, res) => {
-  try {
-    if (!stripe) {
-      return jsonError(res, 500, "Stripe no configurado");
-    }
-
-    const row = await getLatestBillingSubscriptionForUser(req.user.id);
-    if (!row?.stripe_customer_id) {
-      return jsonError(res, 400, "Este usuario no tiene customer de Stripe todavía");
-    }
-
-    const baseUrl = getBaseUrl(req);
-    const returnUrl = req.body?.return_url || `${baseUrl}/`;
-
-    const payload = {
-      customer: row.stripe_customer_id,
-      return_url: returnUrl
-    };
-
-    if (STRIPE_PORTAL_CONFIG_ID) {
-      payload.configuration = STRIPE_PORTAL_CONFIG_ID;
-    }
-
-    const session = await stripe.billingPortal.sessions.create(payload);
-
-    return res.json({
-      ok: true,
-      url: session.url
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error creando portal Stripe", {
-      details: error.message
-    });
-  }
+registerBillingRoutes(app, {
+  requireUser,
+  stripe,
+  STRIPE_PRICE_ID_BETA_MONTHLY,
+  STRIPE_PORTAL_CONFIG_ID,
+  getLatestBillingSubscriptionForUser,
+  ensureProfile,
+  getOrCreateStripeCustomerForUser,
+  getBaseUrl,
+  stripeDebug,
+  jsonError
 });
 
 app.get("/supabase/ping", async (_req, res) => {
