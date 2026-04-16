@@ -6,6 +6,8 @@ const cors = require("cors");
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
+const { registerCoreRoutes } = require("./routes/core-routes");
+const { registerPaymentIntentRoutes } = require("./routes/payment-intents-routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1643,33 +1645,32 @@ async function executeIntentDirect(userId, intentId) {
   };
 }
 
-app.get("/health", async (_req, res) => {
-  const payload = {
-    ok: true,
-    message: "DebtYa API funcionando",
-    server_version: SERVER_VERSION,
-    now: new Date().toISOString()
-  };
+registerCoreRoutes(app, {
+  SERVER_VERSION,
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_ROLE_KEY,
+  CRON_SECRET,
+  STRIPE_SECRET_KEY,
+  STRIPE_PRICE_ID_BETA_MONTHLY,
+  STRIPE_WEBHOOK_SECRET,
+  requireUser,
+  supabaseAdmin,
+  sortTraceRows,
+  getIntentAmount,
+  appDebug,
+  jsonError
+});
 
-  const exposeEnvDebug =
-    process.env.NODE_ENV !== "production" ||
-    process.env.HEALTH_EXPOSE_DEBUG === "1";
-
-  if (exposeEnvDebug) {
-    payload.env_debug = {
-      has_supabase_url: !!SUPABASE_URL,
-      has_anon_key: !!SUPABASE_ANON_KEY,
-      has_service_role_key: !!SUPABASE_SERVICE_ROLE_KEY,
-      has_cron_secret: !!CRON_SECRET,
-      has_stripe_secret_key: !!STRIPE_SECRET_KEY,
-      has_stripe_price_id_beta_monthly: !!STRIPE_PRICE_ID_BETA_MONTHLY,
-      has_stripe_webhook_secret: !!STRIPE_WEBHOOK_SECRET,
-      has_openai_guide: !!process.env.OPENAI_API_KEY,
-      guide_assistant_disabled: process.env.OPENAI_GUIDE_DISABLED === "1"
-    };
-  }
-
-  return res.json(payload);
+registerPaymentIntentRoutes(app, {
+  requireUser,
+  supabaseAdmin,
+  safeNumber,
+  approveIntentDirect,
+  executeIntentDirect,
+  reconcileRecentExecutedIntents,
+  isoDaysAgo,
+  jsonError
 });
 
 const guideRateByIp = new Map();
@@ -2764,251 +2765,7 @@ app.post("/auto_sweep_v2", requireUser, async (req, res) => {
   }
 });
 
-app.get("/payment-intents", requireUser, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("payment_intents")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
 
-    if (error) throw error;
-
-    return res.json({ ok: true, data: data || [] });
-  } catch (error) {
-    return jsonError(res, 500, "Error cargando intents", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/payment-intents", requireUser, async (req, res) => {
-  try {
-    const payload = {
-      user_id: req.user.id,
-      debt_id: req.body.debt_id || null,
-      source_account_id: req.body.source_account_id || null,
-      strategy: req.body.strategy || "avalanche",
-      amount: safeNumber(req.body.amount),
-      status: req.body.status || "draft",
-      scheduled_for: req.body.scheduled_for || null,
-      notes: req.body.notes || null
-    };
-
-    const { data, error } = await supabaseAdmin
-      .from("payment_intents")
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return res.json({ ok: true, data });
-  } catch (error) {
-    return jsonError(res, 500, "Error creando intent", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/payment-intents/:id/approve", requireUser, async (req, res) => {
-  try {
-    const intentId = req.params.id;
-    const data = await approveIntentDirect(req.user.id, intentId);
-
-    return res.json({
-      ok: true,
-      bypass_sql_function: true,
-      data
-    });
-  } catch (error) {
-    return jsonError(res, error.status || 500, "Error aprobando intent", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/payment-intents/:id/execute", requireUser, async (req, res) => {
-  try {
-    const intentId = req.params.id;
-    const result = await executeIntentDirect(req.user.id, intentId);
-
-    return res.json({
-      ok: true,
-      bypass_sql_function: true,
-      data: result
-    });
-  } catch (error) {
-    return jsonError(res, error.status || 500, "Error ejecutando intent", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/payment-intents/approve-visible", requireUser, async (req, res) => {
-  try {
-    const { data: intents, error } = await supabaseAdmin
-      .from("payment_intents")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .in("status", ["draft", "pending", "built", "proposed", "ready", "pending_review"])
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    const results = [];
-
-    for (const intent of intents || []) {
-      try {
-        const approved = await approveIntentDirect(req.user.id, intent.id);
-        results.push({
-          id: intent.id,
-          ok: true,
-          data: approved
-        });
-      } catch (e) {
-        results.push({
-          id: intent.id,
-          ok: false,
-          error: e.message
-        });
-      }
-    }
-
-    return res.json({
-      ok: true,
-      bypass_sql_function: true,
-      total_visible: (intents || []).length,
-      approved_count: results.filter((x) => x.ok).length,
-      failed_count: results.filter((x) => !x.ok).length,
-      results
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error aprobando visibles", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/payment-intents/execute-visible", requireUser, async (req, res) => {
-  try {
-    const { data: intents, error } = await supabaseAdmin
-      .from("payment_intents")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .in("status", ["approved"])
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    const results = [];
-
-    for (const intent of intents || []) {
-      try {
-        const executed = await executeIntentDirect(req.user.id, intent.id);
-        results.push({
-          id: intent.id,
-          ok: true,
-          data: executed
-        });
-      } catch (e) {
-        results.push({
-          id: intent.id,
-          ok: false,
-          error: e.message
-        });
-      }
-    }
-
-    return res.json({
-      ok: true,
-      bypass_sql_function: true,
-      total_visible: (intents || []).length,
-      executed_count: results.filter((x) => x.ok).length,
-      failed_count: results.filter((x) => !x.ok).length,
-      results
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error ejecutando visibles", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/payment-intents/reconcile-recent", requireUser, async (req, res) => {
-  try {
-    const days = Math.max(0, safeNumber(req.body?.days, 2));
-    const limit = Math.min(50, Math.max(1, safeNumber(req.body?.limit, 10)));
-    const sinceIso = req.body?.since_iso || isoDaysAgo(days);
-
-    const result = await reconcileRecentExecutedIntents(req.user.id, {
-      days,
-      limit,
-      since_iso: sinceIso
-    });
-
-    return res.json({
-      ok: true,
-      safe_mode: true,
-      data: result
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error reconciliando intents recientes", {
-      details: error.message
-    });
-  }
-});
-
-app.get("/payment-trace", requireUser, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("v_payment_trace")
-      .select("*")
-      .eq("user_id", req.user.id);
-
-    if (!error) {
-      return res.json({
-        ok: true,
-        source: "v_payment_trace",
-        data: sortTraceRows(data || [])
-      });
-    }
-
-    appDebug("Fallback payment-trace por error en vista:", error.message);
-
-    const { data: intents, error: fallbackError } = await supabaseAdmin
-      .from("payment_intents")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
-
-    if (fallbackError) throw fallbackError;
-
-    const normalized = (intents || []).map((x) => ({
-      id: x.id,
-      user_id: x.user_id,
-      debt_id: x.debt_id,
-      status: x.status,
-      total_amount: getIntentAmount(x),
-      scheduled_for: x.scheduled_for,
-      approved_at: x.approved_at,
-      executed_at: x.executed_at,
-      created_at: x.created_at,
-      updated_at: x.updated_at,
-      metadata: x.metadata || null
-    }));
-
-    return res.json({
-      ok: true,
-      source: "payment_intents_fallback",
-      data: sortTraceRows(normalized)
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error cargando trace", {
-      details: error.message
-    });
-  }
-});
 
 app.get("/strategy/compare", requireUser, async (req, res) => {
   try {

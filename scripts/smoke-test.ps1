@@ -3,7 +3,8 @@ param(
   [string]$ApiBaseUrl,
 
   [string]$AuthToken = "",
-  [string]$DebtId = ""
+  [string]$DebtId = "",
+  [switch]$IncludePaymentIntents
 )
 
 $ErrorActionPreference = "Stop"
@@ -50,6 +51,18 @@ if ($DebtId -and $DebtId.Trim().Length -gt 0) {
   Assert-Status -Name "/payment-trace" -StatusCode $trace.StatusCode
 } else {
   Write-Host "[SKIP] /payment-trace (falta DebtId)" -ForegroundColor Yellow
+}
+
+# 3) Payment intents (optional; requires auth)
+if ($IncludePaymentIntents.IsPresent) {
+  if (-not $AuthToken -or $AuthToken.Trim().Length -eq 0) {
+    throw "[FAIL] /payment-intents requiere AuthToken"
+  }
+
+  $intents = Invoke-ApiGet -Url "$base/payment-intents" -Token $AuthToken
+  Assert-Status -Name "/payment-intents" -StatusCode $intents.StatusCode
+} else {
+  Write-Host "[SKIP] /payment-intents (usa -IncludePaymentIntents para habilitarlo)" -ForegroundColor Yellow
 }
 
 Write-Host "Smoke test finalizado correctamente." -ForegroundColor Green
