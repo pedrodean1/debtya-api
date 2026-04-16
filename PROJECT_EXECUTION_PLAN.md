@@ -11,6 +11,7 @@ Plan de ejecucion para avanzar en paralelo con foco en impacto y estabilidad.
 2. Estabilidad backend
    - Catalogar endpoints criticos y respuesta esperada.
    - Definir smoke tests minimos para `/health`, `/payment-trace`, `/payment-intents`.
+   - Tests unitarios de `lib/validation.js`: `npm test`.
 3. Observabilidad
    - Estandarizar logs de error con contexto de endpoint y request id.
 

@@ -9,7 +9,8 @@
     "smoke:local": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-test.ps1 -ApiBaseUrl http://localhost:3000",
     "smoke:local:intents": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-test.ps1 -ApiBaseUrl http://localhost:3000 -IncludePaymentIntents",
     "smoke:local:full": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-test.ps1 -ApiBaseUrl http://localhost:3000 -IncludePaymentIntents -IncludeAccountsDebtsRules",
-    "validate:env": "node scripts/validate-env.js"
+    "validate:env": "node scripts/validate-env.js",
+    "test": "node --test ./test/lib/validation.test.js"
   },
   "keywords": [],
   "author": "",
