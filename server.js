@@ -14,6 +14,11 @@ const { registerGuideRoutes } = require("./routes/guide-routes");
 const { registerBillingRoutes } = require("./routes/billing-routes");
 const { registerSupabaseRoutes } = require("./routes/supabase-routes");
 const { registerPlaidRoutes } = require("./routes/plaid-routes");
+const { registerAccountsDebtsRoutes } = require("./routes/accounts-debts-routes");
+const { registerPaymentPlansRoutes } = require("./routes/payment-plans-routes");
+const { registerRulesCrudRoutes } = require("./routes/rules-crud-routes");
+const { registerStrategyRoutes } = require("./routes/strategy-routes");
+const { registerCronRoutes } = require("./routes/cron-routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1548,530 +1553,58 @@ registerPlaidRoutes(app, {
   jsonError
 });
 
-app.get("/accounts", requireUser, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("accounts")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("updated_at", { ascending: false });
-
-    if (error) throw error;
-
-    return res.json({ ok: true, data: data || [] });
-  } catch (error) {
-    return jsonError(res, 500, "Error cargando cuentas", {
-      details: error.message
-    });
-  }
+registerAccountsDebtsRoutes(app, {
+  requireUser,
+  supabaseAdmin,
+  jsonError,
+  safeNumber,
+  isUuid,
+  assertLinkedPlaidAccountForUser
 });
 
-app.get("/debts", requireUser, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("debts")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .eq("is_active", true)
-      .order("apr", { ascending: false });
-
-    if (error) throw error;
-
-    return res.json({
-      ok: true,
-      data: data || []
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error cargando deudas", {
-      details: error.message
-    });
-  }
+registerPaymentPlansRoutes(app, {
+  requireUser,
+  supabaseAdmin,
+  jsonError,
+  normalizePaymentPlan,
+  savePaymentPlanForUser,
+  getCurrentPaymentPlan
 });
 
-app.post("/debts", requireUser, async (req, res) => {
-  try {
-    const payload = {
-      user_id: req.user.id,
-      name: req.body.name || "Deuda",
-      balance: safeNumber(req.body.balance),
-      apr: safeNumber(req.body.apr),
-      minimum_payment: safeNumber(req.body.minimum_payment),
-      due_day: req.body.due_day ? Number(req.body.due_day) : null,
-      type: req.body.type || "credit_card",
-      goal_note: req.body.goal_note || null,
-      is_active: true,
-      updated_at: new Date().toISOString()
-    };
-
-    if (req.body.linked_plaid_account_id !== undefined) {
-      const raw = req.body.linked_plaid_account_id;
-      if (raw === null || raw === "") {
-        payload.linked_plaid_account_id = null;
-      } else {
-        const lid = String(raw).trim();
-        await assertLinkedPlaidAccountForUser(req.user.id, lid);
-        payload.linked_plaid_account_id = lid;
-      }
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("debts")
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return res.json({ ok: true, data });
-  } catch (error) {
-    return jsonError(res, 500, "Error creando deuda", {
-      details: error.message
-    });
-  }
+registerRulesCrudRoutes(app, {
+  requireUser,
+  supabaseAdmin,
+  jsonError,
+  safeNumber,
+  safeBoolean,
+  safeNullableNumber,
+  isUuid,
+  buildMicroRulePayload,
+  normalizeMicroRuleModeInput
 });
 
-app.patch("/debts/:id", requireUser, async (req, res) => {
-  try {
-    const debtId = req.params.id;
-    if (!isUuid(debtId)) {
-      return jsonError(res, 400, "ID inválido");
-    }
-
-    const patch = {
-      updated_at: new Date().toISOString()
-    };
-
-    if (req.body.name !== undefined) patch.name = req.body.name;
-    if (req.body.balance !== undefined) patch.balance = safeNumber(req.body.balance);
-    if (req.body.apr !== undefined) patch.apr = safeNumber(req.body.apr);
-    if (req.body.minimum_payment !== undefined) patch.minimum_payment = safeNumber(req.body.minimum_payment);
-    if (req.body.due_day !== undefined) patch.due_day = req.body.due_day ? Number(req.body.due_day) : null;
-    if (req.body.type !== undefined) patch.type = req.body.type;
-    if (req.body.goal_note !== undefined) patch.goal_note = req.body.goal_note || null;
-    if (req.body.is_active !== undefined) patch.is_active = !!req.body.is_active;
-
-    if (req.body.linked_plaid_account_id !== undefined) {
-      const raw = req.body.linked_plaid_account_id;
-      if (raw === null || raw === "") {
-        patch.linked_plaid_account_id = null;
-      } else {
-        const lid = String(raw).trim();
-        await assertLinkedPlaidAccountForUser(req.user.id, lid);
-        patch.linked_plaid_account_id = lid;
-      }
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("debts")
-      .update(patch)
-      .eq("id", debtId)
-      .eq("user_id", req.user.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return res.json({ ok: true, data });
-  } catch (error) {
-    return jsonError(res, 500, "Error actualizando deuda", {
-      details: error.message
-    });
-  }
+registerStrategyRoutes(app, {
+  requireUser,
+  safeNumber,
+  compareStrategiesForUser,
+  jsonError
 });
 
-app.delete("/debts/:id", requireUser, async (req, res) => {
-  try {
-    const debtId = req.params.id;
-    if (!isUuid(debtId)) {
-      return jsonError(res, 400, "ID inválido");
-    }
-
-    const { error } = await supabaseAdmin
-      .from("debts")
-      .update({
-        is_active: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", debtId)
-      .eq("user_id", req.user.id);
-
-    if (error) throw error;
-
-    return res.json({ ok: true });
-  } catch (error) {
-    return jsonError(res, 500, "Error eliminando deuda", {
-      details: error.message
-    });
-  }
-});
-
-app.get("/payment-plans", requireUser, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("payment_plans")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("updated_at", { ascending: false });
-
-    if (error) throw error;
-
-    return res.json({
-      ok: true,
-      data: (data || []).map(normalizePaymentPlan)
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error cargando planes", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/payment-plans", requireUser, async (req, res) => {
-  try {
-    const data = await savePaymentPlanForUser(req.user.id, req.body);
-    return res.json({ ok: true, data });
-  } catch (error) {
-    return jsonError(res, 500, "Error guardando plan", {
-      details: error.message
-    });
-  }
-});
-
-app.get("/payment-plan", requireUser, async (req, res) => {
-  try {
-    const data = await getCurrentPaymentPlan(req.user.id);
-    return res.json({ ok: true, data });
-  } catch (error) {
-    return jsonError(res, 500, "Error cargando plan", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/payment-plan", requireUser, async (req, res) => {
-  try {
-    const data = await savePaymentPlanForUser(req.user.id, req.body);
-    return res.json({ ok: true, data });
-  } catch (error) {
-    return jsonError(res, 500, "Error guardando plan", {
-      details: error.message
-    });
-  }
-});
-
-app.get("/rules", requireUser, async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("micro_rules")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    return res.json({ ok: true, data: data || [] });
-  } catch (error) {
-    return jsonError(res, 500, "Error cargando reglas", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/rules", requireUser, async (req, res) => {
-  try {
-    const { data: existingRows, error: existingErr } = await supabaseAdmin
-      .from("micro_rules")
-      .select("id")
-      .eq("user_id", req.user.id)
-      .limit(1);
-
-    if (existingErr) throw existingErr;
-    if (Array.isArray(existingRows) && existingRows.length >= 1) {
-      return jsonError(res, 409, "ERR_ONE_RULE_MAX");
-    }
-
-    const payload = buildMicroRulePayload(req.user.id, req.body);
-
-    const { data, error } = await supabaseAdmin
-      .from("micro_rules")
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return res.json({ ok: true, data });
-  } catch (error) {
-    return jsonError(res, 500, "Error creando regla", {
-      details: error.message
-    });
-  }
-});
-
-app.patch("/rules/:id", requireUser, async (req, res) => {
-  try {
-    const ruleId = req.params.id;
-    if (!isUuid(ruleId)) {
-      return jsonError(res, 400, "ID inválido");
-    }
-
-    const config = req.body.config_json || req.body.config || {};
-    const patch = {
-      updated_at: new Date().toISOString()
-    };
-
-    if (req.body.enabled !== undefined) patch.enabled = safeBoolean(req.body.enabled, true);
-    if (req.body.is_active !== undefined) patch.enabled = safeBoolean(req.body.is_active, true);
-    if (req.body.mode !== undefined) patch.mode = normalizeMicroRuleModeInput(req.body.mode);
-    if (req.body.rule_type !== undefined) {
-      patch.mode = normalizeMicroRuleModeInput(req.body.rule_type);
-    }
-
-    if (req.body.fixed_amount !== undefined) patch.fixed_amount = safeNumber(req.body.fixed_amount);
-    else if (config.fixed_amount !== undefined) patch.fixed_amount = safeNumber(config.fixed_amount);
-    else if (config.amount !== undefined) patch.fixed_amount = safeNumber(config.amount);
-
-    if (req.body.percent !== undefined) patch.percent = safeNumber(req.body.percent);
-    else if (config.percent !== undefined) patch.percent = safeNumber(config.percent);
-
-    if (req.body.roundup_to !== undefined) patch.roundup_to = safeNumber(req.body.roundup_to);
-    else if (config.roundup_to !== undefined) patch.roundup_to = safeNumber(config.roundup_to);
-
-    if (req.body.min_purchase_amount !== undefined) patch.min_purchase_amount = safeNumber(req.body.min_purchase_amount);
-    else if (config.min_purchase_amount !== undefined) patch.min_purchase_amount = safeNumber(config.min_purchase_amount);
-
-    if (req.body.cap_daily !== undefined) patch.cap_daily = safeNullableNumber(req.body.cap_daily);
-    else if (config.cap_daily !== undefined) patch.cap_daily = safeNullableNumber(config.cap_daily);
-
-    if (req.body.cap_weekly !== undefined) patch.cap_weekly = safeNullableNumber(req.body.cap_weekly);
-    else if (config.cap_weekly !== undefined) patch.cap_weekly = safeNullableNumber(config.cap_weekly);
-
-    const targetDebtId =
-      req.body.target_debt_id !== undefined
-        ? req.body.target_debt_id
-        : config.target_debt_id !== undefined
-        ? config.target_debt_id
-        : req.body.debt_id !== undefined
-        ? req.body.debt_id
-        : undefined;
-
-    if (targetDebtId !== undefined) {
-      patch.target_debt_id = isUuid(targetDebtId) ? targetDebtId : null;
-    }
-
-    if (req.body.auto_run !== undefined) patch.auto_run = safeBoolean(req.body.auto_run, false);
-    else if (config.auto_run !== undefined) patch.auto_run = safeBoolean(config.auto_run, false);
-
-    if (req.body.payout_enabled !== undefined) patch.payout_enabled = safeBoolean(req.body.payout_enabled, false);
-    else if (config.payout_enabled !== undefined) patch.payout_enabled = safeBoolean(config.payout_enabled, false);
-
-    if (req.body.payout_min_threshold !== undefined) patch.payout_min_threshold = safeNumber(req.body.payout_min_threshold);
-    else if (config.payout_min_threshold !== undefined) patch.payout_min_threshold = safeNumber(config.payout_min_threshold);
-
-    const { data, error } = await supabaseAdmin
-      .from("micro_rules")
-      .update(patch)
-      .eq("id", ruleId)
-      .eq("user_id", req.user.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return res.json({ ok: true, data });
-  } catch (error) {
-    return jsonError(res, 500, "Error actualizando regla", {
-      details: error.message
-    });
-  }
-});
-
-app.delete("/rules/:id", requireUser, async (req, res) => {
-  try {
-    const ruleId = req.params.id;
-    if (!isUuid(ruleId)) {
-      return jsonError(res, 400, "ID inválido");
-    }
-
-    const { error } = await supabaseAdmin
-      .from("micro_rules")
-      .delete()
-      .eq("id", ruleId)
-      .eq("user_id", req.user.id);
-
-    if (error) throw error;
-
-    return res.json({ ok: true });
-  } catch (error) {
-    return jsonError(res, 500, "Error eliminando regla", {
-      details: error.message
-    });
-  }
-});
-
-app.get("/strategy/compare", requireUser, async (req, res) => {
-  try {
-    const monthlyBudget = safeNumber(req.query.monthly_budget, 0);
-    const extraPayment = safeNumber(req.query.extra_payment, 0);
-
-    const data = await compareStrategiesForUser(
-      req.user.id,
-      monthlyBudget,
-      extraPayment
-    );
-
-    return res.json({
-      ok: true,
-      data
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error comparando estrategias", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/strategy/compare", requireUser, async (req, res) => {
-  try {
-    const monthlyBudget =
-      req.body.monthly_budget_default !== undefined
-        ? safeNumber(req.body.monthly_budget_default, 0)
-        : safeNumber(req.body.monthly_budget, 0);
-
-    const extraPayment =
-      req.body.extra_payment_default !== undefined
-        ? safeNumber(req.body.extra_payment_default, 0)
-        : safeNumber(req.body.extra_payment, 0);
-
-    const data = await compareStrategiesForUser(
-      req.user.id,
-      monthlyBudget,
-      extraPayment
-    );
-
-    return res.json({
-      ok: true,
-      data
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error comparando estrategias", {
-      details: error.message
-    });
-  }
-});
-
-app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
-  try {
-    if (!supabaseAdmin) {
-      return jsonError(res, 500, "Supabase no configurado");
-    }
-
-    const { data: users, error } = await supabaseAdmin
-      .from("profiles")
-      .select("id");
-
-    if (error) throw error;
-
-    const results = [];
-    let successUsers = 0;
-    let failedUsers = 0;
-    let allocationsCreated = 0;
-    let intentsCreated = 0;
-    let intentsExecuted = 0;
-    let totalExecutedAmount = 0;
-
-    for (const user of users || []) {
-      try {
-        const userId = user.id;
-
-        const applyResult = await callRpc("apply_rules_v2", {
-          p_user_id: userId
-        }).catch(() => null);
-
-        const buildResult = await callRpc("build_intents_v2", {
-          p_user_id: userId
-        }).catch(() => null);
-
-        let buildItems = [];
-        if (Array.isArray(buildResult)) buildItems = buildResult;
-        if (buildResult?.intents && Array.isArray(buildResult.intents)) {
-          buildItems = buildResult.intents;
-        }
-
-        let createdForUser = 0;
-        let executedForUser = 0;
-        let totalExecutedForUser = 0;
-
-        for (const item of buildItems) {
-          const intentId =
-            item?.intent_id || item?.id || item?.payment_intent_id || null;
-          if (!intentId || !isUuid(intentId)) continue;
-
-          createdForUser += 1;
-
-          await approveIntentDirect(userId, intentId).catch(() => null);
-
-          const executeResult = await executeIntentDirect(userId, intentId).catch(() => null);
-
-          if (executeResult && !executeResult.already_executed) {
-            executedForUser += 1;
-            totalExecutedForUser += getIntentAmount(executeResult.data);
-          }
-        }
-
-        const allocationsForUser =
-          safeNumber(applyResult?.allocations_created) ||
-          safeNumber(applyResult?.count) ||
-          0;
-
-        allocationsCreated += allocationsForUser;
-        intentsCreated += createdForUser;
-        intentsExecuted += executedForUser;
-        totalExecutedAmount += totalExecutedForUser;
-        successUsers += 1;
-
-        results.push({
-          user_id: userId,
-          ok: true,
-          allocations_created: allocationsForUser,
-          intents_created: createdForUser,
-          intents_executed: executedForUser,
-          total_executed: Number(totalExecutedForUser.toFixed(2))
-        });
-      } catch (error) {
-        failedUsers += 1;
-        results.push({
-          user_id: user.id,
-          ok: false,
-          error: error.message
-        });
-      }
-    }
-
-    return res.json({
-      ok: true,
-      server_version: SERVER_VERSION,
-      ran_at: new Date().toISOString(),
-      total_users: (users || []).length,
-      success_users: successUsers,
-      failed_users: failedUsers,
-      allocations_created: allocationsCreated,
-      intents_created: intentsCreated,
-      intents_executed: intentsExecuted,
-      total_executed_amount: Number(totalExecutedAmount.toFixed(2)),
-      results,
-      env_debug: {
-        has_supabase_url: !!SUPABASE_URL,
-        has_anon_key: !!SUPABASE_ANON_KEY,
-        has_service_role_key: !!SUPABASE_SERVICE_ROLE_KEY,
-        has_cron_secret: !!CRON_SECRET
-      }
-    });
-  } catch (error) {
-    return jsonError(res, 500, "Error ejecutando cron full-auto", {
-      details: error.message
-    });
-  }
+registerCronRoutes(app, {
+  requireCronSecret,
+  supabaseAdmin,
+  jsonError,
+  callRpc,
+  approveIntentDirect,
+  executeIntentDirect,
+  getIntentAmount,
+  isUuid,
+  safeNumber,
+  SERVER_VERSION,
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_ROLE_KEY,
+  CRON_SECRET
 });
 
 app.use((req, res, next) => {
