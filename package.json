@@ -4,7 +4,9 @@
   "description": "DebtYa backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "smoke:local": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-test.ps1 -ApiBaseUrl http://localhost:3000"
   },
   "keywords": [],
   "author": "",
