@@ -4,7 +4,9 @@
  * Con NODE_ENV=production exige mas claves criticas.
  */
 
-require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
+if (process.env.CI !== "true") {
+  require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
+}
 
 const isProd = process.env.NODE_ENV === "production";
 

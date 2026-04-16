@@ -50,6 +50,13 @@ describe("validateDebtPatch", () => {
   it("rechaza apr fuera de rango", () => {
     assert.equal(validateDebtPatch({ apr: 5000 }), "apr inválido");
   });
+  it("acepta due_day 0 y 31", () => {
+    assert.equal(validateDebtPatch({ due_day: 0 }), null);
+    assert.equal(validateDebtPatch({ due_day: 31 }), null);
+  });
+  it("rechaza due_day fuera de rango", () => {
+    assert.equal(validateDebtPatch({ due_day: 32 }), "due_day inválido");
+  });
 });
 
 describe("validateRuleCreateBody", () => {
@@ -89,6 +96,18 @@ describe("validatePaymentIntentCreate", () => {
     assert.equal(
       validatePaymentIntentCreate({ amount: 1, debt_id: "nope" }, safeNumber),
       "debt_id inválido"
+    );
+  });
+  it("rechaza source_account_id invalido", () => {
+    assert.equal(
+      validatePaymentIntentCreate({ amount: 1, source_account_id: "bad" }, safeNumber),
+      "source_account_id inválido"
+    );
+  });
+  it("rechaza amount por encima del tope", () => {
+    assert.equal(
+      validatePaymentIntentCreate({ amount: 1e15 }, safeNumber),
+      "amount inválido"
     );
   });
 });

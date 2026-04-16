@@ -12,7 +12,7 @@ Plan de ejecucion para avanzar en paralelo con foco en impacto y estabilidad.
    - Catalogar endpoints criticos y respuesta esperada.
    - Definir smoke tests minimos para `/health`, `/payment-trace`, `/payment-intents`.
    - Tests unitarios de `lib/validation.js`: `npm test`.
-   - CI en GitHub Actions (`.github/workflows/ci.yml`): `npm ci` + `npm test` en push/PR a `main`.
+   - CI en GitHub Actions (`.github/workflows/ci.yml`): `npm ci` + `npm test` en push/PR a `main`; paso opcional `validate:env` si hay secrets (ver checklist GitHub abajo).
 3. Observabilidad
    - Estandarizar logs de error con contexto de endpoint y request id.
 
@@ -38,6 +38,22 @@ Plan de ejecucion para avanzar en paralelo con foco en impacto y estabilidad.
 - Cambios pequenos, auditables y reversibles.
 - Siempre con plan de validacion y rollback.
 - Sin tocar flujos criticos sin evidencia de necesidad.
+
+## GitHub Actions (secrets del repo)
+
+Configurar en **Settings → Secrets and variables → Actions** (mismos nombres que en el host):
+
+- `SUPABASE_URL` — si falta, CI **omite** el paso `validate:env` (forks o repo sin configurar).
+- `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+- `CRON_SECRET`
+
+Tras el primer push con secrets: comprobar en la pestaña **Actions** que el job `test` incluye el paso *Validate production env shape* en verde.
+
+## Historial git y secretos
+
+- El archivo `.env` llego a aparecer en el historial (p. ej. commit `fe8fe09`). Aunque hoy este en `.gitignore`, **quien clone el repo puede ver ese commit**. Recomendacion: rotar claves que pudieran figurar alli (Supabase service/anon, Stripe, Plaid, cron) y, si el riesgo lo exige, usar `git filter-repo` o soporte de GitHub para purgar datos sensibles del historial remoto.
+- **`node_modules` no debe versionarse.** Si estaba en el indice, quitarlo con `git rm -r --cached node_modules` y un commit dedicado; luego `npm ci` en cada clone/CI.
 
 ## Checklist de deploy (API)
 

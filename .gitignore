@@ -18,3 +18,7 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Test / tooling artifacts
+coverage/
+.nyc_output/
