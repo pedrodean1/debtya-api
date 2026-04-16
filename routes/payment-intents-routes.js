@@ -1,3 +1,8 @@
+const {
+  validatePaymentIntentCreate,
+  validateIntentRouteParamId
+} = require("../lib/validation");
+
 function registerPaymentIntentRoutes(app, deps) {
   const {
     requireUser,
@@ -30,6 +35,11 @@ function registerPaymentIntentRoutes(app, deps) {
 
   app.post("/payment-intents", requireUser, async (req, res) => {
     try {
+      const intentErr = validatePaymentIntentCreate(req.body, safeNumber);
+      if (intentErr) {
+        return jsonError(res, 400, intentErr);
+      }
+
       const payload = {
         user_id: req.user.id,
         debt_id: req.body.debt_id || null,
@@ -60,6 +70,10 @@ function registerPaymentIntentRoutes(app, deps) {
   app.post("/payment-intents/:id/approve", requireUser, async (req, res) => {
     try {
       const intentId = req.params.id;
+      const idErr = validateIntentRouteParamId(intentId);
+      if (idErr) {
+        return jsonError(res, 400, idErr);
+      }
       const data = await approveIntentDirect(req.user.id, intentId);
 
       return res.json({
@@ -77,6 +91,10 @@ function registerPaymentIntentRoutes(app, deps) {
   app.post("/payment-intents/:id/execute", requireUser, async (req, res) => {
     try {
       const intentId = req.params.id;
+      const idErr = validateIntentRouteParamId(intentId);
+      if (idErr) {
+        return jsonError(res, 400, idErr);
+      }
       const result = await executeIntentDirect(req.user.id, intentId);
 
       return res.json({

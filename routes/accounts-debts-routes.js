@@ -1,3 +1,5 @@
+const { validateDebtCreatePayload } = require("../lib/validation");
+
 function registerAccountsDebtsRoutes(app, deps) {
   const {
     requireUser,
@@ -63,20 +65,25 @@ function registerAccountsDebtsRoutes(app, deps) {
         updated_at: new Date().toISOString()
       };
 
-      if (req.body.linked_plaid_account_id !== undefined) {
-        const raw = req.body.linked_plaid_account_id;
-        if (raw === null || raw === "") {
-          payload.linked_plaid_account_id = null;
-        } else {
-          const lid = String(raw).trim();
-          await assertLinkedPlaidAccountForUser(req.user.id, lid);
-          payload.linked_plaid_account_id = lid;
-        }
+    if (req.body.linked_plaid_account_id !== undefined) {
+      const raw = req.body.linked_plaid_account_id;
+      if (raw === null || raw === "") {
+        payload.linked_plaid_account_id = null;
+      } else {
+        const lid = String(raw).trim();
+        await assertLinkedPlaidAccountForUser(req.user.id, lid);
+        payload.linked_plaid_account_id = lid;
       }
+    }
 
-      const { data, error } = await supabaseAdmin
-        .from("debts")
-        .insert(payload)
+    const debtErr = validateDebtCreatePayload(payload);
+    if (debtErr) {
+      return jsonError(res, 400, debtErr);
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("debts")
+      .insert(payload)
         .select()
         .single();
 

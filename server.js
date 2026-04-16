@@ -9,6 +9,7 @@ const { createClient } = require("@supabase/supabase-js");
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const { registerAllRoutes } = require("./routes");
 const { attachStripeWebhook } = require("./routes/stripe-webhook-routes");
+const { isUuid } = require("./lib/validation");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -160,12 +161,6 @@ const plaidConfig =
     : null;
 
 const plaidClient = plaidConfig ? new PlaidApi(plaidConfig) : null;
-
-function isUuid(value) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    String(value || "")
-  );
-}
 
 function safeNumber(value, fallback = 0) {
   const n = Number(value);
