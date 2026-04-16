@@ -21,7 +21,7 @@ Plan de ejecucion para avanzar en paralelo con foco en impacto y estabilidad.
    - Reducir payloads y lecturas innecesarias.
 2. Calidad de codigo
    - Modularizar `server.js` por dominios (`billing`, `plaid`, `rules`, `cron`). (hecho)
-   - Validacion de input centralizada en `lib/validation.js` (UUID, montos; usada en deudas POST e intents POST y approve/execute).
+   - Validacion de input centralizada en `lib/validation.js` (UUID, montos; deudas POST/PATCH, reglas PATCH, intents POST y approve/execute).
 
 ## Prioridad 3 (iteracion siguiente)
 

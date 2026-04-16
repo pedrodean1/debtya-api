@@ -1,3 +1,5 @@
+const { validateRulePatch } = require("../lib/validation");
+
 function registerRulesCrudRoutes(app, deps) {
   const {
     requireUser,
@@ -108,7 +110,13 @@ function registerRulesCrudRoutes(app, deps) {
           : undefined;
 
       if (targetDebtId !== undefined) {
-        patch.target_debt_id = isUuid(targetDebtId) ? targetDebtId : null;
+        if (targetDebtId === null || String(targetDebtId).trim() === "") {
+          patch.target_debt_id = null;
+        } else if (!isUuid(targetDebtId)) {
+          return jsonError(res, 400, "target_debt_id inválido");
+        } else {
+          patch.target_debt_id = targetDebtId;
+        }
       }
 
       if (req.body.auto_run !== undefined) patch.auto_run = safeBoolean(req.body.auto_run, false);
@@ -119,6 +127,11 @@ function registerRulesCrudRoutes(app, deps) {
 
       if (req.body.payout_min_threshold !== undefined) patch.payout_min_threshold = safeNumber(req.body.payout_min_threshold);
       else if (config.payout_min_threshold !== undefined) patch.payout_min_threshold = safeNumber(config.payout_min_threshold);
+
+      const rulePatchErr = validateRulePatch(patch);
+      if (rulePatchErr) {
+        return jsonError(res, 400, rulePatchErr);
+      }
 
       const { data, error } = await supabaseAdmin
         .from("micro_rules")

@@ -1,4 +1,4 @@
-const { validateDebtCreatePayload } = require("../lib/validation");
+const { validateDebtCreatePayload, validateDebtPatch } = require("../lib/validation");
 
 function registerAccountsDebtsRoutes(app, deps) {
   const {
@@ -126,6 +126,11 @@ function registerAccountsDebtsRoutes(app, deps) {
           await assertLinkedPlaidAccountForUser(req.user.id, lid);
           patch.linked_plaid_account_id = lid;
         }
+      }
+
+      const patchErr = validateDebtPatch(patch);
+      if (patchErr) {
+        return jsonError(res, 400, patchErr);
       }
 
       const { data, error } = await supabaseAdmin
