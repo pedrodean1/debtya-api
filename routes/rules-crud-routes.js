@@ -1,4 +1,4 @@
-const { validateRulePatch } = require("../lib/validation");
+const { validateRuleCreateBody, validateRulePatch } = require("../lib/validation");
 
 function registerRulesCrudRoutes(app, deps) {
   const {
@@ -40,13 +40,23 @@ function registerRulesCrudRoutes(app, deps) {
         .limit(1);
 
       if (existingErr) throw existingErr;
-      if (Array.isArray(existingRows) && existingRows.length >= 1) {
-        return jsonError(res, 409, "ERR_ONE_RULE_MAX");
-      }
+    if (Array.isArray(existingRows) && existingRows.length >= 1) {
+      return jsonError(res, 409, "ERR_ONE_RULE_MAX");
+    }
 
-      const payload = buildMicroRulePayload(req.user.id, req.body);
+    const createErr = validateRuleCreateBody(req.body);
+    if (createErr) {
+      return jsonError(res, 400, createErr);
+    }
 
-      const { data, error } = await supabaseAdmin
+    const payload = buildMicroRulePayload(req.user.id, req.body);
+
+    const payloadErr = validateRulePatch(payload);
+    if (payloadErr) {
+      return jsonError(res, 400, payloadErr);
+    }
+
+    const { data, error } = await supabaseAdmin
         .from("micro_rules")
         .insert(payload)
         .select()
