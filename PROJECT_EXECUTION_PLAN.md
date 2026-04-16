@@ -12,6 +12,7 @@ Plan de ejecucion para avanzar en paralelo con foco en impacto y estabilidad.
    - Catalogar endpoints criticos y respuesta esperada.
    - Definir smoke tests minimos para `/health`, `/payment-trace`, `/payment-intents`.
    - Tests unitarios de `lib/validation.js`: `npm test`.
+   - CI en GitHub Actions (`.github/workflows/ci.yml`): `npm ci` + `npm test` en push/PR a `main`.
 3. Observabilidad
    - Estandarizar logs de error con contexto de endpoint y request id.
 
