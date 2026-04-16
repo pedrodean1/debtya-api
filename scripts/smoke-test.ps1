@@ -4,7 +4,8 @@ param(
 
   [string]$AuthToken = "",
   [string]$DebtId = "",
-  [switch]$IncludePaymentIntents
+  [switch]$IncludePaymentIntents,
+  [switch]$IncludeAccountsDebtsRules
 )
 
 $ErrorActionPreference = "Stop"
@@ -47,10 +48,13 @@ Assert-Status -Name "/health" -StatusCode $health.StatusCode
 
 # 2) Payment trace (optional, only if DebtId provided)
 if ($DebtId -and $DebtId.Trim().Length -gt 0) {
+  if (-not $AuthToken -or $AuthToken.Trim().Length -eq 0) {
+    throw "[FAIL] /payment-trace con DebtId requiere AuthToken"
+  }
   $trace = Invoke-ApiGet -Url "$base/payment-trace?debt_id=$DebtId" -Token $AuthToken
   Assert-Status -Name "/payment-trace" -StatusCode $trace.StatusCode
 } else {
-  Write-Host "[SKIP] /payment-trace (falta DebtId)" -ForegroundColor Yellow
+  Write-Host "[SKIP] /payment-trace (falta DebtId o token)" -ForegroundColor Yellow
 }
 
 # 3) Payment intents (optional; requires auth)
@@ -62,7 +66,25 @@ if ($IncludePaymentIntents.IsPresent) {
   $intents = Invoke-ApiGet -Url "$base/payment-intents" -Token $AuthToken
   Assert-Status -Name "/payment-intents" -StatusCode $intents.StatusCode
 } else {
-  Write-Host "[SKIP] /payment-intents (usa -IncludePaymentIntents para habilitarlo)" -ForegroundColor Yellow
+  Write-Host "[SKIP] /payment-intents (usa -IncludePaymentIntents)" -ForegroundColor Yellow
+}
+
+# 4) Accounts, debts, rules (optional; requires auth)
+if ($IncludeAccountsDebtsRules.IsPresent) {
+  if (-not $AuthToken -or $AuthToken.Trim().Length -eq 0) {
+    throw "[FAIL] /accounts /debts /rules requieren AuthToken"
+  }
+
+  $ac = Invoke-ApiGet -Url "$base/accounts" -Token $AuthToken
+  Assert-Status -Name "/accounts" -StatusCode $ac.StatusCode
+
+  $deb = Invoke-ApiGet -Url "$base/debts" -Token $AuthToken
+  Assert-Status -Name "/debts" -StatusCode $deb.StatusCode
+
+  $rules = Invoke-ApiGet -Url "$base/rules" -Token $AuthToken
+  Assert-Status -Name "/rules" -StatusCode $rules.StatusCode
+} else {
+  Write-Host "[SKIP] /accounts /debts /rules (usa -IncludeAccountsDebtsRules)" -ForegroundColor Yellow
 }
 
 Write-Host "Smoke test finalizado correctamente." -ForegroundColor Green

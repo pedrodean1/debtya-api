@@ -1,24 +1,14 @@
 require("dotenv").config();
 
 const path = require("path");
+const { randomUUID } = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
 const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
-const { registerCoreRoutes } = require("./routes/core-routes");
-const { registerPaymentIntentRoutes } = require("./routes/payment-intents-routes");
-const { registerPlanningRoutes } = require("./routes/planning-routes");
+const { registerAllRoutes } = require("./routes");
 const { attachStripeWebhook } = require("./routes/stripe-webhook-routes");
-const { registerGuideRoutes } = require("./routes/guide-routes");
-const { registerBillingRoutes } = require("./routes/billing-routes");
-const { registerSupabaseRoutes } = require("./routes/supabase-routes");
-const { registerPlaidRoutes } = require("./routes/plaid-routes");
-const { registerAccountsDebtsRoutes } = require("./routes/accounts-debts-routes");
-const { registerPaymentPlansRoutes } = require("./routes/payment-plans-routes");
-const { registerRulesCrudRoutes } = require("./routes/rules-crud-routes");
-const { registerStrategyRoutes } = require("./routes/strategy-routes");
-const { registerCronRoutes } = require("./routes/cron-routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -124,6 +114,15 @@ attachStripeWebhook(app, express, () => ({
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  const incoming = req.headers["x-request-id"];
+  req.requestId =
+    typeof incoming === "string" && incoming.trim()
+      ? incoming.trim().slice(0, 128)
+      : randomUUID();
+  res.setHeader("X-Request-Id", req.requestId);
+  next();
+});
 app.use(
   express.static(path.join(__dirname, "public"), {
     setHeaders(res, filePath) {
@@ -208,9 +207,11 @@ function sortTraceRows(rows = []) {
 }
 
 function jsonError(res, status, message, extra = {}) {
+  const requestId = res.req?.requestId;
   return res.status(status).json({
     ok: false,
     error: message,
+    ...(requestId ? { request_id: requestId } : {}),
     ...extra
   });
 }
@@ -1468,7 +1469,7 @@ async function executeIntentDirect(userId, intentId) {
   };
 }
 
-registerCoreRoutes(app, {
+registerAllRoutes(app, {
   SERVER_VERSION,
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
@@ -1477,68 +1478,35 @@ registerCoreRoutes(app, {
   STRIPE_SECRET_KEY,
   STRIPE_PRICE_ID_BETA_MONTHLY,
   STRIPE_WEBHOOK_SECRET,
+  STRIPE_PORTAL_CONFIG_ID,
   requireUser,
+  requireCronSecret,
   supabaseAdmin,
   sortTraceRows,
   getIntentAmount,
   appDebug,
-  jsonError
-});
-
-registerPaymentIntentRoutes(app, {
-  requireUser,
-  supabaseAdmin,
+  appError,
+  jsonError,
+  callRpc,
   safeNumber,
+  safeBoolean,
+  safeNullableNumber,
+  stampRecentIntentsFundingFromPlan,
   approveIntentDirect,
   executeIntentDirect,
   reconcileRecentExecutedIntents,
   isoDaysAgo,
-  jsonError
-});
-
-registerPlanningRoutes(app, {
-  requireUser,
-  callRpc,
-  safeNumber,
-  stampRecentIntentsFundingFromPlan,
-  appDebug,
-  approveIntentDirect,
-  executeIntentDirect,
-  jsonError
-});
-
-registerGuideRoutes(app, {
-  jsonError,
-  appError
-});
-
-registerBillingRoutes(app, {
-  requireUser,
   stripe,
-  STRIPE_PRICE_ID_BETA_MONTHLY,
-  STRIPE_PORTAL_CONFIG_ID,
+  stripeDebug,
   getLatestBillingSubscriptionForUser,
   ensureProfile,
   getOrCreateStripeCustomerForUser,
   getBaseUrl,
-  stripeDebug,
-  jsonError
-});
-
-registerSupabaseRoutes(app, {
-  supabaseAdmin,
-  jsonError
-});
-
-registerPlaidRoutes(app, {
-  requireUser,
-  supabaseAdmin,
   plaidClient,
   PLAID_PRODUCTS,
   PLAID_COUNTRY_CODES,
   PLAID_REDIRECT_URI,
   PLAID_ANDROID_PACKAGE_NAME,
-  ensureProfile,
   getInstitutionName,
   upsertPlaidItem,
   getPlaidItemsForUser,
@@ -1547,64 +1515,14 @@ registerPlaidRoutes(app, {
   importPlaidAccountsForUser,
   getLatestPlaidItemForUser,
   insertTransactionsRaw,
-  getBaseUrl,
-  appError,
-  appDebug,
-  jsonError
-});
-
-registerAccountsDebtsRoutes(app, {
-  requireUser,
-  supabaseAdmin,
-  jsonError,
-  safeNumber,
   isUuid,
-  assertLinkedPlaidAccountForUser
-});
-
-registerPaymentPlansRoutes(app, {
-  requireUser,
-  supabaseAdmin,
-  jsonError,
+  assertLinkedPlaidAccountForUser,
   normalizePaymentPlan,
   savePaymentPlanForUser,
-  getCurrentPaymentPlan
-});
-
-registerRulesCrudRoutes(app, {
-  requireUser,
-  supabaseAdmin,
-  jsonError,
-  safeNumber,
-  safeBoolean,
-  safeNullableNumber,
-  isUuid,
+  getCurrentPaymentPlan,
   buildMicroRulePayload,
-  normalizeMicroRuleModeInput
-});
-
-registerStrategyRoutes(app, {
-  requireUser,
-  safeNumber,
-  compareStrategiesForUser,
-  jsonError
-});
-
-registerCronRoutes(app, {
-  requireCronSecret,
-  supabaseAdmin,
-  jsonError,
-  callRpc,
-  approveIntentDirect,
-  executeIntentDirect,
-  getIntentAmount,
-  isUuid,
-  safeNumber,
-  SERVER_VERSION,
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  SUPABASE_SERVICE_ROLE_KEY,
-  CRON_SECRET
+  normalizeMicroRuleModeInput,
+  compareStrategiesForUser
 });
 
 app.use((req, res, next) => {
@@ -1638,8 +1556,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use((err, _req, res, _next) => {
-  appError("ERROR NO CONTROLADO:", err);
+app.use((err, req, res, _next) => {
+  appError("ERROR NO CONTROLADO:", req.requestId || null, err);
   return jsonError(res, 500, "Error interno del servidor", {
     details: err.message
   });
