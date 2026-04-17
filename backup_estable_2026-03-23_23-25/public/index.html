@@ -666,6 +666,12 @@
             <div class="actions">
               <button id="connectBankBtn" type="button">Conectar banco</button>
               <button id="loadPlaidItemsBtn" type="button" class="secondary">Ver item Plaid</button>
+              <button id="disconnectBankBtn" type="button" class="secondary">Desconectar banco</button>
+            </div>
+            <div class="row" style="margin-top:10px;">
+              <select id="disconnectPlaidSelect" class="grow" style="display:none" aria-label="Banco a desconectar">
+                <option value="">— Elige banco a desconectar —</option>
+              </select>
             </div>
           </div>
 
@@ -1134,6 +1140,8 @@
 
       connectBankBtn: document.getElementById("connectBankBtn"),
       loadPlaidItemsBtn: document.getElementById("loadPlaidItemsBtn"),
+      disconnectBankBtn: document.getElementById("disconnectBankBtn"),
+      disconnectPlaidSelect: document.getElementById("disconnectPlaidSelect"),
       importAccountsBtn: document.getElementById("importAccountsBtn"),
       loadAccountsBtn: document.getElementById("loadAccountsBtn"),
       importTransactionsBtn: document.getElementById("importTransactionsBtn"),
@@ -1220,7 +1228,12 @@
     };
 
     function getApiBase(){
-      return localStorage.getItem("DEBTYA_API_BASE") || "http://localhost:3000";
+      const saved = localStorage.getItem("DEBTYA_API_BASE");
+      if (saved && String(saved).trim()) return String(saved).trim().replace(/\/+$/,"");
+      if (typeof window !== "undefined" && window.location && window.location.origin) {
+        return window.location.origin;
+      }
+      return "http://localhost:3000";
     }
 
     function setApiBase(value){
@@ -1976,12 +1989,32 @@
       }
     }
 
+    function syncDisconnectPlaidSelect() {
+      const sel = els.disconnectPlaidSelect;
+      if (!sel) return;
+      sel.innerHTML = "";
+      const ph = document.createElement("option");
+      ph.value = "";
+      ph.textContent = plaidItemsCache.length > 1 ? "— Elige banco a desconectar —" : "— Sin bancos conectados —";
+      sel.appendChild(ph);
+      plaidItemsCache.forEach((it) => {
+        const id = String(it.plaid_item_id || "").trim();
+        if (!id) return;
+        const op = document.createElement("option");
+        op.value = id;
+        op.textContent = String(it.institution_name || "Plaid").trim() || id;
+        sel.appendChild(op);
+      });
+      sel.style.display = plaidItemsCache.length > 1 ? "block" : "none";
+    }
+
     async function loadPlaidItems(){
       const json = await api("/plaid/items", { method: "GET", headers: authHeaders() });
       plaidItemsCache = Array.isArray(json.data) ? json.data : [];
 
       if (!plaidItemsCache.length) {
         els.plaidStatus.textContent = "No hay plaid_items guardados para este usuario.";
+        syncDisconnectPlaidSelect();
         return;
       }
 
@@ -1989,6 +2022,58 @@
       els.plaidStatus.textContent =
         "Último item: " + (item.institution_name || "Plaid Sandbox") +
         " | " + safeDate(item.created_at);
+      syncDisconnectPlaidSelect();
+    }
+
+    async function disconnectPlaidBank(){
+      if (!session?.access_token) {
+        showToast("Primero inicia sesión.", true);
+        return;
+      }
+      if (!plaidItemsCache.length) {
+        try {
+          await loadPlaidItems();
+        } catch (e) {
+          showToast("No se pudieron cargar items Plaid:\n" + (e.message || String(e)), true);
+          return;
+        }
+      }
+      if (!plaidItemsCache.length) {
+        showToast("No hay bancos conectados.", true);
+        return;
+      }
+      let plaidItemId = "";
+      if (plaidItemsCache.length === 1) {
+        plaidItemId = String(plaidItemsCache[0].plaid_item_id || "").trim();
+      } else {
+        plaidItemId = String(els.disconnectPlaidSelect?.value || "").trim();
+      }
+      if (!plaidItemId) {
+        showToast("Elige qué banco desconectar en la lista.", true);
+        return;
+      }
+      const row = plaidItemsCache.find((it) => String(it.plaid_item_id || "").trim() === plaidItemId);
+      const label = row ? String(row.institution_name || plaidItemId).trim() : plaidItemId;
+      if (!window.confirm(`¿Quitar la conexión con "${label}"? Esta acción borra el item en Plaid y en DebtYa.`)) {
+        return;
+      }
+      try {
+        setLoading(els.disconnectBankBtn, true, "Desconectando...");
+        await api("/plaid/items/disconnect", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ plaid_item_id: plaidItemId })
+        });
+        showToast("Banco desconectado.", false);
+        await loadPlaidItems();
+        try {
+          await loadAccounts();
+        } catch (_) {}
+      } catch (e) {
+        showToast("Error desconectando:\n" + (e.message || String(e)), true);
+      } finally {
+        setLoading(els.disconnectBankBtn, false);
+      }
     }
 
     async function connectBank(){
@@ -2012,13 +2097,12 @@
           token: linkToken,
           onSuccess: async (public_token, metadata) => {
             try {
-              const institutionName = metadata?.institution?.name || "Plaid Sandbox";
               await api("/plaid/exchange_public_token", {
                 method: "POST",
                 headers: authHeaders(),
                 body: JSON.stringify({
                   public_token,
-                  institution_name: institutionName
+                  metadata: metadata || {}
                 })
               });
 
@@ -2349,6 +2433,8 @@
       };
 
       els.connectBankBtn.onclick = connectBank;
+
+      if (els.disconnectBankBtn) els.disconnectBankBtn.onclick = disconnectPlaidBank;
 
       els.loadPlaidItemsBtn.onclick = async () => {
         try {
