@@ -2045,7 +2045,6 @@
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p id="welcomeText">Home</p>
-            <p id="buildHints" class="hidden" style="font-size:11px;margin:4px 0 0;color:var(--muted);letter-spacing:.02em;max-width:min(420px,90vw);line-height:1.35;"></p>
           </div>
         </div>
 
@@ -2649,7 +2648,6 @@
         ? window.location.origin
         : "https://www.debtya.com";
     const REQUEST_TIMEOUT_MS = 15000;
-    const CLIENT_HTML_BUILD = "plaid-banks-2026-04-17-no-topbar-disconnect";
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
     const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
@@ -3724,7 +3722,6 @@
       mode: "login",
       session: null,
       user: null,
-      health: null,
       debts: [],
       rules: [],
       plan: null,
@@ -5604,16 +5601,6 @@
       `;
     }
 
-    async function refreshHealth() {
-      state.health = await api("/health");
-      const hint = $("buildHints");
-      if (hint) {
-        const srv = state.health?.server_version || "—";
-        hint.textContent = `Build: API ${srv} · ${CLIENT_HTML_BUILD}`;
-        hint.classList.remove("hidden");
-      }
-    }
-
     async function refreshDebts() {
       const res = await api("/debts");
       state.debts = res.data || [];
@@ -5858,7 +5845,6 @@
     async function refreshAll() {
       hideMessage(globalMessage);
       try {
-        await refreshHealth();
         await Promise.all([
           refreshPlan(),
           refreshBillingStatus(),
