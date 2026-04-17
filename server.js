@@ -17,7 +17,7 @@ const { jsonError } = require("./lib/json-error");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-15-disconnect-without-debts-column";
+const SERVER_VERSION = "debtya-2026-04-15-disconnect-intents-plaid-ids";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -902,29 +902,118 @@ async function disconnectPlaidItemForUser(userId, plaidItemId) {
   const now = new Date().toISOString();
 
   if (plaidAccountIds.length) {
-    const { error: debtErr } = await supabaseAdmin
-      .from("debts")
-      .update({ linked_plaid_account_id: null, updated_at: now })
-      .eq("user_id", userId)
-      .in("linked_plaid_account_id", plaidAccountIds);
+    const uuidAccountIds = plaidAccountIds.filter((id) => isUuid(id));
+    const plaidStyleAccountIds = plaidAccountIds.filter((id) => !isUuid(id));
 
-    if (debtErr) {
-      if (isMissingTableColumnError(debtErr, "debts", "linked_plaid_account_id")) {
-        appDebug(
-          "disconnectPlaidItemForUser: columna debts.linked_plaid_account_id ausente; omitiendo limpieza de vinculos. Ejecutar sql/add_debts_linked_plaid_account_id.sql en Supabase."
-        );
-      } else {
-        throw debtErr;
+    if (uuidAccountIds.length) {
+      const { error: debtErr } = await supabaseAdmin
+        .from("debts")
+        .update({ linked_plaid_account_id: null, updated_at: now })
+        .eq("user_id", userId)
+        .in("linked_plaid_account_id", uuidAccountIds);
+
+      if (debtErr) {
+        if (isMissingTableColumnError(debtErr, "debts", "linked_plaid_account_id")) {
+          appDebug(
+            "disconnectPlaidItemForUser: columna debts.linked_plaid_account_id ausente; omitiendo limpieza de vinculos. Ejecutar sql/add_debts_linked_plaid_account_id.sql en Supabase."
+          );
+        } else {
+          throw debtErr;
+        }
       }
     }
 
-    const { error: intentErr } = await supabaseAdmin
-      .from("payment_intents")
-      .update({ source_account_id: null, updated_at: now })
-      .eq("user_id", userId)
-      .in("source_account_id", plaidAccountIds);
+    if (plaidStyleAccountIds.length) {
+      const plaidSet = new Set(plaidStyleAccountIds);
+      const { data: debtsForClear, error: debtSelErr } = await supabaseAdmin
+        .from("debts")
+        .select("id,linked_plaid_account_id")
+        .eq("user_id", userId);
 
-    if (intentErr) throw intentErr;
+      if (debtSelErr) {
+        if (isMissingTableColumnError(debtSelErr, "debts", "linked_plaid_account_id")) {
+          appDebug(
+            "disconnectPlaidItemForUser: columna debts.linked_plaid_account_id ausente; omitiendo limpieza de vinculos (select)."
+          );
+        } else {
+          throw debtSelErr;
+        }
+      } else {
+        const debtIdsToClear = (debtsForClear || [])
+          .filter((row) => {
+            if (!row?.id) return false;
+            const lid =
+              row.linked_plaid_account_id != null
+                ? String(row.linked_plaid_account_id).trim()
+                : "";
+            return lid && plaidSet.has(lid);
+          })
+          .map((row) => row.id)
+          .filter((id) => isUuid(id));
+
+        const chunkD = 80;
+        for (let i = 0; i < debtIdsToClear.length; i += chunkD) {
+          const slice = debtIdsToClear.slice(i, i + chunkD);
+          const { error: debtBulkErr } = await supabaseAdmin
+            .from("debts")
+            .update({ linked_plaid_account_id: null, updated_at: now })
+            .eq("user_id", userId)
+            .in("id", slice);
+
+          if (debtBulkErr) {
+            if (isMissingTableColumnError(debtBulkErr, "debts", "linked_plaid_account_id")) {
+              appDebug(
+                "disconnectPlaidItemForUser: columna debts.linked_plaid_account_id ausente; omitiendo limpieza de vinculos (bulk)."
+              );
+              break;
+            }
+            throw debtBulkErr;
+          }
+        }
+      }
+    }
+
+    if (uuidAccountIds.length) {
+      const { error: intentErr } = await supabaseAdmin
+        .from("payment_intents")
+        .update({ source_account_id: null, updated_at: now })
+        .eq("user_id", userId)
+        .in("source_account_id", uuidAccountIds);
+
+      if (intentErr) throw intentErr;
+    }
+
+    if (plaidStyleAccountIds.length) {
+      const plaidSet = new Set(plaidStyleAccountIds);
+      const { data: intentsForClear, error: intentSelErr } = await supabaseAdmin
+        .from("payment_intents")
+        .select("id,source_account_id")
+        .eq("user_id", userId);
+
+      if (intentSelErr) throw intentSelErr;
+
+      const intentIdsToClear = (intentsForClear || [])
+        .filter((row) => {
+          if (!row?.id) return false;
+          const sid =
+            row.source_account_id != null ? String(row.source_account_id).trim() : "";
+          return sid && plaidSet.has(sid);
+        })
+        .map((row) => row.id)
+        .filter((id) => isUuid(id));
+
+      const chunk = 80;
+      for (let i = 0; i < intentIdsToClear.length; i += chunk) {
+        const slice = intentIdsToClear.slice(i, i + chunk);
+        const { error: intentBulkErr } = await supabaseAdmin
+          .from("payment_intents")
+          .update({ source_account_id: null, updated_at: now })
+          .eq("user_id", userId)
+          .in("id", slice);
+
+        if (intentBulkErr) throw intentBulkErr;
+      }
+    }
   }
 
   const { data: planRows, error: planErr } = await supabaseAdmin
