@@ -2,23 +2,23 @@ const guideRateByIp = new Map();
 const GUIDE_RATE_MAX = 24;
 const GUIDE_RATE_WINDOW_MS = 60 * 60 * 1000;
 
-function guideCheckRate(ip) {
+function guideCheckRate(key) {
   const now = Date.now();
-  let row = guideRateByIp.get(ip);
+  let row = guideRateByIp.get(key);
   if (!row || now - row.windowStart > GUIDE_RATE_WINDOW_MS) {
     row = { count: 0, windowStart: now };
   }
   if (row.count >= GUIDE_RATE_MAX) {
-    guideRateByIp.set(ip, row);
+    guideRateByIp.set(key, row);
     return false;
   }
   row.count += 1;
-  guideRateByIp.set(ip, row);
+  guideRateByIp.set(key, row);
   return true;
 }
 
 function registerGuideRoutes(app, deps) {
-  const { jsonError, appError } = deps;
+  const { jsonError, appError, requireUser } = deps;
 
   app.get("/guide-assistant/status", (_req, res) => {
     const enabled =
@@ -27,7 +27,7 @@ function registerGuideRoutes(app, deps) {
     return res.json({ ok: true, enabled });
   });
 
-  app.post("/guide-assistant", async (req, res) => {
+  app.post("/guide-assistant", requireUser, async (req, res) => {
     try {
       if (!process.env.OPENAI_API_KEY || process.env.OPENAI_GUIDE_DISABLED === "1") {
         return res.status(503).json({
@@ -37,10 +37,8 @@ function registerGuideRoutes(app, deps) {
         });
       }
 
-      const rawIp = String(req.headers["x-forwarded-for"] || "");
-      const ip =
-        rawIp.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
-      if (!guideCheckRate(ip)) {
+      const rateKey = `user:${req.user.id}`;
+      if (!guideCheckRate(rateKey)) {
         return jsonError(
           res,
           429,

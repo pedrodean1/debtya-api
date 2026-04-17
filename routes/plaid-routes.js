@@ -242,11 +242,7 @@ function registerPlaidRoutes(app, deps) {
       appError("exchange_public_token ERROR:", detailedMessage);
       appDebug("exchange_public_token ERROR RAW:", raw);
 
-      return res.status(500).json({
-        ok: false,
-        error: detailedMessage,
-        details: raw
-      });
+      return jsonError(res, 500, "Error intercambiando public_token");
     }
   });
 
