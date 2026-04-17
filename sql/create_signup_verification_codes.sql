@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS public.signup_verification_codes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email text NOT NULL,
-  code_hash text NOT NULL,
+  code text NOT NULL,
   expires_at timestamptz NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );

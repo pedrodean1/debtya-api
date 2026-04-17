@@ -35,11 +35,6 @@ function isValidEmailShape(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
-function hashSignupCode(email, code, pepper) {
-  const e = normalizeEmail(email);
-  return crypto.createHmac("sha256", pepper).update(`${e}:${String(code).trim()}`).digest("hex");
-}
-
 function signupPasswordMeetsPolicy(pw) {
   if (typeof pw !== "string" || pw.length < 8) return false;
   if (!/[A-Z]/.test(pw)) return false;
@@ -83,9 +78,28 @@ async function sendResendEmail({ to, subject, text, apiKey, fromEmail }) {
   return body;
 }
 
+/** Comparación en tiempo constante para códigos de 6 dígitos almacenados en texto. */
+function codesEqualTimingSafe(stored, submitted) {
+  const a = String(stored || "").trim();
+  const b = String(submitted || "").trim();
+  if (a.length !== 6 || b.length !== 6) return false;
+  return crypto.timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
+}
+
+function logSupabaseErr(scope, err) {
+  if (!err || typeof err !== "object") {
+    return String(err);
+  }
+  return {
+    message: err.message,
+    code: err.code,
+    details: err.details,
+    hint: err.hint
+  };
+}
+
 function registerAuthSignupRoutes(app, deps) {
   const { supabaseAdmin, jsonError, appError } = deps;
-  const pepper = String(process.env.CRON_SECRET || "debtya-signup-code-pepper");
 
   app.post("/auth/signup/send-verification-code", async (req, res) => {
     try {
@@ -121,18 +135,17 @@ function registerAuthSignupRoutes(app, deps) {
       }
 
       const code = randomSixDigitCode();
-      const codeHash = hashSignupCode(email, code, pepper);
       const expiresAt = new Date(Date.now() + CODE_TTL_MS).toISOString();
 
       await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
 
       const { error: insErr } = await supabaseAdmin.from("signup_verification_codes").insert({
         email,
-        code_hash: codeHash,
+        code,
         expires_at: expiresAt
       });
       if (insErr) {
-        appError("[auth/signup/send-code] insert:", insErr.message);
+        appError("[auth/signup/send-code] insert signup_verification_codes failed", logSupabaseErr("insert", insErr));
         return jsonError(res, 500, "No se pudo guardar el código. Revisa la tabla signup_verification_codes en Supabase.");
       }
 
@@ -187,25 +200,22 @@ function registerAuthSignupRoutes(app, deps) {
       const nowIso = new Date().toISOString();
       const { data: rows, error: selErr } = await supabaseAdmin
         .from("signup_verification_codes")
-        .select("id, code_hash, expires_at")
+        .select("id, code, expires_at")
         .eq("email", email)
         .gt("expires_at", nowIso)
         .order("created_at", { ascending: false })
         .limit(1);
 
       if (selErr) {
-        appError("[auth/signup/complete] select:", selErr.message);
+        appError("[auth/signup/complete] select signup_verification_codes failed", logSupabaseErr("select", selErr));
         return jsonError(res, 500, "Error verificando código.");
       }
       const row = rows && rows[0];
-      if (!row?.code_hash) {
+      if (!row?.code) {
         return jsonError(res, 400, "Código incorrecto o caducado. Solicita uno nuevo.");
       }
 
-      const expected = hashSignupCode(email, code, pepper);
-      const a = Buffer.from(String(row.code_hash), "utf8");
-      const b = Buffer.from(expected, "utf8");
-      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      if (!codesEqualTimingSafe(row.code, code)) {
         return jsonError(res, 400, "Código incorrecto o caducado. Solicita uno nuevo.");
       }
 
