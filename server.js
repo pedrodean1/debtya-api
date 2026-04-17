@@ -17,7 +17,7 @@ const { jsonError } = require("./lib/json-error");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-15-plaid-connection-role-split";
+const SERVER_VERSION = "debtya-2026-04-15-plaid-upsert-without-connection-role-fallback";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -1125,11 +1125,25 @@ async function upsertPlaidItem({
     updated_at: new Date().toISOString()
   };
 
-  const { data, error } = await supabaseAdmin
+  let { data, error } = await supabaseAdmin
     .from("plaid_items")
     .upsert(payload, { onConflict: "plaid_item_id" })
     .select()
     .single();
+
+  if (error && isMissingTableColumnError(error, "plaid_items", "connection_role")) {
+    appDebug(
+      "upsertPlaidItem: columna connection_role ausente; reintentando sin ella. Ejecutar sql/add_plaid_items_connection_role.sql en Supabase."
+    );
+    const { connection_role: _roleOmit, ...fallbackPayload } = payload;
+    const retry = await supabaseAdmin
+      .from("plaid_items")
+      .upsert(fallbackPayload, { onConflict: "plaid_item_id" })
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw error;
   return data;
@@ -2089,7 +2103,8 @@ registerAllRoutes(app, {
   buildMicroRulePayload,
   normalizeMicroRuleModeInput,
   compareStrategiesForUser,
-  normalizePlaidConnectionRole
+  normalizePlaidConnectionRole,
+  isMissingTableColumnError
 });
 
 app.use((req, res, next) => {

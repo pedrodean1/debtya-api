@@ -21,7 +21,8 @@ function registerPlaidRoutes(app, deps) {
     appError,
     appDebug,
     jsonError,
-    normalizePlaidConnectionRole
+    normalizePlaidConnectionRole,
+    isMissingTableColumnError
   } = deps;
 
   function resolvePlaidItemRowId(row) {
@@ -268,7 +269,15 @@ function registerPlaidRoutes(app, deps) {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (isMissingTableColumnError(error, "plaid_items", "connection_role")) {
+          return jsonError(res, 503, "Falta la columna connection_role en plaid_items", {
+            details:
+              "Ejecuta en Supabase (SQL Editor) el archivo sql/add_plaid_items_connection_role.sql del repositorio."
+          });
+        }
+        throw error;
+      }
       if (!data?.id) {
         const err = new Error("Conexion bancaria no encontrada");
         err.status = 404;
