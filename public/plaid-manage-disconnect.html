@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DebtYa — Quitar banco conectado</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #122033; margin: 0; padding: 24px 16px 48px; line-height: 1.45; }
+    .card { max-width: 520px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 22px 20px; border: 1px solid #e6edf5; box-shadow: 0 12px 30px rgba(18,32,51,.08); }
+    h1 { font-size: 20px; margin: 0 0 10px; letter-spacing: -0.3px; }
+    p { margin: 0 0 12px; color: #6c7a90; font-size: 14px; }
+    .err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px; border-radius: 10px; margin: 12px 0; font-size: 14px; }
+    .ok { background: #ecfdf5; border: 1px solid #bbf7d0; color: #166534; padding: 12px; border-radius: 10px; margin: 12px 0; font-size: 14px; }
+    ul { list-style: none; padding: 0; margin: 16px 0 0; }
+    li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #e6edf5; flex-wrap: wrap; }
+    li:last-child { border-bottom: 0; }
+    .name { font-weight: 700; font-size: 15px; }
+    .sub { font-size: 12px; color: #6c7a90; margin-top: 4px; word-break: break-all; }
+    button { cursor: pointer; border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; font-size: 13px; }
+    .btn-remove { background: #fee2e2; color: #991b1b; }
+    .btn-remove:hover { filter: brightness(0.97); }
+    .btn-back { background: #eef4ff; color: #1f6fff; margin-top: 16px; }
+    a { color: #1f6fff; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Quitar banco conectado</h1>
+    <p>
+      Abre esta página en el <strong>mismo navegador</strong> donde ya iniciaste sesión en DebtYa (así usamos tu sesión guardada).
+      Si no ves bancos, vuelve a <a href="/">la app</a>, entra de nuevo y abre otra vez este enlace.
+    </p>
+    <p lang="en" style="font-size:13px;">
+      <strong>EN:</strong> Use this page in the <strong>same browser</strong> where you are logged into DebtYa. Then pick a bank and remove it.
+    </p>
+    <div id="msg"></div>
+    <div id="list"></div>
+    <button type="button" class="btn-back" id="btnHome">Volver a DebtYa</button>
+  </div>
+  <script>
+    (function () {
+      var API = window.location.origin;
+      var msg = document.getElementById("msg");
+      var list = document.getElementById("list");
+      document.getElementById("btnHome").onclick = function () { window.location.href = "/"; };
+
+      function getToken() {
+        try {
+          var t = localStorage.getItem("debtya_access_token");
+          if (t) return t;
+          var keys = Object.keys(localStorage);
+          var sbKey = keys.find(function (k) { return k.indexOf("auth-token") !== -1; });
+          if (!sbKey) return null;
+          var raw = localStorage.getItem(sbKey);
+          var p = JSON.parse(raw);
+          return (p && (p.access_token || (p.currentSession && p.currentSession.access_token))) || null;
+        } catch (e) { return null; }
+      }
+
+      function showErr(text) {
+        msg.textContent = "";
+        var d = document.createElement("div");
+        d.className = "err";
+        d.textContent = text;
+        msg.appendChild(d);
+      }
+      function showOk(text) {
+        msg.textContent = "";
+        var d = document.createElement("div");
+        d.className = "ok";
+        d.textContent = text;
+        msg.appendChild(d);
+      }
+
+      function api(path, opts) {
+        opts = opts || {};
+        var token = getToken();
+        var headers = { "Content-Type": "application/json" };
+        if (token) headers.Authorization = "Bearer " + token;
+        return fetch(API + path, {
+          method: opts.method || "GET",
+          headers: headers,
+          body: opts.body
+        }).then(function (res) {
+          return res.text().then(function (text) {
+            var json = {};
+            try { json = text ? JSON.parse(text) : {}; } catch (_) { json = {}; }
+            if (!res.ok) {
+              var parts = [json.error, json.details].filter(Boolean);
+              throw new Error(parts.join(" — ") || text || ("HTTP " + res.status));
+            }
+            return json;
+          });
+        });
+      }
+
+      var token = getToken();
+      if (!token) {
+        msg.textContent = "";
+        var d = document.createElement("div");
+        d.className = "err";
+        d.appendChild(document.createTextNode("No hay sesión. Entra en "));
+        var a = document.createElement("a");
+        a.href = "/";
+        a.textContent = "DebtYa";
+        d.appendChild(a);
+        d.appendChild(document.createTextNode(", inicia sesión y vuelve a abrir esta página."));
+        msg.appendChild(d);
+        return;
+      }
+
+      api("/plaid/items")
+        .then(function (res) {
+          var rows = (res && res.data) || [];
+          if (!rows.length) {
+            list.innerHTML = "<p>No hay bancos conectados en esta cuenta.</p>";
+            return;
+          }
+          var ul = document.createElement("ul");
+          rows.forEach(function (row) {
+            var id = String((row && row.plaid_item_id) || "").trim();
+            if (!id) return;
+            var name = String((row && row.institution_name) || "Banco").trim() || "Banco";
+            var li = document.createElement("li");
+            var left = document.createElement("div");
+            left.innerHTML = '<div class="name"></div><div class="sub"></div>';
+            left.querySelector(".name").textContent = name;
+            left.querySelector(".sub").textContent = id;
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn-remove";
+            btn.textContent = "Quitar";
+            btn.onclick = function () {
+              if (!confirm("¿Seguro? Se borrarán en DebtYa las cuentas y datos de este banco para esta conexión.")) return;
+              btn.disabled = true;
+              api("/plaid/items/disconnect", {
+                method: "POST",
+                body: JSON.stringify({ plaid_item_id: id })
+              })
+                .then(function () {
+                  showOk("Listo. Ya puedes volver a la app.");
+                  li.remove();
+                  if (!ul.querySelector("li")) list.innerHTML = "<p>No quedan bancos conectados.</p>";
+                })
+                .catch(function (e) {
+                  btn.disabled = false;
+                  showErr(String(e.message || e));
+                });
+            };
+            li.appendChild(left);
+            li.appendChild(btn);
+            ul.appendChild(li);
+          });
+          list.appendChild(ul);
+        })
+        .catch(function (e) {
+          showErr(String(e.message || e));
+        });
+    })();
+  </script>
+</body>
+</html>

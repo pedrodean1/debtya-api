@@ -17,7 +17,7 @@ const { jsonError } = require("./lib/json-error");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-17-probe-7Hk2Qm9pRw4n";
+const SERVER_VERSION = "debtya-2026-04-18-production";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -123,27 +123,12 @@ app.use(express.urlencoded({ extended: true }));
 
 const PUBLIC_INDEX_HTML = path.join(__dirname, "public", "index.html");
 const PUBLIC_BANK_STRIP_JS = path.join(__dirname, "public", "debtya-bank-strip.js");
-const PUBLIC_DISCONNECT_SNIPPET_JS = path.join(__dirname, "public", "debtya-srv-disconnect-snippet.js");
 
-/** Añade al HTML servido por Node (/, /index.html, fallback SPA) barra + scripts que no dependen de la versión en disco del index. */
+/** Si el index no incluye el script, lo añade antes de </body> (rutas / y fallback SPA). */
 function injectIntoIndexHtml(html) {
   if (!html || !html.includes("</body>")) return html;
-  const chunks = [];
-  if (!html.includes('src="/debtya-bank-strip.js"')) {
-    chunks.push('<script src="/debtya-bank-strip.js" defer></script>');
-  }
-  if (!html.includes('id="debtya-srv-disconnect-bar"')) {
-    chunks.push(
-      '<div id="debtya-srv-disconnect-bar" style="display:none;position:fixed;left:0;right:0;bottom:46px;z-index:10001;padding:10px 12px;text-align:center;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#0f172a;color:#e2e8f0;border-top:1px solid #334155;box-shadow:0 -10px 30px rgba(0,0,0,.14);">' +
-        '<a href="/?debtya_bank_disconnect=1" style="color:#7dd3fc;font-weight:800;text-decoration:underline;margin:0 8px;">Disconnect / Desconectar</a>' +
-        '<span style="color:#64748b;">·</span> ' +
-        '<a href="/bank-disconnect" style="color:#7dd3fc;font-weight:700;text-decoration:underline;margin:0 8px;">/bank-disconnect</a>' +
-        "</div>" +
-        '<script src="/debtya-srv-disconnect-snippet.js" defer></script>'
-    );
-  }
-  if (!chunks.length) return html;
-  return html.replace("</body>", `${chunks.join("\n")}\n</body>`);
+  if (html.includes('src="/debtya-bank-strip.js"')) return html;
+  return html.replace("</body>", '<script src="/debtya-bank-strip.js" defer></script>\n</body>');
 }
 
 function sendNoCacheIndexHtml(res) {
@@ -228,18 +213,6 @@ app.get("/debtya-bank-strip.js", (_req, res) => {
   }
 });
 
-app.get("/debtya-srv-disconnect-snippet.js", (_req, res) => {
-  res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
-  res.setHeader("Surrogate-Control", "no-store");
-  res.type("application/javascript");
-  try {
-    return res.send(fs.readFileSync(PUBLIC_DISCONNECT_SNIPPET_JS, "utf8"));
-  } catch (e) {
-    appError("debtya-srv-disconnect-snippet.js:", e?.message || e);
-    return res.status(404).type("text/plain").send("// debtya-srv-disconnect-snippet.js missing");
-  }
-});
-
 app.use(
   express.static(path.join(__dirname, "public"), {
     setHeaders(res, filePath) {
@@ -249,7 +222,7 @@ app.use(
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
       }
-      if (normalized.endsWith("debtya-bank-strip.js") || normalized.endsWith("debtya-srv-disconnect-snippet.js")) {
+      if (normalized.endsWith("debtya-bank-strip.js")) {
         res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
         res.setHeader("Surrogate-Control", "no-store");
       }
@@ -1979,7 +1952,6 @@ app.use((req, res, next) => {
     req.method === "GET" &&
     req.path !== "/debtya-version.txt" &&
     req.path !== "/debtya-bank-strip.js" &&
-    req.path !== "/debtya-srv-disconnect-snippet.js" &&
     req.path !== "/disconnect-bank.html" &&
     req.path !== "/bank-disconnect" &&
     req.path !== "/bank-disconnect/" &&
@@ -2032,22 +2004,10 @@ try {
   );
 }
 
-try {
-  const _snip = fs.readFileSync(PUBLIC_DISCONNECT_SNIPPET_JS, "utf8");
-  if (!_snip || !_snip.trim()) throw new Error("empty");
-} catch (e) {
-  console.error(
-    "[DebtYa] AVISO: no se pudo leer public/debtya-srv-disconnect-snippet.js — la barra fija inyectada en / no mostrará sesión."
-  );
-}
-
 app.listen(PORT, () => {
   console.log(`DebtYa API escuchando en puerto ${PORT}`);
   console.log(`Server version: ${SERVER_VERSION}`);
   console.log(
     "[DebtYa] Quitar banco (abrir en el navegador con sesion): /bank-disconnect | /disconnect-bank.html | /plaid/manage-disconnect | /api/bank-disconnect"
-  );
-  console.log(
-    "[DebtYa] En / y fallback SPA se inyecta barra debtya-srv-disconnect-bar + debtya-srv-disconnect-snippet.js (no depende de caché del index en disco)."
   );
 });
