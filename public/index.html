@@ -2158,18 +2158,6 @@
               </div>
             </div>
 
-            <div
-              class="bank-unstick-wrap"
-              style="margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid #bae6fd;background:#f0f9ff;font-size:13px;line-height:1.45;"
-              data-i18n-html="bank_tool_hint_html"
-            >
-              <strong>Tip:</strong> Use <strong>Disconnect bank</strong> above. If it is missing, try
-              <a href="/?debtya_bank_disconnect=1" style="font-weight:800;color:#1d4ed8;text-decoration:underline;">this link</a>
-              or
-              <a href="/bank-disconnect" style="font-weight:800;color:#1d4ed8;text-decoration:underline;">/bank-disconnect</a>
-              (same browser, stay signed in).
-            </div>
-
             <div class="operate-bank-row">
               <button id="btnConnectBank" class="btn btn-primary" type="button" data-i18n="btn_connect_bank">Connect bank</button>
               <button id="btnDisconnectBank" class="btn btn-light" type="button" data-i18n="btn_disconnect_bank">
@@ -2646,7 +2634,7 @@
         ? window.location.origin
         : "https://www.debtya.com";
     const REQUEST_TIMEOUT_MS = 15000;
-    const CLIENT_HTML_BUILD = "bank-dc-2026-04-18-operate-hint-clean";
+    const CLIENT_HTML_BUILD = "plaid-banks-2026-04-15-strip-reliable";
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
     const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
@@ -2794,8 +2782,6 @@
         sync_bank_pick_label: "Bank connection",
         sync_bank_pick_continue: "Continue",
         sync_bank_pick_none: "There are no connected banks to disconnect.",
-        bank_tool_hint_html:
-          "<strong>Tip:</strong> Use <strong>Disconnect bank</strong> above. If it is missing, try <a href=\"/?debtya_bank_disconnect=1\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">this link</a> or <a href=\"/bank-disconnect\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">/bank-disconnect</a> (same browser, stay signed in).",
         btn_import_accounts: "Import accounts",
         btn_import_tx: "Import transactions",
         btn_build_intents: "Prepare payments",
@@ -3265,8 +3251,6 @@
         sync_bank_pick_label: "Conexion bancaria",
         sync_bank_pick_continue: "Continuar",
         sync_bank_pick_none: "No hay bancos conectados para desconectar.",
-        bank_tool_hint_html:
-          "<strong>Tip:</strong> Usa <strong>Desconectar banco</strong> arriba. Si no aparece, prueba <a href=\"/?debtya_bank_disconnect=1\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">este enlace</a> o <a href=\"/bank-disconnect\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">/bank-disconnect</a> (mismo navegador, con sesión).",
         btn_import_accounts: "Importar cuentas",
         btn_import_tx: "Importar transacciones",
         btn_build_intents: "Preparar pagos",
@@ -5091,10 +5075,21 @@
       return "";
     }
 
+    function plaidConnectionItemId(row) {
+      if (!row || typeof row !== "object") return "";
+      return String(
+        row.plaid_item_id ||
+          row.item_id ||
+          row.plaidItemId ||
+          row.itemId ||
+          ""
+      ).trim();
+    }
+
     function getSyncedInstitutionNameMap() {
       const map = new Map();
       (state.plaidItems || []).forEach((it) => {
-        const itemId = String(it?.plaid_item_id || it?.item_id || "").trim();
+        const itemId = plaidConnectionItemId(it);
         if (!itemId) return;
         const name = String(it?.institution_name || "").trim();
         map.set(itemId, name || t("sync_bank_default"));
@@ -5108,7 +5103,7 @@
       const byItem = getSyncedInstitutionNameMap();
 
       (state.plaidItems || []).forEach((it) => {
-        const itemId = String(it?.plaid_item_id || it?.item_id || "").trim();
+        const itemId = plaidConnectionItemId(it);
         if (!itemId || seen.has(itemId)) return;
         seen.add(itemId);
         const name =
@@ -5123,7 +5118,7 @@
 
       if (!entries.length) {
         (state.accounts || []).forEach((acc) => {
-          const itemId = String(acc?.plaid_item_id || acc?.item_id || "").trim();
+          const itemId = plaidConnectionItemId(acc);
           if (!itemId || seen.has(itemId)) return;
           seen.add(itemId);
           entries.push({
@@ -5135,6 +5130,25 @@
       }
 
       return entries;
+    }
+
+    function mergePlaidItemFromExchangeIfMissing(exchItem) {
+      if (!exchItem || typeof exchItem !== "object") return;
+      const id = plaidConnectionItemId(exchItem);
+      if (!id) return;
+      const already = collectSyncedPlaidEntries().some(
+        (e) => String(e.plaid_item_id).trim() === id
+      );
+      if (already) return;
+      const row = {
+        plaid_item_id: id,
+        institution_id: exchItem.institution_id || null,
+        institution_name: exchItem.institution_name || null,
+        institution_logo_data_url: null
+      };
+      state.plaidItems = [...(Array.isArray(state.plaidItems) ? state.plaidItems : []), row];
+      renderSyncedBanksStrip();
+      updateDisconnectBankButton();
     }
 
     function updateDisconnectBankButton() {
@@ -5558,8 +5572,13 @@
     async function refreshPlaidItems() {
       try {
         const res = await api("/plaid/items");
-        const raw = res?.data;
-        state.plaidItems = Array.isArray(raw) ? raw : [];
+        let raw = res?.data;
+        if (!Array.isArray(raw)) raw = Array.isArray(res?.items) ? res.items : [];
+        state.plaidItems = (Array.isArray(raw) ? raw : []).map((row) => {
+          if (!row || typeof row !== "object") return row;
+          const id = plaidConnectionItemId(row);
+          return id ? { ...row, plaid_item_id: id } : row;
+        });
       } catch {
         state.plaidItems = [];
       }
@@ -5764,7 +5783,7 @@
             try {
               showMessage(globalMessage, t("connecting_bank"), "warn");
 
-              await api("/plaid/exchange_public_token", {
+              const exch = await api("/plaid/exchange_public_token", {
                 method: "POST",
                 body: JSON.stringify({
                   public_token,
@@ -5774,7 +5793,11 @@
 
               setBankExchangeFlag();
               showMessage(globalMessage, t("bank_ok"), "success");
+              try {
+                await api("/plaid/accounts/import", { method: "POST", body: "{}" });
+              } catch (_) {}
               await refreshAccounts();
+              mergePlaidItemFromExchangeIfMissing(exch?.item);
             } catch (err) {
               showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
             } finally {
