@@ -2057,9 +2057,6 @@
           <span id="sessionBadge" class="pill blue">Signed in</span>
           <button id="topUpgradeBtn" class="btn btn-primary hidden" type="button" data-i18n="btn_activate_plan">Activate plan</button>
           <button id="topManageBillingBtn" class="btn btn-light hidden" type="button" data-i18n="btn_manage_plan">Manage plan</button>
-          <button id="topDisconnectBankBtn" class="btn btn-light" type="button" data-i18n="btn_disconnect_bank">
-            Disconnect bank
-          </button>
           <button id="logoutBtn" class="btn btn-danger" type="button" data-i18n="btn_logout">Log out</button>
         </div>
       </div>
@@ -2652,7 +2649,7 @@
         ? window.location.origin
         : "https://www.debtya.com";
     const REQUEST_TIMEOUT_MS = 15000;
-    const CLIENT_HTML_BUILD = "plaid-banks-2026-04-15-no-pill-disconnect-x";
+    const CLIENT_HTML_BUILD = "plaid-banks-2026-04-17-no-topbar-disconnect";
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
     const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
@@ -5247,7 +5244,7 @@
     function updateDisconnectBankButton() {
       const n = collectSyncedPlaidEntries().length;
       const hint = n === 0 ? t("sync_bank_pick_none") : "";
-      ["btnDisconnectBank", "topDisconnectBankBtn", "accountsDisconnectBankBtn"].forEach((id) => {
+      ["btnDisconnectBank", "accountsDisconnectBankBtn"].forEach((id) => {
         const btn = $(id);
         if (!btn) return;
         btn.disabled = false;
@@ -5267,7 +5264,7 @@
         if (!appView || appView.classList.contains("hidden")) return;
         const stored = getStoredAccessToken();
         if (!state.session && !stored) return;
-        if ($("btnDisconnectBank") || $("topDisconnectBankBtn") || $("accountsDisconnectBankBtn")) return;
+        if ($("btnDisconnectBank") || $("accountsDisconnectBankBtn")) return;
         if ($("debtyaDisconnectFab")) return;
         const fab = document.createElement("button");
         fab.id = "debtyaDisconnectFab";
@@ -6291,7 +6288,7 @@
     const bankRoleBothBtn = $("bankRoleBothBtn");
     if (bankRoleBothBtn) bankRoleBothBtn.addEventListener("click", () => finishBankConnectionRoleChoice("both"));
 
-    ["btnDisconnectBank", "topDisconnectBankBtn", "accountsDisconnectBankBtn"].forEach((id) => {
+    ["btnDisconnectBank", "accountsDisconnectBankBtn"].forEach((id) => {
       const el = $(id);
       if (el) el.addEventListener("click", () => openBankPickDisconnectFlow());
     });
