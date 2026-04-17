@@ -2031,6 +2031,23 @@
           <input id="authPassword" class="input" type="password" placeholder="••••••••" required />
         </div>
 
+        <div id="authPasswordConfirmWrap" class="field hidden">
+          <label class="label" for="authPasswordConfirm" data-i18n="lbl_password_confirm"
+            >Confirm password</label
+          >
+          <input
+            id="authPasswordConfirm"
+            class="input"
+            type="password"
+            autocomplete="new-password"
+            placeholder="••••••••"
+          />
+        </div>
+        <!-- Cloudflare Turnstile (registro): montar el widget en #authTurnstileMount cuando existan site key y verificación en backend; no activar hasta entonces. -->
+        <div id="authTurnstileMountWrap" class="hidden" aria-hidden="true" data-turnstile-inactive="1">
+          <div id="authTurnstileMount"></div>
+        </div>
+
         <button id="authSubmitBtn" class="btn btn-primary" type="submit" data-i18n="btn_login">Log in</button>
       </form>
 
@@ -2764,6 +2781,8 @@
         guide_assistant_rate: "Too many requests. Please wait a bit and try again.",
         lbl_email: "Email",
         lbl_password: "Password",
+        lbl_password_confirm: "Confirm password",
+        err_password_mismatch: "Passwords do not match.",
         ph_email: "you@email.com",
         btn_reset_pw: "Email me a password reset link",
         auth_footer_hint: "Sign in to connect your bank, activate your plan, and use your own numbers.",
@@ -3242,6 +3261,9 @@
         guide_assistant_rate: "Demasiadas solicitudes. Espera un momento e intentalo de nuevo.",
         lbl_email: "Email",
         lbl_password: "Contrasena",
+        lbl_password_confirm: "Confirmar contraseña",
+        err_password_mismatch:
+          "Las contrasenas no coinciden. Revisa ambos campos y vuelve a intentarlo.",
         ph_email: "tu@email.com",
         btn_reset_pw: "Enviar link para cambiar contrasena",
         auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y usar tus datos reales.",
@@ -4187,6 +4209,14 @@
         authSubmitBtn.textContent = t("btn_signup");
       }
       authSubmitBtn.dataset.originalText = authSubmitBtn.textContent;
+      const confirmWrap = $("authPasswordConfirmWrap");
+      const confirmInput = $("authPasswordConfirm");
+      if (confirmWrap) {
+        confirmWrap.classList.toggle("hidden", state.mode === "login");
+      }
+      if (state.mode === "login" && confirmInput) {
+        confirmInput.value = "";
+      }
     }
 
     function setBankExchangeFlag() {
@@ -6346,6 +6376,10 @@
           await login(email, password);
           showMessage(authMessage, t("session_ok"), "success");
         } else {
+          const passwordConfirm = String($("authPasswordConfirm")?.value || "").trim();
+          if (password !== passwordConfirm) {
+            throw new Error(t("err_password_mismatch"));
+          }
           const result = await signup(email, password);
           if (result?.user && !result?.session) {
             showMessage(authMessage, t("acct_created_check"), "warn");
