@@ -2783,6 +2783,10 @@
         lbl_password: "Password",
         lbl_password_confirm: "Confirm password",
         err_password_mismatch: "Passwords do not match.",
+        err_signup_password_pair_required:
+          "Enter and confirm your password in both fields.",
+        err_password_policy:
+          "Your password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character.",
         ph_email: "you@email.com",
         btn_reset_pw: "Email me a password reset link",
         auth_footer_hint: "Sign in to connect your bank, activate your plan, and use your own numbers.",
@@ -3262,8 +3266,11 @@
         lbl_email: "Email",
         lbl_password: "Contrasena",
         lbl_password_confirm: "Confirmar contraseña",
-        err_password_mismatch:
-          "Las contrasenas no coinciden. Revisa ambos campos y vuelve a intentarlo.",
+        err_password_mismatch: "Las contraseñas no coinciden.",
+        err_signup_password_pair_required:
+          "Escribe la contraseña y confírmala en ambos campos.",
+        err_password_policy:
+          "La contraseña debe tener al menos 8 caracteres e incluir una mayúscula, una minúscula, un número y un carácter especial.",
         ph_email: "tu@email.com",
         btn_reset_pw: "Enviar link para cambiar contrasena",
         auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y usar tus datos reales.",
@@ -5976,6 +5983,15 @@
       return data;
     }
 
+    function signupPasswordMeetsPolicy(pw) {
+      if (typeof pw !== "string" || pw.length < 8) return false;
+      if (!/[A-Z]/.test(pw)) return false;
+      if (!/[a-z]/.test(pw)) return false;
+      if (!/[0-9]/.test(pw)) return false;
+      if (!/[^A-Za-z0-9]/.test(pw)) return false;
+      return true;
+    }
+
     async function resetPassword(email) {
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
         redirectTo: "https://www.debtya.com/"
@@ -6370,15 +6386,21 @@
         const email = authEmail.value.trim();
         const password = authPassword.value.trim();
 
-        if (!email || !password) throw new Error(t("fill_email_pw"));
-
         if (state.mode === "login") {
+          if (!email || !password) throw new Error(t("fill_email_pw"));
           await login(email, password);
           showMessage(authMessage, t("session_ok"), "success");
         } else {
           const passwordConfirm = String($("authPasswordConfirm")?.value || "").trim();
+          if (!email) throw new Error(t("enter_email_first"));
+          if (!password || !passwordConfirm) {
+            throw new Error(t("err_signup_password_pair_required"));
+          }
           if (password !== passwordConfirm) {
             throw new Error(t("err_password_mismatch"));
+          }
+          if (!signupPasswordMeetsPolicy(password)) {
+            throw new Error(t("err_password_policy"));
           }
           const result = await signup(email, password);
           if (result?.user && !result?.session) {
