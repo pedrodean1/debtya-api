@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-18-plaid-banks-fix" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-18-operate-hint-clean" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2160,13 +2160,14 @@
 
             <div
               class="bank-unstick-wrap"
-              style="margin:0 0 14px;padding:12px 14px;border-radius:12px;border:1px solid #bae6fd;background:#f0f9ff;font-size:13px;line-height:1.55;"
+              style="margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid #bae6fd;background:#f0f9ff;font-size:13px;line-height:1.45;"
               data-i18n-html="bank_tool_hint_html"
             >
-              <strong>Bank tool</strong>
-              If disconnect does not show here, open
-              <a href="/plaid/manage-disconnect" style="font-weight:800;color:#1f6fff;">/plaid/manage-disconnect</a>
-              in this same browser (stay logged in).
+              <strong>Tip:</strong> Use <strong>Disconnect bank</strong> above. If it is missing, try
+              <a href="/?debtya_bank_disconnect=1" style="font-weight:800;color:#1d4ed8;text-decoration:underline;">this link</a>
+              or
+              <a href="/bank-disconnect" style="font-weight:800;color:#1d4ed8;text-decoration:underline;">/bank-disconnect</a>
+              (same browser, stay signed in).
             </div>
 
             <div class="operate-bank-row">
@@ -2175,11 +2176,6 @@
                 Disconnect bank
               </button>
             </div>
-            <p
-              class="operate-bank-deeplink-wrap"
-              style="margin:0 0 14px;font-size:13px;line-height:1.55;color:var(--muted);"
-              data-i18n-html="operate_bank_deeplink_html"
-            ></p>
             <div class="grid-2" style="margin-bottom:12px;">
               <button id="btnImportAccounts" class="btn btn-light" type="button" data-i18n="btn_import_accounts">Import accounts</button>
               <button id="btnImportTransactions" class="btn btn-light" type="button" data-i18n="btn_import_tx">Import transactions</button>
@@ -2650,7 +2646,7 @@
         ? window.location.origin
         : "https://www.debtya.com";
     const REQUEST_TIMEOUT_MS = 15000;
-    const CLIENT_HTML_BUILD = "bank-dc-2026-04-18-plaid-banks-fix";
+    const CLIENT_HTML_BUILD = "bank-dc-2026-04-18-operate-hint-clean";
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
     const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
@@ -2798,10 +2794,8 @@
         sync_bank_pick_label: "Bank connection",
         sync_bank_pick_continue: "Continue",
         sync_bank_pick_none: "There are no connected banks to disconnect.",
-        operate_bank_deeplink_html:
-          "<strong>No disconnect button?</strong> Use <a href=\"/?debtya_bank_disconnect=1\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">this link</a> — same login.",
         bank_tool_hint_html:
-          "<strong>Remove a bank?</strong> Open <a href='/bank-disconnect' style='font-weight:800;color:#1f6fff;'>/bank-disconnect</a>, <a href='/?debtya_bank_disconnect=1' style='font-weight:800;color:#1f6fff;'>/?debtya_bank_disconnect=1</a> (works on static hosts), <a href='/disconnect-bank.html' style='font-weight:800;color:#1f6fff;'>/disconnect-bank.html</a>, or <a href='/plaid/manage-disconnect' style='font-weight:800;color:#1f6fff;'>/plaid/manage-disconnect</a> — same browser, stay logged in.",
+          "<strong>Tip:</strong> Use <strong>Disconnect bank</strong> above. If it is missing, try <a href=\"/?debtya_bank_disconnect=1\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">this link</a> or <a href=\"/bank-disconnect\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">/bank-disconnect</a> (same browser, stay signed in).",
         btn_import_accounts: "Import accounts",
         btn_import_tx: "Import transactions",
         btn_build_intents: "Prepare payments",
@@ -3271,10 +3265,8 @@
         sync_bank_pick_label: "Conexion bancaria",
         sync_bank_pick_continue: "Continuar",
         sync_bank_pick_none: "No hay bancos conectados para desconectar.",
-        operate_bank_deeplink_html:
-          "<strong>¿No ves el botón desconectar?</strong> Usa <a href=\"/?debtya_bank_disconnect=1\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">este enlace</a> — mismo inicio de sesión.",
         bank_tool_hint_html:
-          "<strong>¿Quitar un banco?</strong> Abre <a href='/bank-disconnect' style='font-weight:800;color:#1f6fff;'>/bank-disconnect</a>, <a href='/?debtya_bank_disconnect=1' style='font-weight:800;color:#1f6fff;'>/?debtya_bank_disconnect=1</a> (si el hosting es estático), <a href='/disconnect-bank.html' style='font-weight:800;color:#1f6fff;'>/disconnect-bank.html</a> o <a href='/plaid/manage-disconnect' style='font-weight:800;color:#1f6fff;'>/plaid/manage-disconnect</a> — mismo navegador, sesión iniciada.",
+          "<strong>Tip:</strong> Usa <strong>Desconectar banco</strong> arriba. Si no aparece, prueba <a href=\"/?debtya_bank_disconnect=1\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">este enlace</a> o <a href=\"/bank-disconnect\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">/bank-disconnect</a> (mismo navegador, con sesión).",
         btn_import_accounts: "Importar cuentas",
         btn_import_tx: "Importar transacciones",
         btn_build_intents: "Preparar pagos",
