@@ -1,7 +1,8 @@
 require("dotenv").config();
 
 const path = require("path");
-const { randomUUID } = require("crypto");
+const fs = require("fs");
+const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const Stripe = require("stripe");
@@ -10,11 +11,13 @@ const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
 const { registerAllRoutes } = require("./routes");
 const { attachStripeWebhook } = require("./routes/stripe-webhook-routes");
 const { isUuid } = require("./lib/validation");
+const { requestIdMiddleware } = require("./lib/request-id");
+const { jsonError } = require("./lib/json-error");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "cron-safe-v20-backend-cleanup-safe";
+const SERVER_VERSION = "debtya-2026-04-17-probe-7Hk2Qm9pRw4n";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -102,6 +105,8 @@ app.use(
   })
 );
 
+app.use(requestIdMiddleware);
+
 attachStripeWebhook(app, express, () => ({
   stripe,
   STRIPE_WEBHOOK_SECRET,
@@ -115,15 +120,126 @@ attachStripeWebhook(app, express, () => ({
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-  const incoming = req.headers["x-request-id"];
-  req.requestId =
-    typeof incoming === "string" && incoming.trim()
-      ? incoming.trim().slice(0, 128)
-      : randomUUID();
-  res.setHeader("X-Request-Id", req.requestId);
-  next();
+
+const PUBLIC_INDEX_HTML = path.join(__dirname, "public", "index.html");
+const PUBLIC_BANK_STRIP_JS = path.join(__dirname, "public", "debtya-bank-strip.js");
+const PUBLIC_DISCONNECT_SNIPPET_JS = path.join(__dirname, "public", "debtya-srv-disconnect-snippet.js");
+
+/** Añade al HTML servido por Node (/, /index.html, fallback SPA) barra + scripts que no dependen de la versión en disco del index. */
+function injectIntoIndexHtml(html) {
+  if (!html || !html.includes("</body>")) return html;
+  const chunks = [];
+  if (!html.includes('src="/debtya-bank-strip.js"')) {
+    chunks.push('<script src="/debtya-bank-strip.js" defer></script>');
+  }
+  if (!html.includes('id="debtya-srv-disconnect-bar"')) {
+    chunks.push(
+      '<div id="debtya-srv-disconnect-bar" style="display:none;position:fixed;left:0;right:0;bottom:46px;z-index:10001;padding:10px 12px;text-align:center;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:#0f172a;color:#e2e8f0;border-top:1px solid #334155;box-shadow:0 -10px 30px rgba(0,0,0,.14);">' +
+        '<a href="/?debtya_bank_disconnect=1" style="color:#7dd3fc;font-weight:800;text-decoration:underline;margin:0 8px;">Disconnect / Desconectar</a>' +
+        '<span style="color:#64748b;">·</span> ' +
+        '<a href="/bank-disconnect" style="color:#7dd3fc;font-weight:700;text-decoration:underline;margin:0 8px;">/bank-disconnect</a>' +
+        "</div>" +
+        '<script src="/debtya-srv-disconnect-snippet.js" defer></script>'
+    );
+  }
+  if (!chunks.length) return html;
+  return html.replace("</body>", `${chunks.join("\n")}\n</body>`);
+}
+
+function sendNoCacheIndexHtml(res) {
+  res.setHeader("Cache-Control", "private, no-store, no-cache, max-age=0, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  try {
+    const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
+    res.type("html");
+    return res.send(html);
+  } catch (e) {
+    appError("sendNoCacheIndexHtml:", e?.message || e);
+    return res.sendFile(PUBLIC_INDEX_HTML);
+  }
+}
+
+function sendSpaFallbackIndexHtml(res) {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  try {
+    const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
+    res.type("html");
+    return res.send(html);
+  } catch (e) {
+    appError("sendSpaFallbackIndexHtml:", e?.message || e);
+    return res.sendFile(PUBLIC_INDEX_HTML);
+  }
+}
+
+app.get("/", (_req, res) => sendNoCacheIndexHtml(res));
+app.get("/index.html", (_req, res) => sendNoCacheIndexHtml(res));
+
+app.get("/debtya-version.txt", (_req, res) => {
+  res.type("text/plain");
+  res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
+  res.setHeader("Surrogate-Control", "no-store");
+  return res.send(`${SERVER_VERSION}\n`);
 });
+
+function sendPlaidManageDisconnectHtml(res) {
+  try {
+    const htmlPath = path.join(__dirname, "public", "plaid-manage-disconnect.html");
+    const html = fs.readFileSync(htmlPath, "utf8");
+    res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
+    res.setHeader("Surrogate-Control", "no-store");
+    res.type("html");
+    return res.status(200).send(html);
+  } catch (e) {
+    appError("plaid/manage-disconnect:", e?.message || e);
+    return res
+      .status(500)
+      .type("html")
+      .send(
+        "<!DOCTYPE html><html><body><p>No se pudo cargar la página (falta public/plaid-manage-disconnect.html en el servidor).</p></body></html>"
+      );
+  }
+}
+
+app.get("/plaid/manage-disconnect", (_req, res) => sendPlaidManageDisconnectHtml(res));
+app.get("/disconnect-bank.html", (_req, res) => sendPlaidManageDisconnectHtml(res));
+app.get("/bank-disconnect", (_req, res) => sendPlaidManageDisconnectHtml(res));
+app.get("/api/bank-disconnect", (_req, res) => sendPlaidManageDisconnectHtml(res));
+app.get("/api/plaid/manage-disconnect", (_req, res) => sendPlaidManageDisconnectHtml(res));
+// Trailing slash (Render / enlaces a veces piden …/bank-disconnect/)
+app.get("/plaid/manage-disconnect/", (_req, res) => res.redirect(308, "/plaid/manage-disconnect"));
+app.get("/disconnect-bank.html/", (_req, res) => res.redirect(308, "/disconnect-bank.html"));
+app.get("/bank-disconnect/", (_req, res) => res.redirect(308, "/bank-disconnect"));
+app.get("/api/bank-disconnect/", (_req, res) => res.redirect(308, "/api/bank-disconnect"));
+app.get("/api/plaid/manage-disconnect/", (_req, res) => res.redirect(308, "/api/plaid/manage-disconnect"));
+
+app.get("/debtya-bank-strip.js", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
+  res.setHeader("Surrogate-Control", "no-store");
+  res.type("application/javascript");
+  try {
+    return res.send(fs.readFileSync(PUBLIC_BANK_STRIP_JS, "utf8"));
+  } catch (e) {
+    appError("debtya-bank-strip.js:", e?.message || e);
+    return res.status(404).type("text/plain").send("// debtya-bank-strip.js missing on server");
+  }
+});
+
+app.get("/debtya-srv-disconnect-snippet.js", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
+  res.setHeader("Surrogate-Control", "no-store");
+  res.type("application/javascript");
+  try {
+    return res.send(fs.readFileSync(PUBLIC_DISCONNECT_SNIPPET_JS, "utf8"));
+  } catch (e) {
+    appError("debtya-srv-disconnect-snippet.js:", e?.message || e);
+    return res.status(404).type("text/plain").send("// debtya-srv-disconnect-snippet.js missing");
+  }
+});
+
 app.use(
   express.static(path.join(__dirname, "public"), {
     setHeaders(res, filePath) {
@@ -132,6 +248,10 @@ app.use(
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
+      }
+      if (normalized.endsWith("debtya-bank-strip.js") || normalized.endsWith("debtya-srv-disconnect-snippet.js")) {
+        res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
+        res.setHeader("Surrogate-Control", "no-store");
       }
     }
   })
@@ -199,16 +319,6 @@ function traceSortValue(row) {
 
 function sortTraceRows(rows = []) {
   return [...rows].sort((a, b) => traceSortValue(b) - traceSortValue(a));
-}
-
-function jsonError(res, status, message, extra = {}) {
-  const requestId = res.req?.requestId;
-  return res.status(status).json({
-    ok: false,
-    error: message,
-    ...(requestId ? { request_id: requestId } : {}),
-    ...extra
-  });
 }
 
 async function assertLinkedPlaidAccountForUser(userId, plaidAccountId) {
@@ -364,6 +474,228 @@ async function getLatestBillingSubscriptionForUser(userId) {
   }
 }
 
+function stripInvisible(s) {
+  return String(s || "").replace(/[\u200B-\u200D\uFEFF]/g, "");
+}
+
+/** Codigos separados por coma en DEBTYA_COMP_PROMO_CODES o uno solo en DEBTYA_COMP_PROMO_CODE. */
+function parseCompPromoCodes() {
+  let raw = stripInvisible(String(process.env.DEBTYA_COMP_PROMO_CODES || "").trim());
+  const single = stripInvisible(String(process.env.DEBTYA_COMP_PROMO_CODE || "").trim());
+  if (!raw && single) raw = single;
+  if (
+    (raw.startsWith('"') && raw.endsWith('"')) ||
+    (raw.startsWith("'") && raw.endsWith("'"))
+  ) {
+    raw = raw.slice(1, -1).trim();
+  }
+  return raw
+    .split(",")
+    .map((s) =>
+      stripInvisible(String(s).trim())
+        .replace(/\r$/, "")
+        .replace(/^["']|["']$/g, "")
+        .trim()
+    )
+    .filter((s) => s.length > 0);
+}
+
+/** UUID v4 estable por usuario (valido si stripe_subscription_id es tipo uuid en Postgres). */
+function getSyntheticCompSubscriptionId(userId) {
+  const digest = crypto.createHash("sha256").update(`debtya_comp_promo|${userId}`).digest();
+  const buf = Buffer.alloc(16);
+  digest.copy(buf, 0, 0, 16);
+  buf[6] = (buf[6] & 0x0f) | 0x40;
+  buf[8] = (buf[8] & 0x3f) | 0x80;
+  const hex = buf.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+function rawJsonSource(row) {
+  const r = row?.raw_json;
+  if (!r) return null;
+  const obj =
+    typeof r === "string"
+      ? (() => {
+          try {
+            return JSON.parse(r);
+          } catch {
+            return null;
+          }
+        })()
+      : r;
+  return obj && typeof obj === "object" ? obj.source || null : null;
+}
+
+function isCompSubscriptionRow(row) {
+  if (!row) return false;
+  if (rawJsonSource(row) === "debtya_comp_promo") return true;
+  if (row.stripe_price_id === "comp") return true;
+  if (String(row.stripe_subscription_id || "").startsWith("debtya_promo_")) return true;
+  return false;
+}
+
+function getCompPromoMeta() {
+  const list = parseCompPromoCodes();
+  return { configured: list.length > 0, count: list.length };
+}
+
+function promoCodeMatchesConfigured(input, codes) {
+  const clean = stripInvisible(String(input || "").trim()).toLowerCase();
+  if (!clean) return false;
+  return codes.some((c) => stripInvisible(c).toLowerCase() === clean);
+}
+
+/**
+ * Activa plan complementario en billing_subscriptions (sin Stripe).
+ * @returns {Promise<{ ok: boolean, status?: number, message?: string, already?: boolean }>}
+ */
+async function redeemCompPromoForUser(userId, code) {
+  if (!supabaseAdmin) {
+    return { ok: false, status: 500, message: "Supabase no configurado" };
+  }
+
+  const codes = parseCompPromoCodes();
+  if (!codes.length) {
+    return {
+      ok: false,
+      status: 503,
+      message: "Canje de codigos no configurado en el servidor"
+    };
+  }
+
+  const normalized = stripInvisible(String(code || "").trim());
+  if (!normalized) {
+    return { ok: false, status: 400, message: "Ingresa un codigo" };
+  }
+
+  if (!promoCodeMatchesConfigured(normalized, codes)) {
+    return { ok: false, status: 400, message: "Codigo invalido" };
+  }
+
+  const row = await getLatestBillingSubscriptionForUser(userId);
+  if (row?.active && row.stripe_subscription_id && String(row.stripe_subscription_id).startsWith("sub_")) {
+    return {
+      ok: false,
+      status: 409,
+      message: "Ya tienes una suscripcion de pago activa"
+    };
+  }
+
+  if (row?.active && isCompSubscriptionRow(row)) {
+    return { ok: true, already: true };
+  }
+
+  const syntheticId = getSyntheticCompSubscriptionId(userId);
+  const farEnd = new Date();
+  farEnd.setUTCFullYear(farEnd.getUTCFullYear() + 100);
+
+  const payload = {
+    user_id: userId,
+    stripe_customer_id: row?.stripe_customer_id || null,
+    stripe_subscription_id: syntheticId,
+    stripe_price_id: null,
+    status: "active",
+    active: true,
+    current_period_end: farEnd.toISOString(),
+    cancel_at_period_end: false,
+    last_event_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    raw_json: { source: "debtya_comp_promo", redeemed_at: new Date().toISOString() }
+  };
+
+  const persistResult = await persistCompPromoSubscriptionRow(payload, syntheticId);
+  if (!persistResult.ok) {
+    const hint =
+      persistResult.error?.message ||
+      persistResult.error?.details ||
+      String(persistResult.error || "");
+    return {
+      ok: false,
+      status: 500,
+      message: hint ? `No se pudo activar el acceso: ${hint}` : "No se pudo activar el acceso"
+    };
+  }
+
+  return { ok: true, already: false };
+}
+
+/** Insert o update sin depender de onConflict (evita errores si el indice unico difiere). */
+async function persistCompPromoSubscriptionRow(payload, syntheticId) {
+  try {
+    const { data: existing, error: selErr } = await supabaseAdmin
+      .from("billing_subscriptions")
+      .select("stripe_subscription_id")
+      .eq("stripe_subscription_id", syntheticId)
+      .maybeSingle();
+
+    if (selErr) throw selErr;
+
+    const updateFields = {
+      user_id: payload.user_id,
+      stripe_customer_id: payload.stripe_customer_id,
+      stripe_price_id: payload.stripe_price_id,
+      status: payload.status,
+      active: payload.active,
+      current_period_end: payload.current_period_end,
+      cancel_at_period_end: payload.cancel_at_period_end,
+      last_event_at: payload.last_event_at,
+      updated_at: payload.updated_at,
+      raw_json: payload.raw_json
+    };
+
+    if (existing?.stripe_subscription_id) {
+      const { error: upErr } = await supabaseAdmin
+        .from("billing_subscriptions")
+        .update(updateFields)
+        .eq("stripe_subscription_id", syntheticId);
+      if (upErr) throw upErr;
+      return { ok: true, error: null };
+    }
+
+    const { error: insErr } = await supabaseAdmin.from("billing_subscriptions").insert(payload);
+    if (insErr) {
+      const dup =
+        insErr.code === "23505" ||
+        String(insErr.message || "")
+          .toLowerCase()
+          .includes("duplicate");
+      if (dup) {
+        const { data: rows, error: listErr } = await supabaseAdmin
+          .from("billing_subscriptions")
+          .select("id, stripe_subscription_id, raw_json")
+          .eq("user_id", payload.user_id)
+          .order("updated_at", { ascending: false })
+          .limit(3);
+        if (listErr) throw listErr;
+        const target =
+          (rows || []).find((r) => isCompSubscriptionRow(r)) ||
+          (rows || []).find((r) => !String(r.stripe_subscription_id || "").startsWith("sub_")) ||
+          (rows || [])[0];
+        if (!target?.id) throw insErr;
+        const { error: up2 } = await supabaseAdmin
+          .from("billing_subscriptions")
+          .update({
+            ...updateFields,
+            stripe_subscription_id: syntheticId
+          })
+          .eq("id", target.id);
+        if (up2) throw up2;
+        return { ok: true, error: null };
+      }
+      throw insErr;
+    }
+    return { ok: true, error: null };
+  } catch (e) {
+    stripeError("[COMP_PROMO] persist billing_subscriptions", {
+      message: e.message,
+      details: e.details || null,
+      code: e.code || null
+    });
+    return { ok: false, error: e };
+  }
+}
+
 async function getStripeCustomerById(customerId) {
   try {
     if (!stripe || !customerId) return null;
@@ -409,7 +741,7 @@ async function upsertBillingSubscriptionRow(payload) {
       .single();
 
     if (error) throw error;
-    return data;
+    return { ok: true, data, error: null };
   } catch (e) {
     stripeError("No se pudo guardar billing_subscriptions:", {
       message: e.message,
@@ -419,7 +751,7 @@ async function upsertBillingSubscriptionRow(payload) {
       stripe_subscription_id: payload?.stripe_subscription_id || null,
       user_id: payload?.user_id || null
     });
-    return null;
+    return { ok: false, data: null, error: e };
   }
 }
 
@@ -515,7 +847,8 @@ async function upsertBillingSubscriptionFromStripe(subscription, fallbackUserId 
     throw new Error("stripe_subscription_id faltante al intentar guardar billing_subscriptions");
   }
 
-  const saved = await upsertBillingSubscriptionRow(payload);
+  const upsertOut = await upsertBillingSubscriptionRow(payload);
+  const saved = upsertOut.ok ? upsertOut.data : null;
 
   stripeInfo("[stripe] billing_subscriptions actualizado", {
     ok: !!saved,
@@ -539,6 +872,124 @@ async function getPlaidItemsForUser(userId) {
 async function getLatestPlaidItemForUser(userId) {
   const items = await getPlaidItemsForUser(userId);
   return items[0] || null;
+}
+
+async function disconnectPlaidItemForUser(userId, plaidItemId) {
+  const itemId = String(plaidItemId || "").trim();
+  if (!itemId) {
+    const err = new Error("plaid_item_id invalido");
+    err.status = 400;
+    throw err;
+  }
+
+  const { data: itemRow, error: itemErr } = await supabaseAdmin
+    .from("plaid_items")
+    .select("id,access_token,plaid_item_id")
+    .eq("user_id", userId)
+    .eq("plaid_item_id", itemId)
+    .maybeSingle();
+
+  if (itemErr) throw itemErr;
+
+  if (!itemRow?.id) {
+    const err = new Error("Conexion bancaria no encontrada");
+    err.status = 404;
+    throw err;
+  }
+
+  if (plaidClient && itemRow.access_token) {
+    try {
+      await plaidClient.itemRemove({ access_token: itemRow.access_token });
+    } catch (e) {
+      appDebug("itemRemove (continuando limpieza local):", e?.response?.data || e?.message || e);
+    }
+  }
+
+  const { data: acctRows, error: acctErr } = await supabaseAdmin
+    .from("accounts")
+    .select("plaid_account_id")
+    .eq("user_id", userId)
+    .eq("plaid_item_id", itemId);
+
+  if (acctErr) throw acctErr;
+
+  const plaidAccountIds = (acctRows || [])
+    .map((r) => String(r.plaid_account_id || "").trim())
+    .filter(Boolean);
+
+  const now = new Date().toISOString();
+
+  if (plaidAccountIds.length) {
+    const { error: debtErr } = await supabaseAdmin
+      .from("debts")
+      .update({ linked_plaid_account_id: null, updated_at: now })
+      .eq("user_id", userId)
+      .in("linked_plaid_account_id", plaidAccountIds);
+
+    if (debtErr) throw debtErr;
+
+    const { error: intentErr } = await supabaseAdmin
+      .from("payment_intents")
+      .update({ source_account_id: null, updated_at: now })
+      .eq("user_id", userId)
+      .in("source_account_id", plaidAccountIds);
+
+    if (intentErr) throw intentErr;
+  }
+
+  const { data: planRows, error: planErr } = await supabaseAdmin
+    .from("payment_plans")
+    .select("*")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+
+  if (planErr) throw planErr;
+
+  const latestPlan = planRows?.[0];
+  if (latestPlan?.id) {
+    const payload =
+      latestPlan.payload_json && typeof latestPlan.payload_json === "object"
+        ? { ...latestPlan.payload_json }
+        : {};
+    const fund = String(payload.funding_plaid_account_id || "").trim();
+    if (fund && plaidAccountIds.includes(fund)) {
+      payload.funding_plaid_account_id = null;
+      const { error: planUpErr } = await supabaseAdmin
+        .from("payment_plans")
+        .update({ payload_json: payload, updated_at: now })
+        .eq("id", latestPlan.id)
+        .eq("user_id", userId);
+
+      if (planUpErr) throw planUpErr;
+    }
+  }
+
+  const { error: txDelErr } = await supabaseAdmin
+    .from("transactions_raw")
+    .delete()
+    .eq("user_id", userId)
+    .eq("plaid_item_id", itemId);
+
+  if (txDelErr) throw txDelErr;
+
+  const { error: accDelErr } = await supabaseAdmin
+    .from("accounts")
+    .delete()
+    .eq("user_id", userId)
+    .eq("plaid_item_id", itemId);
+
+  if (accDelErr) throw accDelErr;
+
+  const { error: itemDelErr } = await supabaseAdmin
+    .from("plaid_items")
+    .delete()
+    .eq("user_id", userId)
+    .eq("plaid_item_id", itemId);
+
+  if (itemDelErr) throw itemDelErr;
+
+  return { ok: true, plaid_item_id: itemId };
 }
 
 async function upsertPlaidItem({
@@ -1494,6 +1945,8 @@ registerAllRoutes(app, {
   stripe,
   stripeDebug,
   getLatestBillingSubscriptionForUser,
+  redeemCompPromoForUser,
+  getCompPromoMeta,
   ensureProfile,
   getOrCreateStripeCustomerForUser,
   getBaseUrl,
@@ -1505,6 +1958,7 @@ registerAllRoutes(app, {
   getInstitutionName,
   upsertPlaidItem,
   getPlaidItemsForUser,
+  disconnectPlaidItemForUser,
   stripPlaidItemSecretsForClient,
   fetchInstitutionLogoDataUrl,
   importPlaidAccountsForUser,
@@ -1523,6 +1977,15 @@ registerAllRoutes(app, {
 app.use((req, res, next) => {
   if (
     req.method === "GET" &&
+    req.path !== "/debtya-version.txt" &&
+    req.path !== "/debtya-bank-strip.js" &&
+    req.path !== "/debtya-srv-disconnect-snippet.js" &&
+    req.path !== "/disconnect-bank.html" &&
+    req.path !== "/bank-disconnect" &&
+    req.path !== "/bank-disconnect/" &&
+    req.path !== "/api/bank-disconnect" &&
+    req.path !== "/api/bank-disconnect/" &&
+    req.path !== "/api/plaid/manage-disconnect" &&
     !req.path.startsWith("/health") &&
     !req.path.startsWith("/billing") &&
     !req.path.startsWith("/stripe") &&
@@ -1543,10 +2006,7 @@ app.use((req, res, next) => {
     !req.path.startsWith("/strategy") &&
     !req.path.startsWith("/cron")
   ) {
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-    return res.sendFile(path.join(__dirname, "public", "index.html"));
+    return sendSpaFallbackIndexHtml(res);
   }
   next();
 });
@@ -1558,7 +2018,36 @@ app.use((err, req, res, _next) => {
   });
 });
 
+try {
+  const _probe = fs.readFileSync(
+    path.join(__dirname, "public", "plaid-manage-disconnect.html"),
+    "utf8"
+  );
+  if (!_probe || !_probe.trim()) {
+    throw new Error("empty file");
+  }
+} catch (e) {
+  console.error(
+    "[DebtYa] AVISO: no se pudo leer public/plaid-manage-disconnect.html — /bank-disconnect devolverá error hasta que exista el archivo en el deploy."
+  );
+}
+
+try {
+  const _snip = fs.readFileSync(PUBLIC_DISCONNECT_SNIPPET_JS, "utf8");
+  if (!_snip || !_snip.trim()) throw new Error("empty");
+} catch (e) {
+  console.error(
+    "[DebtYa] AVISO: no se pudo leer public/debtya-srv-disconnect-snippet.js — la barra fija inyectada en / no mostrará sesión."
+  );
+}
+
 app.listen(PORT, () => {
   console.log(`DebtYa API escuchando en puerto ${PORT}`);
   console.log(`Server version: ${SERVER_VERSION}`);
+  console.log(
+    "[DebtYa] Quitar banco (abrir en el navegador con sesion): /bank-disconnect | /disconnect-bank.html | /plaid/manage-disconnect | /api/bank-disconnect"
+  );
+  console.log(
+    "[DebtYa] En / y fallback SPA se inyecta barra debtya-srv-disconnect-bar + debtya-srv-disconnect-snippet.js (no depende de caché del index en disco)."
+  );
 });

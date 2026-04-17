@@ -1,8 +1,11 @@
 <!DOCTYPE html>
+<!-- DEBTYA-UNIQ-SOURCE-7Hk2Qm9pRw4n-20260417 buscar esto en Ver codigo fuente -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="debtya-build-probe" content="DEBTYA-UNIQ-7Hk2Qm9pRw4n-20260417" />
+  <meta name="debtya-ui-rev" content="bank-strip-html-v8-final" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -88,6 +91,22 @@
       align-items:center;
       gap:10px;
       flex-wrap:wrap;
+    }
+
+    .operate-bank-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    @media (max-width: 520px){
+      .operate-bank-row{grid-template-columns:1fr}
+    }
+
+    .btn.is-low-banks{
+      opacity:0.88;
+      border-style:dashed;
     }
 
     .page-grid{
@@ -1018,15 +1037,26 @@
     }
 
     .sync-bank-pill{
+      position:relative;
       display:inline-flex;
       align-items:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:999px;
+      gap:0;
+      padding:8px 38px 8px 10px;
+      border-radius:14px;
       border:1px solid #d7e6ff;
       background:#f6faff;
       font-size:12px;
       font-weight:700;
+      min-height:40px;
+      box-sizing:border-box;
+    }
+
+    .sync-bank-pill-inner{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      min-width:0;
+      padding-right:2px;
     }
 
     .sync-bank-icon{
@@ -1051,6 +1081,98 @@
       background:#fff;
       flex:0 0 auto;
       border:1px solid rgba(31,111,255,.14);
+    }
+
+    .sync-bank-remove{
+      position:absolute;
+      top:4px;
+      right:4px;
+      width:28px;
+      height:28px;
+      padding:0;
+      border:none;
+      background:rgba(255,255,255,.92);
+      color:#64748b;
+      font-size:18px;
+      line-height:1;
+      font-weight:800;
+      cursor:pointer;
+      border-radius:8px;
+      box-shadow:0 1px 3px rgba(15,23,42,.12);
+      border:1px solid rgba(148,163,184,.45);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      z-index:2;
+    }
+
+    .sync-bank-remove:hover{
+      color:#b91c1c;
+      background:#fff5f5;
+      border-color:rgba(185,28,28,.35);
+    }
+
+    .sync-bank-remove:focus-visible{
+      outline:2px solid var(--primary);
+      outline-offset:1px;
+    }
+
+    .bank-dc-modal-root{
+      position:fixed;
+      inset:0;
+      z-index:80;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      pointer-events:none;
+    }
+
+    .bank-dc-modal-root:not(.hidden){
+      pointer-events:auto;
+    }
+
+    .bank-dc-backdrop{
+      position:absolute;
+      inset:0;
+      z-index:0;
+      background:rgba(15,23,42,.48);
+      cursor:pointer;
+    }
+
+    .bank-dc-dialog{
+      position:relative;
+      z-index:1;
+      width:min(420px,calc(100vw - 32px));
+      background:#fff;
+      border-radius:18px;
+      border:1px solid var(--line);
+      box-shadow:0 24px 64px rgba(15,23,42,.22);
+      padding:22px 22px 18px;
+      pointer-events:auto;
+    }
+
+    .bank-dc-title{
+      margin:0 0 12px;
+      font-size:19px;
+      font-weight:800;
+      letter-spacing:-.35px;
+      color:var(--text);
+      line-height:1.25;
+    }
+
+    .bank-dc-body{
+      margin:0 0 22px;
+      font-size:14px;
+      line-height:1.55;
+      color:var(--muted);
+    }
+
+    .bank-dc-actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
     }
 
     .plan-field-hint{
@@ -1692,6 +1814,26 @@
   </style>
 </head>
 <body>
+  <!-- Siempre visible: no depende de JS ni de caché de botones. Misma sesión en este navegador. -->
+  <div
+    id="debtyaPlaidUnstickStrip"
+    style="margin:0;padding:10px 14px;background:#fff7ed;border-bottom:2px solid #fdba74;font:13px/1.5 system-ui,-apple-system,sans-serif;color:#7c2d12;text-align:center;position:relative;z-index:5;"
+  >
+    <strong style="color:#9a3412;">Plaid</strong>
+    —
+    <a href="/?debtya_bank_disconnect=1" style="font-weight:800;color:#1d4ed8;text-decoration:underline;">Disconnect bank</a>
+    ·
+    <a href="/bank-disconnect" style="font-weight:800;color:#1d4ed8;text-decoration:underline;">/bank-disconnect</a>
+    <span style="color:#a8a29e;margin:0 6px;">|</span>
+    <a href="/?debtya_bank_disconnect=1" style="font-weight:800;color:#1d4ed8;text-decoration:underline;">Desconectar banco</a>
+    ·
+    <a href="/bank-disconnect" style="font-weight:800;color:#1d4ed8;text-decoration:underline;">Misma sesión</a>
+    <span style="display:block;margin-top:4px;font-size:11px;color:#b45309;">Usa estos enlaces con la sesión ya iniciada en este navegador.</span>
+    <span
+      id="debtyaDeployProbeVisible"
+      style="display:block;margin-top:10px;font:12px/1.4 ui-monospace,Consolas,monospace;background:#0f172a;color:#67e8f9;padding:8px 10px;border-radius:8px;word-break:break-all;"
+      >DEBTYA-UNIQ-7Hk2Qm9pRw4n-20260417 — si ves esto, el HTML es el del repo actual.</span>
+  </div>
   <div id="landingView">
     <div class="app">
       <div class="topbar">
@@ -1940,6 +2082,7 @@
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p id="welcomeText">Home</p>
+            <p id="buildHints" class="hidden" style="font-size:11px;margin:4px 0 0;color:var(--muted);letter-spacing:.02em;max-width:min(420px,90vw);line-height:1.35;"></p>
           </div>
         </div>
 
@@ -1951,6 +2094,9 @@
           <span id="sessionBadge" class="pill blue">Signed in</span>
           <button id="topUpgradeBtn" class="btn btn-primary hidden" type="button" data-i18n="btn_activate_plan">Activate plan</button>
           <button id="topManageBillingBtn" class="btn btn-light hidden" type="button" data-i18n="btn_manage_plan">Manage plan</button>
+          <button id="topDisconnectBankBtn" class="btn btn-light" type="button" data-i18n="btn_disconnect_bank">
+            Disconnect bank
+          </button>
           <button id="logoutBtn" class="btn btn-danger" type="button" data-i18n="btn_logout">Log out</button>
         </div>
       </div>
@@ -2004,6 +2150,20 @@
               <div id="statExecutedIntents" class="v">0</div>
             </div>
           </div>
+
+          <div id="promoCompWrap" class="hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(15,23,42,0.08);">
+            <p id="promoCompServerHint" class="sub hidden" style="margin:0 0 10px;color:#b45309;"></p>
+            <p class="sub" style="margin:0 0 10px;" data-i18n="promo_comp_hint">
+              If you have a complimentary access code, enter it here.
+            </p>
+            <div class="grid-3" style="align-items:flex-end;gap:10px;">
+              <div class="field" style="grid-column:1 / span 2;">
+                <label class="label" for="promoCompCode" data-i18n="promo_comp_label">Access code</label>
+                <input id="promoCompCode" class="input" type="text" autocomplete="off" />
+              </div>
+              <button id="promoCompBtn" class="btn btn-light" type="button" data-i18n="promo_comp_apply">Apply code</button>
+            </div>
+          </div>
         </div>
 
       </section>
@@ -2020,13 +2180,29 @@
               </div>
             </div>
 
-            <div id="syncedBanksWrap" class="sync-banks-wrap hidden">
-              <p class="sync-banks-title" data-i18n="sync_banks_title">Synced banks</p>
-              <div id="syncedBanksStrip" class="sync-banks-strip"></div>
+            <div
+              class="bank-unstick-wrap"
+              style="margin:0 0 14px;padding:12px 14px;border-radius:12px;border:1px solid #bae6fd;background:#f0f9ff;font-size:13px;line-height:1.55;"
+              data-i18n-html="bank_tool_hint_html"
+            >
+              <strong>Bank tool</strong>
+              If disconnect does not show here, open
+              <a href="/plaid/manage-disconnect" style="font-weight:800;color:#1f6fff;">/plaid/manage-disconnect</a>
+              in this same browser (stay logged in).
             </div>
 
-            <div class="grid-3" style="margin-bottom:12px;">
+            <div class="operate-bank-row">
               <button id="btnConnectBank" class="btn btn-primary" type="button" data-i18n="btn_connect_bank">Connect bank</button>
+              <button id="btnDisconnectBank" class="btn btn-light" type="button" data-i18n="btn_disconnect_bank">
+                Disconnect bank
+              </button>
+            </div>
+            <p
+              class="operate-bank-deeplink-wrap"
+              style="margin:0 0 14px;font-size:13px;line-height:1.55;color:var(--muted);"
+              data-i18n-html="operate_bank_deeplink_html"
+            ></p>
+            <div class="grid-2" style="margin-bottom:12px;">
               <button id="btnImportAccounts" class="btn btn-light" type="button" data-i18n="btn_import_accounts">Import accounts</button>
               <button id="btnImportTransactions" class="btn btn-light" type="button" data-i18n="btn_import_tx">Import transactions</button>
             </div>
@@ -2323,8 +2499,16 @@
                 <p class="sub" data-i18n="accounts_sub">Synced from your bank: cash accounts and debts in separate groups.</p>
               </div>
               <div class="section-actions">
+                <button id="accountsDisconnectBankBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_disconnect_bank">
+                  Disconnect bank
+                </button>
                 <button id="refreshAccountsBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
               </div>
+            </div>
+
+            <div id="syncedBanksWrap" class="sync-banks-wrap hidden">
+              <p class="sync-banks-title" data-i18n="sync_banks_title">Synced banks</p>
+              <div id="syncedBanksStrip" class="sync-banks-strip"></div>
             </div>
 
             <div id="accountsList" class="list list-scroll-sm"></div>
@@ -2341,6 +2525,44 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bankPickDisconnectModal" class="bank-dc-modal-root hidden" aria-hidden="true">
+    <div class="bank-dc-backdrop" id="bankPickBackdrop" tabindex="-1"></div>
+    <div
+      class="bank-dc-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bankPickTitle"
+    >
+      <h3 id="bankPickTitle" class="bank-dc-title" data-i18n="sync_bank_pick_title">Choose a bank</h3>
+      <p id="bankPickSub" class="bank-dc-body" data-i18n="sync_bank_pick_sub">Select the connection you want to remove from DebtYa.</p>
+      <div class="field" style="margin-bottom:18px;">
+        <label class="label" for="bankPickSelect" data-i18n="sync_bank_pick_label">Bank</label>
+        <select id="bankPickSelect" class="select"></select>
+      </div>
+      <div class="bank-dc-actions">
+        <button type="button" id="bankPickCancel" class="btn btn-light" data-i18n="sync_bank_modal_cancel">Cancel</button>
+        <button type="button" id="bankPickContinue" class="btn btn-primary" data-i18n="sync_bank_pick_continue">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bankDisconnectModal" class="bank-dc-modal-root hidden" aria-hidden="true">
+    <div class="bank-dc-backdrop" id="bankDcBackdrop" tabindex="-1"></div>
+    <div
+      class="bank-dc-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bankDcTitle"
+    >
+      <h3 id="bankDcTitle" class="bank-dc-title"></h3>
+      <p id="bankDcBody" class="bank-dc-body"></p>
+      <div class="bank-dc-actions">
+        <button type="button" id="bankDcCancel" class="btn btn-light"></button>
+        <button type="button" id="bankDcConfirm" class="btn btn-primary"></button>
       </div>
     </div>
   </div>
@@ -2445,11 +2667,16 @@
   <script>
     const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
-    const API_BASE = "https://www.debtya.com";
+    const API_BASE =
+      typeof window !== "undefined" && window.location && window.location.origin
+        ? window.location.origin
+        : "https://www.debtya.com";
     const REQUEST_TIMEOUT_MS = 15000;
+    const CLIENT_HTML_BUILD = "bank-dc-2026-04-17-v8-html-strip";
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
     const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
+    const LS_BANK_DISCONNECT_PENDING = "debtya_open_bank_disconnect";
     let uiLang = localStorage.getItem(I18N_STORAGE_KEY) || "en";
     if (uiLang !== "en" && uiLang !== "es") uiLang = "en";
 
@@ -2587,6 +2814,16 @@
         next_step_done: "You are set up for now. After new imports, use Actions to apply rules or refresh payments.",
         next_step_done_btn: "Scroll to Actions",
         btn_connect_bank: "Connect bank",
+        btn_disconnect_bank: "Disconnect bank",
+        sync_bank_pick_title: "Which bank do you want to remove?",
+        sync_bank_pick_sub: "Pick the bank connection. On the next step we will ask you to confirm.",
+        sync_bank_pick_label: "Bank connection",
+        sync_bank_pick_continue: "Continue",
+        sync_bank_pick_none: "There are no connected banks to disconnect.",
+        operate_bank_deeplink_html:
+          "<strong>No disconnect button?</strong> Use <a href=\"/?debtya_bank_disconnect=1\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">this link</a> — same login.",
+        bank_tool_hint_html:
+          "<strong>Remove a bank?</strong> Open <a href='/bank-disconnect' style='font-weight:800;color:#1f6fff;'>/bank-disconnect</a>, <a href='/?debtya_bank_disconnect=1' style='font-weight:800;color:#1f6fff;'>/?debtya_bank_disconnect=1</a> (works on static hosts), <a href='/disconnect-bank.html' style='font-weight:800;color:#1f6fff;'>/disconnect-bank.html</a>, or <a href='/plaid/manage-disconnect' style='font-weight:800;color:#1f6fff;'>/plaid/manage-disconnect</a> — same browser, stay logged in.",
         btn_import_accounts: "Import accounts",
         btn_import_tx: "Import transactions",
         btn_build_intents: "Prepare payments",
@@ -2715,6 +2952,15 @@
         accounts_sub: "Synced from your bank: cash accounts and debts in separate groups.",
         sync_banks_title: "Synced banks",
         sync_bank_default: "Bank",
+        sync_bank_disconnect_aria: "Remove bank",
+        sync_bank_disconnect_confirm:
+          "Remove this bank connection? Accounts, debt links, plan funding, and imported transactions from this bank will be cleared in DebtYa.",
+        sync_bank_modal_title: "Are you sure?",
+        sync_bank_modal_body:
+          "You are about to remove {bank} from DebtYa. Imported accounts, debt links, pay-from settings, and transaction history for this bank will be cleared. You can connect the bank again later if you want.",
+        sync_bank_modal_cancel: "Not now",
+        sync_bank_modal_confirm: "Yes, remove bank",
+        sync_bank_disconnected_ok: "Bank connection removed.",
         accounts_sec_cash: "Cash and checking",
         accounts_sec_debt: "Credit cards and loans",
         accounts_sec_other: "Other (investments and similar)",
@@ -2789,6 +3035,7 @@
         err_plan_funding_type: "Pay-from account must be a deposit account (for example checking or savings).",
         err_plan_debt_invalid: "Target debt is not valid.",
         err_plan_debt_missing: "Target debt was not found.",
+        err_bank_not_found: "That bank connection was not found.",
         debt_label: "Debt",
         apr_label: "APR",
         min_label: "Minimum",
@@ -2840,6 +3087,16 @@
         plan_mode_safe: "Safe auto",
         plan_mode_full: "Full auto",
         bill_active: "Active",
+        promo_comp_hint:
+          "If you have a complimentary access code (for example friends & family), enter it here to unlock the app without checkout.",
+        promo_comp_label: "Access code",
+        promo_comp_apply: "Apply code",
+        promo_comp_ok: "Access activated.",
+        promo_comp_already: "This account already has complimentary access.",
+        promo_comp_err: "Could not apply the code.",
+        promo_comp_need: "Enter a code first.",
+        promo_comp_server_off:
+          "This server has no promo codes configured (set DEBTYA_COMP_PROMO_CODES or DEBTYA_COMP_PROMO_CODE on the host and redeploy).",
         bill_trialing: "Trialing",
         bill_inactive: "Inactive",
         bill_past_due: "Past due",
@@ -3030,6 +3287,16 @@
         next_step_done: "Por ahora vas al dia. Tras nuevas importaciones, usa Acciones para reglas o pagos.",
         next_step_done_btn: "Ir a Acciones",
         btn_connect_bank: "Conectar banco",
+        btn_disconnect_bank: "Desconectar banco",
+        sync_bank_pick_title: "¿Que banco quieres quitar?",
+        sync_bank_pick_sub: "Elige la conexion. En el siguiente paso te pediremos confirmacion.",
+        sync_bank_pick_label: "Conexion bancaria",
+        sync_bank_pick_continue: "Continuar",
+        sync_bank_pick_none: "No hay bancos conectados para desconectar.",
+        operate_bank_deeplink_html:
+          "<strong>¿No ves el botón desconectar?</strong> Usa <a href=\"/?debtya_bank_disconnect=1\" style=\"font-weight:800;color:#1d4ed8;text-decoration:underline;\">este enlace</a> — mismo inicio de sesión.",
+        bank_tool_hint_html:
+          "<strong>¿Quitar un banco?</strong> Abre <a href='/bank-disconnect' style='font-weight:800;color:#1f6fff;'>/bank-disconnect</a>, <a href='/?debtya_bank_disconnect=1' style='font-weight:800;color:#1f6fff;'>/?debtya_bank_disconnect=1</a> (si el hosting es estático), <a href='/disconnect-bank.html' style='font-weight:800;color:#1f6fff;'>/disconnect-bank.html</a> o <a href='/plaid/manage-disconnect' style='font-weight:800;color:#1f6fff;'>/plaid/manage-disconnect</a> — mismo navegador, sesión iniciada.",
         btn_import_accounts: "Importar cuentas",
         btn_import_tx: "Importar transacciones",
         btn_build_intents: "Preparar pagos",
@@ -3158,6 +3425,15 @@
         accounts_sub: "Sincronizadas con tu banco: efectivo y deudas en grupos separados.",
         sync_banks_title: "Bancos sincronizados",
         sync_bank_default: "Banco",
+        sync_bank_disconnect_aria: "Quitar banco",
+        sync_bank_disconnect_confirm:
+          "¿Quitar esta conexion bancaria? Se borraran en DebtYa las cuentas, enlaces con deudas, cuenta de origen del plan y movimientos importados de este banco.",
+        sync_bank_modal_title: "¿Seguro?",
+        sync_bank_modal_body:
+          "Vas a quitar {bank} de DebtYa. Se borraran las cuentas importadas, enlaces con deudas, la cuenta de origen del plan si aplica y el historial de movimientos de este banco. Luego puedes volver a conectar si quieres.",
+        sync_bank_modal_cancel: "Mejor no",
+        sync_bank_modal_confirm: "Si, quitar banco",
+        sync_bank_disconnected_ok: "Conexion bancaria quitada.",
         accounts_sec_cash: "Efectivo y cuentas corrientes",
         accounts_sec_debt: "Tarjetas y prestamos",
         accounts_sec_other: "Otras (inversiones y similares)",
@@ -3231,6 +3507,7 @@
         err_plan_funding_type: "La cuenta de origen debe ser de deposito (por ejemplo cheques o ahorros).",
         err_plan_debt_invalid: "La deuda destino no es valida.",
         err_plan_debt_missing: "No se encontro la deuda destino.",
+        err_bank_not_found: "No encontramos esa conexion bancaria.",
         debt_label: "Deuda",
         apr_label: "APR",
         min_label: "Minimo",
@@ -3282,6 +3559,16 @@
         plan_mode_safe: "Automatico seguro",
         plan_mode_full: "Automatico total",
         bill_active: "Activa",
+        promo_comp_hint:
+          "Si tienes un codigo de acceso complementario (por ejemplo amigos y familia), ingresalo aqui para desbloquear la app sin pasar por el pago.",
+        promo_comp_label: "Codigo de acceso",
+        promo_comp_apply: "Aplicar codigo",
+        promo_comp_ok: "Acceso activado.",
+        promo_comp_already: "Esta cuenta ya tiene acceso complementario.",
+        promo_comp_err: "No se pudo aplicar el codigo.",
+        promo_comp_need: "Ingresa un codigo primero.",
+        promo_comp_server_off:
+          "Este servidor no tiene codigos de promocion configurados (define DEBTYA_COMP_PROMO_CODES o DEBTYA_COMP_PROMO_CODE en el host y redeploy).",
         bill_trialing: "En prueba",
         bill_inactive: "Inactiva",
         bill_past_due: "Pago vencido",
@@ -3348,6 +3635,14 @@
       return M.en[key] !== undefined ? M.en[key] : key;
     }
 
+    function tf(key, vars = {}) {
+      let s = t(key);
+      Object.keys(vars).forEach((k) => {
+        s = s.split(`{${k}}`).join(String(vars[k] ?? ""));
+      });
+      return s;
+    }
+
     function syncLangButtons() {
       document.querySelectorAll(".lang-switch button[data-lang-btn]").forEach((b) => {
         b.classList.toggle("active", b.getAttribute("data-lang-btn") === uiLang);
@@ -3404,6 +3699,26 @@
         updateRuleModeHint();
         if (state.lastCompare) renderCompare(state.lastCompare);
         updateNextActionGuide();
+        const bdRoot = $("bankDisconnectModal");
+        if (
+          bdRoot &&
+          !bdRoot.classList.contains("hidden") &&
+          bankDcPendingId &&
+          $("bankDcTitle") &&
+          $("bankDcBody")
+        ) {
+          $("bankDcTitle").textContent = t("sync_bank_modal_title");
+          $("bankDcBody").textContent = tf("sync_bank_modal_body", {
+            bank: bankDcPendingName || t("sync_bank_default")
+          });
+          $("bankDcCancel").textContent = t("sync_bank_modal_cancel");
+          $("bankDcConfirm").textContent = t("sync_bank_modal_confirm");
+        }
+        const dfab = $("debtyaDisconnectFab");
+        if (dfab) {
+          dfab.textContent = t("btn_disconnect_bank");
+          dfab.setAttribute("aria-label", t("btn_disconnect_bank"));
+        }
       } else {
         $("sessionBadge").className = "pill blue";
         $("sessionBadge").textContent = t("badge_session");
@@ -3447,13 +3762,20 @@
     const authMessage = $("authMessage");
     const globalMessage = $("globalMessage");
 
+    function removeDisconnectFallbackFab() {
+      const f = $("debtyaDisconnectFab");
+      if (f) f.remove();
+    }
+
     function showLanding() {
+      removeDisconnectFallbackFab();
       landingView.classList.remove("hidden");
       authView.classList.add("hidden");
       appView.classList.add("hidden");
     }
 
     function showAuth(mode = "login") {
+      removeDisconnectFallbackFab();
       state.mode = mode;
       updateAuthModeUI();
       landingView.classList.add("hidden");
@@ -3465,6 +3787,7 @@
       landingView.classList.add("hidden");
       authView.classList.add("hidden");
       appView.classList.remove("hidden");
+      mountFallbackDisconnectFabIfMissing();
     }
 
     function setNav(active) {
@@ -3621,6 +3944,7 @@
       if (text.includes("La cuenta de origen debe ser de deposito")) return t("err_plan_funding_type");
       if (text.includes("Deuda destino no valida")) return t("err_plan_debt_invalid");
       if (text.includes("Deuda destino no encontrada")) return t("err_plan_debt_missing");
+      if (text.includes("Conexion bancaria no encontrada")) return t("err_bank_not_found");
 
       return text;
     }
@@ -3672,7 +3996,9 @@
         }
 
         if (!res.ok) {
-          throw new Error(json?.error || json?.details || text || `HTTP ${res.status}`);
+          const parts = [json?.error, json?.details].filter(Boolean);
+          const msg = [...new Set(parts)].join(" — ") || text || `HTTP ${res.status}`;
+          throw new Error(msg);
         }
 
         return json;
@@ -4806,11 +5132,7 @@
       return map;
     }
 
-    function renderSyncedBanksStrip() {
-      const wrap = $("syncedBanksWrap");
-      const strip = $("syncedBanksStrip");
-      if (!wrap || !strip) return;
-
+    function collectSyncedPlaidEntries() {
       const entries = [];
       const seen = new Set();
       const byItem = getSyncedInstitutionNameMap();
@@ -4826,7 +5148,7 @@
           it.institution_logo_data_url.startsWith("data:image/")
             ? it.institution_logo_data_url
             : null;
-        entries.push({ name, logo });
+        entries.push({ name, logo, plaid_item_id: itemId });
       });
 
       if (!entries.length) {
@@ -4836,41 +5158,115 @@
           seen.add(itemId);
           entries.push({
             name: byItem.get(itemId) || t("sync_bank_default"),
-            logo: null
+            logo: null,
+            plaid_item_id: itemId
           });
         });
       }
 
+      return entries;
+    }
+
+    function updateDisconnectBankButton() {
+      const n = collectSyncedPlaidEntries().length;
+      const hint = n === 0 ? t("sync_bank_pick_none") : "";
+      ["btnDisconnectBank", "topDisconnectBankBtn", "accountsDisconnectBankBtn"].forEach((id) => {
+        const btn = $(id);
+        if (!btn) return;
+        btn.disabled = false;
+        btn.removeAttribute("aria-disabled");
+        btn.title = hint;
+        btn.classList.toggle("is-low-banks", n === 0);
+      });
+      const dfab = $("debtyaDisconnectFab");
+      if (dfab) {
+        dfab.title = hint;
+        dfab.classList.toggle("is-low-banks", n === 0);
+      }
+    }
+
+    function mountFallbackDisconnectFabIfMissing() {
+      try {
+        if (!appView || appView.classList.contains("hidden")) return;
+        const stored = getStoredAccessToken();
+        if (!state.session && !stored) return;
+        if ($("btnDisconnectBank") || $("topDisconnectBankBtn") || $("accountsDisconnectBankBtn")) return;
+        if ($("debtyaDisconnectFab")) return;
+        const fab = document.createElement("button");
+        fab.id = "debtyaDisconnectFab";
+        fab.type = "button";
+        fab.className = "btn btn-light";
+        fab.textContent = t("btn_disconnect_bank");
+        fab.setAttribute("aria-label", t("btn_disconnect_bank"));
+        fab.style.cssText =
+          "position:fixed;right:16px;bottom:100px;z-index:9998;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;border:1px solid rgba(15,23,42,0.14);background:#fff;box-shadow:0 10px 30px rgba(15,23,42,0.14);max-width:min(220px,calc(100vw - 32px));";
+        fab.addEventListener("click", () => {
+          void openBankPickDisconnectFlow();
+        });
+        document.body.appendChild(fab);
+        updateDisconnectBankButton();
+      } catch (_) {}
+    }
+
+    function renderSyncedBanksStrip() {
+      const wrap = $("syncedBanksWrap");
+      const strip = $("syncedBanksStrip");
+      if (!wrap || !strip) {
+        updateDisconnectBankButton();
+        return;
+      }
+
+      const entries = collectSyncedPlaidEntries();
+
       if (!entries.length) {
         wrap.classList.add("hidden");
         strip.replaceChildren();
+        updateDisconnectBankButton();
         return;
       }
 
       strip.replaceChildren();
-      entries.forEach(({ name, logo }) => {
+      entries.forEach(({ name, logo, plaid_item_id: itemId }) => {
         const pill = document.createElement("span");
         pill.className = "sync-bank-pill";
+        const inner = document.createElement("span");
+        inner.className = "sync-bank-pill-inner";
         if (logo) {
           const img = document.createElement("img");
           img.className = "sync-bank-icon-img";
           img.src = logo;
           img.alt = name;
           img.loading = "lazy";
-          pill.appendChild(img);
+          inner.appendChild(img);
         } else {
           const initial = (String(name).trim()[0] || "B").toUpperCase();
           const ic = document.createElement("span");
           ic.className = "sync-bank-icon";
           ic.textContent = initial;
-          pill.appendChild(ic);
+          inner.appendChild(ic);
         }
         const label = document.createElement("span");
         label.textContent = name;
-        pill.appendChild(label);
+        inner.appendChild(label);
+        pill.appendChild(inner);
+        if (itemId) {
+          const rm = document.createElement("button");
+          rm.type = "button";
+          rm.className = "sync-bank-remove";
+          rm.setAttribute("aria-label", t("sync_bank_disconnect_aria"));
+          rm.title = t("sync_bank_disconnect_aria");
+          rm.textContent = "\u00d7";
+          rm.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            openBankDisconnectModal(itemId, name);
+          });
+          pill.appendChild(rm);
+        }
         strip.appendChild(pill);
       });
       wrap.classList.remove("hidden");
+      updateDisconnectBankButton();
     }
 
     function updatePlanFieldHints() {
@@ -5061,7 +5457,8 @@
         current_period_end: null,
         stripe_customer_id: null,
         stripe_subscription_id: null,
-        cancel_at_period_end: false
+        cancel_at_period_end: false,
+        promo_codes_configured: null
       };
 
       const billingStatusText = $("billingStatusText");
@@ -5090,6 +5487,19 @@
       if (topManageBillingBtn) topManageBillingBtn.classList.toggle("hidden", !canManage);
       if (billingStartBtn) billingStartBtn.classList.toggle("hidden", isActive);
       if (topUpgradeBtn) topUpgradeBtn.classList.toggle("hidden", isActive);
+
+      const promoWrap = $("promoCompWrap");
+      if (promoWrap) promoWrap.classList.toggle("hidden", isActive);
+
+      const promoHint = $("promoCompServerHint");
+      if (promoHint) {
+        if (!isActive && billing.promo_codes_configured === false) {
+          promoHint.textContent = t("promo_comp_server_off");
+          promoHint.classList.remove("hidden");
+        } else {
+          promoHint.classList.add("hidden");
+        }
+      }
     }
 
     function renderCompare(data) {
@@ -5136,6 +5546,12 @@
 
     async function refreshHealth() {
       state.health = await api("/health");
+      const hint = $("buildHints");
+      if (hint) {
+        const srv = state.health?.server_version || "—";
+        hint.textContent = `Build: API ${srv} · ${CLIENT_HTML_BUILD}`;
+        hint.classList.remove("hidden");
+      }
     }
 
     async function refreshDebts() {
@@ -5178,6 +5594,126 @@
       }
     }
 
+    let bankDcPendingId = null;
+    let bankDcPendingName = "";
+
+    function closeBankPickModal() {
+      const root = $("bankPickDisconnectModal");
+      if (!root) return;
+      root.classList.add("hidden");
+      root.setAttribute("aria-hidden", "true");
+    }
+
+    async function openBankPickDisconnectFlow() {
+      try {
+        await refreshAccounts();
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+        return;
+      }
+      updateDisconnectBankButton();
+      const entries = collectSyncedPlaidEntries();
+      if (!entries.length) {
+        showMessage(globalMessage, t("sync_bank_pick_none"), "warn");
+        return;
+      }
+      if (entries.length === 1) {
+        openBankDisconnectModal(entries[0].plaid_item_id, entries[0].name);
+        return;
+      }
+      const sel = $("bankPickSelect");
+      if (!sel) return;
+      sel.innerHTML = "";
+      entries.forEach((e) => {
+        const op = document.createElement("option");
+        op.value = e.plaid_item_id;
+        op.textContent = e.name;
+        sel.appendChild(op);
+      });
+      const root = $("bankPickDisconnectModal");
+      if (!root) return;
+      root.classList.remove("hidden");
+      root.setAttribute("aria-hidden", "false");
+      window.setTimeout(() => sel.focus(), 30);
+    }
+
+    function confirmBankPickContinue() {
+      const sel = $("bankPickSelect");
+      if (!sel) {
+        closeBankPickModal();
+        return;
+      }
+      const id = String(sel.value || "").trim();
+      const opt = sel.selectedOptions && sel.selectedOptions[0];
+      const name = opt ? String(opt.textContent || "").trim() : t("sync_bank_default");
+      if (!id) {
+        closeBankPickModal();
+        return;
+      }
+      closeBankPickModal();
+      openBankDisconnectModal(id, name);
+    }
+
+    function closeBankDisconnectModal() {
+      bankDcPendingId = null;
+      bankDcPendingName = "";
+      const root = $("bankDisconnectModal");
+      if (!root) return;
+      root.classList.add("hidden");
+      root.setAttribute("aria-hidden", "true");
+    }
+
+    function openBankDisconnectModal(plaidItemId, bankDisplayName) {
+      const id = String(plaidItemId || "").trim();
+      if (!id) return;
+      const root = $("bankDisconnectModal");
+      const titleEl = $("bankDcTitle");
+      const bodyEl = $("bankDcBody");
+      const cancelBtn = $("bankDcCancel");
+      const confirmBtn = $("bankDcConfirm");
+      if (!root || !titleEl || !bodyEl || !cancelBtn || !confirmBtn) return;
+
+      bankDcPendingId = id;
+      const bankLabel = String(bankDisplayName || "").trim() || t("sync_bank_default");
+      bankDcPendingName = bankLabel;
+      titleEl.textContent = t("sync_bank_modal_title");
+      bodyEl.textContent = tf("sync_bank_modal_body", { bank: bankLabel });
+      cancelBtn.textContent = t("sync_bank_modal_cancel");
+      confirmBtn.textContent = t("sync_bank_modal_confirm");
+
+      root.classList.remove("hidden");
+      root.setAttribute("aria-hidden", "false");
+      window.setTimeout(() => cancelBtn.focus(), 30);
+    }
+
+    async function confirmDisconnectPlaidBank() {
+      const id = String(bankDcPendingId || "").trim();
+      if (!id) {
+        closeBankDisconnectModal();
+        return;
+      }
+      const confirmBtn = $("bankDcConfirm");
+      if (confirmBtn) confirmBtn.disabled = true;
+      try {
+        await api("/plaid/items/disconnect", {
+          method: "POST",
+          body: JSON.stringify({ plaid_item_id: id })
+        });
+        closeBankDisconnectModal();
+        showMessage(globalMessage, t("sync_bank_disconnected_ok"), "success");
+        await Promise.all([
+          refreshAccounts(),
+          refreshDebts(),
+          refreshPlan(),
+          refreshIntents()
+        ]);
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+      } finally {
+        if (confirmBtn) confirmBtn.disabled = false;
+      }
+    }
+
     async function refreshAccounts() {
       const [accountsRes] = await Promise.all([
         api("/accounts"),
@@ -5191,7 +5727,17 @@
     async function refreshBillingStatus() {
       try {
         const res = await api("/billing/subscription-status");
-        state.billing = res.data || null;
+        let data = res.data || null;
+        if (data && typeof data.promo_codes_configured === "undefined") {
+          try {
+            const peRes = await fetch(`${API_BASE}/billing/promo-env`);
+            const pe = peRes.ok ? await peRes.json() : null;
+            if (pe && typeof pe.promo_codes_configured === "boolean") {
+              data = { ...data, promo_codes_configured: pe.promo_codes_configured };
+            }
+          } catch (_) {}
+        }
+        state.billing = data;
       } catch {
         state.billing = {
           status: "inactive",
@@ -5199,7 +5745,8 @@
           current_period_end: null,
           stripe_customer_id: null,
           stripe_subscription_id: null,
-          cancel_at_period_end: false
+          cancel_at_period_end: false,
+          promo_codes_configured: null
         };
       }
       renderBilling();
@@ -5302,6 +5849,7 @@
       localStorage.removeItem("debtya_access_token");
       try {
         localStorage.removeItem(LS_BANK_EXCHANGED);
+        sessionStorage.removeItem(LS_BANK_DISCONNECT_PENDING);
       } catch (e) {}
       window.location.href = "https://www.debtya.com/";
     }
@@ -5337,6 +5885,35 @@
         } else {
           showMessage(authMessage, msg, "error");
         }
+      } finally {
+        if (buttonEl) setLoading(buttonEl, false);
+      }
+    }
+
+    async function applyPromoCompCode(buttonEl = null) {
+      const input = $("promoCompCode");
+      const code = String(input?.value || "").trim();
+      if (!code) {
+        showMessage(globalMessage, t("promo_comp_need"), "warn");
+        return;
+      }
+      try {
+        if (buttonEl) setLoading(buttonEl, true, t("proc"));
+        const res = await api("/billing/redeem-promo-code", {
+          method: "POST",
+          body: JSON.stringify({ code })
+        });
+        state.billing = res.data || state.billing;
+        renderBilling();
+        showMessage(
+          globalMessage,
+          res.already ? t("promo_comp_already") : t("promo_comp_ok"),
+          "success"
+        );
+        if (input) input.value = "";
+        updateNextActionGuide();
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
       } finally {
         if (buttonEl) setLoading(buttonEl, false);
       }
@@ -5391,7 +5968,40 @@
       window.history.replaceState({}, document.title, cleanUrl);
     }
 
+    function normalizeBankDisconnectPathInUrl() {
+      try {
+        const u = new URL(window.location.href);
+        const p = u.pathname.replace(/\/+$/, "") || "/";
+        const deepPaths = ["/bank-disconnect", "/disconnect-bank.html", "/plaid/manage-disconnect"];
+        if (deepPaths.includes(p)) {
+          window.history.replaceState({}, document.title, "/");
+          sessionStorage.setItem(LS_BANK_DISCONNECT_PENDING, "1");
+          return;
+        }
+        if (u.searchParams.get("debtya_bank_disconnect") === "1" || u.searchParams.get("bank_disconnect") === "1") {
+          u.searchParams.delete("debtya_bank_disconnect");
+          u.searchParams.delete("bank_disconnect");
+          const qs = u.searchParams.toString();
+          const next = `${u.pathname}${qs ? `?${qs}` : ""}${u.hash}`;
+          window.history.replaceState({}, document.title, next || "/");
+          sessionStorage.setItem(LS_BANK_DISCONNECT_PENDING, "1");
+        }
+      } catch (_) {}
+    }
+
+    async function maybeOpenPendingBankDisconnectFlow() {
+      try {
+        if (sessionStorage.getItem(LS_BANK_DISCONNECT_PENDING) !== "1") return;
+        const storedToken = getStoredAccessToken();
+        if (!(state.session || storedToken)) return;
+        sessionStorage.removeItem(LS_BANK_DISCONNECT_PENDING);
+        await openBankPickDisconnectFlow();
+      } catch (_) {}
+    }
+
     async function loadSession() {
+      normalizeBankDisconnectPathInUrl();
+
       try {
         const { data } = await supabaseClient.auth.getSession();
         state.session = data?.session || null;
@@ -5416,6 +6026,7 @@
       }
 
       await handleCheckoutReturn();
+      await maybeOpenPendingBankDisconnectFlow();
     }
 
     async function approveIntent(id) {
@@ -5538,8 +6149,39 @@
         closeHelpModal();
       });
     }
+
+    const bankPickBackdrop = $("bankPickBackdrop");
+    if (bankPickBackdrop) bankPickBackdrop.addEventListener("click", closeBankPickModal);
+    const bankPickCancel = $("bankPickCancel");
+    if (bankPickCancel) bankPickCancel.addEventListener("click", closeBankPickModal);
+    const bankPickContinue = $("bankPickContinue");
+    if (bankPickContinue) bankPickContinue.addEventListener("click", () => confirmBankPickContinue());
+
+    const bankDcBackdrop = $("bankDcBackdrop");
+    if (bankDcBackdrop) bankDcBackdrop.addEventListener("click", closeBankDisconnectModal);
+    const bankDcCancel = $("bankDcCancel");
+    if (bankDcCancel) bankDcCancel.addEventListener("click", closeBankDisconnectModal);
+    const bankDcConfirm = $("bankDcConfirm");
+    if (bankDcConfirm) bankDcConfirm.addEventListener("click", () => confirmDisconnectPlaidBank());
+
+    ["btnDisconnectBank", "topDisconnectBankBtn", "accountsDisconnectBankBtn"].forEach((id) => {
+      const el = $(id);
+      if (el) el.addEventListener("click", () => openBankPickDisconnectFlow());
+    });
+    updateDisconnectBankButton();
+
     document.addEventListener("keydown", (ev) => {
       if (ev.key !== "Escape") return;
+      const pickRoot = $("bankPickDisconnectModal");
+      if (pickRoot && !pickRoot.classList.contains("hidden")) {
+        closeBankPickModal();
+        return;
+      }
+      const bankRoot = $("bankDisconnectModal");
+      if (bankRoot && !bankRoot.classList.contains("hidden")) {
+        closeBankDisconnectModal();
+        return;
+      }
       const root = $("helpModalRoot");
       if (root && !root.classList.contains("hidden")) closeHelpModal();
     });
@@ -5612,6 +6254,8 @@
     const billingStartBtn = $("billingStartBtn");
     if (billingStartBtn) billingStartBtn.addEventListener("click", () => startCheckout($("billingStartBtn")));
     $("topUpgradeBtn").addEventListener("click", () => startCheckout($("topUpgradeBtn")));
+    const promoCompBtn = $("promoCompBtn");
+    if (promoCompBtn) promoCompBtn.addEventListener("click", () => applyPromoCompCode($("promoCompBtn")));
     const billingManageBtn = $("billingManageBtn");
     if (billingManageBtn) billingManageBtn.addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
