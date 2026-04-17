@@ -17,7 +17,7 @@ const { jsonError } = require("./lib/json-error");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-15-disconnect-missing-debt-column";
+const SERVER_VERSION = "debtya-2026-04-15-disconnect-orphan-plaid-item";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -868,36 +868,50 @@ async function disconnectPlaidItemForUser(userId, plaidItemId) {
     throw err;
   }
 
-  const { data: itemRow, error: itemErr } = await supabaseAdmin
-    .from("plaid_items")
-    .select("id,access_token,plaid_item_id")
-    .eq("user_id", userId)
-    .eq("plaid_item_id", itemId)
-    .maybeSingle();
+  const [itemRes, acctRes, txProbeRes] = await Promise.all([
+    supabaseAdmin
+      .from("plaid_items")
+      .select("id,access_token,plaid_item_id")
+      .eq("user_id", userId)
+      .eq("plaid_item_id", itemId)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("accounts")
+      .select("plaid_account_id")
+      .eq("user_id", userId)
+      .eq("plaid_item_id", itemId),
+    supabaseAdmin
+      .from("transactions_raw")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("plaid_item_id", itemId)
+      .limit(1)
+  ]);
 
-  if (itemErr) throw itemErr;
+  const itemRow = itemRes.data;
+  if (itemRes.error) throw itemRes.error;
 
-  if (!itemRow?.id) {
+  const acctRows = acctRes.data || [];
+  if (acctRes.error) throw acctRes.error;
+
+  const txProbe = txProbeRes.data || [];
+  if (txProbeRes.error) throw txProbeRes.error;
+
+  const hasOrphanLocal = acctRows.length > 0 || txProbe.length > 0;
+
+  if (!itemRow?.id && !hasOrphanLocal) {
     const err = new Error("Conexion bancaria no encontrada");
     err.status = 404;
     throw err;
   }
 
-  if (plaidClient && itemRow.access_token) {
+  if (plaidClient && itemRow?.access_token) {
     try {
       await plaidClient.itemRemove({ access_token: itemRow.access_token });
     } catch (e) {
       appDebug("itemRemove (continuando limpieza local):", e?.response?.data || e?.message || e);
     }
   }
-
-  const { data: acctRows, error: acctErr } = await supabaseAdmin
-    .from("accounts")
-    .select("plaid_account_id")
-    .eq("user_id", userId)
-    .eq("plaid_item_id", itemId);
-
-  if (acctErr) throw acctErr;
 
   const plaidAccountIds = (acctRows || [])
     .map((r) => String(r.plaid_account_id || "").trim())
