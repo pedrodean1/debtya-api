@@ -17,7 +17,7 @@ const { jsonError } = require("./lib/json-error");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-18-production";
+const SERVER_VERSION = "debtya-2026-04-18-plaid-banks-fix";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -124,11 +124,8 @@ app.use(express.urlencoded({ extended: true }));
 const PUBLIC_INDEX_HTML = path.join(__dirname, "public", "index.html");
 const PUBLIC_BANK_STRIP_JS = path.join(__dirname, "public", "debtya-bank-strip.js");
 
-/** Si el index no incluye el script, lo añade antes de </body> (rutas / y fallback SPA). */
 function injectIntoIndexHtml(html) {
-  if (!html || !html.includes("</body>")) return html;
-  if (html.includes('src="/debtya-bank-strip.js"')) return html;
-  return html.replace("</body>", '<script src="/debtya-bank-strip.js" defer></script>\n</body>');
+  return html;
 }
 
 function sendNoCacheIndexHtml(res) {

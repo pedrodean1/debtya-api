@@ -15,6 +15,7 @@ function registerPlaidRoutes(app, deps) {
     fetchInstitutionLogoDataUrl,
     importPlaidAccountsForUser,
     getLatestPlaidItemForUser,
+    disconnectPlaidItemForUser,
     insertTransactionsRaw,
     getBaseUrl,
     appError,
@@ -238,15 +239,52 @@ function registerPlaidRoutes(app, deps) {
           logoByInstitution.set(institutionId, dataUrl);
         })
       );
-      const data = stripped.map((row) => ({
-        ...row,
-        institution_logo_data_url: row?.institution_id
-          ? logoByInstitution.get(row.institution_id) ?? null
-          : null
-      }));
+      const data = stripped.map((row) => {
+        const pid =
+          row?.plaid_item_id != null && String(row.plaid_item_id).trim()
+            ? String(row.plaid_item_id).trim()
+            : row?.item_id != null && String(row.item_id).trim()
+              ? String(row.item_id).trim()
+              : null;
+        return {
+          ...row,
+          plaid_item_id: pid,
+          institution_logo_data_url: row?.institution_id
+            ? logoByInstitution.get(row.institution_id) ?? null
+            : null
+        };
+      });
       return res.json({ ok: true, data });
     } catch (error) {
       return jsonError(res, 500, "Error cargando plaid items", {
+        details: error.message
+      });
+    }
+  });
+
+  app.post("/plaid/items/disconnect", requireUser, async (req, res) => {
+    try {
+      const plaidItemId = String(req.body?.plaid_item_id || "").trim();
+      if (!plaidItemId) {
+        return jsonError(res, 400, "Falta plaid_item_id");
+      }
+      const result = await disconnectPlaidItemForUser(req.user.id, plaidItemId);
+      return res.json(result);
+    } catch (error) {
+      return jsonError(res, error.status || 500, "Error desconectando banco", {
+        details: error.message
+      });
+    }
+  });
+
+  app.delete("/plaid/items/:plaidItemId", requireUser, async (req, res) => {
+    try {
+      const raw = String(req.params.plaidItemId || "").trim();
+      const plaidItemId = decodeURIComponent(raw);
+      const result = await disconnectPlaidItemForUser(req.user.id, plaidItemId);
+      return res.json(result);
+    } catch (error) {
+      return jsonError(res, error.status || 500, "Error desconectando banco", {
         details: error.message
       });
     }

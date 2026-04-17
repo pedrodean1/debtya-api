@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-18-clean" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-18-plaid-banks-fix" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2650,7 +2650,7 @@
         ? window.location.origin
         : "https://www.debtya.com";
     const REQUEST_TIMEOUT_MS = 15000;
-    const CLIENT_HTML_BUILD = "bank-dc-2026-04-18-clean";
+    const CLIENT_HTML_BUILD = "bank-dc-2026-04-18-plaid-banks-fix";
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
     const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
@@ -5102,7 +5102,7 @@
     function getSyncedInstitutionNameMap() {
       const map = new Map();
       (state.plaidItems || []).forEach((it) => {
-        const itemId = String(it?.plaid_item_id || "").trim();
+        const itemId = String(it?.plaid_item_id || it?.item_id || "").trim();
         if (!itemId) return;
         const name = String(it?.institution_name || "").trim();
         map.set(itemId, name || t("sync_bank_default"));
@@ -5116,7 +5116,7 @@
       const byItem = getSyncedInstitutionNameMap();
 
       (state.plaidItems || []).forEach((it) => {
-        const itemId = String(it?.plaid_item_id || "").trim();
+        const itemId = String(it?.plaid_item_id || it?.item_id || "").trim();
         if (!itemId || seen.has(itemId)) return;
         seen.add(itemId);
         const name =
@@ -5131,7 +5131,7 @@
 
       if (!entries.length) {
         (state.accounts || []).forEach((acc) => {
-          const itemId = String(acc?.plaid_item_id || "").trim();
+          const itemId = String(acc?.plaid_item_id || acc?.item_id || "").trim();
           if (!itemId || seen.has(itemId)) return;
           seen.add(itemId);
           entries.push({
@@ -5566,7 +5566,8 @@
     async function refreshPlaidItems() {
       try {
         const res = await api("/plaid/items");
-        state.plaidItems = res.data || [];
+        const raw = res?.data;
+        state.plaidItems = Array.isArray(raw) ? raw : [];
       } catch {
         state.plaidItems = [];
       }
