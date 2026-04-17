@@ -54,6 +54,13 @@ function randomSixDigitCode() {
   return String(n).padStart(6, "0");
 }
 
+/** Lee Resend en cada petición (evita valores vacíos “congelados” al arranque) y recorta espacios. */
+function readResendEnv() {
+  const apiKey = String(process.env.RESEND_API_KEY ?? "").trim();
+  const fromEmail = String(process.env.RESEND_FROM_EMAIL ?? "").trim();
+  return { apiKey, fromEmail };
+}
+
 async function sendResendEmail({ to, subject, text, apiKey, fromEmail }) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -78,8 +85,6 @@ async function sendResendEmail({ to, subject, text, apiKey, fromEmail }) {
 
 function registerAuthSignupRoutes(app, deps) {
   const { supabaseAdmin, jsonError, appError } = deps;
-  const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-  const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "";
   const pepper = String(process.env.CRON_SECRET || "debtya-signup-code-pepper");
 
   app.post("/auth/signup/send-verification-code", async (req, res) => {
@@ -87,7 +92,15 @@ function registerAuthSignupRoutes(app, deps) {
       if (!supabaseAdmin) {
         return jsonError(res, 500, "Supabase no configurado");
       }
+
+      const { apiKey: RESEND_API_KEY, fromEmail: RESEND_FROM_EMAIL } = readResendEnv();
       if (!RESEND_API_KEY || !RESEND_FROM_EMAIL) {
+        appError("[auth/signup/send-code] Resend env ausente o vacio (tras trim)", {
+          RESEND_API_KEY_len: RESEND_API_KEY.length,
+          RESEND_FROM_EMAIL_len: RESEND_FROM_EMAIL.length,
+          has_RESEND_API_KEY: Object.prototype.hasOwnProperty.call(process.env, "RESEND_API_KEY"),
+          has_RESEND_FROM_EMAIL: Object.prototype.hasOwnProperty.call(process.env, "RESEND_FROM_EMAIL")
+        });
         return jsonError(res, 503, "Envío de correo no configurado (RESEND_API_KEY / RESEND_FROM_EMAIL).");
       }
 
