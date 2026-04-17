@@ -1042,6 +1042,17 @@
       gap:8px;
     }
 
+    .sync-banks-split{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    @media (max-width:720px){
+      .sync-banks-split{grid-template-columns:1fr}
+    }
+
     .sync-bank-pill{
       position:relative;
       display:inline-flex;
@@ -2132,9 +2143,15 @@
               </div>
             </div>
 
-            <div id="operateSyncedBanksWrap" class="sync-banks-wrap hidden" style="margin-bottom:12px;">
-              <p class="sync-banks-title" data-i18n="sync_banks_title">Synced banks</p>
-              <div id="operateSyncedBanksStrip" class="sync-banks-strip"></div>
+            <div class="sync-banks-split">
+              <div id="operateFundingBanksWrap" class="sync-banks-wrap hidden">
+                <p class="sync-banks-title" data-i18n="sync_banks_funding_title">Banks you pay from</p>
+                <div id="operateFundingBanksStrip" class="sync-banks-strip"></div>
+              </div>
+              <div id="operateLiabilitiesBanksWrap" class="sync-banks-wrap hidden">
+                <p class="sync-banks-title" data-i18n="sync_banks_liabilities_title">Banks with debts you pay down</p>
+                <div id="operateLiabilitiesBanksStrip" class="sync-banks-strip"></div>
+              </div>
             </div>
 
             <div class="operate-bank-row">
@@ -2447,9 +2464,15 @@
               </div>
             </div>
 
-            <div id="syncedBanksWrap" class="sync-banks-wrap hidden">
-              <p class="sync-banks-title" data-i18n="sync_banks_title">Synced banks</p>
-              <div id="syncedBanksStrip" class="sync-banks-strip"></div>
+            <div class="sync-banks-split">
+              <div id="accountsFundingBanksWrap" class="sync-banks-wrap hidden">
+                <p class="sync-banks-title" data-i18n="sync_banks_funding_title">Banks you pay from</p>
+                <div id="accountsFundingBanksStrip" class="sync-banks-strip"></div>
+              </div>
+              <div id="accountsLiabilitiesBanksWrap" class="sync-banks-wrap hidden">
+                <p class="sync-banks-title" data-i18n="sync_banks_liabilities_title">Banks with debts you pay down</p>
+                <div id="accountsLiabilitiesBanksStrip" class="sync-banks-strip"></div>
+              </div>
             </div>
 
             <div id="accountsList" class="list list-scroll-sm"></div>
@@ -2504,6 +2527,22 @@
       <div class="bank-dc-actions">
         <button type="button" id="bankDcCancel" class="btn btn-light"></button>
         <button type="button" id="bankDcConfirm" class="btn btn-primary"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bankConnectionRoleModal" class="bank-dc-modal-root hidden" aria-hidden="true">
+    <div class="bank-dc-backdrop" id="bankRoleBackdrop" tabindex="-1"></div>
+    <div class="bank-dc-dialog" role="dialog" aria-modal="true" aria-labelledby="bankRoleTitle">
+      <h3 id="bankRoleTitle" class="bank-dc-title" data-i18n="bank_role_modal_title">How will you use this bank?</h3>
+      <p class="bank-dc-body" data-i18n="bank_role_modal_sub"></p>
+      <div class="grid-2" style="gap:10px;margin-bottom:14px;">
+        <button type="button" id="bankRoleFundingBtn" class="btn btn-primary" data-i18n="bank_role_funding_btn">Pay from here (checking, savings)</button>
+        <button type="button" id="bankRoleLiabilitiesBtn" class="btn btn-secondary" data-i18n="bank_role_liabilities_btn">Debts here (cards, loans)</button>
+      </div>
+      <button type="button" id="bankRoleBothBtn" class="btn btn-light" style="width:100%;margin-bottom:14px;" data-i18n="bank_role_both_btn">Both — money moves in both directions</button>
+      <div class="bank-dc-actions">
+        <button type="button" id="bankRoleCancelBtn" class="btn btn-light" data-i18n="bank_role_cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -2888,6 +2927,15 @@
         accounts_title: "Connected accounts",
         accounts_sub: "Synced from your bank: cash accounts and debts in separate groups.",
         sync_banks_title: "Synced banks",
+        sync_banks_funding_title: "Banks you pay from",
+        sync_banks_liabilities_title: "Banks with debts you pay down",
+        bank_role_modal_title: "What is this bank for?",
+        bank_role_modal_sub:
+          "Choose where to list this connection. All accounts still import; this only groups the bank in your workspace.",
+        bank_role_funding_btn: "Pay from here — checking, savings",
+        bank_role_liabilities_btn: "Debts here — cards, loans",
+        bank_role_both_btn: "Both — funding and debts at this bank",
+        bank_role_cancel: "Cancel",
         sync_bank_default: "Bank",
         sync_bank_disconnect_aria: "Remove bank",
         sync_bank_disconnect_confirm:
@@ -3357,6 +3405,15 @@
         accounts_title: "Cuentas conectadas",
         accounts_sub: "Sincronizadas con tu banco: efectivo y deudas en grupos separados.",
         sync_banks_title: "Bancos sincronizados",
+        sync_banks_funding_title: "Bancos desde los que pagas",
+        sync_banks_liabilities_title: "Bancos con deudas a las que va el dinero",
+        bank_role_modal_title: "¿Para que usas este banco?",
+        bank_role_modal_sub:
+          "Elige en que grupo mostrar esta conexion. Igual se importan todas las cuentas; solo organiza el banco en la app.",
+        bank_role_funding_btn: "Sacar dinero de aqui — cuenta corriente, ahorros",
+        bank_role_liabilities_btn: "Deudas aqui — tarjetas, prestamos",
+        bank_role_both_btn: "Ambos — origen y deudas en este banco",
+        bank_role_cancel: "Cancelar",
         sync_bank_default: "Banco",
         sync_bank_disconnect_aria: "Quitar banco",
         sync_bank_disconnect_confirm:
@@ -5067,6 +5124,62 @@
       ).trim();
     }
 
+    function normalizePlaidConnectionRoleClient(v) {
+      const s = String(v || "")
+        .trim()
+        .toLowerCase();
+      if (s === "funding" || s === "pay_from" || s === "origin" || s === "origen") return "funding";
+      if (
+        s === "liabilities" ||
+        s === "debts" ||
+        s === "paydown" ||
+        s === "destino" ||
+        s === "deudas"
+      ) {
+        return "liabilities";
+      }
+      if (s === "both" || s === "ambos") return "both";
+      return "unspecified";
+    }
+
+    function inferPlaidRoleFromAccountsOnly(itemId) {
+      const accs = (state.accounts || []).filter((a) => plaidConnectionItemId(a) === itemId);
+      if (!accs.length) return "unspecified";
+      let hasDebt = false;
+      let hasCash = false;
+      accs.forEach((a) => {
+        const ty = String(a.type || "").toLowerCase();
+        if (ty === "credit" || ty === "loan") hasDebt = true;
+        else hasCash = true;
+      });
+      if (hasDebt && hasCash) return "both";
+      if (hasDebt) return "liabilities";
+      return "funding";
+    }
+
+    function getPlaidItemRoleForItemId(itemId) {
+      const it = (state.plaidItems || []).find((x) => plaidConnectionItemId(x) === itemId);
+      const fromItem = it ? normalizePlaidConnectionRoleClient(it.connection_role) : "unspecified";
+      if (fromItem !== "unspecified") return fromItem;
+      return inferPlaidRoleFromAccountsOnly(itemId);
+    }
+
+    function entryMatchesFundingBankStrip(role) {
+      return role === "funding" || role === "both" || role === "unspecified";
+    }
+
+    function entryMatchesLiabilitiesBankStrip(role) {
+      return role === "liabilities" || role === "both";
+    }
+
+    function collectSyncedPlaidEntriesForSide(side) {
+      return collectSyncedPlaidEntries().filter((e) => {
+        const role = getPlaidItemRoleForItemId(e.plaid_item_id);
+        if (side === "funding") return entryMatchesFundingBankStrip(role);
+        return entryMatchesLiabilitiesBankStrip(role);
+      });
+    }
+
     function getSyncedInstitutionNameMap() {
       const map = new Map();
       (state.plaidItems || []).forEach((it) => {
@@ -5123,7 +5236,8 @@
         plaid_item_id: id,
         institution_id: exchItem.institution_id || null,
         institution_name: exchItem.institution_name || null,
-        institution_logo_data_url: null
+        institution_logo_data_url: null,
+        connection_role: normalizePlaidConnectionRoleClient(exchItem.connection_role)
       };
       state.plaidItems = [...(Array.isArray(state.plaidItems) ? state.plaidItems : []), row];
       renderSyncedBanksStrip();
@@ -5172,9 +5286,10 @@
     }
 
     function renderSyncedBanksStrip() {
-      const entries = collectSyncedPlaidEntries();
+      const fundingEntries = collectSyncedPlaidEntriesForSide("funding");
+      const liabilitiesEntries = collectSyncedPlaidEntriesForSide("liabilities");
 
-      const fill = (wrap, strip) => {
+      const fill = (wrap, strip, entries) => {
         if (!wrap || !strip) return;
         if (!entries.length) {
           wrap.classList.add("hidden");
@@ -5210,8 +5325,10 @@
         wrap.classList.remove("hidden");
       };
 
-      fill($("syncedBanksWrap"), $("syncedBanksStrip"));
-      fill($("operateSyncedBanksWrap"), $("operateSyncedBanksStrip"));
+      fill($("operateFundingBanksWrap"), $("operateFundingBanksStrip"), fundingEntries);
+      fill($("operateLiabilitiesBanksWrap"), $("operateLiabilitiesBanksStrip"), liabilitiesEntries);
+      fill($("accountsFundingBanksWrap"), $("accountsFundingBanksStrip"), fundingEntries);
+      fill($("accountsLiabilitiesBanksWrap"), $("accountsLiabilitiesBanksStrip"), liabilitiesEntries);
       updateDisconnectBankButton();
     }
 
@@ -5540,7 +5657,13 @@
         state.plaidItems = (Array.isArray(raw) ? raw : []).map((row) => {
           if (!row || typeof row !== "object") return row;
           const id = plaidConnectionItemId(row);
-          return id ? { ...row, plaid_item_id: id } : row;
+          return id
+            ? {
+                ...row,
+                plaid_item_id: id,
+                connection_role: normalizePlaidConnectionRoleClient(row.connection_role)
+              }
+            : row;
         });
       } catch {
         state.plaidItems = [];
@@ -5555,6 +5678,36 @@
       if (!root) return;
       root.classList.add("hidden");
       root.setAttribute("aria-hidden", "true");
+    }
+
+    let bankRoleChoiceResolver = null;
+
+    function closeBankConnectionRoleModal() {
+      const root = $("bankConnectionRoleModal");
+      if (!root) return;
+      root.classList.add("hidden");
+      root.setAttribute("aria-hidden", "true");
+    }
+
+    function openBankConnectionRoleChoice() {
+      return new Promise((resolve) => {
+        bankRoleChoiceResolver = resolve;
+        const root = $("bankConnectionRoleModal");
+        if (!root) {
+          bankRoleChoiceResolver = null;
+          resolve("unspecified");
+          return;
+        }
+        root.classList.remove("hidden");
+        root.setAttribute("aria-hidden", "false");
+      });
+    }
+
+    function finishBankConnectionRoleChoice(role) {
+      const fn = bankRoleChoiceResolver;
+      bankRoleChoiceResolver = null;
+      closeBankConnectionRoleModal();
+      if (typeof fn === "function") fn(role);
     }
 
     async function openBankPickDisconnectFlow() {
@@ -5726,11 +5879,16 @@
 
     async function connectBankDirect(){
       const btn = $("btnConnectBank");
-      setLoading(btn, true, t("plaid_opening"));
       try {
         const token = await getAccessToken();
         if (!token) throw new Error(t("sign_in_first"));
         if (!window.Plaid) throw new Error(t("plaid_script"));
+
+        const rolePick = await openBankConnectionRoleChoice();
+        if (!rolePick) return;
+        const chosenConnectionRole = normalizePlaidConnectionRoleClient(rolePick);
+
+        setLoading(btn, true, t("plaid_opening"));
 
         const tokenRes = await api("/plaid/create_link_token", {
           method: "POST",
@@ -5750,7 +5908,8 @@
                 method: "POST",
                 body: JSON.stringify({
                   public_token,
-                  metadata
+                  metadata,
+                  connection_role: chosenConnectionRole
                 })
               });
 
@@ -6121,6 +6280,17 @@
     const bankDcConfirm = $("bankDcConfirm");
     if (bankDcConfirm) bankDcConfirm.addEventListener("click", () => confirmDisconnectPlaidBank());
 
+    const bankRoleBackdrop = $("bankRoleBackdrop");
+    if (bankRoleBackdrop) bankRoleBackdrop.addEventListener("click", () => finishBankConnectionRoleChoice(null));
+    const bankRoleCancelBtn = $("bankRoleCancelBtn");
+    if (bankRoleCancelBtn) bankRoleCancelBtn.addEventListener("click", () => finishBankConnectionRoleChoice(null));
+    const bankRoleFundingBtn = $("bankRoleFundingBtn");
+    if (bankRoleFundingBtn) bankRoleFundingBtn.addEventListener("click", () => finishBankConnectionRoleChoice("funding"));
+    const bankRoleLiabilitiesBtn = $("bankRoleLiabilitiesBtn");
+    if (bankRoleLiabilitiesBtn) bankRoleLiabilitiesBtn.addEventListener("click", () => finishBankConnectionRoleChoice("liabilities"));
+    const bankRoleBothBtn = $("bankRoleBothBtn");
+    if (bankRoleBothBtn) bankRoleBothBtn.addEventListener("click", () => finishBankConnectionRoleChoice("both"));
+
     ["btnDisconnectBank", "topDisconnectBankBtn", "accountsDisconnectBankBtn"].forEach((id) => {
       const el = $(id);
       if (el) el.addEventListener("click", () => openBankPickDisconnectFlow());
@@ -6132,6 +6302,11 @@
       const pickRoot = $("bankPickDisconnectModal");
       if (pickRoot && !pickRoot.classList.contains("hidden")) {
         closeBankPickModal();
+        return;
+      }
+      const roleRoot = $("bankConnectionRoleModal");
+      if (roleRoot && !roleRoot.classList.contains("hidden")) {
+        finishBankConnectionRoleChoice(null);
         return;
       }
       const bankRoot = $("bankDisconnectModal");

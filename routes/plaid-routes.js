@@ -20,7 +20,8 @@ function registerPlaidRoutes(app, deps) {
     getBaseUrl,
     appError,
     appDebug,
-    jsonError
+    jsonError,
+    normalizePlaidConnectionRole
   } = deps;
 
   function resolvePlaidItemRowId(row) {
@@ -198,12 +199,15 @@ function registerPlaidRoutes(app, deps) {
         }
       }
 
+      const connectionRole = normalizePlaidConnectionRole(req.body?.connection_role);
+
       const plaidItem = await upsertPlaidItem({
         userId: req.user.id,
         itemId,
         accessToken,
         institutionId,
-        institutionName
+        institutionName,
+        connectionRole
       });
 
       return res.json({
@@ -212,7 +216,11 @@ function registerPlaidRoutes(app, deps) {
           id: plaidItem?.id || null,
           plaid_item_id: plaidItem?.plaid_item_id || itemId,
           institution_id: plaidItem?.institution_id || institutionId,
-          institution_name: plaidItem?.institution_name || institutionName
+          institution_name: plaidItem?.institution_name || institutionName,
+          connection_role:
+            plaidItem?.connection_role != null
+              ? normalizePlaidConnectionRole(plaidItem.connection_role)
+              : connectionRole
         }
       });
     } catch (error) {
@@ -237,6 +245,43 @@ function registerPlaidRoutes(app, deps) {
         ok: false,
         error: detailedMessage,
         details: raw
+      });
+    }
+  });
+
+  app.post("/plaid/items/connection-role", requireUser, async (req, res) => {
+    try {
+      const plaidItemId = String(req.body?.plaid_item_id || "").trim();
+      const role = normalizePlaidConnectionRole(req.body?.connection_role);
+      if (!plaidItemId) {
+        return jsonError(res, 400, "Falta plaid_item_id");
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from("plaid_items")
+        .update({
+          connection_role: role,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", req.user.id)
+        .eq("plaid_item_id", plaidItemId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (!data?.id) {
+        const err = new Error("Conexion bancaria no encontrada");
+        err.status = 404;
+        throw err;
+      }
+
+      return res.json({
+        ok: true,
+        item: stripPlaidItemSecretsForClient(data)
+      });
+    } catch (error) {
+      return jsonError(res, error.status || 500, "Error actualizando rol del banco", {
+        details: error.message
       });
     }
   });

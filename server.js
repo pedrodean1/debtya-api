@@ -17,7 +17,7 @@ const { jsonError } = require("./lib/json-error");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-15-disconnect-orphan-plaid-item";
+const SERVER_VERSION = "debtya-2026-04-15-plaid-connection-role-split";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -844,6 +844,24 @@ async function getLatestPlaidItemForUser(userId) {
   return items[0] || null;
 }
 
+function normalizePlaidConnectionRole(value) {
+  const s = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (s === "funding" || s === "pay_from" || s === "origin" || s === "origen") return "funding";
+  if (
+    s === "liabilities" ||
+    s === "debts" ||
+    s === "paydown" ||
+    s === "destino" ||
+    s === "deudas"
+  ) {
+    return "liabilities";
+  }
+  if (s === "both" || s === "ambos") return "both";
+  return "unspecified";
+}
+
 function isMissingTableColumnError(error, table, column) {
   const msg = String(error?.message || error?.details || error || "").toLowerCase();
   const t = String(table || "").toLowerCase();
@@ -1094,7 +1112,8 @@ async function upsertPlaidItem({
   itemId,
   accessToken,
   institutionId = null,
-  institutionName = null
+  institutionName = null,
+  connectionRole = null
 }) {
   const payload = {
     user_id: userId,
@@ -1102,6 +1121,7 @@ async function upsertPlaidItem({
     access_token: accessToken,
     institution_id: institutionId,
     institution_name: institutionName,
+    connection_role: normalizePlaidConnectionRole(connectionRole),
     updated_at: new Date().toISOString()
   };
 
@@ -2068,7 +2088,8 @@ registerAllRoutes(app, {
   getCurrentPaymentPlan,
   buildMicroRulePayload,
   normalizeMicroRuleModeInput,
-  compareStrategiesForUser
+  compareStrategiesForUser,
+  normalizePlaidConnectionRole
 });
 
 app.use((req, res, next) => {
