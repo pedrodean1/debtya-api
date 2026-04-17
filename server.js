@@ -17,7 +17,7 @@ const { jsonError } = require("./lib/json-error");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-18-plaid-banks-fix";
+const SERVER_VERSION = "debtya-2026-04-15-disconnect-without-debts-column";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -844,6 +844,18 @@ async function getLatestPlaidItemForUser(userId) {
   return items[0] || null;
 }
 
+function isMissingTableColumnError(error, table, column) {
+  const msg = String(error?.message || error || "").toLowerCase();
+  const t = String(table || "").toLowerCase();
+  const c = String(column || "").toLowerCase();
+  if (!t || !c) return false;
+  return (
+    msg.includes(c) &&
+    msg.includes(t) &&
+    (msg.includes("schema cache") || msg.includes("could not find"))
+  );
+}
+
 async function disconnectPlaidItemForUser(userId, plaidItemId) {
   const itemId = String(plaidItemId || "").trim();
   if (!itemId) {
@@ -896,7 +908,15 @@ async function disconnectPlaidItemForUser(userId, plaidItemId) {
       .eq("user_id", userId)
       .in("linked_plaid_account_id", plaidAccountIds);
 
-    if (debtErr) throw debtErr;
+    if (debtErr) {
+      if (isMissingTableColumnError(debtErr, "debts", "linked_plaid_account_id")) {
+        appDebug(
+          "disconnectPlaidItemForUser: columna debts.linked_plaid_account_id ausente; omitiendo limpieza de vinculos. Ejecutar sql/add_debts_linked_plaid_account_id.sql en Supabase."
+        );
+      } else {
+        throw debtErr;
+      }
+    }
 
     const { error: intentErr } = await supabaseAdmin
       .from("payment_intents")
