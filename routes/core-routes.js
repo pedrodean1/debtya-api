@@ -21,6 +21,10 @@ function registerCoreRoutes(app, deps) {
       ok: true,
       message: "DebtYa API funcionando",
       server_version: SERVER_VERSION,
+      bank_disconnect_page: "/bank-disconnect",
+      bank_disconnect_page_alt: "/disconnect-bank.html",
+      bank_disconnect_page_plaid: "/plaid/manage-disconnect",
+      bank_disconnect_page_api: "/api/bank-disconnect",
       now: new Date().toISOString()
     };
 

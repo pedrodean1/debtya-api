@@ -1,10 +1,13 @@
 function registerBillingRoutes(app, deps) {
   const {
+    SERVER_VERSION,
     requireUser,
     stripe,
     STRIPE_PRICE_ID_BETA_MONTHLY,
     STRIPE_PORTAL_CONFIG_ID,
     getLatestBillingSubscriptionForUser,
+    redeemCompPromoForUser,
+    getCompPromoMeta,
     ensureProfile,
     getOrCreateStripeCustomerForUser,
     getBaseUrl,
@@ -12,8 +15,19 @@ function registerBillingRoutes(app, deps) {
     jsonError
   } = deps;
 
+  app.get("/billing/promo-env", (_req, res) => {
+    const m = getCompPromoMeta();
+    return res.json({
+      ok: true,
+      server_version: SERVER_VERSION || null,
+      promo_codes_configured: m.configured,
+      promo_codes_count: m.count
+    });
+  });
+
   app.get("/billing/subscription-status", requireUser, async (req, res) => {
     try {
+      const promoMeta = getCompPromoMeta();
       const row = await getLatestBillingSubscriptionForUser(req.user.id);
 
       if (!row) {
@@ -25,7 +39,8 @@ function registerBillingRoutes(app, deps) {
             current_period_end: null,
             stripe_customer_id: null,
             stripe_subscription_id: null,
-            cancel_at_period_end: false
+            cancel_at_period_end: false,
+            promo_codes_configured: promoMeta.configured
           }
         });
       }
@@ -38,11 +53,41 @@ function registerBillingRoutes(app, deps) {
           current_period_end: row.current_period_end || null,
           stripe_customer_id: row.stripe_customer_id || null,
           stripe_subscription_id: row.stripe_subscription_id || null,
-          cancel_at_period_end: !!row.cancel_at_period_end
+          cancel_at_period_end: !!row.cancel_at_period_end,
+          promo_codes_configured: promoMeta.configured
         }
       });
     } catch (error) {
       return jsonError(res, 500, "Error cargando suscripción", {
+        details: error.message
+      });
+    }
+  });
+
+  app.post("/billing/redeem-promo-code", requireUser, async (req, res) => {
+    try {
+      await ensureProfile(req.user.id);
+      const rawCode = req.body?.code ?? req.query?.code;
+      const result = await redeemCompPromoForUser(req.user.id, rawCode);
+      if (!result.ok) {
+        return jsonError(res, result.status || 400, result.message || "Error");
+      }
+
+      const row = await getLatestBillingSubscriptionForUser(req.user.id);
+      return res.json({
+        ok: true,
+        already: !!result.already,
+        data: {
+          status: row?.status || "active",
+          active: !!row?.active,
+          current_period_end: row?.current_period_end || null,
+          stripe_customer_id: row?.stripe_customer_id || null,
+          stripe_subscription_id: row?.stripe_subscription_id || null,
+          cancel_at_period_end: !!row?.cancel_at_period_end
+        }
+      });
+    } catch (error) {
+      return jsonError(res, 500, "Error canjeando codigo", {
         details: error.message
       });
     }

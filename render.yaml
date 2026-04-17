@@ -1,0 +1,15 @@
+# DebtYa en Render: un solo "Web Service" (Node) sirve API + public/ (HTML).
+# Si creas además un "Static Site" y apuntas www ahí, rutas como /bank-disconnect
+# no existen en estático: hay que usar este servicio para el dominio principal
+# o quitar el Static Site y dejar solo este web.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: debtya-api
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
