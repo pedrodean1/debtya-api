@@ -7,11 +7,21 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-774SR18YGP');
+    function trackEvent(name, params) {
+      if (typeof gtag === "function") {
+        gtag("event", name, params || {});
+      }
+    }
+    gtag("config", "G-774SR18YGP", { send_page_view: false });
+    trackEvent("page_view", {
+      page_title: document.title,
+      page_location: window.location.href,
+      page_path: window.location.pathname + window.location.search
+    });
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-18-operate-hint-clean" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-18-ga4-events" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -5955,6 +5965,7 @@
 
     async function startCheckout(buttonEl = null) {
       try {
+        trackEvent("subscribe_click", { cta_id: buttonEl && buttonEl.id ? buttonEl.id : null });
         if (buttonEl) setLoading(buttonEl, true, t("stripe_opening"));
 
         const token = await getAccessToken();
@@ -5964,6 +5975,7 @@
           return;
         }
 
+        trackEvent("begin_checkout", { cta_id: buttonEl && buttonEl.id ? buttonEl.id : null });
         const res = await api("/stripe/create-checkout-session", {
           method: "POST",
           body: JSON.stringify({
@@ -6209,7 +6221,10 @@
     window.deleteRule = deleteRule;
     window.beginEditRule = beginEditRule;
 
-    $("landingLoginBtn").addEventListener("click", () => showAuth("login"));
+    $("landingLoginBtn").addEventListener("click", () => {
+      trackEvent("login_click", { cta_id: "landingLoginBtn" });
+      showAuth("login");
+    });
     $("landingSignupBtn").addEventListener("click", () => showAuth("signup"));
     $("landingStartBtn").addEventListener("click", () => startCheckout($("landingStartBtn")));
     $("landingDemoBtn").addEventListener("click", () => {
@@ -6217,7 +6232,10 @@
       setHelpModalTab("faq");
     });
     $("pricingStartBtn").addEventListener("click", () => startCheckout($("pricingStartBtn")));
-    $("pricingLoginBtn").addEventListener("click", () => showAuth("login"));
+    $("pricingLoginBtn").addEventListener("click", () => {
+      trackEvent("login_click", { cta_id: "pricingLoginBtn" });
+      showAuth("login");
+    });
 
     const helpFabBtn = $("helpFab");
     if (helpFabBtn) helpFabBtn.addEventListener("click", () => openHelpModal());
@@ -6302,6 +6320,7 @@
     });
 
     $("showLoginBtn").addEventListener("click", () => {
+      trackEvent("login_click", { cta_id: "showLoginBtn" });
       state.mode = "login";
       updateAuthModeUI();
       hideMessage(authMessage);
