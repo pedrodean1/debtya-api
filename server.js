@@ -17,7 +17,7 @@ const { jsonError } = require("./lib/json-error");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-15-disconnect-intents-plaid-ids";
+const SERVER_VERSION = "debtya-2026-04-15-disconnect-missing-debt-column";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -845,14 +845,18 @@ async function getLatestPlaidItemForUser(userId) {
 }
 
 function isMissingTableColumnError(error, table, column) {
-  const msg = String(error?.message || error || "").toLowerCase();
+  const msg = String(error?.message || error?.details || error || "").toLowerCase();
   const t = String(table || "").toLowerCase();
   const c = String(column || "").toLowerCase();
   if (!t || !c) return false;
+  if (!msg.includes(c) || !msg.includes(t)) return false;
+  const code = String(error?.code || "");
   return (
-    msg.includes(c) &&
-    msg.includes(t) &&
-    (msg.includes("schema cache") || msg.includes("could not find"))
+    code === "42703" ||
+    msg.includes("schema cache") ||
+    msg.includes("could not find") ||
+    msg.includes("does not exist") ||
+    msg.includes("undefined column")
   );
 }
 
