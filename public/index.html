@@ -2158,6 +2158,11 @@
               </div>
             </div>
 
+            <div id="operateSyncedBanksWrap" class="sync-banks-wrap hidden" style="margin-bottom:12px;">
+              <p class="sync-banks-title" data-i18n="sync_banks_title">Synced banks</p>
+              <div id="operateSyncedBanksStrip" class="sync-banks-strip"></div>
+            </div>
+
             <div class="operate-bank-row">
               <button id="btnConnectBank" class="btn btn-primary" type="button" data-i18n="btn_connect_bank">Connect bank</button>
               <button id="btnDisconnectBank" class="btn btn-light" type="button" data-i18n="btn_disconnect_bank">
@@ -2634,7 +2639,7 @@
         ? window.location.origin
         : "https://www.debtya.com";
     const REQUEST_TIMEOUT_MS = 15000;
-    const CLIENT_HTML_BUILD = "plaid-banks-2026-04-15-strip-reliable";
+    const CLIENT_HTML_BUILD = "plaid-banks-2026-04-15-union-accounts-operate-strip";
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
     const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
@@ -5082,6 +5087,8 @@
           row.item_id ||
           row.plaidItemId ||
           row.itemId ||
+          row.connection_item_id ||
+          row.plaid_connection_id ||
           ""
       ).trim();
     }
@@ -5116,18 +5123,16 @@
         entries.push({ name, logo, plaid_item_id: itemId });
       });
 
-      if (!entries.length) {
-        (state.accounts || []).forEach((acc) => {
-          const itemId = plaidConnectionItemId(acc);
-          if (!itemId || seen.has(itemId)) return;
-          seen.add(itemId);
-          entries.push({
-            name: byItem.get(itemId) || t("sync_bank_default"),
-            logo: null,
-            plaid_item_id: itemId
-          });
+      (state.accounts || []).forEach((acc) => {
+        const itemId = plaidConnectionItemId(acc);
+        if (!itemId || seen.has(itemId)) return;
+        seen.add(itemId);
+        entries.push({
+          name: byItem.get(itemId) || t("sync_bank_default"),
+          logo: null,
+          plaid_item_id: itemId
         });
-      }
+      });
 
       return entries;
     }
@@ -5193,63 +5198,60 @@
     }
 
     function renderSyncedBanksStrip() {
-      const wrap = $("syncedBanksWrap");
-      const strip = $("syncedBanksStrip");
-      if (!wrap || !strip) {
-        updateDisconnectBankButton();
-        return;
-      }
-
       const entries = collectSyncedPlaidEntries();
 
-      if (!entries.length) {
-        wrap.classList.add("hidden");
+      const fill = (wrap, strip) => {
+        if (!wrap || !strip) return;
+        if (!entries.length) {
+          wrap.classList.add("hidden");
+          strip.replaceChildren();
+          return;
+        }
         strip.replaceChildren();
-        updateDisconnectBankButton();
-        return;
-      }
+        entries.forEach(({ name, logo, plaid_item_id: itemId }) => {
+          const pill = document.createElement("span");
+          pill.className = "sync-bank-pill";
+          const inner = document.createElement("span");
+          inner.className = "sync-bank-pill-inner";
+          if (logo) {
+            const img = document.createElement("img");
+            img.className = "sync-bank-icon-img";
+            img.src = logo;
+            img.alt = name;
+            img.loading = "lazy";
+            inner.appendChild(img);
+          } else {
+            const initial = (String(name).trim()[0] || "B").toUpperCase();
+            const ic = document.createElement("span");
+            ic.className = "sync-bank-icon";
+            ic.textContent = initial;
+            inner.appendChild(ic);
+          }
+          const label = document.createElement("span");
+          label.textContent = name;
+          inner.appendChild(label);
+          pill.appendChild(inner);
+          if (itemId) {
+            const rm = document.createElement("button");
+            rm.type = "button";
+            rm.className = "sync-bank-remove";
+            rm.setAttribute("aria-label", t("sync_bank_disconnect_aria"));
+            rm.title = t("sync_bank_disconnect_aria");
+            rm.textContent = "\u00d7";
+            rm.addEventListener("click", (ev) => {
+              ev.preventDefault();
+              ev.stopPropagation();
+              openBankDisconnectModal(itemId, name);
+            });
+            pill.appendChild(rm);
+          }
+          strip.appendChild(pill);
+        });
+        wrap.classList.remove("hidden");
+      };
 
-      strip.replaceChildren();
-      entries.forEach(({ name, logo, plaid_item_id: itemId }) => {
-        const pill = document.createElement("span");
-        pill.className = "sync-bank-pill";
-        const inner = document.createElement("span");
-        inner.className = "sync-bank-pill-inner";
-        if (logo) {
-          const img = document.createElement("img");
-          img.className = "sync-bank-icon-img";
-          img.src = logo;
-          img.alt = name;
-          img.loading = "lazy";
-          inner.appendChild(img);
-        } else {
-          const initial = (String(name).trim()[0] || "B").toUpperCase();
-          const ic = document.createElement("span");
-          ic.className = "sync-bank-icon";
-          ic.textContent = initial;
-          inner.appendChild(ic);
-        }
-        const label = document.createElement("span");
-        label.textContent = name;
-        inner.appendChild(label);
-        pill.appendChild(inner);
-        if (itemId) {
-          const rm = document.createElement("button");
-          rm.type = "button";
-          rm.className = "sync-bank-remove";
-          rm.setAttribute("aria-label", t("sync_bank_disconnect_aria"));
-          rm.title = t("sync_bank_disconnect_aria");
-          rm.textContent = "\u00d7";
-          rm.addEventListener("click", (ev) => {
-            ev.preventDefault();
-            ev.stopPropagation();
-            openBankDisconnectModal(itemId, name);
-          });
-          pill.appendChild(rm);
-        }
-        strip.appendChild(pill);
-      });
-      wrap.classList.remove("hidden");
+      fill($("syncedBanksWrap"), $("syncedBanksStrip"));
+      fill($("operateSyncedBanksWrap"), $("operateSyncedBanksStrip"));
       updateDisconnectBankButton();
     }
 
@@ -5574,6 +5576,7 @@
         const res = await api("/plaid/items");
         let raw = res?.data;
         if (!Array.isArray(raw)) raw = Array.isArray(res?.items) ? res.items : [];
+        if (!Array.isArray(raw) && Array.isArray(res)) raw = res;
         state.plaidItems = (Array.isArray(raw) ? raw : []).map((row) => {
           if (!row || typeof row !== "object") return row;
           const id = plaidConnectionItemId(row);

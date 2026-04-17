@@ -23,6 +23,24 @@ function registerPlaidRoutes(app, deps) {
     jsonError
   } = deps;
 
+  function resolvePlaidItemRowId(row) {
+    if (!row || typeof row !== "object") return null;
+    const candidates = [
+      row.plaid_item_id,
+      row.item_id,
+      row.plaidItemId,
+      row.itemId,
+      row.connection_item_id,
+      row.plaid_connection_id
+    ];
+    for (const v of candidates) {
+      if (v == null) continue;
+      const s = String(v).trim();
+      if (s) return s;
+    }
+    return null;
+  }
+
   app.get("/plaid/web", (req, res) => {
     const baseUrl = getBaseUrl(req);
     return res.send(`
@@ -226,26 +244,35 @@ function registerPlaidRoutes(app, deps) {
   app.get("/plaid/items", requireUser, async (req, res) => {
     try {
       const items = await getPlaidItemsForUser(req.user.id);
-      const stripped = (items || []).map(stripPlaidItemSecretsForClient);
+      const stripped = (items || [])
+        .filter((r) => r != null && typeof r === "object")
+        .map(stripPlaidItemSecretsForClient)
+        .filter((r) => r != null && typeof r === "object");
       const uniqueInstitutionIds = [
         ...new Set(
           stripped.map((row) => row?.institution_id).filter((id) => !!id)
         )
       ];
       const logoByInstitution = new Map();
-      await Promise.all(
+      const logoWaitMs = 5000;
+      const loadLogos = Promise.all(
         uniqueInstitutionIds.map(async (institutionId) => {
-          const dataUrl = await fetchInstitutionLogoDataUrl(institutionId);
-          logoByInstitution.set(institutionId, dataUrl);
+          try {
+            const dataUrl = await fetchInstitutionLogoDataUrl(institutionId);
+            logoByInstitution.set(institutionId, dataUrl);
+          } catch {
+            logoByInstitution.set(institutionId, null);
+          }
         })
       );
+      await Promise.race([
+        loadLogos,
+        new Promise((resolve) => {
+          setTimeout(resolve, logoWaitMs);
+        })
+      ]);
       const data = stripped.map((row) => {
-        const pid =
-          row?.plaid_item_id != null && String(row.plaid_item_id).trim()
-            ? String(row.plaid_item_id).trim()
-            : row?.item_id != null && String(row.item_id).trim()
-              ? String(row.item_id).trim()
-              : null;
+        const pid = resolvePlaidItemRowId(row);
         return {
           ...row,
           plaid_item_id: pid,
