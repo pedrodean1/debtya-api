@@ -2047,21 +2047,16 @@
           <label class="label" for="authSignupVerifyCode" data-i18n="lbl_signup_verification_code"
             >Verification code</label
           >
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
-            <input
-              id="authSignupVerifyCode"
-              class="input"
-              type="text"
-              inputmode="numeric"
-              maxlength="6"
-              autocomplete="one-time-code"
-              placeholder="000000"
-              style="max-width: 140px; letter-spacing: 0.12em"
-            />
-            <button type="button" id="authSendSignupCodeBtn" class="btn btn-light" data-i18n="btn_send_signup_code">
-              Send code
-            </button>
-          </div>
+          <input
+            id="authSignupVerifyCode"
+            class="input"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            autocomplete="one-time-code"
+            placeholder="000000"
+            style="max-width: 160px; letter-spacing: 0.12em"
+          />
         </div>
         <!-- Cloudflare Turnstile (registro): montar el widget en #authTurnstileMount cuando existan site key y verificación en backend; no activar hasta entonces. -->
         <div id="authTurnstileMountWrap" class="hidden" aria-hidden="true" data-turnstile-inactive="1">
@@ -2808,9 +2803,12 @@
         err_password_policy:
           "Your password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character.",
         lbl_signup_verification_code: "Verification code",
-        btn_send_signup_code: "Send verification code",
         err_signup_code_invalid: "The code must be 6 digits.",
-        signup_code_sent_ok: "If the email is valid, you will receive a code shortly.",
+        signup_check_email_code:
+          "We sent a 6-digit code to your email. Enter it below and press Create account again to finish.",
+        signup_email_changed_reenter:
+          "The email changed after the code was sent. Press Create account again to request a new code.",
+        signup_sending_code: "Sending code…",
         ph_email: "you@email.com",
         btn_reset_pw: "Email me a password reset link",
         auth_footer_hint: "Sign in to connect your bank, activate your plan, and use your own numbers.",
@@ -3296,9 +3294,12 @@
         err_password_policy:
           "La contraseña debe tener al menos 8 caracteres e incluir una mayúscula, una minúscula, un número y un carácter especial.",
         lbl_signup_verification_code: "Código de verificación",
-        btn_send_signup_code: "Enviar código al correo",
         err_signup_code_invalid: "El código debe tener 6 dígitos.",
-        signup_code_sent_ok: "Si el correo es válido, recibirás un código en unos instantes.",
+        signup_check_email_code:
+          "Te enviamos un código de 6 dígitos a tu correo. Escríbelo abajo y vuelve a pulsar Crear cuenta para terminar.",
+        signup_email_changed_reenter:
+          "Cambiaste el correo después de enviar el código. Pulsa Crear cuenta otra vez para pedir un código nuevo.",
+        signup_sending_code: "Enviando código…",
         ph_email: "tu@email.com",
         btn_reset_pw: "Enviar link para cambiar contrasena",
         auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y usar tus datos reales.",
@@ -3787,6 +3788,8 @@
 
     const state = {
       mode: "login",
+      signupVerificationPending: false,
+      signupVerificationEmail: null,
       session: null,
       user: null,
       debts: [],
@@ -3827,6 +3830,8 @@
 
     function showAuth(mode = "login") {
       removeDisconnectFallbackFab();
+      state.signupVerificationPending = false;
+      state.signupVerificationEmail = null;
       state.mode = mode;
       updateAuthModeUI();
       landingView.classList.add("hidden");
@@ -4231,6 +4236,8 @@
       const loginBtn = $("showLoginBtn");
       const signupBtn = $("showSignupBtn");
       if (state.mode === "login") {
+        state.signupVerificationPending = false;
+        state.signupVerificationEmail = null;
         loginBtn.className = "btn btn-primary";
         signupBtn.className = "btn btn-light";
         loginBtn.textContent = t("btn_login");
@@ -4255,7 +4262,10 @@
       const codeWrap = $("authSignupCodeWrap");
       const codeInput = $("authSignupVerifyCode");
       if (codeWrap) {
-        codeWrap.classList.toggle("hidden", state.mode === "login");
+        const hideCode =
+          state.mode === "login" ||
+          (state.mode === "signup" && !state.signupVerificationPending);
+        codeWrap.classList.toggle("hidden", hideCode);
       }
       if (state.mode === "login" && codeInput) {
         codeInput.value = "";
@@ -6022,33 +6032,6 @@
       return true;
     }
 
-    async function sendSignupVerificationCode() {
-      const email = authEmail.value.trim();
-      if (!email) {
-        showMessage(authMessage, t("enter_email_first"), "warn");
-        return;
-      }
-      const btn = $("authSendSignupCodeBtn");
-      try {
-        if (btn) setLoading(btn, true, t("proc_loading"));
-        const res = await fetch(`${API_BASE}/auth/signup/send-verification-code`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email })
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const parts = [json.error, json.details].filter(Boolean);
-          throw new Error(parts.join(" — ") || `HTTP ${res.status}`);
-        }
-        showMessage(authMessage, json.message || t("signup_code_sent_ok"), "success");
-      } catch (err) {
-        showMessage(authMessage, normalizeErrorMessage(err.message), "error");
-      } finally {
-        if (btn) setLoading(btn, false);
-      }
-    }
-
     async function resetPassword(email) {
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
         redirectTo: "https://www.debtya.com/"
@@ -6438,7 +6421,13 @@
     authForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       hideMessage(authMessage);
-      setLoading(authSubmitBtn, true, state.mode === "login" ? t("signing_in") : t("creating_acct"));
+      const signupSubmitLabel =
+        state.mode === "signup" && state.signupVerificationPending
+          ? t("creating_acct")
+          : state.mode === "signup"
+            ? t("signup_sending_code")
+            : t("signing_in");
+      setLoading(authSubmitBtn, true, signupSubmitLabel);
       try {
         const email = authEmail.value.trim();
         const password = authPassword.value.trim();
@@ -6459,6 +6448,41 @@
           if (!signupPasswordMeetsPolicy(password)) {
             throw new Error(t("err_password_policy"));
           }
+
+          const emailNorm = email.toLowerCase();
+
+          if (!state.signupVerificationPending) {
+            const sendRes = await fetch(`${API_BASE}/auth/signup/send-verification-code`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email })
+            });
+            const sendJson = await sendRes.json().catch(() => ({}));
+            if (!sendRes.ok) {
+              const parts = [sendJson.error, sendJson.details].filter(Boolean);
+              throw new Error(parts.join(" — ") || `HTTP ${sendRes.status}`);
+            }
+            state.signupVerificationPending = true;
+            state.signupVerificationEmail = emailNorm;
+            updateAuthModeUI();
+            const codeInput = $("authSignupVerifyCode");
+            if (codeInput) {
+              codeInput.value = "";
+              try {
+                codeInput.focus();
+              } catch (_) {}
+            }
+            showMessage(authMessage, t("signup_check_email_code"), "success");
+            return;
+          }
+
+          if (state.signupVerificationEmail && emailNorm !== state.signupVerificationEmail) {
+            state.signupVerificationPending = false;
+            state.signupVerificationEmail = null;
+            updateAuthModeUI();
+            throw new Error(t("signup_email_changed_reenter"));
+          }
+
           const verifyCode = String($("authSignupVerifyCode")?.value || "").trim();
           if (!/^\d{6}$/.test(verifyCode)) {
             throw new Error(t("err_signup_code_invalid"));
@@ -6473,6 +6497,11 @@
             const parts = [regJson.error, regJson.details].filter(Boolean);
             throw new Error(parts.join(" — ") || `HTTP ${regRes.status}`);
           }
+          state.signupVerificationPending = false;
+          state.signupVerificationEmail = null;
+          const codeEl = $("authSignupVerifyCode");
+          if (codeEl) codeEl.value = "";
+          updateAuthModeUI();
           await login(email, password);
           showMessage(authMessage, t("session_ok"), "success");
         }
@@ -6484,13 +6513,6 @@
         setLoading(authSubmitBtn, false);
       }
     });
-
-    const authSendSignupCodeBtn = $("authSendSignupCodeBtn");
-    if (authSendSignupCodeBtn) {
-      authSendSignupCodeBtn.addEventListener("click", () => {
-        void sendSignupVerificationCode();
-      });
-    }
 
     $("resetPasswordBtn").addEventListener("click", async () => {
       hideMessage(authMessage);
