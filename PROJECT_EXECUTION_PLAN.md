@@ -28,7 +28,7 @@ Plan de ejecucion para avanzar en paralelo con foco en impacto y estabilidad.
 ## Prioridad 3 (iteracion siguiente)
 
 1. UX/API contract
-   - Unificar formato de errores para frontend.
+   - Unificar formato de errores para frontend (contrato en `lib/json-error.js`; incluye `http_status` y `request_id`).
    - Documentar endpoints y ejemplos de respuesta.
 2. Features
    - Entregar mejoras priorizadas por impacto de negocio.
@@ -41,14 +41,36 @@ Plan de ejecucion para avanzar en paralelo con foco en impacto y estabilidad.
 
 ## GitHub Actions (secrets del repo)
 
-Configurar en **Settings → Secrets and variables → Actions** (mismos nombres que en el host):
+Configurar en **Settings → Secrets and variables → Actions** (mismos nombres que en el host). El paso opcional `validate:env` en CI solo corre si **los seis** estan definidos; si falta cualquiera (o en forks sin secrets), se omite y el workflow sigue verde.
 
-- Los seis anteriores deben estar definidos **todos** para que CI ejecute `validate:env`. Si falta cualquiera (o en forks sin secrets), el paso se **omite** y el workflow sigue verde.
+- `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `CRON_SECRET`
 
 Tras el primer push con secrets: comprobar en la pestaña **Actions** que el job `test` incluye el paso *Validate production env shape* en verde.
+
+## Branch protection (main)
+
+En GitHub: **Settings → Branches → Branch protection rule** para `main`:
+
+- Require a pull request before merging (opcional si trabajas solo, recomendable con colaboradores).
+- Require status checks to pass: marcar el workflow **CI / test** (nombre exacto segun Actions).
+- Do not allow bypassing the above settings (solo owners si aplica).
+
+## Contrato JSON de errores (`lib/json-error.js`)
+
+Respuestas de error HTTP tipicas incluyen:
+
+- `ok`: `false`
+- `error`: mensaje legible
+- `http_status`: mismo codigo HTTP de la respuesta
+- `request_id`: correlacion con cabecera `X-Request-Id` (middleware `lib/request-id.js`, aplicado tambien al webhook de Stripe)
+- Campos adicionales opcionales (`details`, etc.) segun el endpoint
+
+## Chequeos locales de seguridad
+
+- `npm run security:preflight` (PowerShell): confirma que `.env` y `node_modules` no estan trackeados y avisa si `.env` aparece en historial.
 
 ## Historial git y secretos
 
@@ -57,6 +79,7 @@ Tras el primer push con secrets: comprobar en la pestaña **Actions** que el job
 
 ## Checklist de deploy (API)
 
+0. `npm run security:preflight` (PowerShell).
 1. `npm run validate:env` (carga `.env` local; en deploy usa variables del host). Con `NODE_ENV=production` exige tambien `SUPABASE_SERVICE_ROLE_KEY`, Stripe y `CRON_SECRET`.
 2. Aplicar SQL pendiente en Supabase (si hay migraciones o scripts en `sql/`).
 3. Desplegar API y verificar `GET /health` (incluye `X-Request-Id` en respuestas JSON de error).
@@ -79,4 +102,4 @@ Tras rotar: redeploy + smoke tests + verificar webhooks (Stripe dashboard reenvi
 ## Observabilidad
 
 - Cada request lleva `X-Request-Id` (o el valor enviado en cabecera `X-Request-Id` del cliente).
-- Las respuestas JSON de error incluyen `request_id` cuando aplica, para correlacionar con logs del servidor.
+- Las respuestas JSON de error incluyen `request_id` y `http_status` cuando aplica, para correlacionar con logs del servidor.
