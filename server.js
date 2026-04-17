@@ -2136,7 +2136,8 @@ app.use((req, res, next) => {
     !req.path.startsWith("/payment-intents") &&
     !req.path.startsWith("/payment-trace") &&
     !req.path.startsWith("/strategy") &&
-    !req.path.startsWith("/cron")
+    !req.path.startsWith("/cron") &&
+    !req.path.startsWith("/auth")
   ) {
     return sendSpaFallbackIndexHtml(res);
   }

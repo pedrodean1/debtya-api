@@ -1,0 +1,227 @@
+const crypto = require("crypto");
+
+const SEND_BY_EMAIL = new Map();
+const SEND_BY_IP = new Map();
+const VERIFY_BY_EMAIL = new Map();
+
+const SEND_EMAIL_WINDOW_MS = 60 * 60 * 1000;
+const SEND_EMAIL_MAX = 3;
+const SEND_IP_WINDOW_MS = 60 * 60 * 1000;
+const SEND_IP_MAX = 20;
+const VERIFY_WINDOW_MS = 15 * 60 * 1000;
+const VERIFY_MAX = 12;
+const CODE_TTL_MS = 15 * 60 * 1000;
+
+function bumpRate(map, key, windowMs, max) {
+  const now = Date.now();
+  let row = map.get(key);
+  if (!row || now - row.start > windowMs) {
+    row = { start: now, n: 0 };
+  }
+  row.n += 1;
+  map.set(key, row);
+  return row.n <= max;
+}
+
+function normalizeEmail(email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase();
+}
+
+function isValidEmailShape(email) {
+  const s = normalizeEmail(email);
+  if (s.length < 5 || s.length > 254) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+function hashSignupCode(email, code, pepper) {
+  const e = normalizeEmail(email);
+  return crypto.createHmac("sha256", pepper).update(`${e}:${String(code).trim()}`).digest("hex");
+}
+
+function signupPasswordMeetsPolicy(pw) {
+  if (typeof pw !== "string" || pw.length < 8) return false;
+  if (!/[A-Z]/.test(pw)) return false;
+  if (!/[a-z]/.test(pw)) return false;
+  if (!/[0-9]/.test(pw)) return false;
+  if (!/[^A-Za-z0-9]/.test(pw)) return false;
+  return true;
+}
+
+function randomSixDigitCode() {
+  const n = crypto.randomInt(0, 1_000_000);
+  return String(n).padStart(6, "0");
+}
+
+async function sendResendEmail({ to, subject, text, apiKey, fromEmail }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: fromEmail,
+      to: [to],
+      subject,
+      text
+    })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = body?.message || body?.error || res.statusText || "Resend error";
+    throw new Error(msg);
+  }
+  return body;
+}
+
+function registerAuthSignupRoutes(app, deps) {
+  const { supabaseAdmin, jsonError, appError } = deps;
+  const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+  const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "";
+  const pepper = String(process.env.CRON_SECRET || "debtya-signup-code-pepper");
+
+  app.post("/auth/signup/send-verification-code", async (req, res) => {
+    try {
+      if (!supabaseAdmin) {
+        return jsonError(res, 500, "Supabase no configurado");
+      }
+      if (!RESEND_API_KEY || !RESEND_FROM_EMAIL) {
+        return jsonError(res, 503, "Envío de correo no configurado (RESEND_API_KEY / RESEND_FROM_EMAIL).");
+      }
+
+      const emailRaw = req.body?.email;
+      const email = normalizeEmail(emailRaw);
+      if (!isValidEmailShape(email)) {
+        return jsonError(res, 400, "Correo no válido.");
+      }
+
+      const rawIp = String(req.headers["x-forwarded-for"] || "");
+      const ip = rawIp.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+
+      if (!bumpRate(SEND_BY_EMAIL, email, SEND_EMAIL_WINDOW_MS, SEND_EMAIL_MAX)) {
+        return jsonError(res, 429, "Demasiados códigos para este correo. Espera un poco e inténtalo de nuevo.");
+      }
+      if (!bumpRate(SEND_BY_IP, ip, SEND_IP_WINDOW_MS, SEND_IP_MAX)) {
+        return jsonError(res, 429, "Demasiadas solicitudes. Inténtalo más tarde.");
+      }
+
+      const code = randomSixDigitCode();
+      const codeHash = hashSignupCode(email, code, pepper);
+      const expiresAt = new Date(Date.now() + CODE_TTL_MS).toISOString();
+
+      await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
+
+      const { error: insErr } = await supabaseAdmin.from("signup_verification_codes").insert({
+        email,
+        code_hash: codeHash,
+        expires_at: expiresAt
+      });
+      if (insErr) {
+        appError("[auth/signup/send-code] insert:", insErr.message);
+        return jsonError(res, 500, "No se pudo guardar el código. Revisa la tabla signup_verification_codes en Supabase.");
+      }
+
+      try {
+        await sendResendEmail({
+          to: email,
+          subject: "Tu código de verificación DebtYa",
+          text: `Tu código de verificación DebtYa es: ${code}\n\nVálido durante 15 minutos. Si no solicitaste registrarte, ignora este mensaje.`,
+          apiKey: RESEND_API_KEY,
+          fromEmail: RESEND_FROM_EMAIL
+        });
+      } catch (mailErr) {
+        appError("[auth/signup/send-code] Resend:", mailErr.message || mailErr);
+        await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
+        return jsonError(res, 502, "No se pudo enviar el correo. Inténtalo de nuevo en unos minutos.");
+      }
+
+      return res.json({
+        ok: true,
+        message: "Si el correo es válido, recibirás un código en unos instantes."
+      });
+    } catch (e) {
+      appError("[auth/signup/send-code]", e);
+      return jsonError(res, 500, "Error enviando código.");
+    }
+  });
+
+  app.post("/auth/signup/complete", async (req, res) => {
+    try {
+      if (!supabaseAdmin) {
+        return jsonError(res, 500, "Supabase no configurado");
+      }
+
+      const email = normalizeEmail(req.body?.email);
+      const password = String(req.body?.password || "");
+      const code = String(req.body?.code || "").trim();
+
+      if (!isValidEmailShape(email)) {
+        return jsonError(res, 400, "Correo no válido.");
+      }
+      if (!signupPasswordMeetsPolicy(password)) {
+        return jsonError(res, 400, "La contraseña no cumple los requisitos mínimos.");
+      }
+      if (!/^\d{6}$/.test(code)) {
+        return jsonError(res, 400, "El código debe ser de 6 dígitos.");
+      }
+
+      if (!bumpRate(VERIFY_BY_EMAIL, email, VERIFY_WINDOW_MS, VERIFY_MAX)) {
+        return jsonError(res, 429, "Demasiados intentos. Solicita un código nuevo.");
+      }
+
+      const nowIso = new Date().toISOString();
+      const { data: rows, error: selErr } = await supabaseAdmin
+        .from("signup_verification_codes")
+        .select("id, code_hash, expires_at")
+        .eq("email", email)
+        .gt("expires_at", nowIso)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (selErr) {
+        appError("[auth/signup/complete] select:", selErr.message);
+        return jsonError(res, 500, "Error verificando código.");
+      }
+      const row = rows && rows[0];
+      if (!row?.code_hash) {
+        return jsonError(res, 400, "Código incorrecto o caducado. Solicita uno nuevo.");
+      }
+
+      const expected = hashSignupCode(email, code, pepper);
+      const a = Buffer.from(String(row.code_hash), "utf8");
+      const b = Buffer.from(expected, "utf8");
+      if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+        return jsonError(res, 400, "Código incorrecto o caducado. Solicita uno nuevo.");
+      }
+
+      await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
+
+      const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true
+      });
+
+      if (createErr) {
+        const msg = String(createErr.message || "");
+        if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("registered")) {
+          return jsonError(res, 409, "Ese correo ya está registrado. Inicia sesión.");
+        }
+        appError("[auth/signup/complete] createUser:", createErr);
+        return jsonError(res, 400, msg || "No se pudo crear la cuenta.");
+      }
+
+      return res.json({
+        ok: true,
+        user_id: created?.user?.id || null
+      });
+    } catch (e) {
+      appError("[auth/signup/complete]", e);
+      return jsonError(res, 500, "Error completando el registro.");
+    }
+  });
+}
+
+module.exports = { registerAuthSignupRoutes };

@@ -2043,6 +2043,26 @@
             placeholder="••••••••"
           />
         </div>
+        <div id="authSignupCodeWrap" class="field hidden">
+          <label class="label" for="authSignupVerifyCode" data-i18n="lbl_signup_verification_code"
+            >Verification code</label
+          >
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+            <input
+              id="authSignupVerifyCode"
+              class="input"
+              type="text"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="one-time-code"
+              placeholder="000000"
+              style="max-width: 140px; letter-spacing: 0.12em"
+            />
+            <button type="button" id="authSendSignupCodeBtn" class="btn btn-light" data-i18n="btn_send_signup_code">
+              Send code
+            </button>
+          </div>
+        </div>
         <!-- Cloudflare Turnstile (registro): montar el widget en #authTurnstileMount cuando existan site key y verificación en backend; no activar hasta entonces. -->
         <div id="authTurnstileMountWrap" class="hidden" aria-hidden="true" data-turnstile-inactive="1">
           <div id="authTurnstileMount"></div>
@@ -2787,6 +2807,10 @@
           "Enter and confirm your password in both fields.",
         err_password_policy:
           "Your password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character.",
+        lbl_signup_verification_code: "Verification code",
+        btn_send_signup_code: "Send verification code",
+        err_signup_code_invalid: "The code must be 6 digits.",
+        signup_code_sent_ok: "If the email is valid, you will receive a code shortly.",
         ph_email: "you@email.com",
         btn_reset_pw: "Email me a password reset link",
         auth_footer_hint: "Sign in to connect your bank, activate your plan, and use your own numbers.",
@@ -3271,6 +3295,10 @@
           "Escribe la contraseña y confírmala en ambos campos.",
         err_password_policy:
           "La contraseña debe tener al menos 8 caracteres e incluir una mayúscula, una minúscula, un número y un carácter especial.",
+        lbl_signup_verification_code: "Código de verificación",
+        btn_send_signup_code: "Enviar código al correo",
+        err_signup_code_invalid: "El código debe tener 6 dígitos.",
+        signup_code_sent_ok: "Si el correo es válido, recibirás un código en unos instantes.",
         ph_email: "tu@email.com",
         btn_reset_pw: "Enviar link para cambiar contrasena",
         auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y usar tus datos reales.",
@@ -4223,6 +4251,14 @@
       }
       if (state.mode === "login" && confirmInput) {
         confirmInput.value = "";
+      }
+      const codeWrap = $("authSignupCodeWrap");
+      const codeInput = $("authSignupVerifyCode");
+      if (codeWrap) {
+        codeWrap.classList.toggle("hidden", state.mode === "login");
+      }
+      if (state.mode === "login" && codeInput) {
+        codeInput.value = "";
       }
     }
 
@@ -5977,12 +6013,6 @@
       return data;
     }
 
-    async function signup(email, password) {
-      const { data, error } = await supabaseClient.auth.signUp({ email, password });
-      if (error) throw error;
-      return data;
-    }
-
     function signupPasswordMeetsPolicy(pw) {
       if (typeof pw !== "string" || pw.length < 8) return false;
       if (!/[A-Z]/.test(pw)) return false;
@@ -5990,6 +6020,33 @@
       if (!/[0-9]/.test(pw)) return false;
       if (!/[^A-Za-z0-9]/.test(pw)) return false;
       return true;
+    }
+
+    async function sendSignupVerificationCode() {
+      const email = authEmail.value.trim();
+      if (!email) {
+        showMessage(authMessage, t("enter_email_first"), "warn");
+        return;
+      }
+      const btn = $("authSendSignupCodeBtn");
+      try {
+        if (btn) setLoading(btn, true, t("proc_loading"));
+        const res = await fetch(`${API_BASE}/auth/signup/send-verification-code`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const parts = [json.error, json.details].filter(Boolean);
+          throw new Error(parts.join(" — ") || `HTTP ${res.status}`);
+        }
+        showMessage(authMessage, json.message || t("signup_code_sent_ok"), "success");
+      } catch (err) {
+        showMessage(authMessage, normalizeErrorMessage(err.message), "error");
+      } finally {
+        if (btn) setLoading(btn, false);
+      }
     }
 
     async function resetPassword(email) {
@@ -6402,12 +6459,22 @@
           if (!signupPasswordMeetsPolicy(password)) {
             throw new Error(t("err_password_policy"));
           }
-          const result = await signup(email, password);
-          if (result?.user && !result?.session) {
-            showMessage(authMessage, t("acct_created_check"), "warn");
-          } else {
-            showMessage(authMessage, t("acct_created_in"), "success");
+          const verifyCode = String($("authSignupVerifyCode")?.value || "").trim();
+          if (!/^\d{6}$/.test(verifyCode)) {
+            throw new Error(t("err_signup_code_invalid"));
           }
+          const regRes = await fetch(`${API_BASE}/auth/signup/complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, code: verifyCode })
+          });
+          const regJson = await regRes.json().catch(() => ({}));
+          if (!regRes.ok) {
+            const parts = [regJson.error, regJson.details].filter(Boolean);
+            throw new Error(parts.join(" — ") || `HTTP ${regRes.status}`);
+          }
+          await login(email, password);
+          showMessage(authMessage, t("session_ok"), "success");
         }
 
         await loadSession();
@@ -6417,6 +6484,13 @@
         setLoading(authSubmitBtn, false);
       }
     });
+
+    const authSendSignupCodeBtn = $("authSendSignupCodeBtn");
+    if (authSendSignupCodeBtn) {
+      authSendSignupCodeBtn.addEventListener("click", () => {
+        void sendSignupVerificationCode();
+      });
+    }
 
     $("resetPasswordBtn").addEventListener("click", async () => {
       hideMessage(authMessage);

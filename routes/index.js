@@ -10,6 +10,7 @@ const { registerPaymentPlansRoutes } = require("./payment-plans-routes");
 const { registerRulesCrudRoutes } = require("./rules-crud-routes");
 const { registerStrategyRoutes } = require("./strategy-routes");
 const { registerCronRoutes } = require("./cron-routes");
+const { registerAuthSignupRoutes } = require("./auth-signup-routes");
 
 /**
  * Registra todas las rutas HTTP modulares en el orden previo al refactor.
@@ -20,6 +21,7 @@ function registerAllRoutes(app, deps) {
   registerPaymentIntentRoutes(app, deps);
   registerPlanningRoutes(app, deps);
   registerGuideRoutes(app, deps);
+  registerAuthSignupRoutes(app, deps);
   registerBillingRoutes(app, deps);
   registerSupabaseRoutes(app, deps);
   registerPlaidRoutes(app, deps);
