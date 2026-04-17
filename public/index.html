@@ -1039,7 +1039,7 @@
       display:inline-flex;
       align-items:center;
       gap:0;
-      padding:8px 38px 8px 10px;
+      padding:8px 12px;
       border-radius:14px;
       border:1px solid #d7e6ff;
       background:#f6faff;
@@ -1079,40 +1079,6 @@
       background:#fff;
       flex:0 0 auto;
       border:1px solid rgba(31,111,255,.14);
-    }
-
-    .sync-bank-remove{
-      position:absolute;
-      top:4px;
-      right:4px;
-      width:28px;
-      height:28px;
-      padding:0;
-      border:none;
-      background:rgba(255,255,255,.92);
-      color:#64748b;
-      font-size:18px;
-      line-height:1;
-      font-weight:800;
-      cursor:pointer;
-      border-radius:8px;
-      box-shadow:0 1px 3px rgba(15,23,42,.12);
-      border:1px solid rgba(148,163,184,.45);
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      z-index:2;
-    }
-
-    .sync-bank-remove:hover{
-      color:#b91c1c;
-      background:#fff5f5;
-      border-color:rgba(185,28,28,.35);
-    }
-
-    .sync-bank-remove:focus-visible{
-      outline:2px solid var(--primary);
-      outline-offset:1px;
     }
 
     .bank-dc-modal-root{
@@ -2639,7 +2605,7 @@
         ? window.location.origin
         : "https://www.debtya.com";
     const REQUEST_TIMEOUT_MS = 15000;
-    const CLIENT_HTML_BUILD = "plaid-banks-2026-04-15-union-accounts-operate-strip";
+    const CLIENT_HTML_BUILD = "plaid-banks-2026-04-15-no-pill-disconnect-x";
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
     const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
@@ -5231,20 +5197,6 @@
           label.textContent = name;
           inner.appendChild(label);
           pill.appendChild(inner);
-          if (itemId) {
-            const rm = document.createElement("button");
-            rm.type = "button";
-            rm.className = "sync-bank-remove";
-            rm.setAttribute("aria-label", t("sync_bank_disconnect_aria"));
-            rm.title = t("sync_bank_disconnect_aria");
-            rm.textContent = "\u00d7";
-            rm.addEventListener("click", (ev) => {
-              ev.preventDefault();
-              ev.stopPropagation();
-              openBankDisconnectModal(itemId, name);
-            });
-            pill.appendChild(rm);
-          }
           strip.appendChild(pill);
         });
         wrap.classList.remove("hidden");
