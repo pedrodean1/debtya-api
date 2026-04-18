@@ -22,6 +22,10 @@ const CODE_TTL_MS = 15 * 60 * 1000;
 const PASSWORD_RESET_SHORTLINK_TTL_MS = 24 * 60 * 60 * 1000;
 const PASSWORD_RESET_TOKEN_HEX_BYTES = 20;
 
+/** Anon publica del proyecto DebtYa (misma que public/index.html). Login en servidor no depende de SUPABASE_ANON_KEY en el entorno. */
+const DEBTYA_PROJECT_SUPABASE_ANON_PUBLIC =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
+
 function bumpRate(map, key, windowMs, max) {
   const now = Date.now();
   let row = map.get(key);
@@ -128,7 +132,6 @@ function tAuth(lang, key) {
 const AUTH_I18N = {
   en: {
     err_supabase_not_configured: "Supabase is not configured.",
-    err_supabase_anon_not_configured: "Supabase anon client is not configured.",
     err_resend_not_configured: "Email sending is not configured (RESEND_API_KEY / RESEND_FROM_EMAIL).",
     err_invalid_email: "Invalid email address.",
     err_password_required: "Password is required.",
@@ -170,7 +173,6 @@ const AUTH_I18N = {
   },
   es: {
     err_supabase_not_configured: "Supabase no configurado",
-    err_supabase_anon_not_configured: "Supabase anon no configurado",
     err_resend_not_configured: "Envío de correo no configurado (RESEND_API_KEY / RESEND_FROM_EMAIL).",
     err_invalid_email: "Correo no válido.",
     err_password_required: "Contraseña requerida.",
@@ -212,11 +214,17 @@ const AUTH_I18N = {
   }
 };
 
-/** Cliente anon nuevo por petición (evita contaminar sesión entre requests en el singleton del servidor). */
-function createFreshAnonAuthClient(deps) {
-  const { SUPABASE_URL, SUPABASE_ANON_KEY } = deps;
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/**
+ * Cliente Supabase para signInWithPassword en rutas de login: URL desde deps o env; anon desde deps o clave publica embebida.
+ * Cliente nuevo por petición. Si no hay URL, intenta supabaseAdmin.
+ */
+function getAuthClientForServerPasswordSignIn(deps) {
+  const url = String((deps && deps.SUPABASE_URL) || process.env.SUPABASE_URL || "").trim();
+  const keyFromDeps = String((deps && deps.SUPABASE_ANON_KEY) || "").trim();
+  const anonKey = keyFromDeps || DEBTYA_PROJECT_SUPABASE_ANON_PUBLIC;
+  if (url && anonKey) return createClient(url, anonKey);
+  if (deps && deps.supabaseAdmin) return deps.supabaseAdmin;
+  return null;
 }
 
 function isLocalhostBase(base) {
@@ -1432,13 +1440,18 @@ function registerAuthSignupRoutes(app, deps) {
 
   app.post("/auth/login/send-verification-code", async (req, res) => {
     const lang = resolveAuthLang(req.body, req);
+    const rid = req.requestId || null;
     try {
       if (!supabaseAdmin) {
+        appError("[auth/login/send-code] sin supabaseAdmin", rid);
         return jsonError(res, 500, tAuth(lang, "err_supabase_not_configured"));
       }
-      const anonAuth = createFreshAnonAuthClient(deps);
-      if (!anonAuth) {
-        return jsonError(res, 500, tAuth(lang, "err_supabase_anon_not_configured"));
+      const authClient = getAuthClientForServerPasswordSignIn(deps);
+      if (!authClient) {
+        appError("[auth/login/send-code] sin cliente auth (url/anon/admin)", rid, {
+          hasUrl: Boolean(String((deps && deps.SUPABASE_URL) || process.env.SUPABASE_URL || "").trim())
+        });
+        return jsonError(res, 500, tAuth(lang, "err_supabase_not_configured"));
       }
 
       const { apiKey: RESEND_API_KEY, fromEmail: RESEND_FROM_EMAIL } = readResendEnv();
@@ -1465,9 +1478,21 @@ function registerAuthSignupRoutes(app, deps) {
       const rawIp = String(req.headers["x-forwarded-for"] || "");
       const ip = rawIp.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
 
-      const { data: signData, error: signErr } = await anonAuth.auth.signInWithPassword({ email, password });
+      let signData;
+      let signErr;
+      try {
+        const out = await authClient.auth.signInWithPassword({ email, password });
+        signData = out.data;
+        signErr = out.error;
+      } catch (signThrow) {
+        appError("[auth/login/send-code] signInWithPassword excepcion", rid, {
+          message: signThrow?.message || String(signThrow),
+          stack: signThrow?.stack
+        });
+        return jsonError(res, 500, tAuth(lang, "err_generic_send_code"));
+      }
       if (signErr || !signData?.session) {
-        appError("[auth/login/send-code] signInWithPassword fallo", signErr?.message || signErr || "sin session");
+        appError("[auth/login/send-code] signInWithPassword fallo", rid, signErr?.message || signErr || "sin session");
         return jsonError(res, 401, tAuth(lang, "err_bad_credentials"));
       }
 
@@ -1481,7 +1506,10 @@ function registerAuthSignupRoutes(app, deps) {
       const code = randomSixDigitCode();
       const expiresAt = new Date(Date.now() + CODE_TTL_MS).toISOString();
 
-      await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
+      const { error: delErr } = await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
+      if (delErr) {
+        appError("[auth/login/send-code] delete signup_verification_codes (se continua)", rid, logSupabaseErr("delete", delErr));
+      }
 
       const { error: insErr } = await supabaseAdmin.from("signup_verification_codes").insert({
         email,
@@ -1489,7 +1517,7 @@ function registerAuthSignupRoutes(app, deps) {
         expires_at: expiresAt
       });
       if (insErr) {
-        appError("[auth/login/send-code] insert signup_verification_codes failed", logSupabaseErr("insert", insErr));
+        appError("[auth/login/send-code] insert signup_verification_codes failed", rid, logSupabaseErr("insert", insErr));
         return jsonError(res, 500, tAuth(lang, "err_code_save_failed"));
       }
 
@@ -1502,7 +1530,7 @@ function registerAuthSignupRoutes(app, deps) {
           fromEmail: RESEND_FROM_EMAIL
         });
       } catch (mailErr) {
-        appError("[auth/login/send-code] Resend:", mailErr.message || mailErr);
+        appError("[auth/login/send-code] Resend:", rid, mailErr.message || mailErr);
         await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
         return jsonError(res, 502, tAuth(lang, "err_mail_send_failed"));
       }
@@ -1512,15 +1540,20 @@ function registerAuthSignupRoutes(app, deps) {
         message: tAuth(lang, "msg_login_code_sent")
       });
     } catch (e) {
-      appError("[auth/login/send-code]", e);
+      appError("[auth/login/send-code] excepcion no controlada", rid, {
+        message: e?.message || String(e),
+        stack: e?.stack
+      });
       return jsonError(res, 500, tAuth(lang, "err_generic_send_code"));
     }
   });
 
   app.post("/auth/login/complete", async (req, res) => {
     const lang = resolveAuthLang(req.body, req);
+    const rid = req.requestId || null;
     try {
       if (!supabaseAdmin) {
+        appError("[auth/login/complete] sin supabaseAdmin", rid);
         return jsonError(res, 500, tAuth(lang, "err_supabase_not_configured"));
       }
       const email = normalizeEmail(req.body?.email);
@@ -1551,7 +1584,7 @@ function registerAuthSignupRoutes(app, deps) {
         .limit(1);
 
       if (selErr) {
-        appError("[auth/login/complete] select signup_verification_codes failed", logSupabaseErr("select", selErr));
+        appError("[auth/login/complete] select signup_verification_codes failed", rid, logSupabaseErr("select", selErr));
         return jsonError(res, 500, tAuth(lang, "err_verify_db"));
       }
       const row = rows && rows[0];
@@ -1565,14 +1598,27 @@ function registerAuthSignupRoutes(app, deps) {
 
       await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
 
-      const anonAuth = createFreshAnonAuthClient(deps);
-      if (!anonAuth) {
-        return jsonError(res, 500, tAuth(lang, "err_supabase_anon_not_configured"));
+      const authClient = getAuthClientForServerPasswordSignIn(deps);
+      if (!authClient) {
+        appError("[auth/login/complete] sin cliente auth", rid);
+        return jsonError(res, 500, tAuth(lang, "err_supabase_not_configured"));
       }
 
-      const { data: signData, error: signErr } = await anonAuth.auth.signInWithPassword({ email, password });
+      let signData;
+      let signErr;
+      try {
+        const out = await authClient.auth.signInWithPassword({ email, password });
+        signData = out.data;
+        signErr = out.error;
+      } catch (signThrow) {
+        appError("[auth/login/complete] signInWithPassword excepcion", rid, {
+          message: signThrow?.message || String(signThrow),
+          stack: signThrow?.stack
+        });
+        return jsonError(res, 500, tAuth(lang, "err_login_session"));
+      }
       if (signErr || !signData?.session) {
-        appError("[auth/login/complete] signInWithPassword fallo", signErr?.message || signErr || "sin session");
+        appError("[auth/login/complete] signInWithPassword fallo", rid, signErr?.message || signErr || "sin session");
         return jsonError(res, 401, tAuth(lang, "err_bad_credentials"));
       }
 
@@ -1589,7 +1635,10 @@ function registerAuthSignupRoutes(app, deps) {
         }
       });
     } catch (e) {
-      appError("[auth/login/complete]", e);
+      appError("[auth/login/complete] excepcion no controlada", rid, {
+        message: e?.message || String(e),
+        stack: e?.stack
+      });
       return jsonError(res, 500, tAuth(lang, "err_login_session"));
     }
   });

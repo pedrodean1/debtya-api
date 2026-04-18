@@ -15,9 +15,10 @@ const { requestIdMiddleware } = require("./lib/request-id");
 const { jsonError } = require("./lib/json-error");
 
 const app = express();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-15-plaid-upsert-without-connection-role-fallback";
+const SERVER_VERSION = "debtya-2026-04-18-www-html-api-base-purge";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -66,6 +67,13 @@ const {
   STRIPE_PORTAL_CONFIG_ID
 } = process.env;
 
+/** Misma clave anon publica que public/index.html (Supabase). Si Render no tiene SUPABASE_ANON_KEY, el login no debe romperse. */
+const DEBTYA_EMBEDDED_SUPABASE_ANON_FALLBACK =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
+
+const SUPABASE_ANON_KEY_EFFECTIVE =
+  String(SUPABASE_ANON_KEY || "").trim() || DEBTYA_EMBEDDED_SUPABASE_ANON_FALLBACK;
+
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
 const DEFAULT_CORS_ORIGINS = [
@@ -101,7 +109,8 @@ app.use(
       }
       appError("[cors] origen no permitido:", origin);
       return callback(null, false);
-    }
+    },
+    exposedHeaders: ["Debtya-Api-Base"]
   })
 );
 
@@ -122,10 +131,26 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 const PUBLIC_INDEX_HTML = path.join(__dirname, "public", "index.html");
+const PUBLIC_PASSWORD_RESET_HTML = path.join(__dirname, "public", "password-reset.html");
 const PUBLIC_BANK_STRIP_JS = path.join(__dirname, "public", "debtya-bank-strip.js");
 
+/**
+ * Si DEBTYA_PUBLIC_API_URL o PASSWORD_RESET_LINK_BASE estan definidos, inyecta window.__DEBTYA_API_BASE__
+ * para que fetch() no use solo location.origin (www estatico sin /auth/* en Node).
+ */
+function injectDebtyaApiBaseIntoHtml(html) {
+  const base = String(process.env.DEBTYA_PUBLIC_API_URL || process.env.PASSWORD_RESET_LINK_BASE || "")
+    .trim()
+    .replace(/\/+$/, "");
+  if (!base) return html;
+  const s = String(html || "");
+  if (/\b__DEBTYA_API_BASE__\b/.test(s)) return s;
+  const script = `    <script>window.__DEBTYA_API_BASE__=${JSON.stringify(base)};<\/script>\n`;
+  return s.replace(/<head(\s[^>]*)?>/i, (full) => `${full}\n${script}`);
+}
+
 function injectIntoIndexHtml(html) {
-  return html;
+  return injectDebtyaApiBaseIntoHtml(html);
 }
 
 function sendNoCacheIndexHtml(res) {
@@ -198,6 +223,23 @@ app.get("/bank-disconnect/", (_req, res) => res.redirect(308, "/bank-disconnect"
 app.get("/api/bank-disconnect/", (_req, res) => res.redirect(308, "/api/bank-disconnect"));
 app.get("/api/plaid/manage-disconnect/", (_req, res) => res.redirect(308, "/api/plaid/manage-disconnect"));
 
+function sendPasswordResetStandaloneHtml(res) {
+  res.setHeader("Cache-Control", "private, no-store, no-cache, max-age=0, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  try {
+    const html = injectDebtyaApiBaseIntoHtml(fs.readFileSync(PUBLIC_PASSWORD_RESET_HTML, "utf8"));
+    res.type("html");
+    return res.send(html);
+  } catch (e) {
+    appError("sendPasswordResetStandaloneHtml:", e?.message || e);
+    return res.sendFile(PUBLIC_PASSWORD_RESET_HTML);
+  }
+}
+
+app.get("/password-reset.html", (_req, res) => sendPasswordResetStandaloneHtml(res));
+
 app.get("/debtya-bank-strip.js", (_req, res) => {
   res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
   res.setHeader("Surrogate-Control", "no-store");
@@ -228,8 +270,8 @@ app.use(
 );
 
 const supabaseAnon =
-  SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  SUPABASE_URL && SUPABASE_ANON_KEY_EFFECTIVE
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY_EFFECTIVE)
     : null;
 
 const supabaseAdmin =
@@ -2049,7 +2091,7 @@ async function executeIntentDirect(userId, intentId) {
 registerAllRoutes(app, {
   SERVER_VERSION,
   SUPABASE_URL,
-  SUPABASE_ANON_KEY,
+  SUPABASE_ANON_KEY: SUPABASE_ANON_KEY_EFFECTIVE,
   SUPABASE_SERVICE_ROLE_KEY,
   APP_BASE_URL,
   FRONTEND_URL,
