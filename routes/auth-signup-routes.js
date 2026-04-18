@@ -5,6 +5,8 @@ const SEND_BY_EMAIL = new Map();
 const SEND_BY_IP = new Map();
 const VERIFY_BY_EMAIL = new Map();
 const LOGIN_VERIFY_BY_EMAIL = new Map();
+const PW_RESET_BY_EMAIL = new Map();
+const PW_RESET_BY_IP = new Map();
 
 const SEND_EMAIL_WINDOW_MS = 60 * 60 * 1000;
 const SEND_EMAIL_MAX = 3;
@@ -146,7 +148,12 @@ const AUTH_I18N = {
       `Your DebtYa verification code is: ${code}\n\nIt is valid for 15 minutes. If you did not request an account, ignore this message.`,
     login_email_subject: "Your code to sign in to DebtYa",
     login_email_body: (code) =>
-      `Your code to sign in to DebtYa is: ${code}\n\nIt is valid for 15 minutes. If this was not you, change your password.`
+      `Your code to sign in to DebtYa is: ${code}\n\nIt is valid for 15 minutes. If this was not you, change your password.`,
+    msg_pw_reset_neutral:
+      "If an account exists for this address, you will receive an email with a reset link shortly.",
+    pw_reset_email_subject: "Reset your DebtYa password",
+    pw_reset_email_body: (link) =>
+      `Open this link to choose a new password (single use; expires soon):\n\n${link}\n\nIf you did not request a reset, you can ignore this email.`
   },
   es: {
     err_supabase_not_configured: "Supabase no configurado",
@@ -176,7 +183,12 @@ const AUTH_I18N = {
       `Tu código de verificación DebtYa es: ${code}\n\nVálido durante 15 minutos. Si no solicitaste registrarte, ignora este mensaje.`,
     login_email_subject: "Tu código para iniciar sesión en DebtYa",
     login_email_body: (code) =>
-      `Tu código para iniciar sesión en DebtYa es: ${code}\n\nVálido durante 15 minutos. Si no fuiste tú, cambia tu contraseña.`
+      `Tu código para iniciar sesión en DebtYa es: ${code}\n\nVálido durante 15 minutos. Si no fuiste tú, cambia tu contraseña.`,
+    msg_pw_reset_neutral:
+      "Si existe una cuenta con este correo, recibirás un enlace para restablecer la contraseña en unos instantes.",
+    pw_reset_email_subject: "Restablece tu contraseña de DebtYa",
+    pw_reset_email_body: (link) =>
+      `Abre este enlace para elegir una nueva contraseña (un solo uso; caduca pronto):\n\n${link}\n\nSi no lo pediste, ignora este mensaje.`
   }
 };
 
@@ -187,8 +199,100 @@ function createFreshAnonAuthClient(deps) {
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
+/** URL post-reset: FRONTEND_URL > APP_BASE_URL > host de la petición > debtya.com (debe estar en Redirect URLs de Supabase). */
+function resolvePasswordResetRedirect(deps, req) {
+  const fe = String(deps.FRONTEND_URL || "").trim().replace(/\/+$/, "");
+  const app = String(deps.APP_BASE_URL || "").trim().replace(/\/+$/, "");
+  let base = fe || app;
+  if (!base && typeof deps.getBaseUrl === "function") {
+    try {
+      base = String(deps.getBaseUrl(req) || "").trim().replace(/\/+$/, "");
+    } catch (_) {
+      base = "";
+    }
+  }
+  const b = base || "https://www.debtya.com";
+  return `${b}/`;
+}
+
 function registerAuthSignupRoutes(app, deps) {
   const { supabaseAdmin, jsonError, appError } = deps;
+
+  app.post("/auth/password-reset/request", async (req, res) => {
+    const lang = resolveAuthLang(req.body, req);
+    const neutralJson = () => res.json({ ok: true, message: tAuth(lang, "msg_pw_reset_neutral") });
+
+    try {
+      if (!supabaseAdmin) {
+        return jsonError(res, 500, tAuth(lang, "err_supabase_not_configured"));
+      }
+
+      const { apiKey: RESEND_API_KEY, fromEmail: RESEND_FROM_EMAIL } = readResendEnv();
+      if (!RESEND_API_KEY || !RESEND_FROM_EMAIL) {
+        appError("[auth/password-reset] Resend env ausente o vacio (tras trim)", {
+          RESEND_API_KEY_len: RESEND_API_KEY.length,
+          RESEND_FROM_EMAIL_len: RESEND_FROM_EMAIL.length
+        });
+        return jsonError(res, 503, tAuth(lang, "err_resend_not_configured"));
+      }
+
+      const email = normalizeEmail(req.body?.email);
+      if (!isValidEmailShape(email)) {
+        return jsonError(res, 400, tAuth(lang, "err_invalid_email"));
+      }
+
+      const rawIp = String(req.headers["x-forwarded-for"] || "");
+      const ip = rawIp.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+
+      if (!bumpRate(PW_RESET_BY_EMAIL, email, SEND_EMAIL_WINDOW_MS, SEND_EMAIL_MAX)) {
+        return jsonError(res, 429, tAuth(lang, "err_rate_email"));
+      }
+      if (!bumpRate(PW_RESET_BY_IP, ip, SEND_IP_WINDOW_MS, SEND_IP_MAX)) {
+        return jsonError(res, 429, tAuth(lang, "err_rate_ip"));
+      }
+
+      const redirectTo = resolvePasswordResetRedirect(deps, req);
+
+      const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: { redirectTo }
+      });
+
+      if (linkErr || !linkData?.properties) {
+        appError(
+          "[auth/password-reset] generateLink fallo",
+          linkErr ? logSupabaseErr("generateLink", linkErr) : "sin properties"
+        );
+        return neutralJson();
+      }
+
+      const props = linkData.properties || {};
+      const actionLink = props.action_link || props.actionLink || "";
+      if (!actionLink) {
+        appError("[auth/password-reset] sin action_link", { keys: Object.keys(props) });
+        return neutralJson();
+      }
+
+      try {
+        await sendResendEmail({
+          to: email,
+          subject: tAuth(lang, "pw_reset_email_subject"),
+          text: (lang === "es" ? AUTH_I18N.es.pw_reset_email_body : AUTH_I18N.en.pw_reset_email_body)(actionLink),
+          apiKey: RESEND_API_KEY,
+          fromEmail: RESEND_FROM_EMAIL
+        });
+      } catch (mailErr) {
+        appError("[auth/password-reset] Resend:", mailErr.message || mailErr);
+        return jsonError(res, 502, tAuth(lang, "err_mail_send_failed"));
+      }
+
+      return neutralJson();
+    } catch (e) {
+      appError("[auth/password-reset]", e);
+      return jsonError(res, 500, tAuth(lang, "err_generic_send_code"));
+    }
+  });
 
   app.post("/auth/signup/send-verification-code", async (req, res) => {
     const lang = resolveAuthLang(req.body, req);
