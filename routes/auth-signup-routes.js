@@ -153,7 +153,7 @@ const AUTH_I18N = {
       "If an account exists for this address, you will receive an email with a reset link shortly.",
     pw_reset_email_subject: "Reset your DebtYa password",
     pw_reset_email_body: (link) =>
-      `Open this link to choose a new password (single use; expires soon):\n\n${link}\n\nIf you did not request a reset, you can ignore this email.`
+      `Tap the link below to set a new password. It works once and expires in about an hour.\n\n${link}\n\nIf you did not request this, you can ignore this email.`
   },
   es: {
     err_supabase_not_configured: "Supabase no configurado",
@@ -188,7 +188,7 @@ const AUTH_I18N = {
       "Si existe una cuenta con este correo, recibirás un enlace para restablecer la contraseña en unos instantes.",
     pw_reset_email_subject: "Restablece tu contraseña de DebtYa",
     pw_reset_email_body: (link) =>
-      `Abre este enlace para elegir una nueva contraseña (un solo uso; caduca pronto):\n\n${link}\n\nSi no lo pediste, ignora este mensaje.`
+      `Usa el enlace de abajo para elegir una nueva contraseña. Solo vale una vez y caduca en aproximadamente una hora.\n\n${link}\n\nSi no lo pediste, ignora este mensaje.`
   }
 };
 
@@ -215,8 +215,62 @@ function resolvePasswordResetRedirect(deps, req) {
   return `${b}/`;
 }
 
+/** Base pública del clic en el correo (API). Opcional: PASSWORD_RESET_LINK_BASE. */
+function resolveRecoverClickBase(deps, req) {
+  const explicit = String(process.env.PASSWORD_RESET_LINK_BASE || "")
+    .trim()
+    .replace(/\/+$/, "");
+  if (explicit) return explicit;
+  const app = String(deps.APP_BASE_URL || "")
+    .trim()
+    .replace(/\/+$/, "");
+  if (app) return app;
+  try {
+    return String(deps.getBaseUrl(req) || "")
+      .trim()
+      .replace(/\/+$/, "");
+  } catch (_) {
+    return "";
+  }
+}
+
+function htmlRecoverLinkInvalid() {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>DebtYa</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:26rem;margin:3rem auto;padding:0 1.25rem;color:#111;line-height:1.5}a{color:#2563eb}</style></head><body><h1 style="font-size:1.2rem;font-weight:600">Reset link invalid or expired</h1><p>Request a new reset from the DebtYa sign-in screen.</p><p><a href="/">Continue to DebtYa</a></p></body></html>`;
+}
+
 function registerAuthSignupRoutes(app, deps) {
   const { supabaseAdmin, jsonError, appError } = deps;
+
+  app.get("/auth/recover", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    try {
+      const token = String(req.query.t || "").trim();
+      if (!/^[A-Za-z0-9_-]{16,128}$/.test(token)) {
+        return res.status(400).type("text/html; charset=utf-8").send(htmlRecoverLinkInvalid());
+      }
+      if (!supabaseAdmin) {
+        return res.status(500).type("text/plain").send("Server misconfiguration.");
+      }
+      const nowIso = new Date().toISOString();
+      const { data: row, error: selErr } = await supabaseAdmin
+        .from("password_reset_shortlinks")
+        .select("target_url")
+        .eq("token", token)
+        .gt("expires_at", nowIso)
+        .maybeSingle();
+
+      if (selErr || !row?.target_url) {
+        if (selErr) appError("[auth/recover] select", logSupabaseErr("select", selErr));
+        return res.status(410).type("text/html; charset=utf-8").send(htmlRecoverLinkInvalid());
+      }
+
+      await supabaseAdmin.from("password_reset_shortlinks").delete().eq("token", token);
+      return res.redirect(302, row.target_url);
+    } catch (e) {
+      appError("[auth/recover]", e);
+      return res.status(500).type("text/plain").send("Error.");
+    }
+  });
 
   app.post("/auth/password-reset/request", async (req, res) => {
     const lang = resolveAuthLang(req.body, req);
@@ -274,11 +328,31 @@ function registerAuthSignupRoutes(app, deps) {
         return neutralJson();
       }
 
+      const clickBase = resolveRecoverClickBase(deps, req);
+      const shortToken = crypto.randomBytes(18).toString("base64url");
+      const shortExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      let linkForEmail = actionLink;
+      if (clickBase) {
+        const { error: shortErr } = await supabaseAdmin.from("password_reset_shortlinks").insert({
+          token: shortToken,
+          target_url: actionLink,
+          expires_at: shortExpires
+        });
+        if (!shortErr) {
+          linkForEmail = `${clickBase}/auth/recover?t=${encodeURIComponent(shortToken)}`;
+        } else {
+          appError(
+            "[auth/password-reset] shortlink insert (tabla password_reset_shortlinks?)",
+            logSupabaseErr("insert shortlink", shortErr)
+          );
+        }
+      }
+
       try {
         await sendResendEmail({
           to: email,
           subject: tAuth(lang, "pw_reset_email_subject"),
-          text: (lang === "es" ? AUTH_I18N.es.pw_reset_email_body : AUTH_I18N.en.pw_reset_email_body)(actionLink),
+          text: (lang === "es" ? AUTH_I18N.es.pw_reset_email_body : AUTH_I18N.en.pw_reset_email_body)(linkForEmail),
           apiKey: RESEND_API_KEY,
           fromEmail: RESEND_FROM_EMAIL
         });
