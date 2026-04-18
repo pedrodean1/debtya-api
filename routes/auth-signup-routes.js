@@ -100,6 +100,86 @@ function logSupabaseErr(scope, err) {
   };
 }
 
+/** Idioma UI: el cliente envía `lang: "en" | "es"`; si falta, se infiere de Accept-Language; por defecto en. */
+function resolveAuthLang(body, req) {
+  const raw = String(body?.lang ?? "")
+    .trim()
+    .toLowerCase();
+  if (raw === "es" || raw.startsWith("es")) return "es";
+  if (raw === "en" || raw.startsWith("en")) return "en";
+  const accept = String(req?.headers?.["accept-language"] || "").toLowerCase();
+  if (accept.includes("es")) return "es";
+  return "en";
+}
+
+function tAuth(lang, key) {
+  const pack = lang === "es" ? AUTH_I18N.es : AUTH_I18N.en;
+  return pack[key] ?? AUTH_I18N.en[key] ?? key;
+}
+
+const AUTH_I18N = {
+  en: {
+    err_supabase_not_configured: "Supabase is not configured.",
+    err_supabase_anon_not_configured: "Supabase anon client is not configured.",
+    err_resend_not_configured: "Email sending is not configured (RESEND_API_KEY / RESEND_FROM_EMAIL).",
+    err_invalid_email: "Invalid email address.",
+    err_password_required: "Password is required.",
+    err_rate_email: "Too many codes for this email. Wait a bit and try again.",
+    err_rate_ip: "Too many requests. Try again later.",
+    err_code_save_failed: "Could not save the code. Check the signup_verification_codes table in Supabase.",
+    err_mail_send_failed: "Could not send the email. Try again in a few minutes.",
+    err_generic_send_code: "Error sending the code.",
+    msg_signup_code_sent: "If the email is valid, you will receive a code shortly.",
+    err_bad_credentials: "Incorrect email or password.",
+    msg_login_code_sent: "If your email and password are correct, you will receive a code shortly.",
+    err_code_digits: "The code must be 6 digits.",
+    err_too_many_verify: "Too many attempts. Request a new code.",
+    err_verify_db: "Error verifying the code.",
+    err_code_bad_or_expired: "Incorrect or expired code. Request a new one.",
+    err_login_session: "Error signing in.",
+    err_password_policy: "The password does not meet the minimum requirements.",
+    err_email_registered: "That email is already registered. Sign in.",
+    err_create_account_generic: "Could not create the account.",
+    err_complete_signup: "Error completing registration.",
+    signup_email_subject: "Your DebtYa verification code",
+    signup_email_body: (code) =>
+      `Your DebtYa verification code is: ${code}\n\nIt is valid for 15 minutes. If you did not request an account, ignore this message.`,
+    login_email_subject: "Your code to sign in to DebtYa",
+    login_email_body: (code) =>
+      `Your code to sign in to DebtYa is: ${code}\n\nIt is valid for 15 minutes. If this was not you, change your password.`
+  },
+  es: {
+    err_supabase_not_configured: "Supabase no configurado",
+    err_supabase_anon_not_configured: "Supabase anon no configurado",
+    err_resend_not_configured: "Envío de correo no configurado (RESEND_API_KEY / RESEND_FROM_EMAIL).",
+    err_invalid_email: "Correo no válido.",
+    err_password_required: "Contraseña requerida.",
+    err_rate_email: "Demasiados códigos para este correo. Espera un poco e inténtalo de nuevo.",
+    err_rate_ip: "Demasiadas solicitudes. Inténtalo más tarde.",
+    err_code_save_failed: "No se pudo guardar el código. Revisa la tabla signup_verification_codes en Supabase.",
+    err_mail_send_failed: "No se pudo enviar el correo. Inténtalo de nuevo en unos minutos.",
+    err_generic_send_code: "Error enviando código.",
+    msg_signup_code_sent: "Si el correo es válido, recibirás un código en unos instantes.",
+    err_bad_credentials: "Email o contraseña incorrectos.",
+    msg_login_code_sent: "Si el correo y la contraseña son correctos, recibirás un código en unos instantes.",
+    err_code_digits: "El código debe ser de 6 dígitos.",
+    err_too_many_verify: "Demasiados intentos. Solicita un código nuevo.",
+    err_verify_db: "Error verificando código.",
+    err_code_bad_or_expired: "Código incorrecto o caducado. Solicita uno nuevo.",
+    err_login_session: "Error iniciando sesión.",
+    err_password_policy: "La contraseña no cumple los requisitos mínimos.",
+    err_email_registered: "Ese correo ya está registrado. Inicia sesión.",
+    err_create_account_generic: "No se pudo crear la cuenta.",
+    err_complete_signup: "Error completando el registro.",
+    signup_email_subject: "Tu código de verificación DebtYa",
+    signup_email_body: (code) =>
+      `Tu código de verificación DebtYa es: ${code}\n\nVálido durante 15 minutos. Si no solicitaste registrarte, ignora este mensaje.`,
+    login_email_subject: "Tu código para iniciar sesión en DebtYa",
+    login_email_body: (code) =>
+      `Tu código para iniciar sesión en DebtYa es: ${code}\n\nVálido durante 15 minutos. Si no fuiste tú, cambia tu contraseña.`
+  }
+};
+
 /** Cliente anon nuevo por petición (evita contaminar sesión entre requests en el singleton del servidor). */
 function createFreshAnonAuthClient(deps) {
   const { SUPABASE_URL, SUPABASE_ANON_KEY } = deps;
@@ -111,9 +191,10 @@ function registerAuthSignupRoutes(app, deps) {
   const { supabaseAdmin, jsonError, appError } = deps;
 
   app.post("/auth/signup/send-verification-code", async (req, res) => {
+    const lang = resolveAuthLang(req.body, req);
     try {
       if (!supabaseAdmin) {
-        return jsonError(res, 500, "Supabase no configurado");
+        return jsonError(res, 500, tAuth(lang, "err_supabase_not_configured"));
       }
 
       const { apiKey: RESEND_API_KEY, fromEmail: RESEND_FROM_EMAIL } = readResendEnv();
@@ -124,23 +205,23 @@ function registerAuthSignupRoutes(app, deps) {
           has_RESEND_API_KEY: Object.prototype.hasOwnProperty.call(process.env, "RESEND_API_KEY"),
           has_RESEND_FROM_EMAIL: Object.prototype.hasOwnProperty.call(process.env, "RESEND_FROM_EMAIL")
         });
-        return jsonError(res, 503, "Envío de correo no configurado (RESEND_API_KEY / RESEND_FROM_EMAIL).");
+        return jsonError(res, 503, tAuth(lang, "err_resend_not_configured"));
       }
 
       const emailRaw = req.body?.email;
       const email = normalizeEmail(emailRaw);
       if (!isValidEmailShape(email)) {
-        return jsonError(res, 400, "Correo no válido.");
+        return jsonError(res, 400, tAuth(lang, "err_invalid_email"));
       }
 
       const rawIp = String(req.headers["x-forwarded-for"] || "");
       const ip = rawIp.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
 
       if (!bumpRate(SEND_BY_EMAIL, email, SEND_EMAIL_WINDOW_MS, SEND_EMAIL_MAX)) {
-        return jsonError(res, 429, "Demasiados códigos para este correo. Espera un poco e inténtalo de nuevo.");
+        return jsonError(res, 429, tAuth(lang, "err_rate_email"));
       }
       if (!bumpRate(SEND_BY_IP, ip, SEND_IP_WINDOW_MS, SEND_IP_MAX)) {
-        return jsonError(res, 429, "Demasiadas solicitudes. Inténtalo más tarde.");
+        return jsonError(res, 429, tAuth(lang, "err_rate_ip"));
       }
 
       const code = randomSixDigitCode();
@@ -155,41 +236,42 @@ function registerAuthSignupRoutes(app, deps) {
       });
       if (insErr) {
         appError("[auth/signup/send-code] insert signup_verification_codes failed", logSupabaseErr("insert", insErr));
-        return jsonError(res, 500, "No se pudo guardar el código. Revisa la tabla signup_verification_codes en Supabase.");
+        return jsonError(res, 500, tAuth(lang, "err_code_save_failed"));
       }
 
       try {
         await sendResendEmail({
           to: email,
-          subject: "Tu código de verificación DebtYa",
-          text: `Tu código de verificación DebtYa es: ${code}\n\nVálido durante 15 minutos. Si no solicitaste registrarte, ignora este mensaje.`,
+          subject: tAuth(lang, "signup_email_subject"),
+          text: (lang === "es" ? AUTH_I18N.es.signup_email_body : AUTH_I18N.en.signup_email_body)(code),
           apiKey: RESEND_API_KEY,
           fromEmail: RESEND_FROM_EMAIL
         });
       } catch (mailErr) {
         appError("[auth/signup/send-code] Resend:", mailErr.message || mailErr);
         await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
-        return jsonError(res, 502, "No se pudo enviar el correo. Inténtalo de nuevo en unos minutos.");
+        return jsonError(res, 502, tAuth(lang, "err_mail_send_failed"));
       }
 
       return res.json({
         ok: true,
-        message: "Si el correo es válido, recibirás un código en unos instantes."
+        message: tAuth(lang, "msg_signup_code_sent")
       });
     } catch (e) {
       appError("[auth/signup/send-code]", e);
-      return jsonError(res, 500, "Error enviando código.");
+      return jsonError(res, 500, tAuth(lang, "err_generic_send_code"));
     }
   });
 
   app.post("/auth/login/send-verification-code", async (req, res) => {
+    const lang = resolveAuthLang(req.body, req);
     try {
       if (!supabaseAdmin) {
-        return jsonError(res, 500, "Supabase no configurado");
+        return jsonError(res, 500, tAuth(lang, "err_supabase_not_configured"));
       }
       const anonAuth = createFreshAnonAuthClient(deps);
       if (!anonAuth) {
-        return jsonError(res, 500, "Supabase anon no configurado");
+        return jsonError(res, 500, tAuth(lang, "err_supabase_anon_not_configured"));
       }
 
       const { apiKey: RESEND_API_KEY, fromEmail: RESEND_FROM_EMAIL } = readResendEnv();
@@ -200,17 +282,17 @@ function registerAuthSignupRoutes(app, deps) {
           has_RESEND_API_KEY: Object.prototype.hasOwnProperty.call(process.env, "RESEND_API_KEY"),
           has_RESEND_FROM_EMAIL: Object.prototype.hasOwnProperty.call(process.env, "RESEND_FROM_EMAIL")
         });
-        return jsonError(res, 503, "Envío de correo no configurado (RESEND_API_KEY / RESEND_FROM_EMAIL).");
+        return jsonError(res, 503, tAuth(lang, "err_resend_not_configured"));
       }
 
       const emailRaw = req.body?.email;
       const email = normalizeEmail(emailRaw);
       const password = String(req.body?.password || "");
       if (!isValidEmailShape(email)) {
-        return jsonError(res, 400, "Correo no válido.");
+        return jsonError(res, 400, tAuth(lang, "err_invalid_email"));
       }
       if (!password) {
-        return jsonError(res, 400, "Contraseña requerida.");
+        return jsonError(res, 400, tAuth(lang, "err_password_required"));
       }
 
       const rawIp = String(req.headers["x-forwarded-for"] || "");
@@ -219,14 +301,14 @@ function registerAuthSignupRoutes(app, deps) {
       const { data: signData, error: signErr } = await anonAuth.auth.signInWithPassword({ email, password });
       if (signErr || !signData?.session) {
         appError("[auth/login/send-code] signInWithPassword fallo", signErr?.message || signErr || "sin session");
-        return jsonError(res, 401, "Email o contraseña incorrectos.");
+        return jsonError(res, 401, tAuth(lang, "err_bad_credentials"));
       }
 
       if (!bumpRate(SEND_BY_EMAIL, email, SEND_EMAIL_WINDOW_MS, SEND_EMAIL_MAX)) {
-        return jsonError(res, 429, "Demasiados códigos para este correo. Espera un poco e inténtalo de nuevo.");
+        return jsonError(res, 429, tAuth(lang, "err_rate_email"));
       }
       if (!bumpRate(SEND_BY_IP, ip, SEND_IP_WINDOW_MS, SEND_IP_MAX)) {
-        return jsonError(res, 429, "Demasiadas solicitudes. Inténtalo más tarde.");
+        return jsonError(res, 429, tAuth(lang, "err_rate_ip"));
       }
 
       const code = randomSixDigitCode();
@@ -241,54 +323,55 @@ function registerAuthSignupRoutes(app, deps) {
       });
       if (insErr) {
         appError("[auth/login/send-code] insert signup_verification_codes failed", logSupabaseErr("insert", insErr));
-        return jsonError(res, 500, "No se pudo guardar el código. Revisa la tabla signup_verification_codes en Supabase.");
+        return jsonError(res, 500, tAuth(lang, "err_code_save_failed"));
       }
 
       try {
         await sendResendEmail({
           to: email,
-          subject: "Tu código para iniciar sesión en DebtYa",
-          text: `Tu código para iniciar sesión en DebtYa es: ${code}\n\nVálido durante 15 minutos. Si no fuiste tú, cambia tu contraseña.`,
+          subject: tAuth(lang, "login_email_subject"),
+          text: (lang === "es" ? AUTH_I18N.es.login_email_body : AUTH_I18N.en.login_email_body)(code),
           apiKey: RESEND_API_KEY,
           fromEmail: RESEND_FROM_EMAIL
         });
       } catch (mailErr) {
         appError("[auth/login/send-code] Resend:", mailErr.message || mailErr);
         await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
-        return jsonError(res, 502, "No se pudo enviar el correo. Inténtalo de nuevo en unos minutos.");
+        return jsonError(res, 502, tAuth(lang, "err_mail_send_failed"));
       }
 
       return res.json({
         ok: true,
-        message: "Si el correo y la contraseña son correctos, recibirás un código en unos instantes."
+        message: tAuth(lang, "msg_login_code_sent")
       });
     } catch (e) {
       appError("[auth/login/send-code]", e);
-      return jsonError(res, 500, "Error enviando código.");
+      return jsonError(res, 500, tAuth(lang, "err_generic_send_code"));
     }
   });
 
   app.post("/auth/login/complete", async (req, res) => {
+    const lang = resolveAuthLang(req.body, req);
     try {
       if (!supabaseAdmin) {
-        return jsonError(res, 500, "Supabase no configurado");
+        return jsonError(res, 500, tAuth(lang, "err_supabase_not_configured"));
       }
       const email = normalizeEmail(req.body?.email);
       const password = String(req.body?.password || "");
       const code = String(req.body?.code || "").trim();
 
       if (!isValidEmailShape(email)) {
-        return jsonError(res, 400, "Correo no válido.");
+        return jsonError(res, 400, tAuth(lang, "err_invalid_email"));
       }
       if (!password) {
-        return jsonError(res, 400, "Contraseña requerida.");
+        return jsonError(res, 400, tAuth(lang, "err_password_required"));
       }
       if (!/^\d{6}$/.test(code)) {
-        return jsonError(res, 400, "El código debe ser de 6 dígitos.");
+        return jsonError(res, 400, tAuth(lang, "err_code_digits"));
       }
 
       if (!bumpRate(LOGIN_VERIFY_BY_EMAIL, email, VERIFY_WINDOW_MS, VERIFY_MAX)) {
-        return jsonError(res, 429, "Demasiados intentos. Solicita un código nuevo.");
+        return jsonError(res, 429, tAuth(lang, "err_too_many_verify"));
       }
 
       const nowIso = new Date().toISOString();
@@ -302,28 +385,28 @@ function registerAuthSignupRoutes(app, deps) {
 
       if (selErr) {
         appError("[auth/login/complete] select signup_verification_codes failed", logSupabaseErr("select", selErr));
-        return jsonError(res, 500, "Error verificando código.");
+        return jsonError(res, 500, tAuth(lang, "err_verify_db"));
       }
       const row = rows && rows[0];
       if (!row?.code) {
-        return jsonError(res, 400, "Código incorrecto o caducado. Solicita uno nuevo.");
+        return jsonError(res, 400, tAuth(lang, "err_code_bad_or_expired"));
       }
 
       if (!codesEqualTimingSafe(row.code, code)) {
-        return jsonError(res, 400, "Código incorrecto o caducado. Solicita uno nuevo.");
+        return jsonError(res, 400, tAuth(lang, "err_code_bad_or_expired"));
       }
 
       await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
 
       const anonAuth = createFreshAnonAuthClient(deps);
       if (!anonAuth) {
-        return jsonError(res, 500, "Supabase anon no configurado");
+        return jsonError(res, 500, tAuth(lang, "err_supabase_anon_not_configured"));
       }
 
       const { data: signData, error: signErr } = await anonAuth.auth.signInWithPassword({ email, password });
       if (signErr || !signData?.session) {
         appError("[auth/login/complete] signInWithPassword fallo", signErr?.message || signErr || "sin session");
-        return jsonError(res, 401, "Email o contraseña incorrectos.");
+        return jsonError(res, 401, tAuth(lang, "err_bad_credentials"));
       }
 
       const s = signData.session;
@@ -340,14 +423,15 @@ function registerAuthSignupRoutes(app, deps) {
       });
     } catch (e) {
       appError("[auth/login/complete]", e);
-      return jsonError(res, 500, "Error iniciando sesión.");
+      return jsonError(res, 500, tAuth(lang, "err_login_session"));
     }
   });
 
   app.post("/auth/signup/complete", async (req, res) => {
+    const lang = resolveAuthLang(req.body, req);
     try {
       if (!supabaseAdmin) {
-        return jsonError(res, 500, "Supabase no configurado");
+        return jsonError(res, 500, tAuth(lang, "err_supabase_not_configured"));
       }
 
       const email = normalizeEmail(req.body?.email);
@@ -355,17 +439,17 @@ function registerAuthSignupRoutes(app, deps) {
       const code = String(req.body?.code || "").trim();
 
       if (!isValidEmailShape(email)) {
-        return jsonError(res, 400, "Correo no válido.");
+        return jsonError(res, 400, tAuth(lang, "err_invalid_email"));
       }
       if (!signupPasswordMeetsPolicy(password)) {
-        return jsonError(res, 400, "La contraseña no cumple los requisitos mínimos.");
+        return jsonError(res, 400, tAuth(lang, "err_password_policy"));
       }
       if (!/^\d{6}$/.test(code)) {
-        return jsonError(res, 400, "El código debe ser de 6 dígitos.");
+        return jsonError(res, 400, tAuth(lang, "err_code_digits"));
       }
 
       if (!bumpRate(VERIFY_BY_EMAIL, email, VERIFY_WINDOW_MS, VERIFY_MAX)) {
-        return jsonError(res, 429, "Demasiados intentos. Solicita un código nuevo.");
+        return jsonError(res, 429, tAuth(lang, "err_too_many_verify"));
       }
 
       const nowIso = new Date().toISOString();
@@ -379,15 +463,15 @@ function registerAuthSignupRoutes(app, deps) {
 
       if (selErr) {
         appError("[auth/signup/complete] select signup_verification_codes failed", logSupabaseErr("select", selErr));
-        return jsonError(res, 500, "Error verificando código.");
+        return jsonError(res, 500, tAuth(lang, "err_verify_db"));
       }
       const row = rows && rows[0];
       if (!row?.code) {
-        return jsonError(res, 400, "Código incorrecto o caducado. Solicita uno nuevo.");
+        return jsonError(res, 400, tAuth(lang, "err_code_bad_or_expired"));
       }
 
       if (!codesEqualTimingSafe(row.code, code)) {
-        return jsonError(res, 400, "Código incorrecto o caducado. Solicita uno nuevo.");
+        return jsonError(res, 400, tAuth(lang, "err_code_bad_or_expired"));
       }
 
       await supabaseAdmin.from("signup_verification_codes").delete().eq("email", email);
@@ -401,10 +485,10 @@ function registerAuthSignupRoutes(app, deps) {
       if (createErr) {
         const msg = String(createErr.message || "");
         if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("registered")) {
-          return jsonError(res, 409, "Ese correo ya está registrado. Inicia sesión.");
+          return jsonError(res, 409, tAuth(lang, "err_email_registered"));
         }
         appError("[auth/signup/complete] createUser:", createErr);
-        return jsonError(res, 400, msg || "No se pudo crear la cuenta.");
+        return jsonError(res, 400, msg || tAuth(lang, "err_create_account_generic"));
       }
 
       return res.json({
@@ -413,7 +497,7 @@ function registerAuthSignupRoutes(app, deps) {
       });
     } catch (e) {
       appError("[auth/signup/complete]", e);
-      return jsonError(res, 500, "Error completando el registro.");
+      return jsonError(res, 500, tAuth(lang, "err_complete_signup"));
     }
   });
 }

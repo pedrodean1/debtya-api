@@ -6494,7 +6494,7 @@
             const sendRes = await fetch(`${API_BASE}/auth/login/send-verification-code`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, password })
+              body: JSON.stringify({ email, password, lang: uiLang })
             });
             const sendJson = await sendRes.json().catch(() => ({}));
             if (!sendRes.ok) {
@@ -6529,7 +6529,7 @@
           const loginRes = await fetch(`${API_BASE}/auth/login/complete`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password, code: verifyCode })
+            body: JSON.stringify({ email, password, code: verifyCode, lang: uiLang })
           });
           const loginJson = await loginRes.json().catch(() => ({}));
           if (!loginRes.ok) {
@@ -6569,7 +6569,7 @@
             const sendRes = await fetch(`${API_BASE}/auth/signup/send-verification-code`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email })
+              body: JSON.stringify({ email, lang: uiLang })
             });
             const sendJson = await sendRes.json().catch(() => ({}));
             if (!sendRes.ok) {
@@ -6604,7 +6604,7 @@
           const regRes = await fetch(`${API_BASE}/auth/signup/complete`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password, code: verifyCode })
+            body: JSON.stringify({ email, password, code: verifyCode, lang: uiLang })
           });
           const regJson = await regRes.json().catch(() => ({}));
           if (!regRes.ok) {
