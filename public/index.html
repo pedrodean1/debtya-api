@@ -21,6 +21,13 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Si el HTML es estatico en www y la API en otro host, pon aqui la URL base de la API (https://...) -->
+  <meta name="debtya-api-origin" content="https://debtya-api.onrender.com" />
+  <meta name="debtya-supabase-url" content="https://spybejltsgzfxlwzobkh.supabase.co" />
+  <meta
+    name="debtya-supabase-anon"
+    content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
+  />
   <meta name="debtya-ui-rev" content="debtya-2026-04-18-ga4-events" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
@@ -2015,6 +2022,7 @@
         </div>
       </div>
 
+      <div id="authNormalBlock">
       <div class="auth-switch">
         <button id="showLoginBtn" class="btn btn-primary" type="button" data-i18n="btn_login">Log in</button>
         <button id="showSignupBtn" class="btn btn-light" type="button" data-i18n="btn_signup">Create account</button>
@@ -2080,6 +2088,46 @@
       <button id="resetPasswordBtn" class="btn btn-light" type="button" style="width:100%;" data-i18n="btn_reset_pw">
         Email me a password reset link
       </button>
+      </div>
+
+      <div id="passwordRecoveryPanel" class="hidden stack" style="margin-top:4px;">
+        <h2 style="font-size:1.15rem;font-weight:600;margin:0;" data-i18n="pw_recovery_title">Choose a new password</h2>
+        <p class="mini" style="margin-top:8px;line-height:1.45;" data-i18n="pw_recovery_sub">
+          Enter and confirm your new password, then use a 6-digit code from your email.
+        </p>
+        <p id="pwRecoveryEmailLine" class="mini" style="margin-top:6px;font-weight:600;"></p>
+        <div class="field">
+          <label class="label" for="pwRecoveryNew" data-i18n="pw_recovery_lbl_new">New password</label>
+          <input id="pwRecoveryNew" class="input" type="text" autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label class="label" for="pwRecoveryConfirm" data-i18n="lbl_password_confirm">Confirm password</label>
+          <input id="pwRecoveryConfirm" class="input" type="text" autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label class="label" for="pwRecoveryCode" data-i18n="lbl_signup_verification_code">Verification code</label>
+          <input
+            id="pwRecoveryCode"
+            class="input"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            autocomplete="one-time-code"
+            placeholder="000000"
+            style="max-width: 160px; letter-spacing: 0.12em"
+          />
+        </div>
+        <button type="button" id="pwRecoverySendCodeBtn" class="btn btn-light" style="width:100%;" data-i18n="pw_recovery_send_code">
+          Email me a code
+        </button>
+        <button type="button" id="pwRecoverySubmitBtn" class="btn btn-primary" style="width:100%;margin-top:8px;" data-i18n="pw_recovery_save">
+          Save new password
+        </button>
+        <button type="button" id="pwRecoveryCancelBtn" class="btn btn-light" style="width:100%;margin-top:6px;" data-i18n="pw_recovery_cancel">
+          Cancel
+        </button>
+        <div id="pwRecoveryMessage" class="notice hidden" style="margin-top:12px;"></div>
+      </div>
 
       <div id="authMessage" class="notice hidden" style="margin-top:14px;"></div>
       <p class="mini" style="margin-top:14px;" data-i18n="auth_footer_hint">
@@ -2692,12 +2740,97 @@
   </div>
 
   <script>
-    const SUPABASE_URL = "https://spybejltsgzfxlwzobkh.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
-    const API_BASE =
-      typeof window !== "undefined" && window.location && window.location.origin
-        ? window.location.origin
-        : "https://www.debtya.com";
+    const SUPABASE_URL = (() => {
+      try {
+        const m = document.querySelector('meta[name="debtya-supabase-url"]');
+        const c = m && m.getAttribute("content");
+        if (c && String(c).trim()) return String(c).trim();
+      } catch (_) {}
+      return "https://spybejltsgzfxlwzobkh.supabase.co";
+    })();
+    const SUPABASE_ANON_KEY = (() => {
+      try {
+        const m = document.querySelector('meta[name="debtya-supabase-anon"]');
+        const c = m && m.getAttribute("content");
+        if (c && String(c).trim()) return String(c).trim();
+      } catch (_) {}
+      return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs";
+    })();
+    let API_BASE = (() => {
+      const w = typeof window !== "undefined" ? window : null;
+      const pageHost = w && w.location ? String(w.location.hostname || "").toLowerCase() : "";
+      const isDebtyaMarketing = pageHost === "www.debtya.com" || pageHost === "debtya.com";
+
+      const injected =
+        w && typeof w.__DEBTYA_API_BASE__ === "string" ? String(w.__DEBTYA_API_BASE__).trim().replace(/\/+$/, "") : "";
+      if (injected) return injected;
+      try {
+        const m = document.querySelector('meta[name="debtya-api-origin"]');
+        const mc = m && m.getAttribute("content");
+        if (mc && String(mc).trim()) return String(mc).trim().replace(/\/+$/, "");
+      } catch (_) {}
+      try {
+        const saved = localStorage.getItem("DEBTYA_API_BASE");
+        if (saved && String(saved).trim()) {
+          const clean = String(saved).trim().replace(/\/+$/, "");
+          let savedHost = "";
+          try {
+            savedHost = new URL(clean.startsWith("http") ? clean : `https://${clean}`).hostname.toLowerCase();
+          } catch (_) {
+            savedHost = "";
+          }
+          const savedIsMarketingHost = savedHost === "www.debtya.com" || savedHost === "debtya.com";
+          if (!(isDebtyaMarketing && savedIsMarketingHost)) return clean;
+        }
+      } catch (_) {}
+      if (isDebtyaMarketing) return "https://debtya-api.onrender.com";
+      if (w && w.location && w.location.origin) return w.location.origin;
+      return "https://www.debtya.com";
+    })();
+
+    /** Si la app abre en www pero la API esta en Render u otro host, detecta /health (CORS ya permite www). */
+    const DEBTYA_API_PROBE_ORIGINS = ["https://debtya-api.onrender.com", "https://api.debtya.com"];
+    let debtyaApiBaseProbePromise = null;
+    async function ensureDebtyaApiBaseProbed() {
+      if (debtyaApiBaseProbePromise) return debtyaApiBaseProbePromise;
+      debtyaApiBaseProbePromise = (async () => {
+        try {
+          const loc = typeof window !== "undefined" ? window.location : null;
+          if (!loc || !loc.hostname) return;
+          const h = String(loc.hostname).toLowerCase();
+          if (h !== "www.debtya.com" && h !== "debtya.com") return;
+          const origin = loc.origin.replace(/\/+$/, "");
+          if (String(API_BASE || "").replace(/\/+$/, "") !== origin) return;
+          const hits = await Promise.all(
+            DEBTYA_API_PROBE_ORIGINS.map(async (cand) => {
+              const root = String(cand).replace(/\/+$/, "");
+              try {
+                const ac = new AbortController();
+                const tid = setTimeout(() => ac.abort(), 1800);
+                const r = await fetch(`${root}/health`, {
+                  method: "GET",
+                  signal: ac.signal,
+                  mode: "cors",
+                  cache: "no-store"
+                });
+                clearTimeout(tid);
+                return r.ok ? root : null;
+              } catch (_) {
+                return null;
+              }
+            })
+          );
+          const pick = hits.find(Boolean);
+          if (pick) {
+            try {
+              localStorage.setItem("DEBTYA_API_BASE", pick);
+            } catch (_) {}
+            API_BASE = pick;
+          }
+        } catch (_) {}
+      })();
+      return debtyaApiBaseProbePromise;
+    }
     const REQUEST_TIMEOUT_MS = 15000;
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
@@ -2827,6 +2960,15 @@
         ph_password: "Your password",
         ph_password_confirm: "Repeat password",
         btn_reset_pw: "Email me a password reset link",
+        pw_recovery_title: "Choose a new password",
+        pw_recovery_sub:
+          "Enter and confirm your new password, then use a 6-digit code from your email to finish. You will land here after opening the reset link.",
+        pw_recovery_lbl_new: "New password",
+        pw_recovery_send_code: "Email me a 6-digit code",
+        pw_recovery_save: "Save new password",
+        pw_recovery_cancel: "Cancel and sign out",
+        pw_recovery_code_sent: "Check your email for the 6-digit code.",
+        pw_recovery_done: "Password updated. Loading your account…",
         auth_footer_hint: "Sign in to connect your bank, activate your plan, and use your own numbers.",
         app_welcome_default: "Home",
         badge_session: "Signed in",
@@ -3325,6 +3467,15 @@
         ph_password: "Tu contraseña",
         ph_password_confirm: "Repite la contraseña",
         btn_reset_pw: "Enviar link para cambiar contrasena",
+        pw_recovery_title: "Elige una contrasena nueva",
+        pw_recovery_sub:
+          "Escribe y confirma tu nueva contrasena; luego usa el codigo de 6 digitos que enviamos a tu correo. Llegaras aqui despues de abrir el enlace del correo.",
+        pw_recovery_lbl_new: "Contrasena nueva",
+        pw_recovery_send_code: "Enviar codigo de 6 digitos al correo",
+        pw_recovery_save: "Guardar contrasena nueva",
+        pw_recovery_cancel: "Cancelar y cerrar sesion",
+        pw_recovery_code_sent: "Revisa tu correo para el codigo de 6 digitos.",
+        pw_recovery_done: "Contrasena actualizada. Cargando tu cuenta…",
         auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y usar tus datos reales.",
         app_welcome_default: "Panel principal",
         badge_session: "Sesion activa",
@@ -3807,7 +3958,84 @@
       });
     }
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const PW_RECOVERY_PENDING_KEY = "debtya_pw_recovery_pending";
+    const PW_RECOVERY_PENDING_TTL_MS = 30 * 60 * 1000;
+
+    function decodeAccessTokenPayload(session) {
+      try {
+        const t = session?.access_token;
+        if (!t || typeof t !== "string") return null;
+        const parts = t.split(".");
+        if (parts.length < 2) return null;
+        const b = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+        const pad = b.length % 4 ? "=".repeat(4 - (b.length % 4)) : "";
+        return JSON.parse(atob(b + pad));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    /** PKCE recovery a veces no deja #type=recovery; GoTrue marca amr con method recovery. */
+    function sessionLooksLikePasswordRecovery(session) {
+      if (!session?.access_token) return false;
+      const pl = decodeAccessTokenPayload(session);
+      const amr = pl?.amr;
+      if (!Array.isArray(amr)) return false;
+      return amr.some((e) => e && String(e.method || "").toLowerCase() === "recovery");
+    }
+
+    function setPwRecoveryPending() {
+      try {
+        sessionStorage.setItem(PW_RECOVERY_PENDING_KEY, JSON.stringify({ at: Date.now() }));
+      } catch (_) {}
+    }
+    function clearPwRecoveryPending() {
+      try {
+        sessionStorage.removeItem(PW_RECOVERY_PENDING_KEY);
+      } catch (_) {}
+    }
+    function isPwRecoveryPending() {
+      try {
+        const raw = sessionStorage.getItem(PW_RECOVERY_PENDING_KEY);
+        if (!raw) return false;
+        const j = JSON.parse(raw);
+        return j && typeof j.at === "number" && Date.now() - j.at < PW_RECOVERY_PENDING_TTL_MS;
+      } catch (_) {
+        return false;
+      }
+    }
+    /** Antes de createClient: leer hash/query y quitar JWT viejo para que el recovery no pierda contra sesión guardada. */
+    (function capturePwRecoveryFromUrlEarly() {
+      try {
+        const h = (window.location.hash || "").replace(/^#/, "");
+        const q = new URLSearchParams(window.location.search || "");
+        let mark = false;
+        let hashSaysRecovery = false;
+        if (h) {
+          const p = new URLSearchParams(h);
+          hashSaysRecovery =
+            p.get("type") === "recovery" || /(^|[&])type=recovery(&|$)/.test(h) || h.includes("type%3Drecovery");
+          if (hashSaysRecovery) mark = true;
+        }
+        if (q.get("type") === "recovery") mark = true;
+        if (q.get("debtya_pw_recovery") === "1") mark = true;
+        if (mark) {
+          setPwRecoveryPending();
+          if (hashSaysRecovery) {
+            try {
+              localStorage.removeItem("debtya_access_token");
+              for (const k of Object.keys(localStorage)) {
+                if (k.startsWith("sb-") && k.includes("auth-token")) localStorage.removeItem(k);
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    })();
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { detectSessionInUrl: true, storage: window.localStorage, persistSession: true, autoRefreshToken: true }
+    });
 
     const state = {
       mode: "login",
@@ -3842,6 +4070,32 @@
     const globalMessage = $("globalMessage");
 
     wireAuthPasswordMaskBehavior(authPassword, $("authPasswordConfirm"));
+    wireAuthPasswordMaskBehavior($("pwRecoveryNew"), $("pwRecoveryConfirm"));
+
+    function showPasswordRecoveryPanel() {
+      const panel = $("passwordRecoveryPanel");
+      const block = $("authNormalBlock");
+      if (block) block.classList.add("hidden");
+      if (panel) panel.classList.remove("hidden");
+      landingView.classList.add("hidden");
+      authView.classList.remove("hidden");
+      appView.classList.add("hidden");
+      const line = $("pwRecoveryEmailLine");
+      if (line) line.textContent = state.user?.email || "";
+      try {
+        const path = window.location.pathname || "/";
+        const search = window.location.search || "";
+        window.history.replaceState({}, document.title, `${path}${search}`);
+      } catch (_) {}
+      applyDomI18n();
+    }
+
+    function hidePasswordRecoveryPanel() {
+      const panel = $("passwordRecoveryPanel");
+      const block = $("authNormalBlock");
+      if (panel) panel.classList.add("hidden");
+      if (block) block.classList.remove("hidden");
+    }
 
     function removeDisconnectFallbackFab() {
       const f = $("debtyaDisconnectFab");
@@ -3857,6 +4111,8 @@
 
     function showAuth(mode = "login") {
       removeDisconnectFallbackFab();
+      clearPwRecoveryPending();
+      hidePasswordRecoveryPanel();
       state.signupVerificationPending = false;
       state.signupVerificationEmail = null;
       state.loginVerificationPending = false;
@@ -6070,6 +6326,7 @@
     async function login(email, password) {
       const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      clearPwRecoveryPending();
       return data;
     }
 
@@ -6083,11 +6340,20 @@
     }
 
     async function resetPassword(email) {
+      await ensureDebtyaApiBaseProbed();
       const res = await fetch(`${API_BASE}/auth/password-reset/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, lang: uiLang })
       });
+      try {
+        const echo = res.headers.get("Debtya-Api-Base") || res.headers.get("debtya-api-base");
+        if (echo && String(echo).trim()) {
+          const v = String(echo).trim().replace(/\/+$/, "");
+          localStorage.setItem("DEBTYA_API_BASE", v);
+          API_BASE = v;
+        }
+      } catch (_) {}
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         const parts = [json.error, json.details].filter(Boolean);
@@ -6097,6 +6363,7 @@
     }
 
     async function logout() {
+      clearPwRecoveryPending();
       await supabaseClient.auth.signOut();
       localStorage.removeItem("debtya_access_token");
       try {
@@ -6197,6 +6464,7 @@
     }
 
     async function handleCheckoutReturn() {
+      if (isPwRecoveryPending()) return;
       const params = new URLSearchParams(window.location.search);
       const checkoutState = params.get("checkout");
       if (!checkoutState) return;
@@ -6254,15 +6522,36 @@
     }
 
     async function loadSession() {
+      await ensureDebtyaApiBaseProbed();
       normalizeBankDisconnectPathInUrl();
 
-      try {
-        const { data } = await supabaseClient.auth.getSession();
-        state.session = data?.session || null;
-        state.user = state.session?.user || null;
-      } catch {
-        state.session = null;
-        state.user = null;
+      async function pullSession() {
+        try {
+          const { data } = await supabaseClient.auth.getSession();
+          state.session = data?.session || null;
+          state.user = state.session?.user || null;
+        } catch {
+          state.session = null;
+          state.user = null;
+        }
+      }
+
+      await pullSession();
+
+      if (new URLSearchParams(window.location.search || "").has("code")) {
+        await new Promise((r) => setTimeout(r, 120));
+        await pullSession();
+      }
+
+      if (isPwRecoveryPending()) {
+        for (let i = 0; i < 20 && !state.session; i++) {
+          await new Promise((r) => setTimeout(r, 100));
+          await pullSession();
+        }
+      }
+
+      if (state.session && sessionLooksLikePasswordRecovery(state.session)) {
+        setPwRecoveryPending();
       }
 
       const storedToken = getStoredAccessToken();
@@ -6271,6 +6560,18 @@
       }
 
       renderUser();
+
+      if (isPwRecoveryPending() && state.session) {
+        showPasswordRecoveryPanel();
+        await handleCheckoutReturn();
+        await maybeOpenPendingBankDisconnectFlow();
+        return;
+      }
+
+      if (isPwRecoveryPending() && !state.session) {
+        const qs = new URLSearchParams(window.location.search || "");
+        if (!qs.has("code")) clearPwRecoveryPending();
+      }
 
       if (state.session || storedToken) {
         showApp();
@@ -6494,6 +6795,7 @@
         const password = authPassword.value.trim();
 
         if (state.mode === "login") {
+          await ensureDebtyaApiBaseProbed();
           if (!email || !password) throw new Error(t("fill_email_pw"));
           const emailNorm = email.toLowerCase();
 
@@ -6551,6 +6853,7 @@
             refresh_token: loginJson.session.refresh_token
           });
           if (setSessErr) throw setSessErr;
+          clearPwRecoveryPending();
           state.loginVerificationPending = false;
           state.loginVerificationEmail = null;
           const codeEl = $("authSignupVerifyCode");
@@ -6645,6 +6948,94 @@
       } catch (e) {
         showMessage(authMessage, normalizeErrorMessage(e.message), "error");
       }
+    });
+
+    const pwRecoveryMsg = $("pwRecoveryMessage");
+    function hidePwRecoveryMessage() {
+      hideMessage(pwRecoveryMsg);
+    }
+
+    $("pwRecoverySendCodeBtn").addEventListener("click", async () => {
+      hidePwRecoveryMessage();
+      const btn = $("pwRecoverySendCodeBtn");
+      try {
+        const token = await getAccessToken();
+        if (!token) throw new Error(t("err_generic"));
+        setLoading(btn, true, t("signup_sending_code"));
+        const res = await fetch(`${API_BASE}/auth/password-reset/session/send-code`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ lang: uiLang })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const parts = [json.error, json.details].filter(Boolean);
+          throw new Error(parts.join(" — ") || `HTTP ${res.status}`);
+        }
+        showMessage(pwRecoveryMsg, json?.message || t("pw_recovery_code_sent"), "success");
+      } catch (e) {
+        showMessage(pwRecoveryMsg, normalizeErrorMessage(e.message), "error");
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    $("pwRecoverySubmitBtn").addEventListener("click", async () => {
+      hidePwRecoveryMessage();
+      const btn = $("pwRecoverySubmitBtn");
+      try {
+        const token = await getAccessToken();
+        if (!token) throw new Error(t("err_generic"));
+        const pw = String($("pwRecoveryNew")?.value || "").trim();
+        const pw2 = String($("pwRecoveryConfirm")?.value || "").trim();
+        const code = String($("pwRecoveryCode")?.value || "").trim();
+        if (!pw || !pw2) throw new Error(t("err_signup_password_pair_required"));
+        if (pw !== pw2) throw new Error(t("err_password_mismatch"));
+        if (!signupPasswordMeetsPolicy(pw)) throw new Error(t("err_password_policy"));
+        if (!/^\d{6}$/.test(code)) throw new Error(t("err_signup_code_invalid"));
+        setLoading(btn, true, t("proc"));
+        const res = await fetch(`${API_BASE}/auth/password-reset/session/complete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ password: pw, code, lang: uiLang })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const parts = [json.error, json.details].filter(Boolean);
+          throw new Error(parts.join(" — ") || `HTTP ${res.status}`);
+        }
+        clearPwRecoveryPending();
+        hidePasswordRecoveryPanel();
+        $("pwRecoveryNew").value = "";
+        $("pwRecoveryConfirm").value = "";
+        $("pwRecoveryCode").value = "";
+        showApp();
+        showMessage(globalMessage, json?.message || t("pw_recovery_done"), "success");
+        await refreshAll();
+      } catch (e) {
+        showMessage(pwRecoveryMsg, normalizeErrorMessage(e.message), "error");
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    $("pwRecoveryCancelBtn").addEventListener("click", async () => {
+      hidePwRecoveryMessage();
+      try {
+        await supabaseClient.auth.signOut();
+        localStorage.removeItem("debtya_access_token");
+      } catch (_) {}
+      clearPwRecoveryPending();
+      hidePasswordRecoveryPanel();
+      state.session = null;
+      state.user = null;
+      showAuth("login");
     });
 
     $("logoutBtn").addEventListener("click", logout);
@@ -6954,7 +7345,27 @@
       }
     });
 
-    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (session?.access_token && sessionLooksLikePasswordRecovery(session)) {
+        setPwRecoveryPending();
+      }
+      if (event === "PASSWORD_RECOVERY") {
+        setPwRecoveryPending();
+      }
+      try {
+        const h = (window.location.hash || "").replace(/^#/, "");
+        if (h) {
+          const p = new URLSearchParams(h);
+          if (
+            p.get("type") === "recovery" ||
+            /(^|[&])type=recovery(&|$)/.test(h) ||
+            h.includes("type%3Drecovery")
+          ) {
+            setPwRecoveryPending();
+          }
+        }
+      } catch (_) {}
+
       state.session = session || null;
       state.user = session?.user || null;
 
@@ -6963,6 +7374,11 @@
       }
 
       renderUser();
+
+      if (isPwRecoveryPending() && session) {
+        showPasswordRecoveryPanel();
+        return;
+      }
 
       if (session || getStoredAccessToken()) {
         showApp();
