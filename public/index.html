@@ -2028,7 +2028,15 @@
 
         <div class="field">
           <label class="label" data-i18n="lbl_password">Password</label>
-          <input id="authPassword" class="input" type="password" placeholder="••••••••" required />
+          <input
+            id="authPassword"
+            class="input"
+            type="text"
+            data-i18n-placeholder="ph_password"
+            placeholder=""
+            autocomplete="current-password"
+            required
+          />
         </div>
 
         <div id="authPasswordConfirmWrap" class="field hidden">
@@ -2038,9 +2046,10 @@
           <input
             id="authPasswordConfirm"
             class="input"
-            type="password"
+            type="text"
+            data-i18n-placeholder="ph_password_confirm"
+            placeholder=""
             autocomplete="new-password"
-            placeholder="••••••••"
           />
         </div>
         <div id="authSignupCodeWrap" class="field hidden">
@@ -2806,10 +2815,17 @@
         err_signup_code_invalid: "The code must be 6 digits.",
         signup_check_email_code:
           "We sent a 6-digit code to your email. Enter it below and press Create account again to finish.",
+        login_check_email_code:
+          "We sent a 6-digit code to your email. Enter it below and press Log in again to finish.",
+        login_email_changed_reenter:
+          "The email changed after the code was sent. Press Log in again to request a new code.",
         signup_email_changed_reenter:
           "The email changed after the code was sent. Press Create account again to request a new code.",
         signup_sending_code: "Sending code…",
+        login_sending_code: "Checking credentials and sending code…",
         ph_email: "you@email.com",
+        ph_password: "Your password",
+        ph_password_confirm: "Repeat password",
         btn_reset_pw: "Email me a password reset link",
         auth_footer_hint: "Sign in to connect your bank, activate your plan, and use your own numbers.",
         app_welcome_default: "Home",
@@ -3297,10 +3313,17 @@
         err_signup_code_invalid: "El código debe tener 6 dígitos.",
         signup_check_email_code:
           "Te enviamos un código de 6 dígitos a tu correo. Escríbelo abajo y vuelve a pulsar Crear cuenta para terminar.",
+        login_check_email_code:
+          "Te enviamos un código de 6 dígitos a tu correo. Escríbelo abajo y vuelve a pulsar Entrar para terminar.",
+        login_email_changed_reenter:
+          "Cambiaste el correo después de enviar el código. Pulsa Entrar otra vez para pedir un código nuevo.",
         signup_email_changed_reenter:
           "Cambiaste el correo después de enviar el código. Pulsa Crear cuenta otra vez para pedir un código nuevo.",
         signup_sending_code: "Enviando código…",
+        login_sending_code: "Comprobando datos y enviando código…",
         ph_email: "tu@email.com",
+        ph_password: "Tu contraseña",
+        ph_password_confirm: "Repite la contraseña",
         btn_reset_pw: "Enviar link para cambiar contrasena",
         auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y usar tus datos reales.",
         app_welcome_default: "Panel principal",
@@ -3790,6 +3813,8 @@
       mode: "login",
       signupVerificationPending: false,
       signupVerificationEmail: null,
+      loginVerificationPending: false,
+      loginVerificationEmail: null,
       session: null,
       user: null,
       debts: [],
@@ -3816,6 +3841,8 @@
     const authMessage = $("authMessage");
     const globalMessage = $("globalMessage");
 
+    wireAuthPasswordMaskBehavior(authPassword, $("authPasswordConfirm"));
+
     function removeDisconnectFallbackFab() {
       const f = $("debtyaDisconnectFab");
       if (f) f.remove();
@@ -3832,6 +3859,8 @@
       removeDisconnectFallbackFab();
       state.signupVerificationPending = false;
       state.signupVerificationEmail = null;
+      state.loginVerificationPending = false;
+      state.loginVerificationEmail = null;
       state.mode = mode;
       updateAuthModeUI();
       landingView.classList.add("hidden");
@@ -4244,6 +4273,8 @@
         signupBtn.textContent = t("btn_signup");
         authSubmitBtn.textContent = t("btn_login");
       } else {
+        state.loginVerificationPending = false;
+        state.loginVerificationEmail = null;
         signupBtn.className = "btn btn-primary";
         loginBtn.className = "btn btn-light";
         loginBtn.textContent = t("btn_login");
@@ -4263,13 +4294,32 @@
       const codeInput = $("authSignupVerifyCode");
       if (codeWrap) {
         const hideCode =
-          state.mode === "login" ||
+          (state.mode === "login" && !state.loginVerificationPending) ||
           (state.mode === "signup" && !state.signupVerificationPending);
         codeWrap.classList.toggle("hidden", hideCode);
       }
-      if (state.mode === "login" && codeInput) {
+      if (state.mode === "login" && !state.loginVerificationPending && codeInput) {
         codeInput.value = "";
       }
+    }
+
+    /** Sin máscara cuando el campo está vacío; al escribir pasa a type=password (máscara solo con contenido). */
+    function wireAuthPasswordMaskBehavior(pwEl, confirmEl) {
+      const wire = (el) => {
+        if (!el) return;
+        const syncType = () => {
+          if (el.value.length > 0) el.type = "password";
+          else el.type = "text";
+        };
+        el.addEventListener("focus", syncType);
+        el.addEventListener("input", syncType);
+        el.addEventListener("blur", () => {
+          if (!el.value) el.type = "text";
+        });
+        el.type = el.value ? "password" : "text";
+      };
+      wire(pwEl);
+      wire(confirmEl);
     }
 
     function setBankExchangeFlag() {
@@ -6421,20 +6471,84 @@
     authForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       hideMessage(authMessage);
-      const signupSubmitLabel =
+      const authSubmitLoadingLabel =
         state.mode === "signup" && state.signupVerificationPending
           ? t("creating_acct")
           : state.mode === "signup"
             ? t("signup_sending_code")
-            : t("signing_in");
-      setLoading(authSubmitBtn, true, signupSubmitLabel);
+            : state.mode === "login" && state.loginVerificationPending
+              ? t("signing_in")
+              : state.mode === "login"
+                ? t("login_sending_code")
+                : t("signing_in");
+      setLoading(authSubmitBtn, true, authSubmitLoadingLabel);
       try {
         const email = authEmail.value.trim();
         const password = authPassword.value.trim();
 
         if (state.mode === "login") {
           if (!email || !password) throw new Error(t("fill_email_pw"));
-          await login(email, password);
+          const emailNorm = email.toLowerCase();
+
+          if (!state.loginVerificationPending) {
+            const sendRes = await fetch(`${API_BASE}/auth/login/send-verification-code`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password })
+            });
+            const sendJson = await sendRes.json().catch(() => ({}));
+            if (!sendRes.ok) {
+              const parts = [sendJson.error, sendJson.details].filter(Boolean);
+              throw new Error(parts.join(" — ") || `HTTP ${sendRes.status}`);
+            }
+            state.loginVerificationPending = true;
+            state.loginVerificationEmail = emailNorm;
+            updateAuthModeUI();
+            const codeInput = $("authSignupVerifyCode");
+            if (codeInput) {
+              codeInput.value = "";
+              try {
+                codeInput.focus();
+              } catch (_) {}
+            }
+            showMessage(authMessage, t("login_check_email_code"), "success");
+            return;
+          }
+
+          if (state.loginVerificationEmail && emailNorm !== state.loginVerificationEmail) {
+            state.loginVerificationPending = false;
+            state.loginVerificationEmail = null;
+            updateAuthModeUI();
+            throw new Error(t("login_email_changed_reenter"));
+          }
+
+          const verifyCode = String($("authSignupVerifyCode")?.value || "").trim();
+          if (!/^\d{6}$/.test(verifyCode)) {
+            throw new Error(t("err_signup_code_invalid"));
+          }
+          const loginRes = await fetch(`${API_BASE}/auth/login/complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, code: verifyCode })
+          });
+          const loginJson = await loginRes.json().catch(() => ({}));
+          if (!loginRes.ok) {
+            const parts = [loginJson.error, loginJson.details].filter(Boolean);
+            throw new Error(parts.join(" — ") || `HTTP ${loginRes.status}`);
+          }
+          if (!loginJson.session?.access_token || !loginJson.session?.refresh_token) {
+            throw new Error(t("err_generic"));
+          }
+          const { error: setSessErr } = await supabaseClient.auth.setSession({
+            access_token: loginJson.session.access_token,
+            refresh_token: loginJson.session.refresh_token
+          });
+          if (setSessErr) throw setSessErr;
+          state.loginVerificationPending = false;
+          state.loginVerificationEmail = null;
+          const codeEl = $("authSignupVerifyCode");
+          if (codeEl) codeEl.value = "";
+          updateAuthModeUI();
           showMessage(authMessage, t("session_ok"), "success");
         } else {
           const passwordConfirm = String($("authPasswordConfirm")?.value || "").trim();
