@@ -153,7 +153,7 @@ const AUTH_I18N = {
       "If an account exists for this address, you will receive an email with a reset link shortly.",
     pw_reset_email_subject: "Reset your DebtYa password",
     pw_reset_email_body: (link) =>
-      `Tap the link below to set a new password. It works once and expires in about an hour.\n\n${link}\n\nIf you did not request this, you can ignore this email.`
+      `Tap the link below to set a new password. It expires in about an hour.\n\n${link}\n\nOn the next page, press "Continue to reset password" once (this avoids email scanners breaking the link).\n\nIf you did not request this, you can ignore this email.`
   },
   es: {
     err_supabase_not_configured: "Supabase no configurado",
@@ -188,7 +188,7 @@ const AUTH_I18N = {
       "Si existe una cuenta con este correo, recibirás un enlace para restablecer la contraseña en unos instantes.",
     pw_reset_email_subject: "Restablece tu contraseña de DebtYa",
     pw_reset_email_body: (link) =>
-      `Usa el enlace de abajo para elegir una nueva contraseña. Solo vale una vez y caduca en aproximadamente una hora.\n\n${link}\n\nSi no lo pediste, ignora este mensaje.`
+      `Usa el enlace de abajo para elegir una nueva contraseña. Caduca en aproximadamente una hora.\n\n${link}\n\nEn la siguiente pantalla, pulsa una vez el boton azul "Continue to reset password" (así los bots de seguridad del correo no rompen el enlace).\n\nSi no lo pediste, ignora este mensaje.`
   }
 };
 
@@ -238,9 +238,34 @@ function htmlRecoverLinkInvalid() {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>DebtYa</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:26rem;margin:3rem auto;padding:0 1.25rem;color:#111;line-height:1.5}a{color:#2563eb}</style></head><body><h1 style="font-size:1.2rem;font-weight:600">Reset link invalid or expired</h1><p>Request a new reset from the DebtYa sign-in screen.</p><p><a href="/">Continue to DebtYa</a></p></body></html>`;
 }
 
+function escapeHtmlAttr(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function htmlRecoverConfirmForm(token) {
+  const safe = escapeHtmlAttr(token);
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>DebtYa — password reset</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:26rem;margin:3rem auto;padding:0 1.25rem;color:#111;line-height:1.5}button{font:inherit;padding:0.65rem 1.1rem;border-radius:8px;border:0;background:#2563eb;color:#fff;cursor:pointer}button:hover{background:#1d4ed8}</style></head><body><h1 style="font-size:1.2rem;font-weight:600">Reset your password</h1><p>Confirm to open the secure DebtYa reset page. (This step avoids broken links from email scanners.)</p><form method="post" action="/auth/recover"><input type="hidden" name="t" value="${safe}" /><p><button type="submit">Continue to reset password</button></p></form><p style="font-size:0.9rem;color:#555"><a href="/">Back to DebtYa</a></p></body></html>`;
+}
+
+async function fetchPasswordResetRow(supabaseAdmin, token) {
+  const nowIso = new Date().toISOString();
+  const { data: rows, error: selErr } = await supabaseAdmin
+    .from("password_reset_shortlinks")
+    .select("target_url")
+    .eq("token", token)
+    .gt("expires_at", nowIso)
+    .limit(1);
+  return { row: rows && rows[0], selErr };
+}
+
 function registerAuthSignupRoutes(app, deps) {
   const { supabaseAdmin, jsonError, appError } = deps;
 
+  /** GET: solo muestra confirmación; el enlace real se consume en POST (evita bots de correo que vacían el token). */
   app.get("/auth/recover", async (req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
     try {
@@ -251,23 +276,43 @@ function registerAuthSignupRoutes(app, deps) {
       if (!supabaseAdmin) {
         return res.status(500).type("text/plain").send("Server misconfiguration.");
       }
-      const nowIso = new Date().toISOString();
-      const { data: row, error: selErr } = await supabaseAdmin
-        .from("password_reset_shortlinks")
-        .select("target_url")
-        .eq("token", token)
-        .gt("expires_at", nowIso)
-        .maybeSingle();
-
-      if (selErr || !row?.target_url) {
-        if (selErr) appError("[auth/recover] select", logSupabaseErr("select", selErr));
+      const { row, selErr } = await fetchPasswordResetRow(supabaseAdmin, token);
+      if (selErr) {
+        appError("[auth/recover GET] select", logSupabaseErr("select", selErr));
         return res.status(410).type("text/html; charset=utf-8").send(htmlRecoverLinkInvalid());
       }
+      if (!row?.target_url) {
+        return res.status(410).type("text/html; charset=utf-8").send(htmlRecoverLinkInvalid());
+      }
+      return res.status(200).type("text/html; charset=utf-8").send(htmlRecoverConfirmForm(token));
+    } catch (e) {
+      appError("[auth/recover GET]", e);
+      return res.status(500).type("text/plain").send("Error.");
+    }
+  });
 
+  app.post("/auth/recover", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    try {
+      const token = String(req.body?.t || "").trim();
+      if (!/^[A-Za-z0-9_-]{16,128}$/.test(token)) {
+        return res.status(400).type("text/html; charset=utf-8").send(htmlRecoverLinkInvalid());
+      }
+      if (!supabaseAdmin) {
+        return res.status(500).type("text/plain").send("Server misconfiguration.");
+      }
+      const { row, selErr } = await fetchPasswordResetRow(supabaseAdmin, token);
+      if (selErr) {
+        appError("[auth/recover POST] select", logSupabaseErr("select", selErr));
+        return res.status(410).type("text/html; charset=utf-8").send(htmlRecoverLinkInvalid());
+      }
+      if (!row?.target_url) {
+        return res.status(410).type("text/html; charset=utf-8").send(htmlRecoverLinkInvalid());
+      }
       await supabaseAdmin.from("password_reset_shortlinks").delete().eq("token", token);
       return res.redirect(302, row.target_url);
     } catch (e) {
-      appError("[auth/recover]", e);
+      appError("[auth/recover POST]", e);
       return res.status(500).type("text/plain").send("Error.");
     }
   });
