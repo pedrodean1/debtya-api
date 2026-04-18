@@ -199,17 +199,60 @@ function createFreshAnonAuthClient(deps) {
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
-/** URL post-reset: FRONTEND_URL > APP_BASE_URL > host de la petición > debtya.com (debe estar en Redirect URLs de Supabase). */
+function isLocalhostBase(base) {
+  const s = String(base || "").trim().toLowerCase();
+  if (!s) return true;
+  try {
+    const u = new URL(s.startsWith("http") ? s : `https://${s}`);
+    const h = u.hostname;
+    return h === "localhost" || h === "127.0.0.1" || h === "[::1]";
+  } catch {
+    return /localhost|127\.0\.0\.1/.test(s);
+  }
+}
+
+function requestAppearsLocal(req) {
+  if (!req || typeof req.get !== "function") return false;
+  const host = String(req.get("host") || "").toLowerCase();
+  if (host === "localhost" || host.startsWith("localhost:")) return true;
+  if (host === "127.0.0.1" || host.startsWith("127.0.0.1:")) return true;
+  const origin = String(req.get("origin") || "").toLowerCase();
+  return origin.includes("localhost") || origin.includes("127.0.0.1");
+}
+
+function firstNonLocalhostBase(...candidates) {
+  for (const c of candidates) {
+    const s = String(c || "").trim().replace(/\/+$/, "");
+    if (s && !isLocalhostBase(s)) return s;
+  }
+  return "";
+}
+
+/**
+ * URL post-reset (redirect_to de Supabase). En producción ignora FRONTEND_URL/APP_BASE_URL si son localhost
+ * (suelen quedar copiados del .env local en Render y rompen el flujo al redirigir al navegador del usuario).
+ */
 function resolvePasswordResetRedirect(deps, req) {
   const fe = String(deps.FRONTEND_URL || "").trim().replace(/\/+$/, "");
   const app = String(deps.APP_BASE_URL || "").trim().replace(/\/+$/, "");
-  let base = fe || app;
-  if (!base && typeof deps.getBaseUrl === "function") {
+  let fromReq = "";
+  if (typeof deps.getBaseUrl === "function") {
     try {
-      base = String(deps.getBaseUrl(req) || "").trim().replace(/\/+$/, "");
-    } catch (_) {
-      base = "";
-    }
+      fromReq = String(deps.getBaseUrl(req) || "").trim().replace(/\/+$/, "");
+    } catch (_) {}
+  }
+
+  let base = "";
+  if (requestAppearsLocal(req)) {
+    base = fe || app || fromReq || "http://localhost:3000";
+  } else {
+    base = firstNonLocalhostBase(
+      fe,
+      "https://www.debtya.com",
+      "https://debtya.com",
+      app,
+      fromReq
+    );
   }
   const b = base || "https://www.debtya.com";
   return `${b}/`;
@@ -220,18 +263,30 @@ function resolveRecoverClickBase(deps, req) {
   const explicit = String(process.env.PASSWORD_RESET_LINK_BASE || "")
     .trim()
     .replace(/\/+$/, "");
-  if (explicit) return explicit;
+  if (explicit && (!isLocalhostBase(explicit) || requestAppearsLocal(req))) {
+    return explicit;
+  }
+
   const app = String(deps.APP_BASE_URL || "")
     .trim()
     .replace(/\/+$/, "");
-  if (app) return app;
+  let fromReq = "";
   try {
-    return String(deps.getBaseUrl(req) || "")
+    fromReq = String(deps.getBaseUrl(req) || "")
       .trim()
       .replace(/\/+$/, "");
   } catch (_) {
-    return "";
+    fromReq = "";
   }
+
+  if (!requestAppearsLocal(req)) {
+    return (
+      firstNonLocalhostBase(app, fromReq, "https://www.debtya.com", "https://debtya.com") ||
+      "https://www.debtya.com"
+    );
+  }
+  if (app) return app;
+  return fromReq || "";
 }
 
 function htmlRecoverLinkInvalid() {
