@@ -233,6 +233,13 @@ function firstNonLocalhostBase(...candidates) {
  * (suelen quedar copiados del .env local en Render y rompen el flujo al redirigir al navegador del usuario).
  */
 function resolvePasswordResetRedirect(deps, req) {
+  const forced = String(process.env.DEBTYA_PASSWORD_RESET_PUBLIC_URL || "")
+    .trim()
+    .replace(/\/+$/, "");
+  if (forced && !isLocalhostBase(forced) && !requestAppearsLocal(req)) {
+    return `${forced}/`;
+  }
+
   const fe = String(deps.FRONTEND_URL || "").trim().replace(/\/+$/, "");
   const app = String(deps.APP_BASE_URL || "").trim().replace(/\/+$/, "");
   let fromReq = "";
@@ -256,6 +263,32 @@ function resolvePasswordResetRedirect(deps, req) {
   }
   const b = base || "https://www.debtya.com";
   return `${b}/`;
+}
+
+/**
+ * Fuerza redirect_to en el action_link de Supabase si falta o apunta a localhost.
+ * Corrige enlaces guardados antes de arreglar env y casos donde GoTrue ignora redirectTo.
+ */
+function rewriteSupabaseRecoveryActionUrl(targetUrl, deps, req) {
+  const good = resolvePasswordResetRedirect(deps, req);
+  try {
+    const u = new URL(String(targetUrl || ""));
+    const cur = u.searchParams.get("redirect_to");
+    if (!cur || String(cur).trim() === "") {
+      if (!requestAppearsLocal(req)) u.searchParams.set("redirect_to", good);
+      return u.toString();
+    }
+    let dec = cur;
+    try {
+      dec = decodeURIComponent(cur);
+    } catch (_) {}
+    if (isLocalhostBase(dec) || isLocalhostBase(cur)) {
+      u.searchParams.set("redirect_to", good);
+    }
+    return u.toString();
+  } catch {
+    return String(targetUrl || "");
+  }
 }
 
 /** Base pública del clic en el correo (API). Opcional: PASSWORD_RESET_LINK_BASE. */
@@ -365,7 +398,8 @@ function registerAuthSignupRoutes(app, deps) {
         return res.status(410).type("text/html; charset=utf-8").send(htmlRecoverLinkInvalid());
       }
       await supabaseAdmin.from("password_reset_shortlinks").delete().eq("token", token);
-      return res.redirect(302, row.target_url);
+      const finalUrl = rewriteSupabaseRecoveryActionUrl(row.target_url, deps, req);
+      return res.redirect(302, finalUrl);
     } catch (e) {
       appError("[auth/recover POST]", e);
       return res.status(500).type("text/plain").send("Error.");
@@ -422,11 +456,12 @@ function registerAuthSignupRoutes(app, deps) {
       }
 
       const props = linkData.properties || {};
-      const actionLink = props.action_link || props.actionLink || "";
-      if (!actionLink) {
+      const actionLinkRaw = props.action_link || props.actionLink || "";
+      if (!actionLinkRaw) {
         appError("[auth/password-reset] sin action_link", { keys: Object.keys(props) });
         return neutralJson();
       }
+      const actionLink = rewriteSupabaseRecoveryActionUrl(actionLinkRaw, deps, req);
 
       const clickBase = resolveRecoverClickBase(deps, req);
       const shortToken = crypto.randomBytes(18).toString("base64url");
