@@ -169,6 +169,18 @@
       gap:12px;
     }
 
+    /* Resumen (overview): ancho completo de ventana; el resto de .app sigue centrado a 1280px */
+    #overviewPanel.hero.hero-overview-compact{
+      width:100vw;
+      max-width:100vw;
+      position:relative;
+      left:50%;
+      transform:translateX(-50%);
+      box-sizing:border-box;
+      padding-left:max(18px, env(safe-area-inset-left, 0px));
+      padding-right:max(18px, env(safe-area-inset-right, 0px));
+    }
+
     @media (min-width: 1041px){
       .hero.hero-overview-compact{
         grid-template-columns:1.05fr .95fr;
@@ -180,7 +192,8 @@
     }
 
     .hero-overview-compact .hero-title{
-      margin:0 0 6px;
+      margin:0 0 12px;
+      width:100%;
       font-size:24px;
       letter-spacing:-.45px;
       line-height:1.12;
@@ -421,6 +434,8 @@
 
     .hero-title{
       margin:0 0 10px;
+      width:100%;
+      box-sizing:border-box;
       font-size:36px;
       line-height:1.05;
       letter-spacing:-.7px;
@@ -656,6 +671,8 @@
     .pill.red{background:#fff1f1;color:var(--red)}
     .pill.orange{background:#fff7e8;color:#b7791f}
     .pill.blue{background:#eef4ff;color:var(--primary)}
+    .pill.gray{background:#f3f4f6;color:#4b5563}
+    .pill.purple{background:#f3e8ff;color:#6b21a8}
 
     .mini-summary{
       display:grid;
@@ -2167,9 +2184,9 @@
 
       <section class="hero hero-overview-compact" id="overviewPanel">
         <div class="card hero-main card-soft">
+          <h2 class="hero-title" data-i18n="hero_title">See your plan. Take the next step.</h2>
           <div class="hero-title-row">
             <div class="hero-title-block">
-              <h2 class="hero-title" data-i18n="hero_title">See your plan. Take the next step.</h2>
               <p class="hero-copy" data-i18n="hero_copy">
                 Your bank, your debts, and the next payment—here in one view.
               </p>
@@ -2258,6 +2275,45 @@
             <div class="grid-2" style="margin-bottom:12px;">
               <button id="btnImportAccounts" class="btn btn-light" type="button" data-i18n="btn_import_accounts">Import accounts</button>
               <button id="btnImportTransactions" class="btn btn-light" type="button" data-i18n="btn_import_tx">Import transactions</button>
+            </div>
+
+            <div id="methodDebtsPanel" class="method-debts-panel" style="margin-bottom:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card-2);">
+              <p class="sync-banks-title" data-i18n="method_panel_title">Deudas con Method</p>
+              <p id="methodPanelHint" class="helper-text" data-i18n="method_panel_hint">Conecta liabilities en Method y sincroniza. Luego importa cada deuda a DebtYa.</p>
+              <div class="grid-2" style="margin-top:8px;">
+                <div class="field">
+                  <label class="label" for="methodFirstName" data-i18n="method_lbl_first">Nombre</label>
+                  <input id="methodFirstName" class="input" type="text" autocomplete="given-name" />
+                </div>
+                <div class="field">
+                  <label class="label" for="methodLastName" data-i18n="method_lbl_last">Apellido</label>
+                  <input id="methodLastName" class="input" type="text" autocomplete="family-name" />
+                </div>
+                <div class="field">
+                  <label class="label" for="methodPhone" data-i18n="method_lbl_phone">Teléfono (E.164)</label>
+                  <input id="methodPhone" class="input" type="tel" autocomplete="tel" placeholder="+1..." />
+                </div>
+                <div class="field">
+                  <label class="label" for="methodEmail" data-i18n="method_lbl_email">Correo</label>
+                  <input id="methodEmail" class="input" type="email" autocomplete="email" />
+                </div>
+                <div class="field" style="grid-column:1 / -1;">
+                  <label class="label" for="methodDob" data-i18n="method_lbl_dob">Fecha de nacimiento (opcional, ISO)</label>
+                  <input id="methodDob" class="input" type="text" autocomplete="bday" placeholder="1990-01-15" />
+                </div>
+              </div>
+              <div class="field" style="margin-top:8px;">
+                <label class="label" for="methodEntityPick" data-i18n="method_entity_label">Entidad Method</label>
+                <select id="methodEntityPick" class="select">
+                  <option value="">—</option>
+                </select>
+              </div>
+              <div class="operate-bank-row" style="margin-top:10px;">
+                <button id="btnMethodCreateEntity" class="btn btn-light" type="button" data-i18n="method_btn_create_entity">Crear perfil Method</button>
+                <button id="btnMethodConnect" class="btn btn-light" type="button" data-i18n="method_btn_connect">Conectar liabilities</button>
+                <button id="btnMethodSync" class="btn btn-light" type="button" data-i18n="method_btn_sync">Sincronizar</button>
+              </div>
+              <div id="methodAccountsList" class="method-accounts-list" style="margin-top:12px;"></div>
             </div>
 
             <details class="ux-advanced-details ux-operate-advanced">
@@ -2740,6 +2796,22 @@
   </div>
 
   <script>
+    (function purgeBadDebtyaApiBaseStorage() {
+      try {
+        const w = typeof window !== "undefined" ? window : null;
+        const h = w && w.location ? String(w.location.hostname || "").toLowerCase() : "";
+        if (h !== "www.debtya.com" && h !== "debtya.com") return;
+        const raw = localStorage.getItem("DEBTYA_API_BASE");
+        if (!raw || !String(raw).trim()) return;
+        const clean = String(raw).trim().replace(/\/+$/, "");
+        let sh = "";
+        try {
+          sh = new URL(clean.startsWith("http") ? clean : `https://${clean}`).hostname.toLowerCase();
+        } catch (_) {}
+        if (sh === "www.debtya.com" || sh === "debtya.com") localStorage.removeItem("DEBTYA_API_BASE");
+      } catch (_) {}
+    })();
+
     const SUPABASE_URL = (() => {
       try {
         const m = document.querySelector('meta[name="debtya-supabase-url"]');
@@ -2761,8 +2833,14 @@
       const pageHost = w && w.location ? String(w.location.hostname || "").toLowerCase() : "";
       const isDebtyaMarketing = pageHost === "www.debtya.com" || pageHost === "debtya.com";
 
-      const injected =
+      let injected =
         w && typeof w.__DEBTYA_API_BASE__ === "string" ? String(w.__DEBTYA_API_BASE__).trim().replace(/\/+$/, "") : "";
+      if (injected) {
+        try {
+          const ih = new URL(injected.startsWith("http") ? injected : `https://${injected}`).hostname.toLowerCase();
+          if (isDebtyaMarketing && (ih === "www.debtya.com" || ih === "debtya.com")) injected = "";
+        } catch (_) {}
+      }
       if (injected) return injected;
       try {
         const m = document.querySelector('meta[name="debtya-api-origin"]');
@@ -3039,6 +3117,34 @@
         btn_execute_visible: "Run payments",
         operate_note: "Most days: Connect → Import. Rules and preparing payments live under More.",
         operate_legal_html: 'By connecting an account, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers. Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
+        method_panel_title: "Debts via Method",
+        method_panel_hint: "Method discovers liabilities. Plaid stays for the bank you pay from. Create a Method profile, run Connect, sync, then import each debt into DebtYa.",
+        method_panel_disabled: "Method is not configured on this server yet.",
+        method_lbl_first: "First name",
+        method_lbl_last: "Last name",
+        method_lbl_phone: "Phone (E.164)",
+        method_lbl_email: "Email",
+        method_lbl_dob: "Date of birth (optional, ISO)",
+        method_entity_label: "Method entity",
+        method_btn_create_entity: "Create Method profile",
+        method_btn_connect: "Connect liabilities",
+        method_btn_sync: "Sync liabilities",
+        method_capable_badge: "Payable via Method",
+        method_info_badge: "Informational only",
+        method_import_balance: "Balance",
+        method_import_apr: "APR",
+        method_import_min: "Minimum",
+        method_btn_import: "Import to DebtYa",
+        method_import_ok: "Debt imported.",
+        method_action_ok: "Done.",
+        method_err_entity: "Create a Method profile first.",
+        method_err_pick_entity: "Select a Method entity.",
+        method_empty_sync: "No Method liabilities synced yet.",
+        method_imported_badge: "Imported",
+        debt_source_method: "Method",
+        debt_source_plaid: "Plaid",
+        debt_method_payable: "Payable (Method)",
+        debt_method_info_only: "Informational",
         debts_title: "Debts",
         debts_sub: "Add cards and loans. Link a bank account when it helps.",
         lbl_name: "Name",
@@ -3183,6 +3289,8 @@
         err_fetch: "Could not reach the server.",
         err_network: "There is a connection problem.",
         err_timeout: "The operation took too long. Try again.",
+        err_upstream_unavailable:
+          "The DebtYa server did not respond (busy or restarting). Wait a few seconds and try again.",
         err_login_creds: "Incorrect email or password.",
         err_email_confirm: "Confirm your email before signing in.",
         err_session: "Your session expired. Please sign in again.",
@@ -3546,6 +3654,34 @@
         btn_execute_visible: "Ejecutar pagos",
         operate_note: "Lo usual: Conectar → Importar. Reglas y preparar pagos estan en Mas.",
         operate_legal_html: 'Al conectar una cuenta, autorizas a DebtYa a recibir la informacion financiera necesaria para el servicio a traves de proveedores de confianza. Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
+        method_panel_title: "Deudas con Method",
+        method_panel_hint: "Method descubre liabilities (deudas). Plaid sigue siendo el banco del que pagas. Crea perfil Method, ejecuta Conectar, sincroniza e importa cada deuda a DebtYa.",
+        method_panel_disabled: "Method aun no esta configurado en este servidor.",
+        method_lbl_first: "Nombre",
+        method_lbl_last: "Apellido",
+        method_lbl_phone: "Telefono (E.164)",
+        method_lbl_email: "Correo",
+        method_lbl_dob: "Fecha de nacimiento (opcional, ISO)",
+        method_entity_label: "Entidad Method",
+        method_btn_create_entity: "Crear perfil Method",
+        method_btn_connect: "Conectar liabilities",
+        method_btn_sync: "Sincronizar liabilities",
+        method_capable_badge: "Pagable con Method",
+        method_info_badge: "Solo informativa",
+        method_import_balance: "Saldo",
+        method_import_apr: "APR",
+        method_import_min: "Pago minimo",
+        method_btn_import: "Importar a DebtYa",
+        method_import_ok: "Deuda importada.",
+        method_action_ok: "Listo.",
+        method_err_entity: "Primero crea un perfil Method.",
+        method_err_pick_entity: "Elige una entidad Method.",
+        method_empty_sync: "Aun no hay liabilities Method sincronizadas.",
+        method_imported_badge: "Ya importada",
+        debt_source_method: "Method",
+        debt_source_plaid: "Plaid",
+        debt_method_payable: "Pagable (Method)",
+        debt_method_info_only: "Informativa",
         debts_title: "Deudas",
         debts_sub: "Agrega tarjetas y prestamos. Vincula el banco cuando ayude.",
         lbl_name: "Nombre",
@@ -3689,6 +3825,8 @@
         err_fetch: "No se pudo conectar con el servidor.",
         err_network: "Hay un problema de conexion.",
         err_timeout: "La operacion tardo demasiado. Intentalo otra vez.",
+        err_upstream_unavailable:
+          "El servidor de DebtYa no respondio (puede estar ocupado o reiniciando). Espera unos segundos y vuelve a intentarlo.",
         err_login_creds: "Email o contrasena incorrectos.",
         err_email_confirm: "Confirma tu email antes de entrar.",
         err_session: "Tu sesion expiro. Entra de nuevo.",
@@ -3787,13 +3925,13 @@
         plan_mode_full: "Automatico total",
         bill_active: "Activa",
         promo_comp_hint:
-          "Si tienes un codigo de acceso complementario (por ejemplo amigos y familia), ingresalo aqui para desbloquear la app sin pasar por el pago.",
-        promo_comp_label: "Codigo de acceso",
-        promo_comp_apply: "Aplicar codigo",
+          "Si te compartieron un código de invitación (amigos o familia), escríbelo en el campo de abajo y pulsa «Aplicar código» para usar la app sin pasar por el pago.",
+        promo_comp_label: "Código de invitación",
+        promo_comp_apply: "Aplicar código",
         promo_comp_ok: "Acceso activado.",
         promo_comp_already: "Esta cuenta ya tiene acceso complementario.",
         promo_comp_err: "No se pudo aplicar el codigo.",
-        promo_comp_need: "Ingresa un codigo primero.",
+        promo_comp_need: "Escribe un código primero.",
         promo_comp_server_off:
           "Este servidor no tiene codigos de promocion configurados (define DEBTYA_COMP_PROMO_CODES o DEBTYA_COMP_PROMO_CODE en el host y redeploy).",
         bill_trialing: "En prueba",
@@ -4054,7 +4192,10 @@
       plaidItems: [],
       billing: null,
       lastCompare: null,
-      editingRuleId: null
+      editingRuleId: null,
+      methodConfigured: false,
+      methodEntities: [],
+      methodAccounts: []
     };
 
     const $ = (id) => document.getElementById(id);
@@ -4273,6 +4414,7 @@
       if (text.includes("Failed to fetch")) return t("err_fetch");
       if (text.includes("NetworkError")) return t("err_network");
       if (text.includes("Timeout")) return t("err_timeout");
+      if (/HTTP 502\b|HTTP 503\b|HTTP 504\b|Bad Gateway|Gateway Timeout/i.test(text)) return t("err_upstream_unavailable");
       if (text.includes("Invalid login credentials")) return t("err_login_creds");
       if (text.includes("Email not confirmed")) return t("err_email_confirm");
       if (text.includes("Token invalido") || text.includes("sesion expirada")) return t("err_session");
@@ -4338,7 +4480,14 @@
 
         if (!res.ok) {
           const parts = [json?.error, json?.details].filter(Boolean);
-          const msg = [...new Set(parts)].join(" — ") || text || `HTTP ${res.status}`;
+          let msg = [...new Set(parts)].join(" — ").trim();
+          if (!msg) {
+            const raw = String(text || "").trim();
+            const looksHtml = raw.startsWith("<") || /<html[\s>]/i.test(raw) || /<body[\s>]/i.test(raw);
+            if (looksHtml) msg = `HTTP ${res.status} ${res.statusText || ""}`.trim();
+            else if (raw) msg = raw.length > 400 ? `${raw.slice(0, 397)}...` : raw;
+            else msg = `HTTP ${res.status}`;
+          }
           throw new Error(msg);
         }
 
@@ -5108,12 +5257,25 @@
         const linkPill = hasGoodLink
           ? `<span class="pill blue debt-linked-title-pill">${escapeHtml(t("debt_link_badge_short"))}</span>`
           : "";
+        const src = String(debt.source || "manual");
+        const sourcePills = [];
+        if (src === "method") {
+          sourcePills.push(`<span class="pill purple debt-source-pill">${escapeHtml(t("debt_source_method"))}</span>`);
+          if (debt.payment_capable) {
+            sourcePills.push(`<span class="pill green">${escapeHtml(t("debt_method_payable"))}</span>`);
+          } else {
+            sourcePills.push(`<span class="pill gray">${escapeHtml(t("debt_method_info_only"))}</span>`);
+          }
+        } else if (src === "plaid") {
+          sourcePills.push(`<span class="pill purple">${escapeHtml(t("debt_source_plaid"))}</span>`);
+        }
+        const sourcePillsHtml = sourcePills.join("");
         el.innerHTML = `
           <div class="item-top">
             <div>
               <div class="item-title-wrap">
                 <div class="item-title">${escapeHtml(debt.name || t("debt_label"))}</div>
-                ${linkPill}
+                ${linkPill}${sourcePillsHtml}
               </div>
               <div class="item-meta">
                 ${escapeHtml(t("apr_label"))}: <strong>${Number(debt.apr || 0).toFixed(2)}%</strong> ·
@@ -6213,6 +6375,173 @@
       renderAccounts();
     }
 
+    function safeMethodDomId(id) {
+      return String(id || "").replace(/[^a-zA-Z0-9_]/g, "_");
+    }
+
+    function methodDebtTitleFromRow(row) {
+      try {
+        const snap = row && row.raw_snapshot && typeof row.raw_snapshot === "object" ? row.raw_snapshot : {};
+        const li = snap.liability || row.liability || {};
+        const name = li && li.name ? String(li.name).trim() : "";
+        const mask = li && li.mask ? String(li.mask).trim() : "";
+        if (name) return name;
+        if (mask) return `${t("debt_label")} · ****${mask}`;
+        return row.method_account_id || t("debt_label");
+      } catch (_) {
+        return row.method_account_id || t("debt_label");
+      }
+    }
+
+    function updateMethodPanelHint() {
+      const el = $("methodPanelHint");
+      if (!el) return;
+      if (!state.methodConfigured) {
+        el.removeAttribute("data-i18n");
+        el.textContent = t("method_panel_disabled");
+        return;
+      }
+      el.setAttribute("data-i18n", "method_panel_hint");
+      el.textContent = t("method_panel_hint");
+    }
+
+    function populateMethodEntityPick() {
+      const sel = $("methodEntityPick");
+      if (!sel) return;
+      const rows = Array.isArray(state.methodEntities) ? state.methodEntities : [];
+      const prev = sel.value;
+      let html = `<option value="">—</option>`;
+      rows.forEach((r) => {
+        const mid = r.method_entity_id || "";
+        if (!mid) return;
+        const label = `${mid}${r.status ? " · " + String(r.status) : ""}`;
+        html += `<option value="${escapeHtml(mid)}">${escapeHtml(label)}</option>`;
+      });
+      sel.innerHTML = html;
+      if (prev && rows.some((r) => String(r.method_entity_id) === String(prev))) sel.value = prev;
+      else if (rows[0] && rows[0].method_entity_id) sel.value = rows[0].method_entity_id;
+      else sel.value = "";
+    }
+
+    async function importMethodDebtToDebtya(methodAccountId) {
+      try {
+        const sid = safeMethodDomId(methodAccountId);
+        const balEl = $(`methodBal_${sid}`);
+        const aprEl = $(`methodApr_${sid}`);
+        const minEl = $(`methodMin_${sid}`);
+        const balance = balEl ? Number(balEl.value || 0) : 0;
+        const apr = aprEl ? Number(aprEl.value || 0) : 0;
+        const minimum_payment = minEl ? Number(minEl.value || 0) : 0;
+        await api("/method/import-debt", {
+          method: "POST",
+          body: JSON.stringify({ method_account_id: methodAccountId, balance, apr, minimum_payment })
+        });
+        showMessage(globalMessage, t("method_import_ok"), "success");
+        await Promise.all([refreshDebts(), refreshMethodSection()]);
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+      }
+    }
+
+    function renderMethodAccountsList() {
+      const box = $("methodAccountsList");
+      if (!box) return;
+      if (!state.methodConfigured) {
+        box.innerHTML = "";
+        return;
+      }
+      const rows = Array.isArray(state.methodAccounts) ? state.methodAccounts : [];
+      if (!rows.length) {
+        box.innerHTML = `<div class="empty">${escapeHtml(t("method_empty_sync"))}</div>`;
+        return;
+      }
+      let html = "";
+      rows.forEach((row) => {
+        const id = row.method_account_id || "";
+        const sid = safeMethodDomId(id);
+        const title = escapeHtml(methodDebtTitleFromRow(row));
+        const cap = !!row.payment_capable;
+        const badge = cap
+          ? `<span class="pill green">${escapeHtml(t("method_capable_badge"))}</span>`
+          : `<span class="pill gray">${escapeHtml(t("method_info_badge"))}</span>`;
+        const imported = row.imported_debt_id
+          ? `<span class="pill blue">${escapeHtml(t("method_imported_badge"))}</span>`
+          : "";
+        const importBlock = row.imported_debt_id
+          ? ""
+          : `
+            <div class="grid-3" style="margin-top:10px;">
+              <div class="field">
+                <label class="label">${escapeHtml(t("method_import_balance"))}</label>
+                <input id="methodBal_${sid}" class="input" type="number" step="0.01" value="0" />
+              </div>
+              <div class="field">
+                <label class="label">${escapeHtml(t("method_import_apr"))}</label>
+                <input id="methodApr_${sid}" class="input" type="number" step="0.01" value="0" />
+              </div>
+              <div class="field">
+                <label class="label">${escapeHtml(t("method_import_min"))}</label>
+                <input id="methodMin_${sid}" class="input" type="number" step="0.01" value="0" />
+              </div>
+            </div>
+            <div style="margin-top:8px;">
+              <button type="button" class="btn btn-secondary btn-small" data-method-import="${escapeHtml(id)}">${escapeHtml(
+            t("method_btn_import")
+          )}</button>
+            </div>`;
+        html += `
+          <div class="mini-card" style="margin-bottom:8px;">
+            <div class="item-top">
+              <div>
+                <div class="item-title">${title}</div>
+                <div class="item-meta" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                  ${badge}${imported}
+                  <span class="muted">${escapeHtml(id)}</span>
+                </div>
+              </div>
+            </div>
+            ${importBlock}
+          </div>`;
+      });
+      box.innerHTML = html;
+      box.querySelectorAll("[data-method-import]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const accId = btn.getAttribute("data-method-import");
+          if (!accId) return;
+          await importMethodDebtToDebtya(accId);
+        });
+      });
+    }
+
+    async function refreshMethodSection() {
+      try {
+        const stRes = await fetch(`${API_BASE}/method/status`, { method: "GET", cache: "no-store" });
+        const st = stRes.ok ? await stRes.json().catch(() => ({})) : {};
+        state.methodConfigured = !!st.method_configured;
+      } catch (_) {
+        state.methodConfigured = false;
+      }
+      updateMethodPanelHint();
+      const token = await getAccessToken();
+      if (!token || !state.methodConfigured) {
+        state.methodEntities = [];
+        state.methodAccounts = [];
+        populateMethodEntityPick();
+        renderMethodAccountsList();
+        return;
+      }
+      try {
+        const [entRes, acctRes] = await Promise.all([api("/method/entities"), api("/method/accounts")]);
+        state.methodEntities = (entRes && entRes.data) || [];
+        state.methodAccounts = (acctRes && acctRes.data) || [];
+      } catch (_) {
+        state.methodEntities = [];
+        state.methodAccounts = [];
+      }
+      populateMethodEntityPick();
+      renderMethodAccountsList();
+    }
+
     async function refreshBillingStatus() {
       try {
         const res = await api("/billing/subscription-status");
@@ -6254,6 +6583,7 @@
         ]);
         await refreshAccounts();
         await refreshDebts();
+        await refreshMethodSection();
       } catch (e) {
         showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
       }
@@ -7058,6 +7388,81 @@
     if (billingManageBtn) billingManageBtn.addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
+
+    function getSelectedMethodEntityIdForMethodApi() {
+      const sel = $("methodEntityPick");
+      const v = sel && sel.value ? String(sel.value).trim() : "";
+      if (v) return v;
+      const first = state.methodEntities && state.methodEntities[0];
+      return first && first.method_entity_id ? String(first.method_entity_id) : "";
+    }
+
+    $("btnMethodCreateEntity")?.addEventListener("click", async () => {
+      const btn = $("btnMethodCreateEntity");
+      try {
+        const token = await getAccessToken();
+        if (!token) throw new Error(t("sign_in_first"));
+        if (!state.methodConfigured) throw new Error(t("method_panel_disabled"));
+        setLoading(btn, true, "…");
+        const body = {
+          individual: {
+            first_name: $("methodFirstName")?.value?.trim() || null,
+            last_name: $("methodLastName")?.value?.trim() || null,
+            phone: $("methodPhone")?.value?.trim() || null,
+            email: $("methodEmail")?.value?.trim() || null,
+            dob: $("methodDob")?.value?.trim() || null
+          }
+        };
+        await api("/method/entities", { method: "POST", body: JSON.stringify(body) });
+        showMessage(globalMessage, t("method_action_ok"), "success");
+        await refreshMethodSection();
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    $("btnMethodConnect")?.addEventListener("click", async () => {
+      const btn = $("btnMethodConnect");
+      try {
+        const token = await getAccessToken();
+        if (!token) throw new Error(t("sign_in_first"));
+        if (!state.methodConfigured) throw new Error(t("method_panel_disabled"));
+        const ent = getSelectedMethodEntityIdForMethodApi();
+        if (!ent) throw new Error(t("method_err_entity"));
+        setLoading(btn, true, "…");
+        await api(`/method/entities/${encodeURIComponent(ent)}/connect`, { method: "POST", body: "{}" });
+        showMessage(globalMessage, t("method_action_ok"), "success");
+        await refreshMethodSection();
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    $("btnMethodSync")?.addEventListener("click", async () => {
+      const btn = $("btnMethodSync");
+      try {
+        const token = await getAccessToken();
+        if (!token) throw new Error(t("sign_in_first"));
+        if (!state.methodConfigured) throw new Error(t("method_panel_disabled"));
+        const ent = getSelectedMethodEntityIdForMethodApi();
+        if (!ent) throw new Error(t("method_err_entity"));
+        setLoading(btn, true, "…");
+        await api("/method/accounts/sync", {
+          method: "POST",
+          body: JSON.stringify({ method_entity_id: ent })
+        });
+        showMessage(globalMessage, t("method_action_ok"), "success");
+        await refreshMethodSection();
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+      } finally {
+        setLoading(btn, false);
+      }
+    });
 
     $("navOverview").addEventListener("click", () => setNav("overview"));
     $("navOperate").addEventListener("click", () => setNav("operate"));
