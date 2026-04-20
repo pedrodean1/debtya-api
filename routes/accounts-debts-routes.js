@@ -65,6 +65,24 @@ function registerAccountsDebtsRoutes(app, deps) {
         updated_at: new Date().toISOString()
       };
 
+      if (req.body.source !== undefined && req.body.source !== null) {
+        payload.source = String(req.body.source);
+      } else {
+        payload.source = "manual";
+      }
+      if (req.body.method_account_id !== undefined) {
+        const v = req.body.method_account_id;
+        payload.method_account_id = v === null || v === "" ? null : String(v).trim();
+      }
+      if (req.body.method_entity_id !== undefined) {
+        const v = req.body.method_entity_id;
+        payload.method_entity_id = v === null || v === "" ? null : String(v).trim();
+      }
+      if (req.body.payment_capable !== undefined) {
+        const pc = req.body.payment_capable;
+        payload.payment_capable = pc === true || pc === "true";
+      }
+
     if (req.body.linked_plaid_account_id !== undefined) {
       const raw = req.body.linked_plaid_account_id;
       if (raw === null || raw === "") {
@@ -126,6 +144,22 @@ function registerAccountsDebtsRoutes(app, deps) {
           await assertLinkedPlaidAccountForUser(req.user.id, lid);
           patch.linked_plaid_account_id = lid;
         }
+      }
+
+      if (req.body.source !== undefined) {
+        patch.source = req.body.source === null ? "manual" : String(req.body.source);
+      }
+      if (req.body.method_account_id !== undefined) {
+        const v = req.body.method_account_id;
+        patch.method_account_id = v === null || v === "" ? null : String(v).trim();
+      }
+      if (req.body.method_entity_id !== undefined) {
+        const v = req.body.method_entity_id;
+        patch.method_entity_id = v === null || v === "" ? null : String(v).trim();
+      }
+      if (req.body.payment_capable !== undefined) {
+        const pc = req.body.payment_capable;
+        patch.payment_capable = pc === true || pc === "true";
       }
 
       const patchErr = validateDebtPatch(patch);

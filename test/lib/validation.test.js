@@ -41,6 +41,29 @@ describe("validateDebtCreatePayload", () => {
   it("rechaza balance negativo", () => {
     assert.equal(validateDebtCreatePayload({ balance: -1, minimum_payment: 0, apr: 0 }), "balance inválido");
   });
+  it("exige method_account_id cuando source es method", () => {
+    assert.equal(
+      validateDebtCreatePayload({
+        balance: 0,
+        minimum_payment: 0,
+        apr: 0,
+        source: "method"
+      }),
+      "method_account_id requerido cuando source es method"
+    );
+  });
+  it("acepta source method con method_account_id", () => {
+    assert.equal(
+      validateDebtCreatePayload({
+        balance: 0,
+        minimum_payment: 0,
+        apr: 0,
+        source: "method",
+        method_account_id: "acc_test123"
+      }),
+      null
+    );
+  });
 });
 
 describe("validateDebtPatch", () => {
@@ -56,6 +79,12 @@ describe("validateDebtPatch", () => {
   });
   it("rechaza due_day fuera de rango", () => {
     assert.equal(validateDebtPatch({ due_day: 32 }), "due_day inválido");
+  });
+  it("rechaza source desconocido", () => {
+    assert.equal(validateDebtPatch({ source: "other" }), "source inválido");
+  });
+  it("rechaza payment_capable no booleano", () => {
+    assert.equal(validateDebtPatch({ payment_capable: "yes" }), "payment_capable inválido");
   });
 });
 

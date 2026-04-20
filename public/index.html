@@ -3119,7 +3119,8 @@
         operate_legal_html: 'By connecting an account, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers. Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
         method_panel_title: "Debts via Method",
         method_panel_hint: "Method discovers liabilities. Plaid stays for the bank you pay from. Create a Method profile, run Connect, sync, then import each debt into DebtYa.",
-        method_panel_disabled: "Method is not configured on this server yet.",
+        method_panel_disabled:
+          "Method is not enabled on this API host. Add METHOD_API_KEY to the Node service on Render and redeploy; open /health and confirm method_configured is true.",
         method_lbl_first: "First name",
         method_lbl_last: "Last name",
         method_lbl_phone: "Phone (E.164)",
@@ -3656,7 +3657,8 @@
         operate_legal_html: 'Al conectar una cuenta, autorizas a DebtYa a recibir la informacion financiera necesaria para el servicio a traves de proveedores de confianza. Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
         method_panel_title: "Deudas con Method",
         method_panel_hint: "Method descubre liabilities (deudas). Plaid sigue siendo el banco del que pagas. Crea perfil Method, ejecuta Conectar, sincroniza e importa cada deuda a DebtYa.",
-        method_panel_disabled: "Method aun no esta configurado en este servidor.",
+        method_panel_disabled:
+          "Method no esta activo en esta API: falta METHOD_API_KEY en el servicio Node (Render) o la API desplegada no es la ultima version. Abre /health y comprueba method_configured: true.",
         method_lbl_first: "Nombre",
         method_lbl_last: "Apellido",
         method_lbl_phone: "Telefono (E.164)",
@@ -6513,14 +6515,35 @@
       });
     }
 
-    async function refreshMethodSection() {
-      try {
-        const stRes = await fetch(`${API_BASE}/method/status`, { method: "GET", cache: "no-store" });
-        const st = stRes.ok ? await stRes.json().catch(() => ({})) : {};
-        state.methodConfigured = !!st.method_configured;
-      } catch (_) {
-        state.methodConfigured = false;
+    function parseMethodConfiguredFromPayload(obj) {
+      const v = obj && typeof obj === "object" ? obj.method_configured : undefined;
+      if (v === true) return true;
+      if (v === 1) return true;
+      if (typeof v === "string") {
+        const s = v.trim().toLowerCase();
+        return s === "true" || s === "1" || s === "yes";
       }
+      return false;
+    }
+
+    async function refreshMethodSection() {
+      let configured = false;
+      try {
+        const ac = new AbortController();
+        const tid = setTimeout(() => ac.abort(), 12000);
+        const [stRes, healthRes] = await Promise.all([
+          fetch(`${API_BASE}/method/status`, { method: "GET", cache: "no-store", signal: ac.signal }),
+          fetch(`${API_BASE}/health`, { method: "GET", cache: "no-store", signal: ac.signal })
+        ]);
+        clearTimeout(tid);
+        const st = stRes.ok ? await stRes.json().catch(() => ({})) : {};
+        const health = healthRes.ok ? await healthRes.json().catch(() => ({})) : {};
+        configured =
+          parseMethodConfiguredFromPayload(st) || parseMethodConfiguredFromPayload(health);
+      } catch (_) {
+        configured = false;
+      }
+      state.methodConfigured = configured;
       updateMethodPanelHint();
       const token = await getAccessToken();
       if (!token || !state.methodConfigured) {
