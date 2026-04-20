@@ -1,3 +1,5 @@
+const { isMethodConfigured, readMethodEnv, readMethodApiVersion, readMethodKeyStatus } = require("../lib/method-env");
+
 function registerCoreRoutes(app, deps) {
   const {
     SERVER_VERSION,
@@ -17,6 +19,8 @@ function registerCoreRoutes(app, deps) {
   } = deps;
 
   app.get("/health", async (_req, res) => {
+    const methodOn = isMethodConfigured();
+    const methodStatus = readMethodKeyStatus();
     const payload = {
       ok: true,
       message: "DebtYa API funcionando",
@@ -25,7 +29,12 @@ function registerCoreRoutes(app, deps) {
       bank_disconnect_page_alt: "/disconnect-bank.html",
       bank_disconnect_page_plaid: "/plaid/manage-disconnect",
       bank_disconnect_page_api: "/api/bank-disconnect",
-      now: new Date().toISOString()
+      now: new Date().toISOString(),
+      has_method_api_key: methodStatus.configured,
+      method_key_source: methodStatus.key_source,
+      method_configured: methodOn,
+      method_env: methodOn ? readMethodEnv() : null,
+      method_api_version: methodOn ? readMethodApiVersion() : null
     };
 
     const exposeEnvDebug =
@@ -42,9 +51,14 @@ function registerCoreRoutes(app, deps) {
         has_stripe_price_id_beta_monthly: !!STRIPE_PRICE_ID_BETA_MONTHLY,
         has_stripe_webhook_secret: !!STRIPE_WEBHOOK_SECRET,
         has_openai_guide: !!process.env.OPENAI_API_KEY,
-        guide_assistant_disabled: process.env.OPENAI_GUIDE_DISABLED === "1"
+        guide_assistant_disabled: process.env.OPENAI_GUIDE_DISABLED === "1",
+        has_method_api_key: methodOn
       };
     }
+
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Surrogate-Control", "no-store");
 
     return res.json(payload);
   });

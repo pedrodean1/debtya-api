@@ -13,12 +13,13 @@ const { attachStripeWebhook } = require("./routes/stripe-webhook-routes");
 const { isUuid } = require("./lib/validation");
 const { requestIdMiddleware } = require("./lib/request-id");
 const { jsonError } = require("./lib/json-error");
+const { readMethodKeyStatus, readMethodEnv, readMethodApiVersion } = require("./lib/method-env");
 
 const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-18-www-html-api-base-purge";
+const SERVER_VERSION = "debtya-2026-04-20-method-health-visibility";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2167,6 +2168,7 @@ app.use((req, res, next) => {
     !req.path.startsWith("/stripe") &&
     !req.path.startsWith("/supabase") &&
     !req.path.startsWith("/plaid") &&
+    !req.path.startsWith("/method") &&
     !req.path.startsWith("/accounts") &&
     !req.path.startsWith("/debts") &&
     !req.path.startsWith("/payment-plan") &&
@@ -2210,8 +2212,12 @@ try {
 }
 
 app.listen(PORT, () => {
+  const methodStatus = readMethodKeyStatus();
   console.log(`DebtYa API escuchando en puerto ${PORT}`);
   console.log(`Server version: ${SERVER_VERSION}`);
+  console.log(
+    `[DebtYa] Method config: configured=${methodStatus.configured} key_source=${methodStatus.key_source || "none"} env=${readMethodEnv()} api_version=${readMethodApiVersion()}`
+  );
   console.log(
     "[DebtYa] Quitar banco (abrir en el navegador con sesion): /bank-disconnect | /disconnect-bank.html | /plaid/manage-disconnect | /api/bank-disconnect"
   );
