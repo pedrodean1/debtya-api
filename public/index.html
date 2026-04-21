@@ -28,7 +28,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-22-method-connect-probe-bearer" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-22-method-entity-reset" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2344,6 +2344,12 @@
                 <button id="btnMethodConnect" class="btn btn-light" type="button" data-i18n="method_btn_connect">Conectar liabilities</button>
                 <button id="btnMethodSync" class="btn btn-light" type="button" data-i18n="method_btn_sync">Sincronizar</button>
               </div>
+              <div class="operate-bank-row" style="margin-top:8px;flex-wrap:wrap;gap:8px;">
+                <button id="btnMethodReset" class="btn btn-light" type="button" data-i18n="method_btn_reset">Limpiar perfil Method</button>
+              </div>
+              <p class="helper-text" style="margin-top:6px;" data-i18n="method_reset_blurb">
+                Quita la entidad guardada en DebtYa, las cuentas sincronizadas y el historial de Connect para este usuario. Las deudas importadas desde Method pasan a manual.
+              </p>
               <div id="methodAccountsList" class="method-accounts-list" style="margin-top:12px;"></div>
             </div>
 
@@ -3192,6 +3198,12 @@
         method_btn_create_entity: "Create Method profile",
         method_btn_connect: "Connect liabilities",
         method_btn_sync: "Sync liabilities",
+        method_btn_reset: "Clear Method profile (DebtYa)",
+        method_reset_blurb:
+          "Removes the Method entity, synced liabilities and Connect history stored for your account in DebtYa. Debts previously imported from Method become manual debts.",
+        method_reset_confirm:
+          "Clear Method data stored in DebtYa for your account? You can create a new Method profile afterwards.",
+        method_reset_ok: "Method data cleared. You can create a new profile.",
         method_capable_badge: "Payable via Method",
         method_info_badge: "Informational only",
         method_import_balance: "Balance",
@@ -3738,6 +3750,12 @@
         method_btn_create_entity: "Crear perfil Method",
         method_btn_connect: "Conectar liabilities",
         method_btn_sync: "Sincronizar liabilities",
+        method_btn_reset: "Limpiar perfil Method",
+        method_reset_blurb:
+          "Quita la entidad Method, las liabilities sincronizadas y el historial de Connect guardados en DebtYa para tu usuario. Las deudas que venian de Method pasan a manual (conservan nombre y montos).",
+        method_reset_confirm:
+          "¿Borrar en DebtYa los datos Method de tu cuenta (entidad, sync, Connect)? Podras crear un perfil Method nuevo despues.",
+        method_reset_ok: "Listo: datos Method borrados en DebtYa. Ya puedes crear un perfil nuevo.",
         method_capable_badge: "Pagable con Method",
         method_info_badge: "Solo informativa",
         method_import_balance: "Saldo",
@@ -7753,6 +7771,33 @@
         await refreshMethodSection();
       } catch (e) {
         showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    $("btnMethodReset")?.addEventListener("click", async () => {
+      const btn = $("btnMethodReset");
+      try {
+        const token = await getAccessToken();
+        if (!token) throw new Error(t("sign_in_first"));
+        if (!window.confirm(t("method_reset_confirm"))) return;
+        setLoading(btn, true, "…");
+        const res = await api("/method/entities/reset", { method: "POST", body: "{}" });
+        console.info("[Debtya][Method] reset ok", {
+          removed_entities: res && res.data && res.data.removed_entities,
+          debts_unlinked: res && res.data && res.data.debts_unlinked
+        });
+        state.methodEntitiesLoadError = null;
+        state.methodEntities = [];
+        state.methodAccounts = [];
+        populateMethodEntityPick();
+        renderMethodAccountsList();
+        await refreshMethodSection();
+        await refreshDebts();
+        showMessage(globalMessage, t("method_reset_ok"), "success");
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e && e.message ? String(e.message) : ""), "error");
       } finally {
         setLoading(btn, false);
       }

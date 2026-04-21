@@ -226,6 +226,84 @@ function registerMethodRoutes(app, deps) {
     }
   });
 
+  app.post("/method/entities/reset", requireUser, async (req, res) => {
+    const userId = req.user.id;
+    try {
+      methodInfo(req, "reset.start", { user_id: userId });
+      const now = new Date().toISOString();
+      const fullDebtPatch = {
+        source: "manual",
+        method_account_id: null,
+        method_entity_id: null,
+        payment_capable: false,
+        updated_at: now
+      };
+      const colsOnlyPatch = {
+        method_account_id: null,
+        method_entity_id: null,
+        payment_capable: false,
+        updated_at: now
+      };
+      let dRes = await supabaseAdmin.from("debts").update(fullDebtPatch).eq("user_id", userId).eq("source", "method").select("id");
+      if (dRes.error && isMissingTableColumnError(dRes.error, "debts", "source")) {
+        dRes = await supabaseAdmin
+          .from("debts")
+          .update(colsOnlyPatch)
+          .eq("user_id", userId)
+          .not("method_account_id", "is", null)
+          .select("id");
+      }
+      if (dRes.error) throw dRes.error;
+      const nMethodDebts = Array.isArray(dRes.data) ? dRes.data.length : 0;
+
+      const { data: dStrip, error: stripErr } = await supabaseAdmin
+        .from("debts")
+        .update(colsOnlyPatch)
+        .eq("user_id", userId)
+        .or("method_entity_id.not.is.null,method_account_id.not.is.null")
+        .select("id");
+      if (stripErr) throw stripErr;
+      const nStripDebts = Array.isArray(dStrip) ? dStrip.length : 0;
+
+      const { error: delSessErr } = await supabaseAdmin.from("method_connect_sessions").delete().eq("user_id", userId);
+      if (delSessErr) throw delSessErr;
+
+      const { error: delAcctErr } = await supabaseAdmin.from("method_accounts").delete().eq("user_id", userId);
+      if (delAcctErr) throw delAcctErr;
+
+      const { data: removedEntities, error: delEntErr } = await supabaseAdmin
+        .from("method_entities")
+        .delete()
+        .eq("user_id", userId)
+        .select("id, method_entity_id");
+      if (delEntErr) throw delEntErr;
+
+      const { error: payErr } = await supabaseAdmin.from("method_payments").delete().eq("user_id", userId);
+      if (payErr && !String(payErr.message || "").toLowerCase().includes("relation") && !String(payErr.message || "").toLowerCase().includes("does not exist")) {
+        appError("[Method] reset method_payments delete", req.requestId || null, payErr.message);
+      }
+
+      const nEnt = Array.isArray(removedEntities) ? removedEntities.length : 0;
+      const debtsTouched = nMethodDebts + nStripDebts;
+      methodInfo(req, "reset.done", {
+        user_id: userId,
+        removed_entities: nEnt,
+        debts_unlinked_or_stripped: debtsTouched
+      });
+      return res.json({
+        ok: true,
+        data: {
+          removed_entities: nEnt,
+          removed_method_entity_ids: (removedEntities || []).map((r) => r.method_entity_id).filter(Boolean),
+          debts_unlinked: debtsTouched
+        }
+      });
+    } catch (error) {
+      appError("[Method] POST /method/entities/reset", req.requestId || null, error.message);
+      return jsonError(res, 500, "No se pudo limpiar Method en tu cuenta", { details: error.message });
+    }
+  });
+
   app.post("/method/entities", requireUser, async (req, res) => {
     const mc = getClient();
     if (!mc) {
