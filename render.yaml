@@ -2,6 +2,8 @@
 # Si creas además un "Static Site" y apuntas www ahí, rutas como /bank-disconnect
 # no existen en estático: hay que usar este servicio para el dominio principal
 # o quitar el Static Site y dejar solo este web.
+# Si www es estatico y la API solo en onrender.com: en el Web Service define DEBTYA_PUBLIC_API_URL
+# con la URL publica del servicio Node (fetch + enlaces de reset en el correo).
 # https://render.com/docs/blueprint-spec
 services:
   - type: web

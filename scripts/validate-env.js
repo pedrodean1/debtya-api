@@ -1,7 +1,7 @@
 /**
  * Comprueba variables de entorno requeridas sin imprimir secretos.
  * Uso: node scripts/validate-env.js
- * Con NODE_ENV=production exige mas claves criticas.
+ * Con NODE_ENV=production o RENDER=true exige mas claves criticas.
  */
 
 if (process.env.CI !== "true") {
@@ -9,6 +9,8 @@ if (process.env.CI !== "true") {
 }
 
 const isProd = process.env.NODE_ENV === "production";
+/** Render define RENDER=true; asi el servicio no arranca sin anon aunque NODE_ENV no este definido. */
+const isProdLike = isProd || process.env.RENDER === "true";
 
 const always = ["SUPABASE_URL"];
 
@@ -23,20 +25,25 @@ const prodExtra = [
 function missing(keys) {
   return keys.filter((k) => {
     const v = process.env[k];
-    return v === undefined || String(v).trim() === "";
+    if (v !== undefined && String(v).trim() !== "") return false;
+    if (k === "SUPABASE_ANON_KEY") {
+      const svc = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (svc !== undefined && String(svc).trim() !== "") return false;
+    }
+    return true;
   });
 }
 
-const need = [...always, ...(isProd ? prodExtra : [])];
+const need = [...always, ...(isProdLike ? prodExtra : [])];
 const absent = missing(need);
 
 if (absent.length) {
   console.error(
     "[validate-env] Faltan variables:",
     absent.join(", "),
-    isProd ? "(modo production)" : ""
+    isProdLike ? "(production o Render)" : ""
   );
   process.exit(1);
 }
 
-console.log("[validate-env] OK", isProd ? "(production)" : "");
+console.log("[validate-env] OK", isProdLike ? "(production o Render)" : "");

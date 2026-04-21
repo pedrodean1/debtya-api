@@ -49,4 +49,32 @@ describe("scripts/validate-env.js", () => {
     });
     assert.equal(r.status, 0, r.stderr || r.stdout);
   });
+
+  it("en CI con RENDER=true sin SUPABASE_ANON_KEY pero con service role sale 0 (anon embebida en servidor)", () => {
+    const r = runValidateEnv({
+      CI: "true",
+      NODE_ENV: "development",
+      RENDER: "true",
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "svc",
+      STRIPE_SECRET_KEY: "sk",
+      STRIPE_WEBHOOK_SECRET: "wh",
+      CRON_SECRET: "cron"
+    });
+    assert.equal(r.status, 0, r.stderr || r.stdout);
+  });
+
+  it("en CI con RENDER=true sin anon ni service role falla", () => {
+    const r = runValidateEnv({
+      CI: "true",
+      NODE_ENV: "development",
+      RENDER: "true",
+      SUPABASE_URL: "https://example.supabase.co",
+      STRIPE_SECRET_KEY: "sk",
+      STRIPE_WEBHOOK_SECRET: "wh",
+      CRON_SECRET: "cron"
+    });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr + r.stdout, /SUPABASE_(ANON_KEY|SERVICE_ROLE_KEY)/);
+  });
 });

@@ -23,6 +23,75 @@ function debtNameFromMethodAccount(acc) {
   return "Deuda Method";
 }
 
+function summarizeEntityPayload(payload) {
+  const i = payload && payload.individual && typeof payload.individual === "object" ? payload.individual : {};
+  const a = payload && payload.address && typeof payload.address === "object" ? payload.address : null;
+  return {
+    type: payload && payload.type ? String(payload.type) : null,
+    has_first_name: !!(i.first_name && String(i.first_name).trim()),
+    has_last_name: !!(i.last_name && String(i.last_name).trim()),
+    has_phone: !!(i.phone && String(i.phone).trim()),
+    has_email: !!(i.email && String(i.email).trim()),
+    has_dob: !!(i.dob && String(i.dob).trim()),
+    has_address: !!a
+  };
+}
+
+function pruneEmptyObjectFields(obj) {
+  if (!obj || typeof obj !== "object") return {};
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v == null) continue;
+    if (typeof v === "string" && !String(v).trim()) continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+function looksLikeMethodEntityId(s) {
+  const v = String(s || "").trim();
+  return /^ent_[A-Za-z0-9]+$/.test(v);
+}
+
+function extractMethodEntityId(input) {
+  if (!input || typeof input !== "object") return null;
+  const tryId = (v) => {
+    if (v == null) return null;
+    const s = String(v).trim();
+    return s || null;
+  };
+  const direct = tryId(input.id);
+  if (direct && looksLikeMethodEntityId(direct)) return direct;
+  const alt = tryId(input.entity_id || input.entityId);
+  if (alt && looksLikeMethodEntityId(alt)) return alt;
+
+  const candidates = [input.data, input.entity, input.result, input.response, input.record, input.resource, input.payload];
+  for (const c of candidates) {
+    if (!c || typeof c !== "object") continue;
+    const id1 = tryId(c.id);
+    if (id1 && looksLikeMethodEntityId(id1)) return id1;
+    const id2 = tryId(c.entity_id || c.entityId);
+    if (id2 && looksLikeMethodEntityId(id2)) return id2;
+    if (c.entity && typeof c.entity === "object") {
+      const id3 = tryId(c.entity.id);
+      if (id3 && looksLikeMethodEntityId(id3)) return id3;
+    }
+    if (c.data && typeof c.data === "object") {
+      const id4 = tryId(c.data.id);
+      if (id4 && looksLikeMethodEntityId(id4)) return id4;
+    }
+  }
+  if (Array.isArray(input.data) && input.data[0]) {
+    const row = input.data[0];
+    if (row && typeof row === "object") {
+      const id5 = tryId(row.id);
+      if (id5 && looksLikeMethodEntityId(id5)) return id5;
+    }
+  }
+  if (direct) return direct;
+  return null;
+}
+
 function registerMethodRoutes(app, deps) {
   const { requireUser, supabaseAdmin, jsonError, appError, safeNumber, isUuid, isMissingTableColumnError } = deps;
 
@@ -118,22 +187,52 @@ function registerMethodRoutes(app, deps) {
       const individual = body.individual && typeof body.individual === "object" ? body.individual : {};
       const address = body.address && typeof body.address === "object" ? body.address : undefined;
 
+      const individualRaw = {
+        first_name: individual.first_name != null ? String(individual.first_name).trim() : null,
+        last_name: individual.last_name != null ? String(individual.last_name).trim() : null,
+        phone: individual.phone != null ? String(individual.phone).trim() : null,
+        email: individual.email != null ? String(individual.email).trim() : null,
+        dob: individual.dob != null ? String(individual.dob).trim() : null
+      };
+      const individualClean = pruneEmptyObjectFields(individualRaw);
       const payload = {
         type: "individual",
-        individual: {
-          first_name: individual.first_name != null ? String(individual.first_name).trim() : null,
-          last_name: individual.last_name != null ? String(individual.last_name).trim() : null,
-          phone: individual.phone != null ? String(individual.phone).trim() : null,
-          email: individual.email != null ? String(individual.email).trim() : null,
-          dob: individual.dob != null ? String(individual.dob).trim() : null
-        },
-        ...(address ? { address } : {})
+        individual: individualClean,
+        ...(address ? { address: pruneEmptyObjectFields(address) } : {})
       };
 
-      const entity = await mc.createIndividualEntity(payload);
-      const methodEntityId = entity && entity.id ? String(entity.id) : null;
+      methodInfo(req, "create_entity.request", summarizeEntityPayload(payload));
+      const created = await mc.createIndividualEntityDetailed(payload);
+      const entity = created ? created.body : null;
+      const methodEntityId = extractMethodEntityId(entity);
+      const rawPreview =
+        created && typeof created.rawBody === "string" ? String(created.rawBody).slice(0, 800) : null;
+      methodInfo(
+        req,
+        "create_entity.response",
+        {
+          http_status: created ? created.status : null,
+          body_type: entity === null ? "null" : Array.isArray(entity) ? "array" : typeof entity,
+          top_level_keys: entity && typeof entity === "object" ? Object.keys(entity).slice(0, 25) : [],
+          detected_entity_id: methodEntityId,
+          raw_body_preview: rawPreview
+        }
+      );
       if (!methodEntityId) {
-        return jsonError(res, 502, "Respuesta inválida de Method al crear entidad");
+        appError(
+          "[Method] create_entity sin id usable",
+          req.requestId || null,
+          JSON.stringify({
+            http_status: created ? created.status : null,
+            body_type: entity === null ? "null" : Array.isArray(entity) ? "array" : typeof entity,
+            keys: entity && typeof entity === "object" ? Object.keys(entity).slice(0, 40) : []
+          })
+        );
+        const st = created ? created.status : null;
+        return jsonError(res, 502, "Method respondió sin un entity id usable", {
+          method_http_status: st,
+          details: `La respuesta no trae un id de entidad reconocible (se espera ent_* en id, entity_id o anidados comunes).${st != null ? ` Method HTTP ${st}.` : ""}`
+        });
       }
 
       const { data: inserted, error: insErr } = await supabaseAdmin
@@ -161,9 +260,40 @@ function registerMethodRoutes(app, deps) {
       return res.json({ ok: true, data: { row: inserted, method: entity } });
     } catch (error) {
       const status = error.status && Number(error.status) >= 400 ? Number(error.status) : 502;
-      appError("[Method] POST /method/entities fallo", req.requestId || null, error.message);
+      const rawPrev =
+        error.method_raw_body && typeof error.method_raw_body === "string"
+          ? String(error.method_raw_body).slice(0, 800)
+          : null;
+      methodInfo(req, "create_entity.method_http_error", {
+        method_http_status: error.method_http_status || error.status || null,
+        message: error.message,
+        raw_body_preview: rawPrev
+      });
+      appError(
+        "[Method] POST /method/entities fallo",
+        req.requestId || null,
+        error.message,
+        {
+          method_http_status: error.method_http_status || error.status || null,
+          method_keys:
+            error.method_response && typeof error.method_response === "object"
+              ? Object.keys(error.method_response).slice(0, 25)
+              : [],
+          raw_body_preview: rawPrev
+        }
+      );
+      const clientDetails =
+        error.method_response && typeof error.method_response === "object"
+          ? error.method_response.message ||
+            error.method_response.error ||
+            (typeof error.method_response.error === "object" && error.method_response.error?.message) ||
+            error.message
+          : error.message;
+      const mst = error.method_http_status || error.status || null;
+      const detailStr = typeof clientDetails === "string" ? clientDetails : JSON.stringify(clientDetails);
       return jsonError(res, status >= 500 ? 502 : status, "Error creando entidad Method", {
-        details: error.message
+        details: mst != null ? `${detailStr} (Method HTTP ${mst})` : detailStr,
+        method_http_status: mst
       });
     }
   });

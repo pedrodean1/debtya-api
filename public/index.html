@@ -28,7 +28,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-18-ga4-events" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-21-ui-api-sync" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -1828,9 +1828,34 @@
     .help-jump-faq{
       margin-top:12px;
     }
+
+    .ui-rev-fixed{
+      position:fixed;
+      right:10px;
+      bottom:8px;
+      z-index:9999;
+      font:11px/1.25 ui-monospace,Consolas,monospace;
+      color:var(--muted);
+      background:rgba(255,255,255,.94);
+      border:1px solid var(--line);
+      border-radius:8px;
+      padding:5px 9px;
+      pointer-events:none;
+      max-width:min(96vw,640px);
+      word-break:break-word;
+      box-shadow:var(--shadow-soft);
+    }
   </style>
 </head>
 <body>
+  <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
+  <script>
+    (function () {
+      var m = document.querySelector('meta[name="debtya-ui-rev"]');
+      var el = document.getElementById("debtyaUiRevBadge");
+      if (el && m && m.content) el.textContent = "UI " + m.content + " · API …";
+    })();
+  </script>
   <div id="landingView">
     <div class="app">
       <div class="topbar">
@@ -2909,6 +2934,36 @@
       })();
       return debtyaApiBaseProbePromise;
     }
+
+    function renderDebtyaRevBadge(apiServerVersion) {
+      const el = document.getElementById("debtyaUiRevBadge");
+      if (!el) return;
+      const m = document.querySelector('meta[name="debtya-ui-rev"]');
+      const ui = m && m.content ? String(m.content).trim() : "?";
+      const api =
+        apiServerVersion != null && String(apiServerVersion).trim() ? String(apiServerVersion).trim() : "?";
+      el.textContent = "UI " + ui + " · API " + api;
+    }
+
+    async function probeDebtyaDeployBadge() {
+      try {
+        await ensureDebtyaApiBaseProbed();
+        const ac = new AbortController();
+        const tid = setTimeout(() => ac.abort(), 8000);
+        const r = await fetch(`${API_BASE}/health`, {
+          method: "GET",
+          cache: "no-store",
+          signal: ac.signal,
+          mode: "cors"
+        });
+        clearTimeout(tid);
+        const j = r.ok ? await r.json().catch(() => ({})) : {};
+        renderDebtyaRevBadge(j.server_version);
+      } catch (_) {
+        renderDebtyaRevBadge(null);
+      }
+    }
+
     const REQUEST_TIMEOUT_MS = 15000;
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
@@ -3287,6 +3342,8 @@
         yes: "Yes",
         no: "No",
         err_generic: "Something went wrong. Please try again.",
+        err_stale_method_api:
+          "The DebtYa API is not on the latest release (obsolete Method message). Redeploy debtya-api, hard refresh this page, then try again. If the badge bottom-right does not match your deploy, the static HTML is also stale.",
         err_fetch: "Could not reach the server.",
         err_network: "There is a connection problem.",
         err_timeout: "The operation took too long. Try again.",
@@ -3824,6 +3881,8 @@
         yes: "Si",
         no: "No",
         err_generic: "Ocurrio un error. Intentalo de nuevo.",
+        err_stale_method_api:
+          "La API de DebtYa no esta en la ultima version (mensaje antiguo de Method). Vuelve a desplegar debtya-api, recarga esta pagina a fondo, e intentalo otra vez. Si la etiqueta abajo a la derecha no coincide con tu despliegue, el HTML estatico tambien esta desactualizado.",
         err_fetch: "No se pudo conectar con el servidor.",
         err_network: "Hay un problema de conexion.",
         err_timeout: "La operacion tardo demasiado. Intentalo otra vez.",
@@ -4408,10 +4467,62 @@
       }
     }
 
+    function collectJsonErrorParts(json) {
+      if (!json || typeof json !== "object") return [];
+      const out = [];
+      const push = (v) => {
+        if (v == null) return;
+        const s = String(v).trim();
+        if (s) out.push(s);
+      };
+      if (typeof json.error === "string") push(json.error);
+      else if (json.error && typeof json.error === "object") push(json.error.message);
+      push(json.details);
+      push(json.message);
+      push(json.detail);
+      push(json.hint);
+      push(json.description);
+      if (Array.isArray(json.errors)) {
+        for (const e of json.errors) {
+          if (typeof e === "string") push(e);
+          else if (e && typeof e === "object") push(e.message || e.msg);
+        }
+      }
+      return out;
+    }
+
+    function isLegacyMethodInvalidEntityMessage(message) {
+      const raw = String(message || "").trim();
+      if (!raw) return false;
+      let folded;
+      try {
+        folded = raw
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+      } catch (_) {
+        folded = raw.toLowerCase();
+      }
+      if (folded.includes("respuesta invalida de method al crear entidad")) return true;
+      if (folded.includes("method al crear entidad") && folded.includes("respuesta") && folded.includes("invalida"))
+        return true;
+      let nfc;
+      try {
+        nfc = raw.normalize("NFC");
+      } catch (_) {
+        nfc = raw;
+      }
+      if (/Respuesta\s+inv[aá]lida\s+de\s+Method\s+al\s+crear\s+entidad/i.test(nfc)) return true;
+      if (/Method\s+al\s+crear\s+entidad/i.test(nfc) && /inv[aá]lida/i.test(nfc) && /respuesta/i.test(nfc)) return true;
+      return false;
+    }
+
     function normalizeErrorMessage(message) {
       const text = String(message || "").trim();
 
       if (!text) return t("err_generic");
+
+      if (isLegacyMethodInvalidEntityMessage(text)) return t("err_stale_method_api");
 
       if (text.includes("Failed to fetch")) return t("err_fetch");
       if (text.includes("NetworkError")) return t("err_network");
@@ -4481,7 +4592,7 @@
         }
 
         if (!res.ok) {
-          const parts = [json?.error, json?.details].filter(Boolean);
+          const parts = collectJsonErrorParts(json);
           let msg = [...new Set(parts)].join(" — ").trim();
           if (!msg) {
             const raw = String(text || "").trim();
@@ -4489,6 +4600,16 @@
             if (looksHtml) msg = `HTTP ${res.status} ${res.statusText || ""}`.trim();
             else if (raw) msg = raw.length > 400 ? `${raw.slice(0, 397)}...` : raw;
             else msg = `HTTP ${res.status}`;
+          }
+          throw new Error(msg);
+        }
+
+        if (json && Object.prototype.hasOwnProperty.call(json, "ok") && json.ok === false) {
+          const parts = collectJsonErrorParts(json);
+          let msg = [...new Set(parts)].join(" — ").trim();
+          if (!msg) {
+            const raw = String(text || "").trim();
+            msg = raw.length > 400 ? `${raw.slice(0, 397)}...` : raw || "Respuesta inesperada del servidor";
           }
           throw new Error(msg);
         }
@@ -6538,6 +6659,9 @@
         clearTimeout(tid);
         const st = stRes.ok ? await stRes.json().catch(() => ({})) : {};
         const health = healthRes.ok ? await healthRes.json().catch(() => ({})) : {};
+        if (health && typeof health === "object" && health.server_version) {
+          renderDebtyaRevBadge(health.server_version);
+        }
         configured =
           parseMethodConfiguredFromPayload(st) || parseMethodConfiguredFromPayload(health);
       } catch (_) {
@@ -6876,6 +7000,7 @@
 
     async function loadSession() {
       await ensureDebtyaApiBaseProbed();
+      await probeDebtyaDeployBadge();
       normalizeBankDisconnectPathInUrl();
 
       async function pullSession() {
@@ -7440,7 +7565,8 @@
         showMessage(globalMessage, t("method_action_ok"), "success");
         await refreshMethodSection();
       } catch (e) {
-        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+        const rawMsg = e && typeof e.message === "string" ? e.message : e ? String(e) : "";
+        showMessage(globalMessage, normalizeErrorMessage(rawMsg), "error");
       } finally {
         setLoading(btn, false);
       }
