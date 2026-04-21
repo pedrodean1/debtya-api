@@ -86,8 +86,28 @@ function extractMethodEntityId(input) {
     if (row && typeof row === "object") {
       const id5 = tryId(row.id);
       if (id5 && looksLikeMethodEntityId(id5)) return id5;
+      if (id5) return id5;
     }
   }
+  const seen = new Set();
+  function scanForEntId(obj, depth) {
+    if (!obj || typeof obj !== "object" || depth > 8) return null;
+    if (seen.has(obj)) return null;
+    seen.add(obj);
+    const idH = tryId(obj.id);
+    if (idH && looksLikeMethodEntityId(idH)) return idH;
+    for (const k of Object.keys(obj)) {
+      const v = obj[k];
+      if (typeof v === "string" && looksLikeMethodEntityId(v)) return v.trim();
+      if (v && typeof v === "object") {
+        const hit = scanForEntId(v, depth + 1);
+        if (hit) return hit;
+      }
+    }
+    return null;
+  }
+  const scanned = scanForEntId(input, 0);
+  if (scanned) return scanned;
   if (direct) return direct;
   return null;
 }

@@ -28,7 +28,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-21-ui-api-sync" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-21-method-entity-pick" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -877,6 +877,11 @@
       color:var(--muted);
       line-height:1.45;
       margin-top:8px;
+    }
+
+    .error-text{
+      color:var(--red);
+      font-weight:500;
     }
 
     .landing-grid{
@@ -2332,6 +2337,7 @@
                 <select id="methodEntityPick" class="select">
                   <option value="">—</option>
                 </select>
+                <p id="methodEntityPickHint" class="helper-text" style="margin-top:6px;" aria-live="polite"></p>
               </div>
               <div class="operate-bank-row" style="margin-top:10px;">
                 <button id="btnMethodCreateEntity" class="btn btn-light" type="button" data-i18n="method_btn_create_entity">Crear perfil Method</button>
@@ -3195,6 +3201,12 @@
         method_action_ok: "Done.",
         method_err_entity: "Create a Method profile first.",
         method_err_pick_entity: "Select a Method entity.",
+        method_entity_hint_none:
+          "No Method profile saved in DebtYa yet. Fill the form and press Create Method profile, or fix the load error below.",
+        method_entity_hint_count: "{{n}} Method profile saved. Pick it for Connect / Sync.",
+        method_entity_hint_creating: "Creating Method profile…",
+        method_entity_load_err_generic: "Could not load Method profiles from the server.",
+        method_entity_pick_empty: "(no profile yet)",
         method_empty_sync: "No Method liabilities synced yet.",
         method_imported_badge: "Imported",
         debt_source_method: "Method",
@@ -3735,6 +3747,12 @@
         method_action_ok: "Listo.",
         method_err_entity: "Primero crea un perfil Method.",
         method_err_pick_entity: "Elige una entidad Method.",
+        method_entity_hint_none:
+          "Aun no hay perfil Method guardado en DebtYa. Rellena el formulario y pulsa Crear perfil Method, o corrige el error de carga abajo.",
+        method_entity_hint_count: "{{n}} perfil Method guardado. Eligelo para Conectar / Sincronizar.",
+        method_entity_hint_creating: "Creando perfil Method…",
+        method_entity_load_err_generic: "No se pudieron cargar los perfiles Method desde el servidor.",
+        method_entity_pick_empty: "(sin perfil aun)",
         method_empty_sync: "Aun no hay liabilities Method sincronizadas.",
         method_imported_badge: "Ya importada",
         debt_source_method: "Method",
@@ -4256,7 +4274,9 @@
       editingRuleId: null,
       methodConfigured: false,
       methodEntities: [],
-      methodAccounts: []
+      methodAccounts: [],
+      methodEntitiesLoadError: null,
+      methodEntityCreating: false
     };
 
     const $ = (id) => document.getElementById(id);
@@ -4339,6 +4359,7 @@
       if (active === "overview") $("navOverview").classList.add("active");
       if (active === "operate") $("navOperate").classList.add("active");
       if (active === "setup") $("navSetup").classList.add("active");
+      if (active === "operate") void refreshMethodSection();
     }
 
     function fmtMoney(value) {
@@ -6528,12 +6549,42 @@
       el.textContent = t("method_panel_hint");
     }
 
+    function updateMethodEntityPickHint() {
+      const el = $("methodEntityPickHint");
+      if (!el) return;
+      if (!state.methodConfigured) {
+        el.textContent = "";
+        el.classList.remove("error-text");
+        return;
+      }
+      if (state.methodEntityCreating) {
+        el.textContent = t("method_entity_hint_creating");
+        el.classList.remove("error-text");
+        return;
+      }
+      if (state.methodEntitiesLoadError) {
+        el.textContent = normalizeErrorMessage(state.methodEntitiesLoadError);
+        el.classList.add("error-text");
+        return;
+      }
+      el.classList.remove("error-text");
+      const rows = Array.isArray(state.methodEntities) ? state.methodEntities : [];
+      const n = rows.filter((r) => r && r.method_entity_id).length;
+      if (!n) el.textContent = t("method_entity_hint_none");
+      else el.textContent = t("method_entity_hint_count").replace(/\{\{n\}\}/g, String(n));
+    }
+
     function populateMethodEntityPick() {
       const sel = $("methodEntityPick");
       if (!sel) return;
       const rows = Array.isArray(state.methodEntities) ? state.methodEntities : [];
       const prev = sel.value;
-      let html = `<option value="">—</option>`;
+      let placeholder = "—";
+      if (state.methodConfigured && !state.methodEntitiesLoadError && !state.methodEntityCreating) {
+        const n = rows.filter((r) => r && r.method_entity_id).length;
+        if (!n) placeholder = t("method_entity_pick_empty");
+      }
+      let html = `<option value="">${escapeHtml(placeholder)}</option>`;
       rows.forEach((r) => {
         const mid = r.method_entity_id || "";
         if (!mid) return;
@@ -6544,6 +6595,7 @@
       if (prev && rows.some((r) => String(r.method_entity_id) === String(prev))) sel.value = prev;
       else if (rows[0] && rows[0].method_entity_id) sel.value = rows[0].method_entity_id;
       else sel.value = "";
+      updateMethodEntityPickHint();
     }
 
     async function importMethodDebtToDebtya(methodAccountId) {
@@ -6648,6 +6700,7 @@
     }
 
     async function refreshMethodSection() {
+      state.methodEntitiesLoadError = null;
       let configured = false;
       try {
         const ac = new AbortController();
@@ -6681,9 +6734,14 @@
         const [entRes, acctRes] = await Promise.all([api("/method/entities"), api("/method/accounts")]);
         state.methodEntities = (entRes && entRes.data) || [];
         state.methodAccounts = (acctRes && acctRes.data) || [];
-      } catch (_) {
+        state.methodEntitiesLoadError = null;
+      } catch (e) {
         state.methodEntities = [];
         state.methodAccounts = [];
+        state.methodEntitiesLoadError =
+          e && typeof e.message === "string" && e.message.trim()
+            ? e.message.trim()
+            : t("method_entity_load_err_generic");
       }
       populateMethodEntityPick();
       renderMethodAccountsList();
@@ -6730,9 +6788,14 @@
         ]);
         await refreshAccounts();
         await refreshDebts();
-        await refreshMethodSection();
       } catch (e) {
         showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+      }
+      try {
+        await refreshMethodSection();
+      } catch (e2) {
+        state.methodEntitiesLoadError = e2 && e2.message ? String(e2.message) : "Method";
+        populateMethodEntityPick();
       }
     }
 
@@ -7551,6 +7614,9 @@
         const token = await getAccessToken();
         if (!token) throw new Error(t("sign_in_first"));
         if (!state.methodConfigured) throw new Error(t("method_panel_disabled"));
+        state.methodEntityCreating = true;
+        state.methodEntitiesLoadError = null;
+        populateMethodEntityPick();
         setLoading(btn, true, "…");
         const body = {
           individual: {
@@ -7566,8 +7632,12 @@
         await refreshMethodSection();
       } catch (e) {
         const rawMsg = e && typeof e.message === "string" ? e.message : e ? String(e) : "";
+        state.methodEntitiesLoadError = rawMsg.trim() || t("method_entity_load_err_generic");
+        populateMethodEntityPick();
         showMessage(globalMessage, normalizeErrorMessage(rawMsg), "error");
       } finally {
+        state.methodEntityCreating = false;
+        populateMethodEntityPick();
         setLoading(btn, false);
       }
     });
