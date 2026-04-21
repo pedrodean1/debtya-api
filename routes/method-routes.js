@@ -400,8 +400,18 @@ function registerMethodRoutes(app, deps) {
         return jsonError(res, 404, "Entidad Method no encontrada. Crea una entidad primero.");
       }
 
-      const listed = await mc.listLiabilityAccounts(row.method_entity_id, { limit: 100 });
+      const syncQuery = { page_limit: 100 };
+      methodInfo(req, "sync_accounts.request", {
+        endpoint: "GET /accounts",
+        holder_id: row.method_entity_id,
+        query: { holder_id: row.method_entity_id, type: "liability", page_limit: syncQuery.page_limit }
+      });
+      const listed = await mc.listLiabilityAccounts(row.method_entity_id, syncQuery);
       const rows = listed && Array.isArray(listed.data) ? listed.data : [];
+      methodInfo(req, "sync_accounts.method_response", {
+        holder_id: row.method_entity_id,
+        account_count: rows.length
+      });
 
       const now = new Date().toISOString();
       let upserted = 0;
@@ -440,8 +450,34 @@ function registerMethodRoutes(app, deps) {
       methodInfo(req, "sync_accounts", row.method_entity_id, `count=${upserted}`);
       return res.json({ ok: true, data: { synced: upserted, method_entity_id: row.method_entity_id } });
     } catch (error) {
-      appError("[Method] POST /method/accounts/sync", req.requestId || null, error.message);
-      return jsonError(res, 500, "Error sincronizando cuentas Method", { details: error.message });
+      const mst = error.method_http_status || error.status || null;
+      const rawPrev =
+        error.method_raw_body && typeof error.method_raw_body === "string"
+          ? String(error.method_raw_body).slice(0, 4000)
+          : null;
+      const clientDetails =
+        error.method_response && typeof error.method_response === "object"
+          ? error.method_response.message ||
+            error.method_response.error ||
+            (typeof error.method_response.error === "object" && error.method_response.error?.message) ||
+            error.message
+          : error.message;
+      const detailStr = typeof clientDetails === "string" ? clientDetails : JSON.stringify(clientDetails);
+      methodInfo(req, "sync_accounts.method_error", {
+        method_http_status: mst,
+        message: error.message,
+        raw_body_preview: rawPrev
+      });
+      appError("[Method] POST /method/accounts/sync", req.requestId || null, error.message, {
+        method_http_status: mst,
+        raw_body_preview: rawPrev
+      });
+      const status =
+        error.status && Number(error.status) >= 400 && Number(error.status) < 600 ? Number(error.status) : 502;
+      return jsonError(res, status >= 500 ? 502 : status, "Error sincronizando cuentas Method", {
+        details: mst != null ? `${detailStr} (Method HTTP ${mst})` : detailStr,
+        method_http_status: mst
+      });
     }
   });
 
