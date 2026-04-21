@@ -28,7 +28,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-22-method-create-hardened" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-22-method-create-ui-validate" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -4536,6 +4536,15 @@
       }
       if (/Respuesta\s+inv[aá]lida\s+de\s+Method\s+al\s+crear\s+entidad/i.test(nfc)) return true;
       if (/Method\s+al\s+crear\s+entidad/i.test(nfc) && /inv[aá]lida/i.test(nfc) && /respuesta/i.test(nfc)) return true;
+      if (
+        folded.includes("respuesta") &&
+        folded.includes("invalida") &&
+        folded.includes("method") &&
+        folded.includes("crear") &&
+        folded.includes("entidad")
+      ) {
+        return true;
+      }
       return false;
     }
 
@@ -4571,6 +4580,13 @@
       if (text.includes("Conexion bancaria no encontrada")) return t("err_bank_not_found");
 
       return text;
+    }
+
+    function displayMethodSectionError(raw) {
+      let s = raw != null && typeof raw === "string" ? String(raw).trim() : "";
+      if (!s) s = t("method_entity_load_err_generic");
+      if (isLegacyMethodInvalidEntityMessage(s)) s = t("err_stale_method_api");
+      return normalizeErrorMessage(s);
     }
 
     async function getAccessToken() {
@@ -6570,7 +6586,7 @@
         return;
       }
       if (state.methodEntitiesLoadError) {
-        el.textContent = normalizeErrorMessage(state.methodEntitiesLoadError);
+        el.textContent = state.methodEntitiesLoadError;
         el.classList.add("error-text");
         return;
       }
@@ -6751,10 +6767,9 @@
       } catch (e) {
         state.methodEntities = [];
         state.methodAccounts = [];
-        state.methodEntitiesLoadError =
-          e && typeof e.message === "string" && e.message.trim()
-            ? e.message.trim()
-            : t("method_entity_load_err_generic");
+        state.methodEntitiesLoadError = displayMethodSectionError(
+          e && typeof e.message === "string" ? e.message : ""
+        );
       }
       populateMethodEntityPick();
       renderMethodAccountsList();
@@ -6807,7 +6822,7 @@
       try {
         await refreshMethodSection();
       } catch (e2) {
-        state.methodEntitiesLoadError = e2 && e2.message ? String(e2.message) : "Method";
+        state.methodEntitiesLoadError = displayMethodSectionError(e2 && e2.message ? String(e2.message) : "");
         populateMethodEntityPick();
       }
     }
@@ -7640,14 +7655,36 @@
             dob: $("methodDob")?.value?.trim() || null
           }
         };
-        await api("/method/entities", { method: "POST", body: JSON.stringify(body) });
+        console.info("[Debtya][Method] create_entity request", {
+          has_first: !!body.individual.first_name,
+          has_last: !!body.individual.last_name,
+          has_phone: !!body.individual.phone,
+          has_email: !!body.individual.email,
+          has_dob: !!body.individual.dob
+        });
+        const createdRes = await api("/method/entities", { method: "POST", body: JSON.stringify(body) });
+        const row = createdRes && createdRes.data && createdRes.data.row;
+        const mid = row && row.method_entity_id ? String(row.method_entity_id).trim() : "";
+        console.info("[Debtya][Method] create_entity response", {
+          ok: !!(createdRes && createdRes.ok),
+          method_entity_id: mid || null,
+          row_id: row && row.id ? row.id : null
+        });
+        if (!mid) {
+          console.error("[Debtya][Method] create_entity missing method_entity_id on row", createdRes);
+          throw new Error(
+            "La API respondio OK pero la fila guardada no trae method_entity_id. Revisa Supabase (method_entities) y los logs del servidor."
+          );
+        }
         showMessage(globalMessage, t("method_action_ok"), "success");
         await refreshMethodSection();
       } catch (e) {
         const rawMsg = e && typeof e.message === "string" ? e.message : e ? String(e) : "";
-        state.methodEntitiesLoadError = rawMsg.trim() || t("method_entity_load_err_generic");
+        const display = displayMethodSectionError(rawMsg);
+        state.methodEntitiesLoadError = display;
         populateMethodEntityPick();
-        showMessage(globalMessage, normalizeErrorMessage(rawMsg), "error");
+        console.warn("[Debtya][Method] create_entity failed", { display, raw: e && e.message });
+        showMessage(globalMessage, display, "error");
       } finally {
         state.methodEntityCreating = false;
         populateMethodEntityPick();
