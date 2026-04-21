@@ -79,6 +79,135 @@ function safeJsonPreview(obj, maxLen) {
   }
 }
 
+/**
+ * Columna de `debts` ausente según Postgres o PostgREST (varios formatos de mensaje).
+ */
+function extractMissingDebtsColumnName(err) {
+  const msg = String(err?.message || err?.details || err?.hint || err || "");
+  let m = msg.match(/column\s+(?:"?[\w]+\.)?(\w+)\s+does\s+not\s+exist/i);
+  if (m) return m[1].toLowerCase();
+  m = msg.match(/could\s+not\s+find\s+the\s+'(\w+)'\s+column\s+of\s+'debts'/i);
+  if (m) return m[1].toLowerCase();
+  m = msg.match(/could\s+not\s+find\s+the\s+"(\w+)"\s+column\s+of\s+"debts"/i);
+  if (m) return m[1].toLowerCase();
+  m = msg.match(/'(\w+)'\s+column\s+of\s+'debts'\s+in\s+the\s+schema\s+cache/i);
+  if (m) return m[1].toLowerCase();
+  m = msg.match(/column\s+'(\w+)'\s+is\s+not\s+present\s+in\s+schema\s+cache/i);
+  if (m) return m[1].toLowerCase();
+  return null;
+}
+
+/**
+ * Actualiza debts tolerando columnas ausentes (esquemas viejos).
+ * @returns {{ methodRows: number, stripRows: number }}
+ */
+async function unlinkDebtsFromMethodForReset(supabaseAdmin, userId, now, isMissingTableColumnError, methodInfo, req) {
+  const stripColFromPatch = (patch, col) => {
+    if (!col || !patch || typeof patch !== "object") return patch;
+    const next = { ...patch };
+    delete next[col];
+    return next;
+  };
+
+  async function updateDebtsAdaptive(initialPatch, build) {
+    let patch = { ...initialPatch };
+    for (let i = 0; i < 14; i += 1) {
+      const q0 = supabaseAdmin.from("debts").update(patch);
+      const { data, error } = await build(q0);
+      if (!error) {
+        methodInfo(req, "reset.debts_update_ok", {
+          attempt: i,
+          patch_keys: Object.keys(patch)
+        });
+        return { data: Array.isArray(data) ? data : [], error: null };
+      }
+      const col = extractMissingDebtsColumnName(error);
+      methodInfo(req, "reset.debts_update_error", {
+        attempt: i,
+        patch_keys: Object.keys(patch),
+        missing_column: col,
+        message_preview: String(error?.message || "").slice(0, 220)
+      });
+      if (col && Object.prototype.hasOwnProperty.call(patch, col)) {
+        patch = stripColFromPatch(patch, col);
+        const keys = Object.keys(patch).filter((k) => k !== "updated_at");
+        if (keys.length === 0) return { data: [], error: null };
+        continue;
+      }
+      return { data: [], error };
+    }
+    return { data: [], error: new Error("debts: demasiados reintentos al adaptar columnas") };
+  }
+
+  let nMethod = 0;
+  const fullPatch = {
+    source: "manual",
+    method_account_id: null,
+    method_entity_id: null,
+    payment_capable: false,
+    updated_at: now
+  };
+  let r1 = await updateDebtsAdaptive(fullPatch, (q) => q.eq("user_id", userId).eq("source", "method").select("id"));
+  if (r1.error && isMissingTableColumnError(r1.error, "debts", "source")) {
+    const fallbackPatch = stripColFromPatch(fullPatch, "source");
+    r1 = await updateDebtsAdaptive(fallbackPatch, (q) =>
+      q.eq("user_id", userId).not("method_account_id", "is", null).select("id")
+    );
+    if (r1.error && extractMissingDebtsColumnName(r1.error) === "method_account_id") {
+      r1 = { data: [], error: null };
+    }
+  }
+  if (r1.error) {
+    methodInfo(req, "reset.debts_method_phase_skipped", { message: r1.error.message });
+    r1 = { data: [], error: null };
+  }
+  nMethod = r1.data.length;
+
+  const colsPatch = {
+    method_account_id: null,
+    method_entity_id: null,
+    payment_capable: false,
+    updated_at: now
+  };
+
+  const stripBuilders = [
+    (q) => q.eq("user_id", userId).not("method_account_id", "is", null).select("id"),
+    (q) => q.eq("user_id", userId).not("method_entity_id", "is", null).select("id"),
+    (q) => q.eq("user_id", userId).or("method_entity_id.not.is.null,method_account_id.not.is.null").select("id")
+  ];
+  let nStrip = 0;
+  let lastStripErr = null;
+  for (let si = 0; si < stripBuilders.length; si += 1) {
+    const rTry = await updateDebtsAdaptive(colsPatch, stripBuilders[si]);
+    if (!rTry.error) nStrip += rTry.data.length;
+    else {
+      lastStripErr = rTry.error;
+      methodInfo(req, "reset.debts_strip_try", { index: si, message: rTry.error.message });
+    }
+  }
+  if (lastStripErr && nStrip === 0) {
+    methodInfo(req, "reset.debts_strip_all_variants_failed", { message: lastStripErr.message });
+  }
+
+  return { methodRows: nMethod, stripRows: nStrip };
+}
+
+async function unlinkDebtsFromMethodForResetSafe(supabaseAdmin, userId, now, isMissingTableColumnError, methodInfo, req) {
+  try {
+    return await unlinkDebtsFromMethodForReset(
+      supabaseAdmin,
+      userId,
+      now,
+      isMissingTableColumnError,
+      methodInfo,
+      req
+    );
+  } catch (e) {
+    methodInfo(req, "reset.debts_unlink_exception", { message: e && e.message ? String(e.message) : String(e) });
+    return { methodRows: 0, stripRows: 0 };
+  }
+}
+
 function extractMethodEntityId(input) {
   if (!input || typeof input !== "object") return null;
   const tryId = (v) => {
@@ -231,39 +360,18 @@ function registerMethodRoutes(app, deps) {
     try {
       methodInfo(req, "reset.start", { user_id: userId });
       const now = new Date().toISOString();
-      const fullDebtPatch = {
-        source: "manual",
-        method_account_id: null,
-        method_entity_id: null,
-        payment_capable: false,
-        updated_at: now
-      };
-      const colsOnlyPatch = {
-        method_account_id: null,
-        method_entity_id: null,
-        payment_capable: false,
-        updated_at: now
-      };
-      let dRes = await supabaseAdmin.from("debts").update(fullDebtPatch).eq("user_id", userId).eq("source", "method").select("id");
-      if (dRes.error && isMissingTableColumnError(dRes.error, "debts", "source")) {
-        dRes = await supabaseAdmin
-          .from("debts")
-          .update(colsOnlyPatch)
-          .eq("user_id", userId)
-          .not("method_account_id", "is", null)
-          .select("id");
-      }
-      if (dRes.error) throw dRes.error;
-      const nMethodDebts = Array.isArray(dRes.data) ? dRes.data.length : 0;
-
-      const { data: dStrip, error: stripErr } = await supabaseAdmin
-        .from("debts")
-        .update(colsOnlyPatch)
-        .eq("user_id", userId)
-        .or("method_entity_id.not.is.null,method_account_id.not.is.null")
-        .select("id");
-      if (stripErr) throw stripErr;
-      const nStripDebts = Array.isArray(dStrip) ? dStrip.length : 0;
+      const { methodRows: nMethodDebts, stripRows: nStripDebts } = await unlinkDebtsFromMethodForResetSafe(
+        supabaseAdmin,
+        userId,
+        now,
+        isMissingTableColumnError,
+        methodInfo,
+        req
+      );
+      methodInfo(req, "reset.debts_phase_counts", {
+        method_debt_rows: nMethodDebts,
+        strip_debt_rows: nStripDebts
+      });
 
       const { error: delSessErr } = await supabaseAdmin.from("method_connect_sessions").delete().eq("user_id", userId);
       if (delSessErr) throw delSessErr;
@@ -295,7 +403,8 @@ function registerMethodRoutes(app, deps) {
         data: {
           removed_entities: nEnt,
           removed_method_entity_ids: (removedEntities || []).map((r) => r.method_entity_id).filter(Boolean),
-          debts_unlinked: debtsTouched
+          debts_unlinked: debtsTouched,
+          reset_debts_adapter: "v3-schema-cache"
         }
       });
     } catch (error) {
