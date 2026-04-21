@@ -353,6 +353,11 @@ function registerMethodRoutes(app, deps) {
       if (!row || !row.method_entity_id) {
         return jsonError(res, 404, "Entidad Method no encontrada para este usuario");
       }
+      methodInfo(req, "connect.request", {
+        endpoint: "POST /entities/:id/connect",
+        method_entity_id: row.method_entity_id,
+        method_env: readMethodEnv()
+      });
       const connect = await mc.createConnect(row.method_entity_id);
 
       const { error: upErr } = await supabaseAdmin
@@ -380,10 +385,39 @@ function registerMethodRoutes(app, deps) {
       methodInfo(req, "connect_ran", row.method_entity_id, connect && connect.status);
       return res.json({ ok: true, data: connect });
     } catch (error) {
-      const status = error.status && Number(error.status) >= 400 ? Number(error.status) : 502;
-      appError("[Method] POST connect fallo", req.requestId || null, error.message);
+      const mst = error.method_http_status || error.status || null;
+      const rawPrev =
+        error.method_raw_body && typeof error.method_raw_body === "string"
+          ? String(error.method_raw_body).slice(0, 4000)
+          : null;
+      const clientDetails =
+        error.method_response && typeof error.method_response === "object"
+          ? error.method_response.message ||
+            error.method_response.error ||
+            (typeof error.method_response.error === "object" && error.method_response.error?.message) ||
+            error.message
+          : error.message;
+      const detailStr = typeof clientDetails === "string" ? clientDetails : JSON.stringify(clientDetails);
+      methodInfo(req, "connect.method_error", {
+        method_http_status: mst,
+        message: error.message,
+        raw_body_preview: rawPrev
+      });
+      appError("[Method] POST connect fallo", req.requestId || null, error.message, {
+        method_http_status: mst,
+        raw_body_preview: rawPrev
+      });
+      const low = String(detailStr || "").toLowerCase();
+      let hint = "";
+      if (low.includes("consent") && low.includes("unavailable")) {
+        hint =
+          " Revisa en dashboard.methodfi.com que tu organizacion tenga habilitado Connect (consentimiento de cuentas / liabilities) para el mismo entorno (sandbox/production) y API version que usa esta app.";
+      }
+      const status =
+        error.status && Number(error.status) >= 400 && Number(error.status) < 600 ? Number(error.status) : 502;
       return jsonError(res, status >= 500 ? 502 : status, "Error ejecutando Method Connect", {
-        details: error.message
+        details: (mst != null ? `${detailStr} (Method HTTP ${mst})` : detailStr) + hint,
+        method_http_status: mst
       });
     }
   });
