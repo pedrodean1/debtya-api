@@ -28,7 +28,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-21-method-entity-pick" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-22-method-create-hardened" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2964,7 +2964,8 @@
         });
         clearTimeout(tid);
         const j = r.ok ? await r.json().catch(() => ({})) : {};
-        renderDebtyaRevBadge(j.server_version);
+        const hdr = r.headers.get("X-Debtya-Server-Version") || r.headers.get("x-debtya-server-version");
+        renderDebtyaRevBadge(j.server_version || hdr || null);
       } catch (_) {
         renderDebtyaRevBadge(null);
       }
@@ -4538,6 +4539,12 @@
       return false;
     }
 
+    function rewriteThrownApiMessage(msg) {
+      const s = String(msg || "");
+      if (isLegacyMethodInvalidEntityMessage(s)) return t("err_stale_method_api");
+      return s;
+    }
+
     function normalizeErrorMessage(message) {
       const text = String(message || "").trim();
 
@@ -4622,7 +4629,7 @@
             else if (raw) msg = raw.length > 400 ? `${raw.slice(0, 397)}...` : raw;
             else msg = `HTTP ${res.status}`;
           }
-          throw new Error(msg);
+          throw new Error(rewriteThrownApiMessage(msg));
         }
 
         if (json && Object.prototype.hasOwnProperty.call(json, "ok") && json.ok === false) {
@@ -4632,7 +4639,7 @@
             const raw = String(text || "").trim();
             msg = raw.length > 400 ? `${raw.slice(0, 397)}...` : raw || "Respuesta inesperada del servidor";
           }
-          throw new Error(msg);
+          throw new Error(rewriteThrownApiMessage(msg));
         }
 
         return json;
@@ -6712,8 +6719,14 @@
         clearTimeout(tid);
         const st = stRes.ok ? await stRes.json().catch(() => ({})) : {};
         const health = healthRes.ok ? await healthRes.json().catch(() => ({})) : {};
-        if (health && typeof health === "object" && health.server_version) {
-          renderDebtyaRevBadge(health.server_version);
+        const hdr =
+          healthRes && healthRes.ok
+            ? healthRes.headers.get("X-Debtya-Server-Version") || healthRes.headers.get("x-debtya-server-version")
+            : null;
+        if (health && typeof health === "object") {
+          renderDebtyaRevBadge(health.server_version || hdr || null);
+        } else if (hdr) {
+          renderDebtyaRevBadge(hdr);
         }
         configured =
           parseMethodConfiguredFromPayload(st) || parseMethodConfiguredFromPayload(health);

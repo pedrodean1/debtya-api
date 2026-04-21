@@ -53,6 +53,17 @@ function looksLikeMethodEntityId(s) {
   return /^ent_[A-Za-z0-9]+$/.test(v);
 }
 
+function safeJsonPreview(obj, maxLen) {
+  const n = Math.max(200, Number(maxLen) || 8000);
+  try {
+    const s = JSON.stringify(obj);
+    if (s.length <= n) return s;
+    return `${s.slice(0, n)}…(truncated,len=${s.length})`;
+  } catch {
+    return "[unserializable]";
+  }
+}
+
 function extractMethodEntityId(input) {
   if (!input || typeof input !== "object") return null;
   const tryId = (v) => {
@@ -238,15 +249,23 @@ function registerMethodRoutes(app, deps) {
           raw_body_preview: rawPreview
         }
       );
+      methodInfo(req, "create_entity.parsed_json", safeJsonPreview(entity, 16000));
+      if (created && typeof created.rawBody === "string" && created.rawBody.length) {
+        methodInfo(req, "create_entity.method_raw_body", String(created.rawBody).slice(0, 16000));
+      }
       if (!methodEntityId) {
         appError(
           "[Method] create_entity sin id usable",
           req.requestId || null,
-          JSON.stringify({
-            http_status: created ? created.status : null,
-            body_type: entity === null ? "null" : Array.isArray(entity) ? "array" : typeof entity,
-            keys: entity && typeof entity === "object" ? Object.keys(entity).slice(0, 40) : []
-          })
+          safeJsonPreview(
+            {
+              http_status: created ? created.status : null,
+              parsed_body_keys: entity && typeof entity === "object" ? Object.keys(entity) : [],
+              parsed_body: entity,
+              raw_body_head: created && typeof created.rawBody === "string" ? created.rawBody.slice(0, 16000) : null
+            },
+            20000
+          )
         );
         const st = created ? created.status : null;
         return jsonError(res, 502, "Method respondió sin un entity id usable", {
@@ -282,12 +301,17 @@ function registerMethodRoutes(app, deps) {
       const status = error.status && Number(error.status) >= 400 ? Number(error.status) : 502;
       const rawPrev =
         error.method_raw_body && typeof error.method_raw_body === "string"
-          ? String(error.method_raw_body).slice(0, 800)
+          ? String(error.method_raw_body).slice(0, 16000)
+          : null;
+      const respDump =
+        error.method_response && typeof error.method_response === "object"
+          ? safeJsonPreview(error.method_response, 12000)
           : null;
       methodInfo(req, "create_entity.method_http_error", {
         method_http_status: error.method_http_status || error.status || null,
         message: error.message,
-        raw_body_preview: rawPrev
+        raw_body_preview: rawPrev,
+        method_response_json: respDump
       });
       appError(
         "[Method] POST /method/entities fallo",
@@ -297,9 +321,10 @@ function registerMethodRoutes(app, deps) {
           method_http_status: error.method_http_status || error.status || null,
           method_keys:
             error.method_response && typeof error.method_response === "object"
-              ? Object.keys(error.method_response).slice(0, 25)
+              ? Object.keys(error.method_response).slice(0, 40)
               : [],
-          raw_body_preview: rawPrev
+          raw_body_preview: rawPrev,
+          method_response_json: respDump
         }
       );
       const clientDetails =

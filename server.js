@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-21-method-entity-pick";
+const SERVER_VERSION = "debtya-2026-04-22-method-create-hardened";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -111,9 +111,14 @@ app.use(
       appError("[cors] origen no permitido:", origin);
       return callback(null, false);
     },
-    exposedHeaders: ["Debtya-Api-Base"]
+    exposedHeaders: ["Debtya-Api-Base", "X-Debtya-Server-Version"]
   })
 );
+
+app.use((req, res, next) => {
+  res.setHeader("X-Debtya-Server-Version", SERVER_VERSION);
+  next();
+});
 
 app.use(requestIdMiddleware);
 
