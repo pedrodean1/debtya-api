@@ -12,6 +12,9 @@ services:
     region: oregon
     plan: free
     rootDir: .
+    branch: main
+    # Cada push a main dispara deploy (sin esperar checks externos). Para CI antes de deploy usa: checksPass
+    autoDeployTrigger: commit
     buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health
