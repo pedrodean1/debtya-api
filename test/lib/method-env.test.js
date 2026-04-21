@@ -73,4 +73,16 @@ describe("lib/method-env", () => {
     assert.equal(st.key_source, "METHOD_APIKEY");
     assert.equal(st.key_length > 0, true);
   });
+
+  it("quita prefijo Bearer duplicado de METHOD_API_KEY", () => {
+    process.env.METHOD_API_KEY = "Bearer sk_test_strip";
+    const { readMethodApiKey } = loadMethodEnvFresh();
+    assert.equal(readMethodApiKey(), "sk_test_strip");
+  });
+
+  it("quita prefijo bearer en minusculas", () => {
+    process.env.METHOD_API_KEY = "bearer sk_test_lower";
+    const { readMethodApiKey } = loadMethodEnvFresh();
+    assert.equal(readMethodApiKey(), "sk_test_lower");
+  });
 });

@@ -1,9 +1,24 @@
-const { createMethodClient, computePaymentCapable } = require("../lib/method-client");
+const { createMethodClient, computePaymentCapable, methodErrorMessageFromJson } = require("../lib/method-client");
 const { readMethodApiKey, readMethodEnv, readMethodApiVersion, isMethodConfigured, readMethodKeyStatus } = require("../lib/method-env");
 
 function methodInfo(req, ...parts) {
   const rid = req && req.requestId ? req.requestId : "-";
   console.log("[Method]", rid, ...parts);
+}
+
+function methodFacingHttpMessage(error) {
+  const mr = error && error.method_response;
+  const parsed = mr && typeof mr === "object" ? methodErrorMessageFromJson(mr) : null;
+  if (parsed) return parsed;
+  if (mr && typeof mr === "object") {
+    const legacy =
+      mr.message ||
+      mr.error ||
+      (typeof mr.error === "object" && mr.error?.message ? String(mr.error.message) : null);
+    if (typeof legacy === "string" && legacy.trim()) return legacy.trim();
+  }
+  const m = error && error.message;
+  return typeof m === "string" ? m : String(m || "");
 }
 
 function methodLiabilityToDebtType(liability) {
@@ -126,17 +141,20 @@ function extractMethodEntityId(input) {
 function registerMethodRoutes(app, deps) {
   const { requireUser, supabaseAdmin, jsonError, appError, safeNumber, isUuid, isMissingTableColumnError } = deps;
 
-  let methodClientCache = { key: "", client: null };
+  let methodClientCache = { cacheKey: "", client: null };
 
   function getClient() {
     const apiKey = readMethodApiKey();
     if (!apiKey) return null;
-    if (methodClientCache.key !== apiKey) {
-      methodClientCache.key = apiKey;
+    const methodEnv = readMethodEnv();
+    const apiVersion = readMethodApiVersion();
+    const cacheKey = `${apiKey}|${methodEnv}|${apiVersion}`;
+    if (methodClientCache.cacheKey !== cacheKey) {
+      methodClientCache.cacheKey = cacheKey;
       methodClientCache.client = createMethodClient({
         apiKey,
-        methodEnv: readMethodEnv(),
-        apiVersion: readMethodApiVersion()
+        methodEnv,
+        apiVersion
       });
     }
     return methodClientCache.client;
@@ -327,13 +345,7 @@ function registerMethodRoutes(app, deps) {
           method_response_json: respDump
         }
       );
-      const clientDetails =
-        error.method_response && typeof error.method_response === "object"
-          ? error.method_response.message ||
-            error.method_response.error ||
-            (typeof error.method_response.error === "object" && error.method_response.error?.message) ||
-            error.message
-          : error.message;
+      const clientDetails = methodFacingHttpMessage(error);
       const mst = error.method_http_status || error.status || null;
       const detailStr = typeof clientDetails === "string" ? clientDetails : JSON.stringify(clientDetails);
       return jsonError(res, status >= 500 ? 502 : status, "Error creando entidad Method", {
@@ -353,12 +365,72 @@ function registerMethodRoutes(app, deps) {
       if (!row || !row.method_entity_id) {
         return jsonError(res, 404, "Entidad Method no encontrada para este usuario");
       }
+      const methodEntityId = String(row.method_entity_id).trim();
+      const entityPath = `/entities/${encodeURIComponent(methodEntityId)}`;
+      const entityUrl = `${mc.baseUrl}${entityPath}`;
+      try {
+        const entityBody = await mc.getEntity(methodEntityId);
+        methodInfo(req, "connect.entity_probe_ok", {
+          method_http: `GET ${entityUrl}`,
+          method_entity_id: methodEntityId,
+          top_keys: entityBody && typeof entityBody === "object" ? Object.keys(entityBody).slice(0, 20) : []
+        });
+      } catch (probeErr) {
+        const pmst = probeErr.method_http_status || probeErr.status || null;
+        const rawPrev =
+          probeErr.method_raw_body && typeof probeErr.method_raw_body === "string"
+            ? String(probeErr.method_raw_body).slice(0, 4000)
+            : null;
+        const pdetails = methodFacingHttpMessage(probeErr);
+        const pdump =
+          probeErr.method_response && typeof probeErr.method_response === "object"
+            ? safeJsonPreview(probeErr.method_response, 8000)
+            : null;
+        methodInfo(req, "connect.entity_probe_failed", {
+          method_http_status: pmst,
+          method_http: `GET ${entityUrl}`,
+          message: probeErr.message,
+          method_response_json: pdump,
+          raw_body_preview: rawPrev
+        });
+        appError("[Method] GET entity antes de Connect fallo", req.requestId || null, probeErr.message, {
+          method_http_status: pmst,
+          method_response_json: pdump,
+          raw_body_preview: rawPrev
+        });
+        const pstatus =
+          probeErr.status && Number(probeErr.status) >= 400 && Number(probeErr.status) < 600
+            ? Number(probeErr.status)
+            : 502;
+        const detailLine = pmst != null ? `${pdetails} (Method HTTP ${pmst})` : pdetails;
+        return jsonError(res, pstatus >= 500 ? 502 : pstatus, "Method rechazó la entidad antes de Connect", {
+          details: `${detailLine}. Si es 401, la clave o el entorno no coinciden con Method; si es 404, el ent_ no existe en ese entorno.`,
+          method_http_status: pmst,
+          method_env: readMethodEnv(),
+          method_api_version: readMethodApiVersion(),
+          probe: "GET /entities/:id"
+        });
+      }
+      const connectPath = `/entities/${encodeURIComponent(methodEntityId)}/connect`;
+      const connectUrl = `${mc.baseUrl}${connectPath}`;
       methodInfo(req, "connect.request", {
-        endpoint: "POST /entities/:id/connect",
-        method_entity_id: row.method_entity_id,
-        method_env: readMethodEnv()
+        method_http: `POST ${connectUrl}`,
+        method_entity_id: methodEntityId,
+        method_env: readMethodEnv(),
+        method_api_version: mc.apiVersion,
+        outbound_payload: "{}"
       });
-      const connect = await mc.createConnect(row.method_entity_id);
+      const detailed = await mc.createConnectDetailed(methodEntityId);
+      const connect = detailed.body;
+      methodInfo(req, "connect.method_response", {
+        http_status: detailed.status,
+        body_keys: connect && typeof connect === "object" ? Object.keys(connect).slice(0, 40) : [],
+        connect_id: connect && connect.id ? String(connect.id) : null,
+        connect_status: connect && connect.status ? String(connect.status) : null,
+        has_element_token: !!(connect && (connect.element_token || connect.token)),
+        has_url_field: !!(connect && (connect.url || connect.connect_url || connect.link))
+      });
+      methodInfo(req, "connect.method_raw_body", String(detailed.rawBody || "").slice(0, 16000));
 
       const { error: upErr } = await supabaseAdmin
         .from("method_entities")
@@ -374,7 +446,7 @@ function registerMethodRoutes(app, deps) {
 
       const { error: logErr } = await supabaseAdmin.from("method_connect_sessions").insert({
         user_id: req.user.id,
-        method_entity_id: row.method_entity_id,
+        method_entity_id: methodEntityId,
         method_connect_id: connect && connect.id ? String(connect.id) : "unknown",
         status: connect && connect.status ? String(connect.status) : null,
         account_ids: connect && Array.isArray(connect.accounts) ? connect.accounts : null,
@@ -382,7 +454,7 @@ function registerMethodRoutes(app, deps) {
       });
       if (logErr) appError("[Method] log method_connect_sessions", req.requestId || null, logErr.message);
 
-      methodInfo(req, "connect_ran", row.method_entity_id, connect && connect.status);
+      methodInfo(req, "connect_ran", methodEntityId, connect && connect.status);
       return res.json({ ok: true, data: connect });
     } catch (error) {
       const mst = error.method_http_status || error.status || null;
@@ -390,21 +462,21 @@ function registerMethodRoutes(app, deps) {
         error.method_raw_body && typeof error.method_raw_body === "string"
           ? String(error.method_raw_body).slice(0, 4000)
           : null;
-      const clientDetails =
-        error.method_response && typeof error.method_response === "object"
-          ? error.method_response.message ||
-            error.method_response.error ||
-            (typeof error.method_response.error === "object" && error.method_response.error?.message) ||
-            error.message
-          : error.message;
+      const clientDetails = methodFacingHttpMessage(error);
       const detailStr = typeof clientDetails === "string" ? clientDetails : JSON.stringify(clientDetails);
+      const respDump =
+        error.method_response && typeof error.method_response === "object"
+          ? safeJsonPreview(error.method_response, 12000)
+          : null;
       methodInfo(req, "connect.method_error", {
         method_http_status: mst,
         message: error.message,
+        method_response_json: respDump,
         raw_body_preview: rawPrev
       });
       appError("[Method] POST connect fallo", req.requestId || null, error.message, {
         method_http_status: mst,
+        method_response_json: respDump,
         raw_body_preview: rawPrev
       });
       const low = String(detailStr || "").toLowerCase();
@@ -412,12 +484,17 @@ function registerMethodRoutes(app, deps) {
       if (low.includes("consent") && low.includes("unavailable")) {
         hint =
           " Revisa en dashboard.methodfi.com que tu organizacion tenga habilitado Connect (consentimiento de cuentas / liabilities) para el mismo entorno (sandbox/production) y API version que usa esta app.";
+      } else if (mst === 401 && low.includes("authorization") && low.includes("invalid")) {
+        hint =
+          " Comprueba que METHOD_API_KEY en Render sea solo el valor sk_… (sin prefijo Bearer). Si GET /entities ya funcionaba en logs y Connect sigue en 401, abre ticket con Method con el request_id.";
       }
       const status =
         error.status && Number(error.status) >= 400 && Number(error.status) < 600 ? Number(error.status) : 502;
       return jsonError(res, status >= 500 ? 502 : status, "Error ejecutando Method Connect", {
         details: (mst != null ? `${detailStr} (Method HTTP ${mst})` : detailStr) + hint,
-        method_http_status: mst
+        method_http_status: mst,
+        method_env: readMethodEnv(),
+        method_api_version: readMethodApiVersion()
       });
     }
   });
@@ -489,13 +566,7 @@ function registerMethodRoutes(app, deps) {
         error.method_raw_body && typeof error.method_raw_body === "string"
           ? String(error.method_raw_body).slice(0, 4000)
           : null;
-      const clientDetails =
-        error.method_response && typeof error.method_response === "object"
-          ? error.method_response.message ||
-            error.method_response.error ||
-            (typeof error.method_response.error === "object" && error.method_response.error?.message) ||
-            error.message
-          : error.message;
+      const clientDetails = methodFacingHttpMessage(error);
       const detailStr = typeof clientDetails === "string" ? clientDetails : JSON.stringify(clientDetails);
       methodInfo(req, "sync_accounts.method_error", {
         method_http_status: mst,

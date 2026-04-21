@@ -28,7 +28,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-22-method-connect-body" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-22-method-connect-probe-bearer" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -7701,11 +7701,36 @@
         const ent = getSelectedMethodEntityIdForMethodApi();
         if (!ent) throw new Error(t("method_err_entity"));
         setLoading(btn, true, "…");
-        await api(`/method/entities/${encodeURIComponent(ent)}/connect`, { method: "POST", body: "{}" });
+        const entTrim = String(ent).trim();
+        console.info("[Debtya][Method] connect click", {
+          entity_id_len: entTrim.length,
+          entity_id_prefix: entTrim.slice(0, 8),
+          method_configured: !!state.methodConfigured
+        });
+        const connectRes = await api(`/method/entities/${encodeURIComponent(entTrim)}/connect`, {
+          method: "POST",
+          body: "{}"
+        });
+        const d = connectRes && connectRes.data;
+        const keys = d && typeof d === "object" ? Object.keys(d) : [];
+        console.info("[Debtya][Method] connect api ok", {
+          ok: !!(connectRes && connectRes.ok),
+          data_keys: keys.slice(0, 24),
+          has_id: !!(d && d.id),
+          has_status: !!(d && d.status),
+          has_element_token: !!(d && (d.element_token || d.token)),
+          has_connect_url: !!(d && (d.url || d.connect_url || d.link))
+        });
         showMessage(globalMessage, t("method_action_ok"), "success");
         await refreshMethodSection();
       } catch (e) {
-        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+        const raw = e && typeof e.message === "string" ? e.message : e ? String(e) : "";
+        console.warn("[Debtya][Method] connect failed", {
+          message_len: raw.length,
+          looks_empty_payload: /\bempty\b|\bvacio\b|undefined|null/i.test(raw),
+          looks_auth: /authorization|token invalid|401/i.test(raw)
+        });
+        showMessage(globalMessage, normalizeErrorMessage(raw), "error");
       } finally {
         setLoading(btn, false);
       }
