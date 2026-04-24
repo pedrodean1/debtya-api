@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-22-method-reset-debts-v3";
+const SERVER_VERSION = "debtya-2026-04-23-v8-layout-patch";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -164,6 +164,7 @@ function sendNoCacheIndexHtml(res) {
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
   res.setHeader("Surrogate-Control", "no-store");
+  res.setHeader("CDN-Cache-Control", "no-store");
   try {
     const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
     res.type("html");
@@ -178,6 +179,8 @@ function sendSpaFallbackIndexHtml(res) {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  res.setHeader("CDN-Cache-Control", "no-store");
   try {
     const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
     res.type("html");
@@ -266,6 +269,8 @@ app.use(
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
+        res.setHeader("Surrogate-Control", "no-store");
+        res.setHeader("CDN-Cache-Control", "no-store");
       }
       if (normalized.endsWith("debtya-bank-strip.js")) {
         res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");

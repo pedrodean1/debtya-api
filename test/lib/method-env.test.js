@@ -85,4 +85,10 @@ describe("lib/method-env", () => {
     const { readMethodApiKey } = loadMethodEnvFresh();
     assert.equal(readMethodApiKey(), "sk_test_lower");
   });
+
+  it("quita Bearer repetido y usa solo la primera linea si hay varias", () => {
+    process.env.METHOD_API_KEY = "Bearer Bearer sk_test_double\notra_linea_ignorada";
+    const { readMethodApiKey } = loadMethodEnvFresh();
+    assert.equal(readMethodApiKey(), "sk_test_double");
+  });
 });
