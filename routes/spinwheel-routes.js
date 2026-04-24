@@ -14,6 +14,11 @@ const {
   upsertSpinwheelUserFromApiResponse,
   updateSpinwheelUserRawResponse
 } = require("../lib/spinwheel-users");
+const { validateDebtCreatePayload } = require("../lib/validation");
+const {
+  importDebtsFromSpinwheelApi,
+  spinwheelRawResponseHasDebtProfileData
+} = require("../lib/spinwheel-debt-import");
 
 function spinwheelInfo(req, ...parts) {
   const rid = req && req.requestId ? req.requestId : "-";
@@ -62,7 +67,7 @@ function assertSpinwheelUserIdParam(spinwheelUserId) {
 }
 
 function registerSpinwheelRoutes(app, deps) {
-  const { requireUser, jsonError, isUuid, appError, supabaseAdmin } = deps;
+  const { requireUser, jsonError, isUuid, appError, supabaseAdmin, safeNumber } = deps;
 
   let clientCache = { cacheKey: "", client: null };
 
@@ -393,6 +398,49 @@ function registerSpinwheelRoutes(app, deps) {
         details: spinwheelFacingHttpMessage(e),
         spinwheel_http_status: e.spinwheel_http_status || null
       });
+    }
+  });
+
+  app.post("/spinwheel/import-debts", requireUser, async (req, res) => {
+    const env = readSpinwheelEnv();
+    try {
+      const mapping = await getSpinwheelMappingForUser(supabaseAdmin, req.user.id, env);
+      if (!mapping || !mapping.spinwheel_user_id) {
+        return jsonError(res, 404, "Sin vínculo Spinwheel para este entorno", {
+          code: "spinwheel_mapping_not_found",
+          environment: env
+        });
+      }
+      const useCachedDebtProfile =
+        spinwheelRawResponseHasDebtProfileData(mapping.spinwheel_debt_profile_raw) ||
+        spinwheelRawResponseHasDebtProfileData(mapping.raw_response);
+      let client = null;
+      if (!useCachedDebtProfile) {
+        client = requireSpinwheelClient(res);
+        if (!client) return undefined;
+      }
+      const summary = await importDebtsFromSpinwheelApi(supabaseAdmin, {
+        debtyaUserId: req.user.id,
+        spinwheelUserId: String(mapping.spinwheel_user_id),
+        client,
+        cachedSpinwheelDebtProfileRaw: mapping.spinwheel_debt_profile_raw,
+        cachedRawResponse: mapping.raw_response,
+        safeNumber,
+        validateDebtCreatePayload
+      });
+      if (!summary.ok) {
+        return jsonError(res, 502, summary.error || "Import Spinwheel falló", { details: summary });
+      }
+      return res.json({ ok: true, ...summary });
+    } catch (e) {
+      const msg = e && e.message ? String(e.message) : String(e);
+      spinwheelInfo(req, "import-debts.error", { message: msg });
+      if (/spinwheel_external_id|spinwheel_debt_profile_raw|column|does not exist|schema cache/i.test(msg)) {
+        return jsonError(res, 503, "Falta migración SQL en Supabase (debts / spinwheel_users Spinwheel)", {
+          details: msg
+        });
+      }
+      return jsonError(res, 500, "Error importando deudas Spinwheel", { details: msg });
     }
   });
 }

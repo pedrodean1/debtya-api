@@ -143,4 +143,102 @@ describe("lib/spinwheel-users", () => {
     assert.equal(r.updated, true);
     assert.ok(r.row);
   });
+
+  it("updateSpinwheelUserRawResponse no pisa raw_response si body no es debt profile", async () => {
+    let patch;
+    const supabaseAdmin = {
+      from() {
+        return {
+          update(p) {
+            patch = p;
+            return {
+              eq() {
+                return {
+                  eq() {
+                    return {
+                      eq() {
+                        return {
+                          select() {
+                            return {
+                              maybeSingle() {
+                                return Promise.resolve({
+                                  data: { id: "1", spinwheel_user_id: "550e8400-e29b-41d4-a716-446655440001" },
+                                  error: null
+                                });
+                              }
+                            };
+                          }
+                        };
+                      }
+                    };
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+    };
+    await updateSpinwheelUserRawResponse(supabaseAdmin, {
+      debtyaUserId: "550e8400-e29b-41d4-a716-446655440000",
+      spinwheelUserId: "550e8400-e29b-41d4-a716-446655440001",
+      spinwheelBody: { data: { connectionStatus: "SUCCESS" } },
+      environment: "sandbox"
+    });
+    assert.equal(patch.raw_response, undefined);
+    assert.equal(patch.spinwheel_debt_profile_raw, undefined);
+    assert.equal(patch.status, "active");
+  });
+
+  it("updateSpinwheelUserRawResponse persiste debt profile en raw y columna dedicada", async () => {
+    let patch;
+    const debtBody = {
+      data: {
+        creditCards: [],
+        autoLoans: [],
+        homeLoans: [],
+        personalLoans: [],
+        studentLoans: [],
+        miscellaneousLiabilities: []
+      }
+    };
+    const supabaseAdmin = {
+      from() {
+        return {
+          update(p) {
+            patch = p;
+            return {
+              eq() {
+                return {
+                  eq() {
+                    return {
+                      eq() {
+                        return {
+                          select() {
+                            return {
+                              maybeSingle() {
+                                return Promise.resolve({ data: { id: "1" }, error: null });
+                              }
+                            };
+                          }
+                        };
+                      }
+                    };
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+    };
+    await updateSpinwheelUserRawResponse(supabaseAdmin, {
+      debtyaUserId: "550e8400-e29b-41d4-a716-446655440000",
+      spinwheelUserId: "550e8400-e29b-41d4-a716-446655440001",
+      spinwheelBody: debtBody,
+      environment: "sandbox"
+    });
+    assert.deepEqual(patch.raw_response, debtBody);
+    assert.deepEqual(patch.spinwheel_debt_profile_raw, debtBody);
+  });
 });

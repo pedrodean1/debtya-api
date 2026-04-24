@@ -86,6 +86,7 @@ describe("routes/spinwheel-routes", () => {
       environment: "sandbox",
       status: "active",
       raw_response: null,
+      spinwheel_debt_profile_raw: null,
       created_at: "2026-01-01T00:00:00.000Z",
       updated_at: "2026-01-01T00:00:00.000Z"
     };
