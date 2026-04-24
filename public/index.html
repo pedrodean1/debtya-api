@@ -21,6 +21,11 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="DebtYa helps you connect bank accounts, organize debts, choose a payoff strategy, and track payments—with clear third-party limits."
+  />
+  <meta name="theme-color" content="#1f6fff" />
   <!-- Si el HTML es estatico en www y la API en otro host, pon aqui la URL base de la API (https://...) -->
   <meta name="debtya-api-origin" content="https://debtya-api.onrender.com" />
   <meta name="debtya-supabase-url" content="https://spybejltsgzfxlwzobkh.supabase.co" />
@@ -28,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-23-v8-layout-patch" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v10-spinwheel-health" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -56,11 +61,14 @@
     html,body{
       margin:0;
       padding:0;
-      font-family:Arial,Helvetica,sans-serif;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
       background:var(--bg);
       color:var(--text);
     }
     body{min-height:100vh}
+    @media (prefers-reduced-motion: no-preference){
+      html{scroll-behavior:smooth}
+    }
     button,input,select{font:inherit}
     a{color:inherit;text-decoration:none}
     .hidden{display:none !important}
@@ -487,6 +495,10 @@
 
     .btn:hover{transform:translateY(-1px)}
     .btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+    .btn:focus-visible{
+      outline:2px solid var(--primary);
+      outline-offset:2px;
+    }
     .btn-primary{background:var(--primary);color:#fff}
     .btn-primary:hover{background:var(--primary-dark)}
     .btn-secondary{background:#eef4ff;color:var(--primary)}
@@ -888,21 +900,22 @@
     }
 
     .landing-hero{
-      padding:18px 20px;
+      padding:22px 22px 20px;
     }
 
     .landing-title{
-      margin:0 0 8px;
-      font-size:30px;
+      margin:0 0 10px;
+      font-size:clamp(26px,3.6vw,34px);
       line-height:1.08;
-      letter-spacing:-.65px;
+      letter-spacing:-.72px;
+      text-wrap:balance;
     }
 
     .landing-copy{
       margin:0;
       color:var(--muted);
-      font-size:14px;
-      line-height:1.55;
+      font-size:15px;
+      line-height:1.58;
       max-width:640px;
     }
 
@@ -910,7 +923,17 @@
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      margin-top:14px;
+      margin-top:18px;
+    }
+    .landing-actions .btn-primary{
+      padding:13px 18px;
+      font-size:15px;
+      box-shadow:0 4px 14px rgba(31,111,255,.28);
+    }
+    .landing-actions .btn-light{
+      background:#eef3f9;
+      color:var(--muted);
+      font-weight:600;
     }
 
     .landing-fold{
@@ -929,6 +952,11 @@
       font-size:14px;
       color:var(--text);
       user-select:none;
+      border-radius:12px;
+    }
+    .landing-fold > summary:focus-visible{
+      outline:2px solid var(--primary);
+      outline-offset:2px;
     }
 
     .landing-fold > summary::-webkit-details-marker{display:none}
@@ -949,7 +977,7 @@
     .feature-grid{
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:10px;
+      gap:12px;
     }
 
     @media (max-width: 900px){
@@ -959,8 +987,15 @@
     .feature-card{
       border:1px solid var(--line);
       border-radius:16px;
-      padding:14px;
+      padding:14px 15px;
       background:var(--card-2);
+      transition:border-color .16s ease, box-shadow .16s ease;
+    }
+    @media (hover:hover) and (prefers-reduced-motion: no-preference){
+      .feature-card:hover{
+        border-color:#b9c9e0;
+        box-shadow:var(--shadow-soft);
+      }
     }
 
     .feature-card h3{
@@ -977,16 +1012,16 @@
 
     .steps{
       display:grid;
-      gap:10px;
+      gap:12px;
     }
 
     .step{
       border:1px solid var(--line);
       border-radius:14px;
-      padding:12px;
+      padding:13px 14px;
       background:#fff;
       display:flex;
-      gap:10px;
+      gap:12px;
       align-items:flex-start;
     }
 
@@ -1025,7 +1060,8 @@
     .section-title-step{
       display:inline-flex;
       align-items:center;
-      gap:8px;
+      gap:12px;
+      flex-wrap:wrap;
     }
 
     .section-step-badge{
@@ -1211,6 +1247,10 @@
       background:#eef4ff;
       color:var(--primary);
       border-color:#d7e6ff;
+    }
+    .nav-chip:focus-visible{
+      outline:2px solid var(--primary);
+      outline-offset:2px;
     }
 
     .pricing-wrap{
@@ -1487,7 +1527,12 @@
       width:100%;
       margin:0;
       flex-wrap:wrap;
-      gap:6px;
+      gap:5px;
+      padding:6px 8px;
+      border-radius:14px;
+      background:linear-gradient(180deg,#f6f8fc 0%,#eef2f7 100%);
+      border:1px solid #c9d4e6;
+      box-shadow:0 1px 0 rgba(255,255,255,.85) inset;
     }
     #appView .topbar-right-cluster.top-actions,
     #appView .top-actions.topbar-right-cluster{
@@ -1504,9 +1549,19 @@
       box-shadow:0 1px 0 rgba(255,255,255,.9) inset;
     }
     #appView .top-nav-app .nav-chip{
-      padding:8px 12px;
+      padding:8px 13px;
       font-size:12px;
       font-weight:800;
+      background:transparent;
+      border-color:transparent;
+    }
+    #appView .top-nav-app .nav-chip:not(.active){
+      color:#475569;
+    }
+    #appView .top-nav-app .nav-chip.active{
+      background:#fff;
+      border-color:#b8c8e0;
+      box-shadow:0 1px 3px rgba(18,32,51,.08);
     }
     @media (max-width:720px){
       #appView .topbar-app{
