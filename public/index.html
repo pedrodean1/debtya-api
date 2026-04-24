@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v12-spinwheel-sms-verify-ui" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v13-spinwheel-debt-profile-ui" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2752,6 +2752,7 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">
           <button id="btnSpinwheelSmsTest" class="btn btn-light" type="button">Probar Spinwheel SMS</button>
           <button id="btnSpinwheelSmsVerifyTest" class="btn btn-light" type="button">Verificar SMS Spinwheel</button>
+          <button id="btnSpinwheelDebtProfileTest" class="btn btn-light" type="button">Obtener Debt Profile</button>
         </div>
         <p class="sub" style="margin:10px 0 6px;font-size:12px">Respuesta (JSON):</p>
         <pre
@@ -8281,6 +8282,48 @@
     if (btnSpinwheelSmsTest) btnSpinwheelSmsTest.addEventListener("click", runSpinwheelSmsSandboxTest);
     const btnSpinwheelSmsVerifyTest = $("btnSpinwheelSmsVerifyTest");
     if (btnSpinwheelSmsVerifyTest) btnSpinwheelSmsVerifyTest.addEventListener("click", runSpinwheelSmsVerifySandboxTest);
+
+    /** TEMP: Spinwheel sandbox — POST /spinwheel/users/me/debt-profile */
+    async function runSpinwheelDebtProfileSandboxTest() {
+      const out = $("spinwheelSmsTestOutput");
+      const btn = $("btnSpinwheelDebtProfileTest");
+      if (!out || !btn) return;
+      setLoading(btn, true, "…");
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          return;
+        }
+        const res = await fetch(`${API_BASE}/spinwheel/users/me/debt-profile`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({}),
+          cache: "no-store"
+        });
+        const text = await res.text();
+        let body;
+        try {
+          body = text ? JSON.parse(text) : {};
+        } catch {
+          body = { _parse_error: true, raw: text };
+        }
+        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
+      } catch (e) {
+        out.textContent = JSON.stringify(
+          { ok: false, error: e && e.message ? String(e.message) : String(e) },
+          null,
+          2
+        );
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+    const btnSpinwheelDebtProfileTest = $("btnSpinwheelDebtProfileTest");
+    if (btnSpinwheelDebtProfileTest) btnSpinwheelDebtProfileTest.addEventListener("click", runSpinwheelDebtProfileSandboxTest);
 
     function getSelectedMethodEntityIdForMethodApi() {
       const sel = $("methodEntityPick");
