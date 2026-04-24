@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v10-spinwheel-health" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v11-spinwheel-sms-test-ui" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2715,6 +2715,35 @@
       </div>
 
       <div id="globalMessage" class="notice global-message-toast hidden" role="status" aria-live="polite"></div>
+
+      <!-- TEMP: Spinwheel sandbox smoke test (quitar cuando ya no haga falta) -->
+      <div
+        id="spinwheelSandboxTestWrap"
+        class="card card-soft"
+        style="margin-bottom:14px;border:1px dashed #94a3b8;background:linear-gradient(180deg,#fffefb,#f8fafc)"
+        aria-label="Spinwheel sandbox test"
+      >
+        <p class="sub" style="margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.45">
+          <strong>[TEMP / TEST]</strong> Solo sandbox Spinwheel. No uses datos reales sensibles. Elimina este bloque antes de un release estable si no lo necesitas.
+        </p>
+        <h3 style="margin:0 0 12px;font-size:16px;letter-spacing:-0.02em">Spinwheel sandbox test</h3>
+        <div class="grid-2" style="gap:10px;align-items:flex-end;margin-bottom:10px">
+          <div class="field">
+            <label class="label" for="spinwheelTestPhone">phoneNumber (E.164)</label>
+            <input id="spinwheelTestPhone" class="input" type="tel" inputmode="tel" autocomplete="off" placeholder="+15555550123" />
+          </div>
+          <div class="field">
+            <label class="label" for="spinwheelTestDob">dateOfBirth (YYYY-MM-DD)</label>
+            <input id="spinwheelTestDob" class="input" type="text" inputmode="numeric" autocomplete="off" placeholder="1990-01-15" />
+          </div>
+        </div>
+        <button id="btnSpinwheelSmsTest" class="btn btn-light" type="button">Probar Spinwheel SMS</button>
+        <p class="sub" style="margin:10px 0 6px;font-size:12px">Respuesta (JSON):</p>
+        <pre
+          id="spinwheelSmsTestOutput"
+          style="margin:0;max-height:280px;overflow:auto;padding:10px 12px;border-radius:12px;background:#0f172a;color:#e2e8f0;font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b"
+        >{}</pre>
+      </div>
 
       <div class="page-grid">
         <div class="stack">
@@ -8136,6 +8165,60 @@
     if (billingManageBtn) billingManageBtn.addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
+
+    /** TEMP: Spinwheel sandbox — POST /spinwheel/connect/sms con JWT Supabase (misma base que api()). */
+    async function runSpinwheelSmsSandboxTest() {
+      const out = $("spinwheelSmsTestOutput");
+      const phoneEl = $("spinwheelTestPhone");
+      const dobEl = $("spinwheelTestDob");
+      const btn = $("btnSpinwheelSmsTest");
+      if (!out || !phoneEl || !dobEl || !btn) return;
+      const phoneNumber = String(phoneEl.value || "").trim();
+      const dateOfBirth = String(dobEl.value || "").trim();
+      if (!phoneNumber || !dateOfBirth) {
+        out.textContent = JSON.stringify(
+          { ok: false, error: "Completa phoneNumber (E.164) y dateOfBirth (YYYY-MM-DD)." },
+          null,
+          2
+        );
+        return;
+      }
+      setLoading(btn, true, "…");
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          return;
+        }
+        const res = await fetch(`${API_BASE}/spinwheel/connect/sms`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ phoneNumber, dateOfBirth }),
+          cache: "no-store"
+        });
+        const text = await res.text();
+        let body;
+        try {
+          body = text ? JSON.parse(text) : {};
+        } catch {
+          body = { _parse_error: true, raw: text };
+        }
+        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
+      } catch (e) {
+        out.textContent = JSON.stringify(
+          { ok: false, error: e && e.message ? String(e.message) : String(e) },
+          null,
+          2
+        );
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+    const btnSpinwheelSmsTest = $("btnSpinwheelSmsTest");
+    if (btnSpinwheelSmsTest) btnSpinwheelSmsTest.addEventListener("click", runSpinwheelSmsSandboxTest);
 
     function getSelectedMethodEntityIdForMethodApi() {
       const sel = $("methodEntityPick");
