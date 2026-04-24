@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v11-spinwheel-sms-test-ui" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v12-spinwheel-sms-verify-ui" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2737,7 +2737,22 @@
             <input id="spinwheelTestDob" class="input" type="text" inputmode="numeric" autocomplete="off" placeholder="1990-01-15" />
           </div>
         </div>
-        <button id="btnSpinwheelSmsTest" class="btn btn-light" type="button">Probar Spinwheel SMS</button>
+        <div class="field" style="margin-bottom:10px;max-width:360px">
+          <label class="label" for="spinwheelTestSmsCode">smsCode</label>
+          <input
+            id="spinwheelTestSmsCode"
+            class="input"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="12"
+            placeholder="123456"
+          />
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          <button id="btnSpinwheelSmsTest" class="btn btn-light" type="button">Probar Spinwheel SMS</button>
+          <button id="btnSpinwheelSmsVerifyTest" class="btn btn-light" type="button">Verificar SMS Spinwheel</button>
+        </div>
         <p class="sub" style="margin:10px 0 6px;font-size:12px">Respuesta (JSON):</p>
         <pre
           id="spinwheelSmsTestOutput"
@@ -8217,8 +8232,55 @@
         setLoading(btn, false);
       }
     }
+    /** TEMP: Spinwheel sandbox — POST /spinwheel/users/me/connect/sms/verify */
+    async function runSpinwheelSmsVerifySandboxTest() {
+      const out = $("spinwheelSmsTestOutput");
+      const codeEl = $("spinwheelTestSmsCode");
+      const btn = $("btnSpinwheelSmsVerifyTest");
+      if (!out || !codeEl || !btn) return;
+      const code = String(codeEl.value || "").trim();
+      if (!code) {
+        out.textContent = JSON.stringify({ ok: false, error: "Completa smsCode." }, null, 2);
+        return;
+      }
+      setLoading(btn, true, "…");
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          return;
+        }
+        const res = await fetch(`${API_BASE}/spinwheel/users/me/connect/sms/verify`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ code }),
+          cache: "no-store"
+        });
+        const text = await res.text();
+        let body;
+        try {
+          body = text ? JSON.parse(text) : {};
+        } catch {
+          body = { _parse_error: true, raw: text };
+        }
+        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
+      } catch (e) {
+        out.textContent = JSON.stringify(
+          { ok: false, error: e && e.message ? String(e.message) : String(e) },
+          null,
+          2
+        );
+      } finally {
+        setLoading(btn, false);
+      }
+    }
     const btnSpinwheelSmsTest = $("btnSpinwheelSmsTest");
     if (btnSpinwheelSmsTest) btnSpinwheelSmsTest.addEventListener("click", runSpinwheelSmsSandboxTest);
+    const btnSpinwheelSmsVerifyTest = $("btnSpinwheelSmsVerifyTest");
+    if (btnSpinwheelSmsVerifyTest) btnSpinwheelSmsVerifyTest.addEventListener("click", runSpinwheelSmsVerifySandboxTest);
 
     function getSelectedMethodEntityIdForMethodApi() {
       const sel = $("methodEntityPick");
