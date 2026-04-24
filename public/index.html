@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v13-spinwheel-debt-profile-ui" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v14-spinwheel-debt-profile-body" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -8283,7 +8283,7 @@
     const btnSpinwheelSmsVerifyTest = $("btnSpinwheelSmsVerifyTest");
     if (btnSpinwheelSmsVerifyTest) btnSpinwheelSmsVerifyTest.addEventListener("click", runSpinwheelSmsVerifySandboxTest);
 
-    /** TEMP: Spinwheel sandbox — POST /spinwheel/users/me/debt-profile */
+    /** TEMP: Spinwheel sandbox — POST /spinwheel/users/me/debt-profile (Spinwheel exige creditReport o creditScore en el body). */
     async function runSpinwheelDebtProfileSandboxTest() {
       const out = $("spinwheelSmsTestOutput");
       const btn = $("btnSpinwheelDebtProfileTest");
@@ -8295,13 +8295,18 @@
           out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
           return;
         }
+        const debtProfilePayload = {
+          creditReport: {
+            type: "1_BUREAU.FULL"
+          }
+        };
         const res = await fetch(`${API_BASE}/spinwheel/users/me/debt-profile`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify(debtProfilePayload),
           cache: "no-store"
         });
         const text = await res.text();
