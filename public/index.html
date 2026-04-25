@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v18-spinwheel-payment-intents" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v19-visible-build-intents" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -809,6 +809,19 @@
     .notice.success{background:#ecfbf1;border-color:#cdeed7;color:#17663b}
     .notice.error{background:#fff1f1;border-color:#ffd0cb;color:#9e2e24}
     .notice.warn{background:#fff7e8;border-color:#ffe0a8;color:#8a5a00}
+    .intents-build-json{
+      margin:0;
+      padding:10px 12px;
+      max-height:220px;
+      overflow:auto;
+      font-size:12px;
+      line-height:1.45;
+      background:rgba(255,255,255,0.65);
+      border-radius:10px;
+      border:1px solid rgba(15,23,42,0.08);
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
 
     /* Toast fijo: evita que al mostrar el aviso se mueva el layout y el scroll “salte” arriba */
     #globalMessage.global-message-toast:not(.hidden){
@@ -2855,7 +2868,7 @@
                 <div class="ux-advanced-inner">
                   <div class="grid-4 operate-adv-grid">
                     <button id="btnApplyRules" class="btn btn-secondary" type="button" data-i18n="btn_apply_rules">Apply rules</button>
-                    <button id="btnBuildIntents" class="btn btn-secondary" type="button" data-i18n="btn_build_intents">Prepare payments</button>
+                    <button id="btnBuildIntents" class="btn btn-secondary" type="button" data-i18n="btn_intents_build">Build payments</button>
                     <button id="btnApproveVisible" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
                     <button id="btnExecuteVisible" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
                   </div>
@@ -3111,6 +3124,15 @@
                   </div>
                 </details>
               </div>
+            </div>
+
+            <div class="intents-build-toolbar" style="margin:0 0 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+              <button id="btnBuildIntentsVisible" class="btn btn-primary" type="button" data-i18n="btn_intents_build">Build payments</button>
+            </div>
+
+            <div id="intentsBuildFeedback" class="notice hidden" style="margin-bottom:14px;" role="region" aria-live="polite">
+              <div style="font-weight:700;margin-bottom:8px;" data-i18n="intents_build_response_label">Last response</div>
+              <pre id="intentsBuildResultJson" class="intents-build-json"></pre>
             </div>
 
             <div class="tag-row" style="margin-bottom:14px;">
@@ -3680,7 +3702,8 @@
         sync_bank_pick_none: "There are no connected banks to disconnect.",
         btn_import_accounts: "Import accounts",
         btn_import_tx: "Import transactions",
-        btn_build_intents: "Prepare payments",
+        btn_intents_build: "Build payments",
+        intents_build_response_label: "Last build response (JSON)",
         stat_total_debt: "Total debt",
         stat_active_debts: "Active debts",
         stat_pending_intents: "Suggested payments waiting",
@@ -3919,7 +3942,7 @@
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
         empty_rules: "You have no saved rules yet.",
-        empty_intents: "No suggested payments yet. Under Actions, open More when you are ready to prepare them.",
+        empty_intents: "No suggested payments yet. Use Build payments above (or Actions → More) after applying rules and importing transactions.",
         empty_trace: "No history available yet.",
         empty_accounts: "No imported accounts yet.",
         empty_compare: "No comparison available yet.",
@@ -4243,7 +4266,8 @@
         sync_bank_pick_none: "No hay bancos conectados para desconectar.",
         btn_import_accounts: "Importar cuentas",
         btn_import_tx: "Importar transacciones",
-        btn_build_intents: "Preparar pagos",
+        btn_intents_build: "Construir pagos",
+        intents_build_response_label: "Ultima respuesta del servidor (JSON)",
         stat_total_debt: "Deuda total",
         stat_active_debts: "Deudas activas",
         stat_pending_intents: "Pagos sugeridos en espera",
@@ -4481,7 +4505,7 @@
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
         empty_rules: "Todavia no tienes reglas guardadas.",
-        empty_intents: "Aun no hay pagos sugeridos. En Acciones, abre Mas cuando quieras prepararlos.",
+        empty_intents: "Aun no hay pagos sugeridos. Pulsa Construir pagos arriba (o Acciones → Mas) despues de aplicar reglas e importar movimientos.",
         empty_trace: "Todavia no hay historial disponible.",
         empty_accounts: "Todavia no hay cuentas importadas.",
         empty_compare: "Todavia no hay comparacion disponible.",
@@ -8732,19 +8756,43 @@
       }
     });
 
-    $("btnBuildIntents").addEventListener("click", async () => {
-      const btn = $("btnBuildIntents");
-      setLoading(btn, true, t("building"));
+    async function runPaymentIntentsBuild(triggerBtn) {
+      const btn = triggerBtn;
+      if (btn) setLoading(btn, true, t("building"));
+      const fb = $("intentsBuildFeedback");
+      const pre = $("intentsBuildResultJson");
       try {
-        await api("/payment-intents/build", { method: "POST", body: "{}" });
+        const res = await api("/payment-intents/build", { method: "POST", body: "{}" });
+        if (fb && pre) {
+          pre.textContent = JSON.stringify(res, null, 2);
+          fb.classList.remove("hidden", "error", "success", "warn");
+          fb.classList.add("success");
+        }
         showMessage(globalMessage, t("intents_built"), "success");
         await refreshIntents();
       } catch (err) {
+        if (fb && pre) {
+          pre.textContent = JSON.stringify(
+            { ok: false, error: normalizeErrorMessage(err.message) },
+            null,
+            2
+          );
+          fb.classList.remove("hidden", "success", "warn");
+          fb.classList.add("error");
+        }
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
       } finally {
-        setLoading(btn, false);
+        if (btn) setLoading(btn, false);
       }
-    });
+    }
+
+    const btnBuildIntentsEl = $("btnBuildIntents");
+    if (btnBuildIntentsEl) btnBuildIntentsEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsEl));
+
+    const btnBuildIntentsVisibleEl = $("btnBuildIntentsVisible");
+    if (btnBuildIntentsVisibleEl) {
+      btnBuildIntentsVisibleEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsVisibleEl));
+    }
 
     $("btnApproveVisible").addEventListener("click", async () => {
       const btn = $("btnApproveVisible");
