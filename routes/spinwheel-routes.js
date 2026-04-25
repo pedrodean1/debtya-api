@@ -435,7 +435,11 @@ function registerSpinwheelRoutes(app, deps) {
     } catch (e) {
       const msg = e && e.message ? String(e.message) : String(e);
       spinwheelInfo(req, "import-debts.error", { message: msg });
-      if (/spinwheel_external_id|spinwheel_debt_profile_raw|column|does not exist|schema cache/i.test(msg)) {
+      if (
+        /spinwheel_external_id|spinwheel_debt_profile_raw|uq_debts_user_source_spinwheel|unique constraint|duplicate key|column|does not exist|schema cache/i.test(
+          msg
+        )
+      ) {
         return jsonError(res, 503, "Falta migración SQL en Supabase (debts / spinwheel_users Spinwheel)", {
           details: msg
         });
