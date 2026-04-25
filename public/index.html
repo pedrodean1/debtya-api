@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v17-spinwheel-import-idempotent" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v18-spinwheel-payment-intents" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -677,6 +677,7 @@
     .pill.blue{background:#eef4ff;color:var(--primary)}
     .pill.gray{background:#f3f4f6;color:#4b5563}
     .pill.purple{background:#f3e8ff;color:#6b21a8}
+    .pill.teal{background:#e6fffa;color:#0d9488}
 
     .mini-summary{
       display:grid;
@@ -3750,6 +3751,11 @@
         method_empty_sync: "No Method liabilities synced yet.",
         method_imported_badge: "Imported",
         debt_source_method: "Method",
+        debt_source_spinwheel: "Spinwheel",
+        debt_spinwheel_payable: "Spinwheel bill pay",
+        debt_spinwheel_plan_only: "Spinwheel (planning)",
+        intent_pill_spinwheel: "Spinwheel",
+        intent_spinwheel_plan_only: "Planning only — run is disabled until bill pay is connected.",
         debt_source_plaid: "Plaid",
         debt_method_payable: "Payable (Method)",
         debt_method_info_only: "Informational",
@@ -4308,6 +4314,11 @@
         method_empty_sync: "Aun no hay liabilities Method sincronizadas.",
         method_imported_badge: "Ya importada",
         debt_source_method: "Method",
+        debt_source_spinwheel: "Spinwheel",
+        debt_spinwheel_payable: "Spinwheel — pago de factura",
+        debt_spinwheel_plan_only: "Spinwheel (solo plan)",
+        intent_pill_spinwheel: "Spinwheel",
+        intent_spinwheel_plan_only: "Solo planificacion: la ejecucion queda desactivada hasta conectar el pago real.",
         debt_source_plaid: "Plaid",
         debt_method_payable: "Pagable (Method)",
         debt_method_info_only: "Informativa",
@@ -5987,6 +5998,13 @@
           } else {
             sourcePills.push(`<span class="pill gray">${escapeHtml(t("debt_method_info_only"))}</span>`);
           }
+        } else if (src === "spinwheel") {
+          sourcePills.push(`<span class="pill teal debt-source-pill">${escapeHtml(t("debt_source_spinwheel"))}</span>`);
+          if (debt.payment_capable) {
+            sourcePills.push(`<span class="pill green">${escapeHtml(t("debt_spinwheel_payable"))}</span>`);
+          } else {
+            sourcePills.push(`<span class="pill gray">${escapeHtml(t("debt_spinwheel_plan_only"))}</span>`);
+          }
         } else if (src === "plaid") {
           sourcePills.push(`<span class="pill purple">${escapeHtml(t("debt_source_plaid"))}</span>`);
         }
@@ -6273,12 +6291,22 @@
 
       state.intents.forEach((intent) => {
         const meta = intent.metadata || {};
+        const isSpinIntent = String(intent.source || "").toLowerCase() === "spinwheel";
+        const spinPill = isSpinIntent
+          ? ` <span class="pill teal">${escapeHtml(t("intent_pill_spinwheel"))}</span>`
+          : "";
         const item = document.createElement("div");
         item.className = "item";
+        const actionsHtml = isSpinIntent
+          ? `<div class="muted" style="margin-top:10px;font-size:13px;">${escapeHtml(t("intent_spinwheel_plan_only"))}</div>`
+          : `<div class="item-actions">
+            <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
+            <button class="btn btn-primary btn-small" type="button" onclick="executeIntent('${intent.id}')">${escapeHtml(t("btn_execute"))}</button>
+          </div>`;
         item.innerHTML = `
           <div class="item-top">
             <div>
-              <div class="item-title">${escapeHtml(t("intent_title"))} ${escapeHtml((intent.id || "").slice(0, 8))}</div>
+              <div class="item-title">${escapeHtml(t("intent_title"))} ${escapeHtml((intent.id || "").slice(0, 8))}${spinPill}</div>
               <div class="item-meta">
                 ${escapeHtml(t("meta_pay_from"))}: <strong>${escapeHtml(describeIntentPayFrom(intent))}</strong><br />
                 ${escapeHtml(t("meta_pay_toward"))}: <strong>${escapeHtml(describeIntentPayToward(intent))}</strong><br />
@@ -6302,10 +6330,7 @@
               ${statusPill(intent.status)}
             </div>
           </div>
-          <div class="item-actions">
-            <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
-            <button class="btn btn-primary btn-small" type="button" onclick="executeIntent('${intent.id}')">${escapeHtml(t("btn_execute"))}</button>
-          </div>
+          ${actionsHtml}
         `;
         box.appendChild(item);
       });

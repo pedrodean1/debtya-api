@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-24-v17-spinwheel-import-idempotent";
+const SERVER_VERSION = "debtya-2026-04-24-v18-spinwheel-payment-intents";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2050,6 +2050,14 @@ async function executeIntentDirect(userId, intentId) {
         reason: "ya_ejecutado"
       }
     };
+  }
+
+  if (String(freshIntent.source || "").toLowerCase() === "spinwheel") {
+    const err = new Error(
+      "Intent Spinwheel: solo planificacion por ahora; no hay ejecucion de pago real hasta integrar el rail."
+    );
+    err.status = 400;
+    throw err;
   }
 
   const amount = getIntentAmount(freshIntent);
