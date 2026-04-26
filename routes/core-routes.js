@@ -24,9 +24,6 @@ function registerCoreRoutes(app, deps) {
     const methodStatus = readMethodKeyStatus();
     const spinOn = isSpinwheelConfigured();
     const spinStatus = readSpinwheelKeyStatus();
-    const plaidClientId = String(process.env.PLAID_CLIENT_ID || "").trim();
-    const plaidSecret = String(process.env.PLAID_SECRET || "").trim();
-    const plaidOn = !!(plaidClientId && plaidSecret);
     const payload = {
       ok: true,
       message: "DebtYa API funcionando",
@@ -44,9 +41,7 @@ function registerCoreRoutes(app, deps) {
       spinwheel_configured: spinOn,
       spinwheel_key_source: spinStatus.key_source,
       spinwheel_env: readSpinwheelEnv(),
-      has_spinwheel_api_secret: spinOn,
-      plaid_configured: plaidOn,
-      plaid_env: process.env.PLAID_ENV || null
+      has_spinwheel_api_secret: spinOn
     };
 
     const exposeEnvDebug =
@@ -65,9 +60,7 @@ function registerCoreRoutes(app, deps) {
         has_openai_guide: !!process.env.OPENAI_API_KEY,
         guide_assistant_disabled: process.env.OPENAI_GUIDE_DISABLED === "1",
         has_method_api_key: methodOn,
-        has_spinwheel_api_secret: spinOn,
-        has_plaid_client_id: !!plaidClientId,
-        has_plaid_secret: !!plaidSecret
+        has_spinwheel_api_secret: spinOn
       };
     }
 

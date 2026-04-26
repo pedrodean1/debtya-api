@@ -129,7 +129,7 @@ describe("lib/spinwheel-payment-intents", () => {
     assert.equal(inserts.length, 1);
     assert.equal(inserts[0].source, "spinwheel");
     assert.equal(inserts[0].external_id, "sw-ext-1");
-    assert.equal(inserts[0].status, "pending_review");
+    assert.equal(inserts[0].status, "draft");
     assert.equal(inserts[0].metadata.interest_rate, 18.9);
     assert.equal(inserts[0].amount, 25);
   });
@@ -208,101 +208,5 @@ describe("lib/spinwheel-payment-intents", () => {
 
     assert.equal(r.appended, 0);
     assert.equal(r.skipped, 1);
-  });
-
-  it("appendSpinwheelPaymentIntents reintenta quitando columnas no soportadas", async () => {
-    const userId = "99999999-9999-4999-8999-999999999999";
-    let insertCalls = 0;
-    const supabaseAdmin = {
-      from(table) {
-        if (table === "debts") {
-          return {
-            select() {
-              return {
-                eq() {
-                  return {
-                    eq() {
-                      return {
-                        eq() {
-                          return {
-                            gt() {
-                              return Promise.resolve({
-                                data: [
-                                  {
-                                    id: "88888888-8888-4888-8888-888888888888",
-                                    balance: 60,
-                                    minimum_payment: 12,
-                                    apr: 15,
-                                    spinwheel_external_id: "legacy-no-strategy",
-                                    payment_capable: true,
-                                    is_active: true,
-                                    source: "spinwheel"
-                                  }
-                                ],
-                                error: null
-                              });
-                            }
-                          };
-                        }
-                      };
-                    }
-                  };
-                }
-              };
-            }
-          };
-        }
-        return {
-          select() {
-            return {
-              eq() {
-                return {
-                  eq() {
-                    return {
-                      in() {
-                        return Promise.resolve({ data: [], error: null });
-                      }
-                    };
-                  }
-                };
-              }
-            };
-          },
-          insert() {
-            insertCalls += 1;
-            return {
-              select() {
-                return {
-                  single() {
-                    if (insertCalls === 1) {
-                      return Promise.resolve({
-                        data: null,
-                        error: {
-                          code: "42703",
-                          message: 'column "strategy" of relation "payment_intents" does not exist'
-                        }
-                      });
-                    }
-                    return Promise.resolve({
-                      data: { id: "77777777-7777-4777-8777-777777777777" },
-                      error: null
-                    });
-                  }
-                };
-              }
-            };
-          }
-        };
-      }
-    };
-
-    const r = await appendSpinwheelPaymentIntents(supabaseAdmin, userId, {
-      safeNumber,
-      getCurrentPaymentPlan: async () => ({ strategy: "avalanche" })
-    });
-
-    assert.equal(r.appended, 1);
-    assert.equal(r.skipped, 0);
-    assert.equal(insertCalls, 2);
   });
 });

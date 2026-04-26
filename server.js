@@ -17,10 +17,9 @@ const { readMethodKeyStatus, readMethodEnv, readMethodApiVersion } = require("./
 
 const app = express();
 app.set("trust proxy", 1);
-app.disable("etag");
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-25-v25-restore-classic-ui";
+const SERVER_VERSION = "debtya-2026-04-24-v19-visible-build-intents";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -160,28 +159,12 @@ function injectIntoIndexHtml(html) {
   return injectDebtyaApiBaseIntoHtml(html);
 }
 
-function sendNoCacheIndexHtml(req, res) {
-  try {
-    const host = String(req.headers.host || "debtya.local");
-    const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "https")
-      .split(",")[0]
-      .trim();
-    const current = new URL(req.originalUrl || "/", `${proto}://${host}`);
-    const v = String(current.searchParams.get("v") || "").trim();
-    if (v !== SERVER_VERSION) {
-      current.searchParams.set("v", SERVER_VERSION);
-      current.searchParams.set("t", String(Date.now()));
-      return res.redirect(302, `${current.pathname}${current.search}`);
-    }
-  } catch (_e) {}
+function sendNoCacheIndexHtml(res) {
   res.setHeader("Cache-Control", "private, no-store, no-cache, max-age=0, must-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
   res.setHeader("Surrogate-Control", "no-store");
   res.setHeader("CDN-Cache-Control", "no-store");
-  res.setHeader("Vary", "Accept-Encoding, User-Agent");
-  res.removeHeader("ETag");
-  res.removeHeader("Last-Modified");
   try {
     const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
     res.type("html");
@@ -198,9 +181,6 @@ function sendSpaFallbackIndexHtml(res) {
   res.setHeader("Expires", "0");
   res.setHeader("Surrogate-Control", "no-store");
   res.setHeader("CDN-Cache-Control", "no-store");
-  res.setHeader("Vary", "Accept-Encoding, User-Agent");
-  res.removeHeader("ETag");
-  res.removeHeader("Last-Modified");
   try {
     const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
     res.type("html");
@@ -211,8 +191,8 @@ function sendSpaFallbackIndexHtml(res) {
   }
 }
 
-app.get("/", (req, res) => sendNoCacheIndexHtml(req, res));
-app.get("/index.html", (req, res) => sendNoCacheIndexHtml(req, res));
+app.get("/", (_req, res) => sendNoCacheIndexHtml(res));
+app.get("/index.html", (_req, res) => sendNoCacheIndexHtml(res));
 
 app.get("/debtya-version.txt", (_req, res) => {
   res.type("text/plain");
@@ -283,9 +263,6 @@ app.get("/debtya-bank-strip.js", (_req, res) => {
 
 app.use(
   express.static(path.join(__dirname, "public"), {
-    etag: false,
-    lastModified: false,
-    maxAge: 0,
     setHeaders(res, filePath) {
       const normalized = String(filePath || "").replace(/\\/g, "/");
       if (normalized.endsWith("/index.html") || normalized.endsWith("/legal.html")) {
@@ -294,9 +271,6 @@ app.use(
         res.setHeader("Expires", "0");
         res.setHeader("Surrogate-Control", "no-store");
         res.setHeader("CDN-Cache-Control", "no-store");
-        res.setHeader("Vary", "Accept-Encoding, User-Agent");
-        res.removeHeader("ETag");
-        res.removeHeader("Last-Modified");
       }
       if (normalized.endsWith("debtya-bank-strip.js")) {
         res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
