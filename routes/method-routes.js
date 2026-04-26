@@ -289,11 +289,6 @@ function registerMethodRoutes(app, deps) {
     return methodClientCache.client;
   }
 
-  function invalidateMethodClientCache() {
-    methodClientCache.cacheKey = "";
-    methodClientCache.client = null;
-  }
-
   app.get("/method/status", (_req, res) => {
     const configured = isMethodConfigured();
     const methodStatus = readMethodKeyStatus();
@@ -419,6 +414,10 @@ function registerMethodRoutes(app, deps) {
   });
 
   app.post("/method/entities", requireUser, async (req, res) => {
+    const mc = getClient();
+    if (!mc) {
+      return jsonError(res, 503, "Method no está configurado en el servidor", { code: "method_not_configured" });
+    }
     try {
       const body = req.body && typeof req.body === "object" ? req.body : {};
       const individual = body.individual && typeof body.individual === "object" ? body.individual : {};
@@ -439,46 +438,7 @@ function registerMethodRoutes(app, deps) {
       };
 
       methodInfo(req, "create_entity.request", summarizeEntityPayload(payload));
-      let created = null;
-      let createErr = null;
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        const client = getClient();
-        if (!client) {
-          return jsonError(res, 503, "Method no está configurado en el servidor", { code: "method_not_configured" });
-        }
-        const stKey = readMethodKeyStatus();
-        methodInfo(req, "create_entity.method_call", {
-          attempt,
-          method_env: readMethodEnv(),
-          method_api_version: client.apiVersion,
-          method_base: client.baseUrl,
-          key_source: stKey.key_source,
-          key_length: stKey.key_length,
-          key_mode: (() => {
-            const k = readMethodApiKey();
-            if (k.startsWith("sk_live")) return "sk_live";
-            if (k.startsWith("sk_test")) return "sk_test";
-            return "other";
-          })()
-        });
-        try {
-          created = await client.createIndividualEntityDetailed(payload);
-          createErr = null;
-          break;
-        } catch (e) {
-          createErr = e;
-          const st = e.method_http_status || e.status || null;
-          if (st === 401 && attempt === 0) {
-            methodInfo(req, "create_entity.method_401_invalidate_retry", { attempt });
-            invalidateMethodClientCache();
-            continue;
-          }
-          throw e;
-        }
-      }
-      if (createErr && !created) {
-        throw createErr;
-      }
+      const created = await mc.createIndividualEntityDetailed(payload);
       const entity = created ? created.body : null;
       const methodEntityId = extractMethodEntityId(entity);
       const rawPreview =

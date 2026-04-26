@@ -64,29 +64,6 @@ describe("validateDebtCreatePayload", () => {
       null
     );
   });
-  it("exige spinwheel_external_id cuando source es spinwheel", () => {
-    assert.equal(
-      validateDebtCreatePayload({
-        balance: 1,
-        minimum_payment: 0,
-        apr: 0,
-        source: "spinwheel"
-      }),
-      "spinwheel_external_id requerido cuando source es spinwheel"
-    );
-  });
-  it("acepta source spinwheel con spinwheel_external_id", () => {
-    assert.equal(
-      validateDebtCreatePayload({
-        balance: 10,
-        minimum_payment: 1,
-        apr: 5,
-        source: "spinwheel",
-        spinwheel_external_id: "ext-1"
-      }),
-      null
-    );
-  });
 });
 
 describe("validateDebtPatch", () => {
@@ -105,9 +82,6 @@ describe("validateDebtPatch", () => {
   });
   it("rechaza source desconocido", () => {
     assert.equal(validateDebtPatch({ source: "other" }), "source inválido");
-  });
-  it("acepta source spinwheel en patch", () => {
-    assert.equal(validateDebtPatch({ source: "spinwheel" }), null);
   });
   it("rechaza payment_capable no booleano", () => {
     assert.equal(validateDebtPatch({ payment_capable: "yes" }), "payment_capable inválido");

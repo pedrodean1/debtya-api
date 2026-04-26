@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-24-v19-visible-build-intents";
+const SERVER_VERSION = "debtya-2026-04-22-method-reset-debts-v3";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -164,7 +164,6 @@ function sendNoCacheIndexHtml(res) {
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
   res.setHeader("Surrogate-Control", "no-store");
-  res.setHeader("CDN-Cache-Control", "no-store");
   try {
     const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
     res.type("html");
@@ -179,8 +178,6 @@ function sendSpaFallbackIndexHtml(res) {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
-  res.setHeader("Surrogate-Control", "no-store");
-  res.setHeader("CDN-Cache-Control", "no-store");
   try {
     const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
     res.type("html");
@@ -269,8 +266,6 @@ app.use(
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
-        res.setHeader("Surrogate-Control", "no-store");
-        res.setHeader("CDN-Cache-Control", "no-store");
       }
       if (normalized.endsWith("debtya-bank-strip.js")) {
         res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
@@ -2050,14 +2045,6 @@ async function executeIntentDirect(userId, intentId) {
         reason: "ya_ejecutado"
       }
     };
-  }
-
-  if (String(freshIntent.source || "").toLowerCase() === "spinwheel") {
-    const err = new Error(
-      "Intent Spinwheel: solo planificacion por ahora; no hay ejecucion de pago real hasta integrar el rail."
-    );
-    err.status = 400;
-    throw err;
   }
 
   const amount = getIntentAmount(freshIntent);

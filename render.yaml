@@ -4,8 +4,6 @@
 # o quitar el Static Site y dejar solo este web.
 # Si www es estatico y la API solo en onrender.com: en el Web Service define DEBTYA_PUBLIC_API_URL
 # con la URL publica del servicio Node (fetch + enlaces de reset en el correo).
-# Si el badge sigue en version vieja: el dominio no esta sirviendo este deploy (DNS a otro host,
-# Static Site aparte, o caché CDN). Purga caché o apunta www al mismo Web Service que sirve / y /health.
 # https://render.com/docs/blueprint-spec
 services:
   - type: web
