@@ -33,26 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-25-v24-server-redirect-cache-bust" />
-  <script>
-    (function forceFreshHtmlOnce() {
-      try {
-        var m = document.querySelector('meta[name="debtya-ui-rev"]');
-        var rev = m && m.content ? String(m.content).trim() : "";
-        if (!rev) return;
-        var u = new URL(window.location.href);
-        var currentV = String(u.searchParams.get("v") || "").trim();
-        var guardKey = "DEBTYA_CACHE_BUST_REV";
-        var last = String(sessionStorage.getItem(guardKey) || "").trim();
-        if (currentV !== rev && last !== rev) {
-          sessionStorage.setItem(guardKey, rev);
-          u.searchParams.set("v", rev);
-          u.searchParams.set("t", String(Date.now()));
-          window.location.replace(u.toString());
-        }
-      } catch (_e) {}
-    })();
-  </script>
+  <meta name="debtya-ui-rev" content="debtya-2026-04-25-v25-restore-classic-ui" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2749,29 +2730,29 @@
 
       <div id="globalMessage" class="notice global-message-toast hidden" role="status" aria-live="polite"></div>
 
+      <!-- TEMP: Spinwheel sandbox smoke test (quitar cuando ya no haga falta) -->
       <div
         id="spinwheelSandboxTestWrap"
         class="card card-soft"
-        style="margin-bottom:14px;border:1px solid rgba(31,111,255,0.2);background:linear-gradient(180deg,#ffffff,#f8fbff)"
-        aria-label="Spinwheel connect"
+        style="margin-bottom:14px;border:1px dashed #94a3b8;background:linear-gradient(180deg,#fffefb,#f8fafc)"
+        aria-label="Spinwheel sandbox test"
       >
-        <p class="sub" style="margin:0 0 6px;font-weight:700;color:#1f6fff;">Paso 2 · Spinwheel</p>
-        <h3 style="margin:0 0 8px;font-size:16px;letter-spacing:-0.02em">Conectar Spinwheel</h3>
-        <p class="sub" style="margin:0 0 12px;">
-          Completa telefono y fecha de nacimiento, solicita SMS, verifica el codigo y luego importa deudas.
+        <p class="sub" style="margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.45">
+          <strong>[TEMP / TEST]</strong> Solo sandbox Spinwheel. No uses datos reales sensibles. Elimina este bloque antes de un release estable si no lo necesitas.
         </p>
+        <h3 style="margin:0 0 12px;font-size:16px;letter-spacing:-0.02em">Spinwheel sandbox test</h3>
         <div class="grid-2" style="gap:10px;align-items:flex-end;margin-bottom:10px">
           <div class="field">
-            <label class="label" for="spinwheelTestPhone">Telefono (E.164)</label>
+            <label class="label" for="spinwheelTestPhone">phoneNumber (E.164)</label>
             <input id="spinwheelTestPhone" class="input" type="tel" inputmode="tel" autocomplete="off" placeholder="+15555550123" />
           </div>
           <div class="field">
-            <label class="label" for="spinwheelTestDob">Fecha de nacimiento (YYYY-MM-DD)</label>
+            <label class="label" for="spinwheelTestDob">dateOfBirth (YYYY-MM-DD)</label>
             <input id="spinwheelTestDob" class="input" type="text" inputmode="numeric" autocomplete="off" placeholder="1990-01-15" />
           </div>
         </div>
         <div class="field" style="margin-bottom:10px;max-width:360px">
-          <label class="label" for="spinwheelTestSmsCode">Codigo SMS</label>
+          <label class="label" for="spinwheelTestSmsCode">smsCode</label>
           <input
             id="spinwheelTestSmsCode"
             class="input"
@@ -2783,12 +2764,12 @@
           />
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-          <button id="btnSpinwheelSmsTest" class="btn btn-light" type="button">1) Solicitar SMS</button>
-          <button id="btnSpinwheelSmsVerifyTest" class="btn btn-light" type="button">2) Verificar SMS</button>
-          <button id="btnSpinwheelDebtProfileTest" class="btn btn-light" type="button">3) Obtener Debt Profile</button>
-          <button id="btnSpinwheelImportDebtsTest" class="btn btn-primary" type="button">4) Importar deudas</button>
+          <button id="btnSpinwheelSmsTest" class="btn btn-light" type="button">Probar Spinwheel SMS</button>
+          <button id="btnSpinwheelSmsVerifyTest" class="btn btn-light" type="button">Verificar SMS Spinwheel</button>
+          <button id="btnSpinwheelDebtProfileTest" class="btn btn-light" type="button">Obtener Debt Profile</button>
+          <button id="btnSpinwheelImportDebtsTest" class="btn btn-light" type="button">Importar deudas Spinwheel</button>
         </div>
-        <p class="sub" style="margin:10px 0 6px;font-size:12px">Respuesta Spinwheel (JSON):</p>
+        <p class="sub" style="margin:10px 0 6px;font-size:12px">Respuesta (JSON):</p>
         <pre
           id="spinwheelSmsTestOutput"
           style="margin:0;max-height:280px;overflow:auto;padding:10px 12px;border-radius:12px;background:#0f172a;color:#e2e8f0;font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b"
@@ -2797,21 +2778,6 @@
 
       <div class="page-grid">
         <div class="stack">
-          <section class="card" id="quickFlowPanel">
-            <div class="section-head">
-              <div>
-                <h2 data-i18n="quick_flow_title">Guided steps</h2>
-                <p class="sub" data-i18n="quick_flow_sub">Follow the sequence and use each main action once.</p>
-              </div>
-            </div>
-            <div class="grid-4">
-              <button class="btn btn-primary" type="button" data-scroll-target="operatePanel" data-i18n="quick_step_1">1) Connect bank (Plaid)</button>
-              <button class="btn btn-light" type="button" data-scroll-target="spinwheelSandboxTestWrap" data-i18n="quick_step_2">2) Connect Spinwheel</button>
-              <button class="btn btn-light" type="button" data-scroll-target="setupPanel" data-i18n="quick_step_3">3) Save debts and plan</button>
-              <button class="btn btn-light" type="button" data-scroll-target="suggestedPaymentsPanel" data-i18n="quick_step_4">4) Build and review payments</button>
-            </div>
-          </section>
-
           <section class="card card-operate" id="operatePanel">
             <div class="section-head section-head-tight">
               <div>
@@ -2839,7 +2805,6 @@
                   Disconnect bank
                 </button>
               </div>
-              <p id="plaidStatusHint" class="helper-text" style="margin:8px 0 0;" aria-live="polite"></p>
               <div class="grid-2 operate-import-row">
                 <button id="btnImportAccounts" class="btn btn-light" type="button" data-i18n="btn_import_accounts">Import accounts</button>
                 <button id="btnImportTransactions" class="btn btn-light" type="button" data-i18n="btn_import_tx">Import transactions</button>
@@ -2849,7 +2814,7 @@
             <div class="operate-advanced-stack">
               <p class="operate-rail-label operate-rail-label-adv" data-i18n="operate_rail_advanced">Advanced</p>
 
-              <div id="methodDebtsPanel" class="method-debts-panel method-panel-pro hidden">
+              <div id="methodDebtsPanel" class="method-debts-panel method-panel-pro">
                 <div class="method-panel-head">
                   <span class="method-panel-eyebrow" data-i18n="method_panel_eyebrow">Optional</span>
                   <h3 class="method-panel-h" data-i18n="method_panel_title">Debts via Method</h3>
@@ -2993,7 +2958,6 @@
                 <p class="sub" data-i18n="rules_sub">Three ways to steer extra money toward your debts when you apply rules.</p>
               </div>
               <div class="section-actions">
-                <button id="btnApplyRulesInline" class="btn btn-secondary btn-small" type="button" data-i18n="btn_apply_rules">Apply rules</button>
                 <button id="refreshRulesBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
               </div>
             </div>
@@ -3164,13 +3128,6 @@
 
             <div class="intents-build-toolbar" style="margin:0 0 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
               <button id="btnBuildIntentsVisible" class="btn btn-primary" type="button" data-i18n="btn_intents_build">Build payments</button>
-              <button id="btnApproveVisibleInline" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
-              <button id="btnExecuteVisibleInline" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
-              <select id="intentsFilterSelect" class="select" style="max-width:220px;">
-                <option value="all" data-i18n-opt="intents_filter_all">All intents</option>
-                <option value="spinwheel" data-i18n-opt="intents_filter_spinwheel">Spinwheel only</option>
-                <option value="regular" data-i18n-opt="intents_filter_regular">Regular only</option>
-              </select>
             </div>
 
             <div id="intentsBuildFeedback" class="notice hidden" style="margin-bottom:14px;" role="region" aria-live="polite">
@@ -3736,17 +3693,7 @@
         next_step_review_btn: "Review payments",
         next_step_done: "You are set up for now. After new imports, use Actions to apply rules or refresh payments.",
         next_step_done_btn: "Scroll to Actions",
-        quick_flow_title: "Guided steps",
-        quick_flow_sub: "Follow this order for a clean setup and payment cycle.",
-        quick_step_1: "1) Connect bank (Plaid)",
-        quick_step_2: "2) Connect Spinwheel",
-        quick_step_3: "3) Save debts and plan",
-        quick_step_4: "4) Build and review payments",
         btn_connect_bank: "Connect bank",
-        plaid_status_ready: "Plaid connection ready.",
-        plaid_status_missing:
-          "Plaid is not enabled on this API host. Check /health and confirm plaid_configured is true, then redeploy.",
-        plaid_status_host: "API host: {host}",
         btn_disconnect_bank: "Disconnect bank",
         sync_bank_pick_title: "Which bank do you want to remove?",
         sync_bank_pick_sub: "Pick the bank connection. On the next step we will ask you to confirm.",
@@ -3757,9 +3704,6 @@
         btn_import_tx: "Import transactions",
         btn_intents_build: "Build payments",
         intents_build_response_label: "Last build response (JSON)",
-        intents_filter_all: "All intents",
-        intents_filter_spinwheel: "Spinwheel only",
-        intents_filter_regular: "Regular only",
         stat_total_debt: "Total debt",
         stat_active_debts: "Active debts",
         stat_pending_intents: "Suggested payments waiting",
@@ -3783,7 +3727,7 @@
         sub_portal_hint: "If your plan is active, you can open your account page to manage it.",
         operate_title: "Actions",
         operate_sub:
-          "Start with your bank: connect and import. Use Advanced below for rules and payment runs.",
+          "Start with your bank: connect and import. Use Advanced below for Method, rules, and payment runs.",
         operate_rail_main: "Start here",
         operate_rail_advanced: "Advanced",
         method_panel_eyebrow: "Liability data (Method)",
@@ -3791,7 +3735,7 @@
         btn_approve_visible: "Approve payments",
         btn_execute_visible: "Run payments",
         operate_note: "Most days: Connect → Import. Rules and preparing payments live under More.",
-        operate_legal_html: 'By connecting accounts, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers (for example Plaid for bank data you connect and Stripe for subscription billing). Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
+        operate_legal_html: 'By connecting accounts, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers (for example Plaid for bank data you connect, Method where you use liability integrations, and Stripe for subscription billing). Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
         method_panel_title: "Debts via Method",
         method_panel_hint: "Method discovers liabilities. Plaid stays for the bank you pay from. Create a Method profile, run Connect, sync, then import each debt into DebtYa.",
         method_panel_disabled:
@@ -4313,17 +4257,7 @@
         next_step_review_btn: "Ver pagos sugeridos",
         next_step_done: "Por ahora vas al dia. Tras nuevas importaciones, usa Acciones para reglas o pagos.",
         next_step_done_btn: "Ir a Acciones",
-        quick_flow_title: "Pasos guiados",
-        quick_flow_sub: "Sigue este orden para configurar y operar pagos sin perderte.",
-        quick_step_1: "1) Conectar banco (Plaid)",
-        quick_step_2: "2) Conectar Spinwheel",
-        quick_step_3: "3) Guardar deudas y plan",
-        quick_step_4: "4) Construir y revisar pagos",
         btn_connect_bank: "Conectar banco",
-        plaid_status_ready: "Conexion Plaid lista.",
-        plaid_status_missing:
-          "Plaid no esta activo en esta API. Revisa /health y confirma plaid_configured: true, luego redeploy.",
-        plaid_status_host: "Host API: {host}",
         btn_disconnect_bank: "Desconectar banco",
         sync_bank_pick_title: "¿Que banco quieres quitar?",
         sync_bank_pick_sub: "Elige la conexion. En el siguiente paso te pediremos confirmacion.",
@@ -4334,9 +4268,6 @@
         btn_import_tx: "Importar transacciones",
         btn_intents_build: "Construir pagos",
         intents_build_response_label: "Ultima respuesta del servidor (JSON)",
-        intents_filter_all: "Todos",
-        intents_filter_spinwheel: "Solo Spinwheel",
-        intents_filter_regular: "Solo regulares",
         stat_total_debt: "Deuda total",
         stat_active_debts: "Deudas activas",
         stat_pending_intents: "Pagos sugeridos en espera",
@@ -4360,7 +4291,7 @@
         sub_portal_hint: "Si tu plan esta activo, puedes abrir la pagina de tu cuenta para administrarlo.",
         operate_title: "Acciones",
         operate_sub:
-          "Empieza por el banco: conecta e importa. Mas abajo, avanzado para reglas y pagos.",
+          "Empieza por el banco: conecta e importa. Mas abajo, avanzado para Method, reglas y pagos.",
         operate_rail_main: "Empieza aqui",
         operate_rail_advanced: "Avanzado",
         method_panel_eyebrow: "Datos de pasivos (Method)",
@@ -4368,7 +4299,7 @@
         btn_approve_visible: "Aprobar pagos",
         btn_execute_visible: "Ejecutar pagos",
         operate_note: "Lo usual: Conectar → Importar. Reglas y preparar pagos estan en Mas.",
-        operate_legal_html: 'Al conectar cuentas, autorizas a DebtYa a recibir la informacion financiera necesaria a traves de proveedores de confianza (por ejemplo Plaid para el banco conectado y Stripe para la suscripcion). Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
+        operate_legal_html: 'Al conectar cuentas, autorizas a DebtYa a recibir la informacion financiera necesaria a traves de proveedores de confianza (por ejemplo Plaid para el banco conectado, Method si usas deudas por ese canal, y Stripe para la suscripcion). Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
         method_panel_title: "Deudas con Method",
         method_panel_hint: "Method descubre liabilities (deudas). Plaid sigue siendo el banco del que pagas. Crea perfil Method, ejecuta Conectar, sincroniza e importa cada deuda a DebtYa.",
         method_panel_disabled:
@@ -4934,9 +4865,7 @@
       methodEntities: [],
       methodAccounts: [],
       methodEntitiesLoadError: null,
-      methodEntityCreating: false,
-      intentFilter: "all",
-      plaidConfigured: true
+      methodEntityCreating: false
     };
 
     const $ = (id) => document.getElementById(id);
@@ -5020,9 +4949,7 @@
       if (active === "overview") $("navOverview").classList.add("active");
       if (active === "operate") $("navOperate").classList.add("active");
       if (active === "setup") $("navSetup").classList.add("active");
-      if (active === "operate") {
-        // Method panel retired; keep operate navigation lightweight.
-      }
+      if (active === "operate") void refreshMethodSection();
     }
 
     function fmtMoney(value) {
@@ -6375,35 +6302,18 @@
       return `<span class="pill">${escapeHtml(s || "-")}</span>`;
     }
 
-    function scrollToPanel(panelId) {
-      const el = panelId ? document.getElementById(panelId) : null;
-      if (!el) return;
-      try {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      } catch (_) {
-        el.scrollIntoView();
-      }
-    }
-
     function renderIntents() {
       const box = $("intentsList");
       box.innerHTML = "";
-      const filter = String(state.intentFilter || "all");
-      const intents = (state.intents || []).filter((intent) => {
-        const isSpinIntent = String(intent.source || "").toLowerCase() === "spinwheel";
-        if (filter === "spinwheel") return isSpinIntent;
-        if (filter === "regular") return !isSpinIntent;
-        return true;
-      });
 
-      if (!intents.length) {
+      if (!state.intents.length) {
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_intents"))}</div>`;
         renderStats();
         updateNextActionGuide();
         return;
       }
 
-      intents.forEach((intent) => {
+      state.intents.forEach((intent) => {
         const meta = intent.metadata || {};
         const isSpinIntent = String(intent.source || "").toLowerCase() === "spinwheel";
         const spinPill = isSpinIntent
@@ -7415,44 +7325,6 @@
       return false;
     }
 
-    function parsePlaidConfiguredFromPayload(obj) {
-      const v = obj && typeof obj === "object" ? obj.plaid_configured : undefined;
-      if (v === true) return true;
-      if (v === 1) return true;
-      if (typeof v === "string") {
-        const s = v.trim().toLowerCase();
-        return s === "true" || s === "1" || s === "yes";
-      }
-      return false;
-    }
-
-    function renderPlaidStatusHint() {
-      const hint = $("plaidStatusHint");
-      if (!hint) return;
-      const ok = state.plaidConfigured !== false;
-      const hostText = tf("plaid_status_host", { host: API_BASE || "-" });
-      hint.textContent = `${ok ? t("plaid_status_ready") : t("plaid_status_missing")} ${hostText}`;
-      hint.classList.toggle("error-text", !ok);
-    }
-
-    async function probePlaidConfiguredApiBase() {
-      const candidates = [String(API_BASE || "").replace(/\/+$/, ""), ...DEBTYA_API_PROBE_ORIGINS]
-        .filter(Boolean)
-        .filter((v, i, a) => a.indexOf(v) === i);
-      for (const root of candidates) {
-        try {
-          const ac = new AbortController();
-          const tid = setTimeout(() => ac.abort(), 2500);
-          const r = await fetch(`${root}/health`, { method: "GET", cache: "no-store", signal: ac.signal, mode: "cors" });
-          clearTimeout(tid);
-          if (!r.ok) continue;
-          const h = await r.json().catch(() => ({}));
-          if (parsePlaidConfiguredFromPayload(h)) return { ok: true, root, health: h };
-        } catch (_) {}
-      }
-      return { ok: false, root: String(API_BASE || "").replace(/\/+$/, ""), health: {} };
-    }
-
     async function refreshMethodSection() {
       state.methodEntitiesLoadError = null;
       let configured = false;
@@ -7537,19 +7409,6 @@
     async function refreshAll() {
       hideMessage(globalMessage);
       try {
-        try {
-          const probe = await probePlaidConfiguredApiBase();
-          if (probe.ok && probe.root && probe.root !== String(API_BASE || "").replace(/\/+$/, "")) {
-            API_BASE = probe.root;
-            try {
-              localStorage.setItem("DEBTYA_API_BASE", probe.root);
-            } catch (_) {}
-          }
-          state.plaidConfigured = !!probe.ok;
-        } catch (_) {
-          state.plaidConfigured = true;
-        }
-        renderPlaidStatusHint();
         await Promise.all([
           refreshPlan(),
           refreshBillingStatus(),
@@ -7563,7 +7422,12 @@
       } catch (e) {
         showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
       }
-      // Method integration retired from active UX.
+      try {
+        await refreshMethodSection();
+      } catch (e2) {
+        state.methodEntitiesLoadError = displayMethodSectionError(e2 && e2.message ? String(e2.message) : "");
+        populateMethodEntityPick();
+      }
     }
 
     async function connectBankDirect(){
@@ -8879,8 +8743,8 @@
       }
     });
 
-    async function runApplyRules(triggerBtn) {
-      const btn = triggerBtn || null;
+    $("btnApplyRules").addEventListener("click", async () => {
+      const btn = $("btnApplyRules");
       setLoading(btn, true, t("applying"));
       try {
         const res = await api("/rules/apply", { method: "POST", body: "{}" });
@@ -8890,11 +8754,7 @@
       } finally {
         setLoading(btn, false);
       }
-    }
-    const btnApplyRulesMainEl = $("btnApplyRules");
-    if (btnApplyRulesMainEl) btnApplyRulesMainEl.addEventListener("click", () => runApplyRules(btnApplyRulesMainEl));
-    const btnApplyRulesInlineEl = $("btnApplyRulesInline");
-    if (btnApplyRulesInlineEl) btnApplyRulesInlineEl.addEventListener("click", () => runApplyRules(btnApplyRulesInlineEl));
+    });
 
     async function runPaymentIntentsBuild(triggerBtn) {
       const btn = triggerBtn;
@@ -8933,16 +8793,9 @@
     if (btnBuildIntentsVisibleEl) {
       btnBuildIntentsVisibleEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsVisibleEl));
     }
-    const intentsFilterSelectEl = $("intentsFilterSelect");
-    if (intentsFilterSelectEl) {
-      intentsFilterSelectEl.addEventListener("change", () => {
-        state.intentFilter = intentsFilterSelectEl.value || "all";
-        renderIntents();
-      });
-    }
 
-    async function runApproveVisible(triggerBtn) {
-      const btn = triggerBtn || null;
+    $("btnApproveVisible").addEventListener("click", async () => {
+      const btn = $("btnApproveVisible");
       setLoading(btn, true, t("approving"));
       try {
         const res = await api("/payment-intents/approve-visible", { method: "POST", body: "{}" });
@@ -8953,18 +8806,10 @@
       } finally {
         setLoading(btn, false);
       }
-    }
-    const btnApproveVisibleMainEl = $("btnApproveVisible");
-    if (btnApproveVisibleMainEl) {
-      btnApproveVisibleMainEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleMainEl));
-    }
-    const btnApproveVisibleInlineEl = $("btnApproveVisibleInline");
-    if (btnApproveVisibleInlineEl) {
-      btnApproveVisibleInlineEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleInlineEl));
-    }
+    });
 
-    async function runExecuteVisible(triggerBtn) {
-      const btn = triggerBtn || null;
+    $("btnExecuteVisible").addEventListener("click", async () => {
+      const btn = $("btnExecuteVisible");
       setLoading(btn, true, t("executing"));
       try {
         const res = await api("/payment-intents/execute-visible", { method: "POST", body: "{}" });
@@ -8975,21 +8820,6 @@
       } finally {
         setLoading(btn, false);
       }
-    }
-    const btnExecuteVisibleMainEl = $("btnExecuteVisible");
-    if (btnExecuteVisibleMainEl) {
-      btnExecuteVisibleMainEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleMainEl));
-    }
-    const btnExecuteVisibleInlineEl = $("btnExecuteVisibleInline");
-    if (btnExecuteVisibleInlineEl) {
-      btnExecuteVisibleInlineEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleInlineEl));
-    }
-
-    document.querySelectorAll("[data-scroll-target]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const panelId = btn.getAttribute("data-scroll-target");
-        scrollToPanel(panelId);
-      });
     });
 
     $("reconcileRecentBtn").addEventListener("click", async () => {
