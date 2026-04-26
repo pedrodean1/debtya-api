@@ -20,7 +20,7 @@ app.set("trust proxy", 1);
 app.disable("etag");
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-25-v23-self-heal-cache";
+const SERVER_VERSION = "debtya-2026-04-25-v24-server-redirect-cache-bust";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -160,7 +160,20 @@ function injectIntoIndexHtml(html) {
   return injectDebtyaApiBaseIntoHtml(html);
 }
 
-function sendNoCacheIndexHtml(res) {
+function sendNoCacheIndexHtml(req, res) {
+  try {
+    const host = String(req.headers.host || "debtya.local");
+    const proto = String(req.headers["x-forwarded-proto"] || req.protocol || "https")
+      .split(",")[0]
+      .trim();
+    const current = new URL(req.originalUrl || "/", `${proto}://${host}`);
+    const v = String(current.searchParams.get("v") || "").trim();
+    if (v !== SERVER_VERSION) {
+      current.searchParams.set("v", SERVER_VERSION);
+      current.searchParams.set("t", String(Date.now()));
+      return res.redirect(302, `${current.pathname}${current.search}`);
+    }
+  } catch (_e) {}
   res.setHeader("Cache-Control", "private, no-store, no-cache, max-age=0, must-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
@@ -198,8 +211,8 @@ function sendSpaFallbackIndexHtml(res) {
   }
 }
 
-app.get("/", (_req, res) => sendNoCacheIndexHtml(res));
-app.get("/index.html", (_req, res) => sendNoCacheIndexHtml(res));
+app.get("/", (req, res) => sendNoCacheIndexHtml(req, res));
+app.get("/index.html", (req, res) => sendNoCacheIndexHtml(req, res));
 
 app.get("/debtya-version.txt", (_req, res) => {
   res.type("text/plain");
