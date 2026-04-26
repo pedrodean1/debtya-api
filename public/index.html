@@ -3128,6 +3128,11 @@
 
             <div class="intents-build-toolbar" style="margin:0 0 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
               <button id="btnBuildIntentsVisible" class="btn btn-primary" type="button" data-i18n="btn_intents_build">Build payments</button>
+              <select id="intentsFilterSelect" class="select" style="max-width:220px;">
+                <option value="all" data-i18n-opt="intents_filter_all">All intents</option>
+                <option value="spinwheel" data-i18n-opt="intents_filter_spinwheel">Spinwheel only</option>
+                <option value="regular" data-i18n-opt="intents_filter_regular">Regular only</option>
+              </select>
             </div>
 
             <div id="intentsBuildFeedback" class="notice hidden" style="margin-bottom:14px;" role="region" aria-live="polite">
@@ -3704,6 +3709,9 @@
         btn_import_tx: "Import transactions",
         btn_intents_build: "Build payments",
         intents_build_response_label: "Last build response (JSON)",
+        intents_filter_all: "All intents",
+        intents_filter_spinwheel: "Spinwheel only",
+        intents_filter_regular: "Regular only",
         stat_total_debt: "Total debt",
         stat_active_debts: "Active debts",
         stat_pending_intents: "Suggested payments waiting",
@@ -4268,6 +4276,9 @@
         btn_import_tx: "Importar transacciones",
         btn_intents_build: "Construir pagos",
         intents_build_response_label: "Ultima respuesta del servidor (JSON)",
+        intents_filter_all: "Todos",
+        intents_filter_spinwheel: "Solo Spinwheel",
+        intents_filter_regular: "Solo regulares",
         stat_total_debt: "Deuda total",
         stat_active_debts: "Deudas activas",
         stat_pending_intents: "Pagos sugeridos en espera",
@@ -4865,7 +4876,8 @@
       methodEntities: [],
       methodAccounts: [],
       methodEntitiesLoadError: null,
-      methodEntityCreating: false
+      methodEntityCreating: false,
+      intentFilter: "all"
     };
 
     const $ = (id) => document.getElementById(id);
@@ -6305,15 +6317,22 @@
     function renderIntents() {
       const box = $("intentsList");
       box.innerHTML = "";
+      const filter = String(state.intentFilter || "all");
+      const intents = (state.intents || []).filter((intent) => {
+        const isSpinIntent = String(intent.source || "").toLowerCase() === "spinwheel";
+        if (filter === "spinwheel") return isSpinIntent;
+        if (filter === "regular") return !isSpinIntent;
+        return true;
+      });
 
-      if (!state.intents.length) {
+      if (!intents.length) {
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_intents"))}</div>`;
         renderStats();
         updateNextActionGuide();
         return;
       }
 
-      state.intents.forEach((intent) => {
+      intents.forEach((intent) => {
         const meta = intent.metadata || {};
         const isSpinIntent = String(intent.source || "").toLowerCase() === "spinwheel";
         const spinPill = isSpinIntent
@@ -8792,6 +8811,13 @@
     const btnBuildIntentsVisibleEl = $("btnBuildIntentsVisible");
     if (btnBuildIntentsVisibleEl) {
       btnBuildIntentsVisibleEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsVisibleEl));
+    }
+    const intentsFilterSelectEl = $("intentsFilterSelect");
+    if (intentsFilterSelectEl) {
+      intentsFilterSelectEl.addEventListener("change", () => {
+        state.intentFilter = intentsFilterSelectEl.value || "all";
+        renderIntents();
+      });
     }
 
     $("btnApproveVisible").addEventListener("click", async () => {
