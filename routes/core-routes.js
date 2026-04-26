@@ -1,5 +1,4 @@
 const { isMethodConfigured, readMethodEnv, readMethodApiVersion, readMethodKeyStatus } = require("../lib/method-env");
-const { isSpinwheelConfigured, readSpinwheelEnv, readSpinwheelKeyStatus } = require("../lib/spinwheel-env");
 
 function registerCoreRoutes(app, deps) {
   const {
@@ -22,8 +21,6 @@ function registerCoreRoutes(app, deps) {
   app.get("/health", async (_req, res) => {
     const methodOn = isMethodConfigured();
     const methodStatus = readMethodKeyStatus();
-    const spinOn = isSpinwheelConfigured();
-    const spinStatus = readSpinwheelKeyStatus();
     const payload = {
       ok: true,
       message: "DebtYa API funcionando",
@@ -37,11 +34,7 @@ function registerCoreRoutes(app, deps) {
       method_key_source: methodStatus.key_source,
       method_configured: methodOn,
       method_env: methodOn ? readMethodEnv() : null,
-      method_api_version: methodOn ? readMethodApiVersion() : null,
-      spinwheel_configured: spinOn,
-      spinwheel_key_source: spinStatus.key_source,
-      spinwheel_env: readSpinwheelEnv(),
-      has_spinwheel_api_secret: spinOn
+      method_api_version: methodOn ? readMethodApiVersion() : null
     };
 
     const exposeEnvDebug =
@@ -59,8 +52,7 @@ function registerCoreRoutes(app, deps) {
         has_stripe_webhook_secret: !!STRIPE_WEBHOOK_SECRET,
         has_openai_guide: !!process.env.OPENAI_API_KEY,
         guide_assistant_disabled: process.env.OPENAI_GUIDE_DISABLED === "1",
-        has_method_api_key: methodOn,
-        has_spinwheel_api_secret: spinOn
+        has_method_api_key: methodOn
       };
     }
 

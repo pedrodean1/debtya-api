@@ -1,5 +1,3 @@
-const { appendSpinwheelPaymentIntents } = require("../lib/spinwheel-payment-intents");
-
 function registerCronRoutes(app, deps) {
   const {
     requireCronSecret,
@@ -11,8 +9,6 @@ function registerCronRoutes(app, deps) {
     getIntentAmount,
     isUuid,
     safeNumber,
-    getCurrentPaymentPlan,
-    stampRecentIntentsFundingFromPlan,
     SERVER_VERSION,
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
@@ -51,15 +47,6 @@ function registerCronRoutes(app, deps) {
           const buildResult = await callRpc("build_intents_v2", {
             p_user_id: userId
           }).catch(() => null);
-
-          await appendSpinwheelPaymentIntents(supabaseAdmin, userId, {
-            safeNumber,
-            getCurrentPaymentPlan
-          }).catch(() => null);
-
-          if (typeof stampRecentIntentsFundingFromPlan === "function") {
-            await stampRecentIntentsFundingFromPlan(userId).catch(() => null);
-          }
 
           let buildItems = [];
           if (Array.isArray(buildResult)) buildItems = buildResult;
