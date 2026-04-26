@@ -17,9 +17,10 @@ const { readMethodKeyStatus, readMethodEnv, readMethodApiVersion } = require("./
 
 const app = express();
 app.set("trust proxy", 1);
+app.disable("etag");
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-25-v21-hard-refresh-onboarding";
+const SERVER_VERSION = "debtya-2026-04-25-v22-cache-killer";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -165,6 +166,9 @@ function sendNoCacheIndexHtml(res) {
   res.setHeader("Expires", "0");
   res.setHeader("Surrogate-Control", "no-store");
   res.setHeader("CDN-Cache-Control", "no-store");
+  res.setHeader("Vary", "Accept-Encoding, User-Agent");
+  res.removeHeader("ETag");
+  res.removeHeader("Last-Modified");
   try {
     const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
     res.type("html");
@@ -181,6 +185,9 @@ function sendSpaFallbackIndexHtml(res) {
   res.setHeader("Expires", "0");
   res.setHeader("Surrogate-Control", "no-store");
   res.setHeader("CDN-Cache-Control", "no-store");
+  res.setHeader("Vary", "Accept-Encoding, User-Agent");
+  res.removeHeader("ETag");
+  res.removeHeader("Last-Modified");
   try {
     const html = injectIntoIndexHtml(fs.readFileSync(PUBLIC_INDEX_HTML, "utf8"));
     res.type("html");
@@ -263,6 +270,9 @@ app.get("/debtya-bank-strip.js", (_req, res) => {
 
 app.use(
   express.static(path.join(__dirname, "public"), {
+    etag: false,
+    lastModified: false,
+    maxAge: 0,
     setHeaders(res, filePath) {
       const normalized = String(filePath || "").replace(/\\/g, "/");
       if (normalized.endsWith("/index.html") || normalized.endsWith("/legal.html")) {
@@ -271,6 +281,9 @@ app.use(
         res.setHeader("Expires", "0");
         res.setHeader("Surrogate-Control", "no-store");
         res.setHeader("CDN-Cache-Control", "no-store");
+        res.setHeader("Vary", "Accept-Encoding, User-Agent");
+        res.removeHeader("ETag");
+        res.removeHeader("Last-Modified");
       }
       if (normalized.endsWith("debtya-bank-strip.js")) {
         res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
