@@ -20,7 +20,7 @@ app.set("trust proxy", 1);
 app.disable("etag");
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-25-v22-cache-killer";
+const SERVER_VERSION = "debtya-2026-04-25-v23-self-heal-cache";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;

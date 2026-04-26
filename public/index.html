@@ -33,7 +33,26 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-25-v22-cache-killer" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-25-v23-self-heal-cache" />
+  <script>
+    (function forceFreshHtmlOnce() {
+      try {
+        var m = document.querySelector('meta[name="debtya-ui-rev"]');
+        var rev = m && m.content ? String(m.content).trim() : "";
+        if (!rev) return;
+        var u = new URL(window.location.href);
+        var currentV = String(u.searchParams.get("v") || "").trim();
+        var guardKey = "DEBTYA_CACHE_BUST_REV";
+        var last = String(sessionStorage.getItem(guardKey) || "").trim();
+        if (currentV !== rev && last !== rev) {
+          sessionStorage.setItem(guardKey, rev);
+          u.searchParams.set("v", rev);
+          u.searchParams.set("t", String(Date.now()));
+          window.location.replace(u.toString());
+        }
+      } catch (_e) {}
+    })();
+  </script>
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
