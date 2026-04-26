@@ -3703,6 +3703,7 @@
         plaid_status_ready: "Plaid connection ready.",
         plaid_status_missing:
           "Plaid is not enabled on this API host. Check /health and confirm plaid_configured is true, then redeploy.",
+        plaid_status_host: "API host: {host}",
         btn_disconnect_bank: "Disconnect bank",
         sync_bank_pick_title: "Which bank do you want to remove?",
         sync_bank_pick_sub: "Pick the bank connection. On the next step we will ask you to confirm.",
@@ -4273,6 +4274,7 @@
         plaid_status_ready: "Conexion Plaid lista.",
         plaid_status_missing:
           "Plaid no esta activo en esta API. Revisa /health y confirma plaid_configured: true, luego redeploy.",
+        plaid_status_host: "Host API: {host}",
         btn_disconnect_bank: "Desconectar banco",
         sync_bank_pick_title: "¿Que banco quieres quitar?",
         sync_bank_pick_sub: "Elige la conexion. En el siguiente paso te pediremos confirmacion.",
@@ -7367,8 +7369,27 @@
       const hint = $("plaidStatusHint");
       if (!hint) return;
       const ok = state.plaidConfigured !== false;
-      hint.textContent = ok ? t("plaid_status_ready") : t("plaid_status_missing");
+      const hostText = tf("plaid_status_host", { host: API_BASE || "-" });
+      hint.textContent = `${ok ? t("plaid_status_ready") : t("plaid_status_missing")} ${hostText}`;
       hint.classList.toggle("error-text", !ok);
+    }
+
+    async function probePlaidConfiguredApiBase() {
+      const candidates = [String(API_BASE || "").replace(/\/+$/, ""), ...DEBTYA_API_PROBE_ORIGINS]
+        .filter(Boolean)
+        .filter((v, i, a) => a.indexOf(v) === i);
+      for (const root of candidates) {
+        try {
+          const ac = new AbortController();
+          const tid = setTimeout(() => ac.abort(), 2500);
+          const r = await fetch(`${root}/health`, { method: "GET", cache: "no-store", signal: ac.signal, mode: "cors" });
+          clearTimeout(tid);
+          if (!r.ok) continue;
+          const h = await r.json().catch(() => ({}));
+          if (parsePlaidConfiguredFromPayload(h)) return { ok: true, root, health: h };
+        } catch (_) {}
+      }
+      return { ok: false, root: String(API_BASE || "").replace(/\/+$/, ""), health: {} };
     }
 
     async function refreshMethodSection() {
@@ -7456,9 +7477,14 @@
       hideMessage(globalMessage);
       try {
         try {
-          const h = await fetch(`${API_BASE}/health`, { method: "GET", cache: "no-store" });
-          const health = h.ok ? await h.json().catch(() => ({})) : {};
-          state.plaidConfigured = parsePlaidConfiguredFromPayload(health);
+          const probe = await probePlaidConfiguredApiBase();
+          if (probe.ok && probe.root && probe.root !== String(API_BASE || "").replace(/\/+$/, "")) {
+            API_BASE = probe.root;
+            try {
+              localStorage.setItem("DEBTYA_API_BASE", probe.root);
+            } catch (_) {}
+          }
+          state.plaidConfigured = !!probe.ok;
         } catch (_) {
           state.plaidConfigured = true;
         }
