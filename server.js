@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-25-v20-onboarding-flow-refresh";
+const SERVER_VERSION = "debtya-2026-04-25-v21-hard-refresh-onboarding";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
