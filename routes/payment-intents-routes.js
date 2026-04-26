@@ -116,6 +116,7 @@ function registerPaymentIntentRoutes(app, deps) {
         .select("*")
         .eq("user_id", req.user.id)
         .in("status", ["draft", "pending", "built", "proposed", "ready", "pending_review"])
+        .or("source.is.null,source.neq.spinwheel")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -161,6 +162,7 @@ function registerPaymentIntentRoutes(app, deps) {
         .select("*")
         .eq("user_id", req.user.id)
         .in("status", ["approved"])
+        .or("source.is.null,source.neq.spinwheel")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
