@@ -2805,6 +2805,7 @@
                   Disconnect bank
                 </button>
               </div>
+              <p id="plaidStatusHint" class="helper-text" style="margin:8px 0 0;" aria-live="polite"></p>
               <div class="grid-2 operate-import-row">
                 <button id="btnImportAccounts" class="btn btn-light" type="button" data-i18n="btn_import_accounts">Import accounts</button>
                 <button id="btnImportTransactions" class="btn btn-light" type="button" data-i18n="btn_import_tx">Import transactions</button>
@@ -3699,6 +3700,9 @@
         next_step_done: "You are set up for now. After new imports, use Actions to apply rules or refresh payments.",
         next_step_done_btn: "Scroll to Actions",
         btn_connect_bank: "Connect bank",
+        plaid_status_ready: "Plaid connection ready.",
+        plaid_status_missing:
+          "Plaid is not enabled on this API host. Check /health and confirm plaid_configured is true, then redeploy.",
         btn_disconnect_bank: "Disconnect bank",
         sync_bank_pick_title: "Which bank do you want to remove?",
         sync_bank_pick_sub: "Pick the bank connection. On the next step we will ask you to confirm.",
@@ -4266,6 +4270,9 @@
         next_step_done: "Por ahora vas al dia. Tras nuevas importaciones, usa Acciones para reglas o pagos.",
         next_step_done_btn: "Ir a Acciones",
         btn_connect_bank: "Conectar banco",
+        plaid_status_ready: "Conexion Plaid lista.",
+        plaid_status_missing:
+          "Plaid no esta activo en esta API. Revisa /health y confirma plaid_configured: true, luego redeploy.",
         btn_disconnect_bank: "Desconectar banco",
         sync_bank_pick_title: "¿Que banco quieres quitar?",
         sync_bank_pick_sub: "Elige la conexion. En el siguiente paso te pediremos confirmacion.",
@@ -4877,7 +4884,8 @@
       methodAccounts: [],
       methodEntitiesLoadError: null,
       methodEntityCreating: false,
-      intentFilter: "all"
+      intentFilter: "all",
+      plaidConfigured: true
     };
 
     const $ = (id) => document.getElementById(id);
@@ -7344,6 +7352,25 @@
       return false;
     }
 
+    function parsePlaidConfiguredFromPayload(obj) {
+      const v = obj && typeof obj === "object" ? obj.plaid_configured : undefined;
+      if (v === true) return true;
+      if (v === 1) return true;
+      if (typeof v === "string") {
+        const s = v.trim().toLowerCase();
+        return s === "true" || s === "1" || s === "yes";
+      }
+      return false;
+    }
+
+    function renderPlaidStatusHint() {
+      const hint = $("plaidStatusHint");
+      if (!hint) return;
+      const ok = state.plaidConfigured !== false;
+      hint.textContent = ok ? t("plaid_status_ready") : t("plaid_status_missing");
+      hint.classList.toggle("error-text", !ok);
+    }
+
     async function refreshMethodSection() {
       state.methodEntitiesLoadError = null;
       let configured = false;
@@ -7428,6 +7455,14 @@
     async function refreshAll() {
       hideMessage(globalMessage);
       try {
+        try {
+          const h = await fetch(`${API_BASE}/health`, { method: "GET", cache: "no-store" });
+          const health = h.ok ? await h.json().catch(() => ({})) : {};
+          state.plaidConfigured = parsePlaidConfiguredFromPayload(health);
+        } catch (_) {
+          state.plaidConfigured = true;
+        }
+        renderPlaidStatusHint();
         await Promise.all([
           refreshPlan(),
           refreshBillingStatus(),
