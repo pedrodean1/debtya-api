@@ -21,6 +21,11 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="DebtYa helps you connect bank accounts, organize debts, choose a payoff strategy, and track payments—with clear third-party limits."
+  />
+  <meta name="theme-color" content="#1f6fff" />
   <!-- Si el HTML es estatico en www y la API en otro host, pon aqui la URL base de la API (https://...) -->
   <meta name="debtya-api-origin" content="https://debtya-api.onrender.com" />
   <meta name="debtya-supabase-url" content="https://spybejltsgzfxlwzobkh.supabase.co" />
@@ -28,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-23-v8-layout-patch" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-24-v19-visible-build-intents" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -56,11 +61,14 @@
     html,body{
       margin:0;
       padding:0;
-      font-family:Arial,Helvetica,sans-serif;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
       background:var(--bg);
       color:var(--text);
     }
     body{min-height:100vh}
+    @media (prefers-reduced-motion: no-preference){
+      html{scroll-behavior:smooth}
+    }
     button,input,select{font:inherit}
     a{color:inherit;text-decoration:none}
     .hidden{display:none !important}
@@ -487,6 +495,10 @@
 
     .btn:hover{transform:translateY(-1px)}
     .btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+    .btn:focus-visible{
+      outline:2px solid var(--primary);
+      outline-offset:2px;
+    }
     .btn-primary{background:var(--primary);color:#fff}
     .btn-primary:hover{background:var(--primary-dark)}
     .btn-secondary{background:#eef4ff;color:var(--primary)}
@@ -665,6 +677,7 @@
     .pill.blue{background:#eef4ff;color:var(--primary)}
     .pill.gray{background:#f3f4f6;color:#4b5563}
     .pill.purple{background:#f3e8ff;color:#6b21a8}
+    .pill.teal{background:#e6fffa;color:#0d9488}
 
     .mini-summary{
       display:grid;
@@ -796,6 +809,19 @@
     .notice.success{background:#ecfbf1;border-color:#cdeed7;color:#17663b}
     .notice.error{background:#fff1f1;border-color:#ffd0cb;color:#9e2e24}
     .notice.warn{background:#fff7e8;border-color:#ffe0a8;color:#8a5a00}
+    .intents-build-json{
+      margin:0;
+      padding:10px 12px;
+      max-height:220px;
+      overflow:auto;
+      font-size:12px;
+      line-height:1.45;
+      background:rgba(255,255,255,0.65);
+      border-radius:10px;
+      border:1px solid rgba(15,23,42,0.08);
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
 
     /* Toast fijo: evita que al mostrar el aviso se mueva el layout y el scroll “salte” arriba */
     #globalMessage.global-message-toast:not(.hidden){
@@ -888,21 +914,22 @@
     }
 
     .landing-hero{
-      padding:18px 20px;
+      padding:22px 22px 20px;
     }
 
     .landing-title{
-      margin:0 0 8px;
-      font-size:30px;
+      margin:0 0 10px;
+      font-size:clamp(26px,3.6vw,34px);
       line-height:1.08;
-      letter-spacing:-.65px;
+      letter-spacing:-.72px;
+      text-wrap:balance;
     }
 
     .landing-copy{
       margin:0;
       color:var(--muted);
-      font-size:14px;
-      line-height:1.55;
+      font-size:15px;
+      line-height:1.58;
       max-width:640px;
     }
 
@@ -910,7 +937,17 @@
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      margin-top:14px;
+      margin-top:18px;
+    }
+    .landing-actions .btn-primary{
+      padding:13px 18px;
+      font-size:15px;
+      box-shadow:0 4px 14px rgba(31,111,255,.28);
+    }
+    .landing-actions .btn-light{
+      background:#eef3f9;
+      color:var(--muted);
+      font-weight:600;
     }
 
     .landing-fold{
@@ -929,6 +966,11 @@
       font-size:14px;
       color:var(--text);
       user-select:none;
+      border-radius:12px;
+    }
+    .landing-fold > summary:focus-visible{
+      outline:2px solid var(--primary);
+      outline-offset:2px;
     }
 
     .landing-fold > summary::-webkit-details-marker{display:none}
@@ -949,7 +991,7 @@
     .feature-grid{
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:10px;
+      gap:12px;
     }
 
     @media (max-width: 900px){
@@ -959,8 +1001,15 @@
     .feature-card{
       border:1px solid var(--line);
       border-radius:16px;
-      padding:14px;
+      padding:14px 15px;
       background:var(--card-2);
+      transition:border-color .16s ease, box-shadow .16s ease;
+    }
+    @media (hover:hover) and (prefers-reduced-motion: no-preference){
+      .feature-card:hover{
+        border-color:#b9c9e0;
+        box-shadow:var(--shadow-soft);
+      }
     }
 
     .feature-card h3{
@@ -977,16 +1026,16 @@
 
     .steps{
       display:grid;
-      gap:10px;
+      gap:12px;
     }
 
     .step{
       border:1px solid var(--line);
       border-radius:14px;
-      padding:12px;
+      padding:13px 14px;
       background:#fff;
       display:flex;
-      gap:10px;
+      gap:12px;
       align-items:flex-start;
     }
 
@@ -1025,7 +1074,8 @@
     .section-title-step{
       display:inline-flex;
       align-items:center;
-      gap:8px;
+      gap:12px;
+      flex-wrap:wrap;
     }
 
     .section-step-badge{
@@ -1211,6 +1261,10 @@
       background:#eef4ff;
       color:var(--primary);
       border-color:#d7e6ff;
+    }
+    .nav-chip:focus-visible{
+      outline:2px solid var(--primary);
+      outline-offset:2px;
     }
 
     .pricing-wrap{
@@ -1487,7 +1541,12 @@
       width:100%;
       margin:0;
       flex-wrap:wrap;
-      gap:6px;
+      gap:5px;
+      padding:6px 8px;
+      border-radius:14px;
+      background:linear-gradient(180deg,#f6f8fc 0%,#eef2f7 100%);
+      border:1px solid #c9d4e6;
+      box-shadow:0 1px 0 rgba(255,255,255,.85) inset;
     }
     #appView .topbar-right-cluster.top-actions,
     #appView .top-actions.topbar-right-cluster{
@@ -1504,9 +1563,19 @@
       box-shadow:0 1px 0 rgba(255,255,255,.9) inset;
     }
     #appView .top-nav-app .nav-chip{
-      padding:8px 12px;
+      padding:8px 13px;
       font-size:12px;
       font-weight:800;
+      background:transparent;
+      border-color:transparent;
+    }
+    #appView .top-nav-app .nav-chip:not(.active){
+      color:#475569;
+    }
+    #appView .top-nav-app .nav-chip.active{
+      background:#fff;
+      border-color:#b8c8e0;
+      box-shadow:0 1px 3px rgba(18,32,51,.08);
     }
     @media (max-width:720px){
       #appView .topbar-app{
@@ -2661,6 +2730,52 @@
 
       <div id="globalMessage" class="notice global-message-toast hidden" role="status" aria-live="polite"></div>
 
+      <!-- TEMP: Spinwheel sandbox smoke test (quitar cuando ya no haga falta) -->
+      <div
+        id="spinwheelSandboxTestWrap"
+        class="card card-soft"
+        style="margin-bottom:14px;border:1px dashed #94a3b8;background:linear-gradient(180deg,#fffefb,#f8fafc)"
+        aria-label="Spinwheel sandbox test"
+      >
+        <p class="sub" style="margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.45">
+          <strong>[TEMP / TEST]</strong> Solo sandbox Spinwheel. No uses datos reales sensibles. Elimina este bloque antes de un release estable si no lo necesitas.
+        </p>
+        <h3 style="margin:0 0 12px;font-size:16px;letter-spacing:-0.02em">Spinwheel sandbox test</h3>
+        <div class="grid-2" style="gap:10px;align-items:flex-end;margin-bottom:10px">
+          <div class="field">
+            <label class="label" for="spinwheelTestPhone">phoneNumber (E.164)</label>
+            <input id="spinwheelTestPhone" class="input" type="tel" inputmode="tel" autocomplete="off" placeholder="+15555550123" />
+          </div>
+          <div class="field">
+            <label class="label" for="spinwheelTestDob">dateOfBirth (YYYY-MM-DD)</label>
+            <input id="spinwheelTestDob" class="input" type="text" inputmode="numeric" autocomplete="off" placeholder="1990-01-15" />
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:10px;max-width:360px">
+          <label class="label" for="spinwheelTestSmsCode">smsCode</label>
+          <input
+            id="spinwheelTestSmsCode"
+            class="input"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="12"
+            placeholder="123456"
+          />
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          <button id="btnSpinwheelSmsTest" class="btn btn-light" type="button">Probar Spinwheel SMS</button>
+          <button id="btnSpinwheelSmsVerifyTest" class="btn btn-light" type="button">Verificar SMS Spinwheel</button>
+          <button id="btnSpinwheelDebtProfileTest" class="btn btn-light" type="button">Obtener Debt Profile</button>
+          <button id="btnSpinwheelImportDebtsTest" class="btn btn-light" type="button">Importar deudas Spinwheel</button>
+        </div>
+        <p class="sub" style="margin:10px 0 6px;font-size:12px">Respuesta (JSON):</p>
+        <pre
+          id="spinwheelSmsTestOutput"
+          style="margin:0;max-height:280px;overflow:auto;padding:10px 12px;border-radius:12px;background:#0f172a;color:#e2e8f0;font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b"
+        >{}</pre>
+      </div>
+
       <div class="page-grid">
         <div class="stack">
           <section class="card card-operate" id="operatePanel">
@@ -2753,7 +2868,7 @@
                 <div class="ux-advanced-inner">
                   <div class="grid-4 operate-adv-grid">
                     <button id="btnApplyRules" class="btn btn-secondary" type="button" data-i18n="btn_apply_rules">Apply rules</button>
-                    <button id="btnBuildIntents" class="btn btn-secondary" type="button" data-i18n="btn_build_intents">Prepare payments</button>
+                    <button id="btnBuildIntents" class="btn btn-secondary" type="button" data-i18n="btn_intents_build">Build payments</button>
                     <button id="btnApproveVisible" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
                     <button id="btnExecuteVisible" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
                   </div>
@@ -3009,6 +3124,15 @@
                   </div>
                 </details>
               </div>
+            </div>
+
+            <div class="intents-build-toolbar" style="margin:0 0 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+              <button id="btnBuildIntentsVisible" class="btn btn-primary" type="button" data-i18n="btn_intents_build">Build payments</button>
+            </div>
+
+            <div id="intentsBuildFeedback" class="notice hidden" style="margin-bottom:14px;" role="region" aria-live="polite">
+              <div style="font-weight:700;margin-bottom:8px;" data-i18n="intents_build_response_label">Last response</div>
+              <pre id="intentsBuildResultJson" class="intents-build-json"></pre>
             </div>
 
             <div class="tag-row" style="margin-bottom:14px;">
@@ -3578,7 +3702,8 @@
         sync_bank_pick_none: "There are no connected banks to disconnect.",
         btn_import_accounts: "Import accounts",
         btn_import_tx: "Import transactions",
-        btn_build_intents: "Prepare payments",
+        btn_intents_build: "Build payments",
+        intents_build_response_label: "Last build response (JSON)",
         stat_total_debt: "Total debt",
         stat_active_debts: "Active debts",
         stat_pending_intents: "Suggested payments waiting",
@@ -3649,6 +3774,11 @@
         method_empty_sync: "No Method liabilities synced yet.",
         method_imported_badge: "Imported",
         debt_source_method: "Method",
+        debt_source_spinwheel: "Spinwheel",
+        debt_spinwheel_payable: "Spinwheel bill pay",
+        debt_spinwheel_plan_only: "Spinwheel (planning)",
+        intent_pill_spinwheel: "Spinwheel",
+        intent_spinwheel_plan_only: "Planning only — run is disabled until bill pay is connected.",
         debt_source_plaid: "Plaid",
         debt_method_payable: "Payable (Method)",
         debt_method_info_only: "Informational",
@@ -3812,7 +3942,7 @@
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
         empty_rules: "You have no saved rules yet.",
-        empty_intents: "No suggested payments yet. Under Actions, open More when you are ready to prepare them.",
+        empty_intents: "No suggested payments yet. Use Build payments above (or Actions → More) after applying rules and importing transactions.",
         empty_trace: "No history available yet.",
         empty_accounts: "No imported accounts yet.",
         empty_compare: "No comparison available yet.",
@@ -4136,7 +4266,8 @@
         sync_bank_pick_none: "No hay bancos conectados para desconectar.",
         btn_import_accounts: "Importar cuentas",
         btn_import_tx: "Importar transacciones",
-        btn_build_intents: "Preparar pagos",
+        btn_intents_build: "Construir pagos",
+        intents_build_response_label: "Ultima respuesta del servidor (JSON)",
         stat_total_debt: "Deuda total",
         stat_active_debts: "Deudas activas",
         stat_pending_intents: "Pagos sugeridos en espera",
@@ -4207,6 +4338,11 @@
         method_empty_sync: "Aun no hay liabilities Method sincronizadas.",
         method_imported_badge: "Ya importada",
         debt_source_method: "Method",
+        debt_source_spinwheel: "Spinwheel",
+        debt_spinwheel_payable: "Spinwheel — pago de factura",
+        debt_spinwheel_plan_only: "Spinwheel (solo plan)",
+        intent_pill_spinwheel: "Spinwheel",
+        intent_spinwheel_plan_only: "Solo planificacion: la ejecucion queda desactivada hasta conectar el pago real.",
         debt_source_plaid: "Plaid",
         debt_method_payable: "Pagable (Method)",
         debt_method_info_only: "Informativa",
@@ -4369,7 +4505,7 @@
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
         empty_rules: "Todavia no tienes reglas guardadas.",
-        empty_intents: "Aun no hay pagos sugeridos. En Acciones, abre Mas cuando quieras prepararlos.",
+        empty_intents: "Aun no hay pagos sugeridos. Pulsa Construir pagos arriba (o Acciones → Mas) despues de aplicar reglas e importar movimientos.",
         empty_trace: "Todavia no hay historial disponible.",
         empty_accounts: "Todavia no hay cuentas importadas.",
         empty_compare: "Todavia no hay comparacion disponible.",
@@ -5886,6 +6022,13 @@
           } else {
             sourcePills.push(`<span class="pill gray">${escapeHtml(t("debt_method_info_only"))}</span>`);
           }
+        } else if (src === "spinwheel") {
+          sourcePills.push(`<span class="pill teal debt-source-pill">${escapeHtml(t("debt_source_spinwheel"))}</span>`);
+          if (debt.payment_capable) {
+            sourcePills.push(`<span class="pill green">${escapeHtml(t("debt_spinwheel_payable"))}</span>`);
+          } else {
+            sourcePills.push(`<span class="pill gray">${escapeHtml(t("debt_spinwheel_plan_only"))}</span>`);
+          }
         } else if (src === "plaid") {
           sourcePills.push(`<span class="pill purple">${escapeHtml(t("debt_source_plaid"))}</span>`);
         }
@@ -6172,12 +6315,22 @@
 
       state.intents.forEach((intent) => {
         const meta = intent.metadata || {};
+        const isSpinIntent = String(intent.source || "").toLowerCase() === "spinwheel";
+        const spinPill = isSpinIntent
+          ? ` <span class="pill teal">${escapeHtml(t("intent_pill_spinwheel"))}</span>`
+          : "";
         const item = document.createElement("div");
         item.className = "item";
+        const actionsHtml = isSpinIntent
+          ? `<div class="muted" style="margin-top:10px;font-size:13px;">${escapeHtml(t("intent_spinwheel_plan_only"))}</div>`
+          : `<div class="item-actions">
+            <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
+            <button class="btn btn-primary btn-small" type="button" onclick="executeIntent('${intent.id}')">${escapeHtml(t("btn_execute"))}</button>
+          </div>`;
         item.innerHTML = `
           <div class="item-top">
             <div>
-              <div class="item-title">${escapeHtml(t("intent_title"))} ${escapeHtml((intent.id || "").slice(0, 8))}</div>
+              <div class="item-title">${escapeHtml(t("intent_title"))} ${escapeHtml((intent.id || "").slice(0, 8))}${spinPill}</div>
               <div class="item-meta">
                 ${escapeHtml(t("meta_pay_from"))}: <strong>${escapeHtml(describeIntentPayFrom(intent))}</strong><br />
                 ${escapeHtml(t("meta_pay_toward"))}: <strong>${escapeHtml(describeIntentPayToward(intent))}</strong><br />
@@ -6201,10 +6354,7 @@
               ${statusPill(intent.status)}
             </div>
           </div>
-          <div class="item-actions">
-            <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
-            <button class="btn btn-primary btn-small" type="button" onclick="executeIntent('${intent.id}')">${escapeHtml(t("btn_execute"))}</button>
-          </div>
+          ${actionsHtml}
         `;
         box.appendChild(item);
       });
@@ -8082,6 +8232,196 @@
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
 
+    /** TEMP: Spinwheel sandbox — POST /spinwheel/connect/sms con JWT Supabase (misma base que api()). */
+    async function runSpinwheelSmsSandboxTest() {
+      const out = $("spinwheelSmsTestOutput");
+      const phoneEl = $("spinwheelTestPhone");
+      const dobEl = $("spinwheelTestDob");
+      const btn = $("btnSpinwheelSmsTest");
+      if (!out || !phoneEl || !dobEl || !btn) return;
+      const phoneNumber = String(phoneEl.value || "").trim();
+      const dateOfBirth = String(dobEl.value || "").trim();
+      if (!phoneNumber || !dateOfBirth) {
+        out.textContent = JSON.stringify(
+          { ok: false, error: "Completa phoneNumber (E.164) y dateOfBirth (YYYY-MM-DD)." },
+          null,
+          2
+        );
+        return;
+      }
+      setLoading(btn, true, "…");
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          return;
+        }
+        const res = await fetch(`${API_BASE}/spinwheel/connect/sms`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ phoneNumber, dateOfBirth }),
+          cache: "no-store"
+        });
+        const text = await res.text();
+        let body;
+        try {
+          body = text ? JSON.parse(text) : {};
+        } catch {
+          body = { _parse_error: true, raw: text };
+        }
+        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
+      } catch (e) {
+        out.textContent = JSON.stringify(
+          { ok: false, error: e && e.message ? String(e.message) : String(e) },
+          null,
+          2
+        );
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+    /** TEMP: Spinwheel sandbox — POST /spinwheel/users/me/connect/sms/verify */
+    async function runSpinwheelSmsVerifySandboxTest() {
+      const out = $("spinwheelSmsTestOutput");
+      const codeEl = $("spinwheelTestSmsCode");
+      const btn = $("btnSpinwheelSmsVerifyTest");
+      if (!out || !codeEl || !btn) return;
+      const code = String(codeEl.value || "").trim();
+      if (!code) {
+        out.textContent = JSON.stringify({ ok: false, error: "Completa smsCode." }, null, 2);
+        return;
+      }
+      setLoading(btn, true, "…");
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          return;
+        }
+        const res = await fetch(`${API_BASE}/spinwheel/users/me/connect/sms/verify`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ code }),
+          cache: "no-store"
+        });
+        const text = await res.text();
+        let body;
+        try {
+          body = text ? JSON.parse(text) : {};
+        } catch {
+          body = { _parse_error: true, raw: text };
+        }
+        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
+      } catch (e) {
+        out.textContent = JSON.stringify(
+          { ok: false, error: e && e.message ? String(e.message) : String(e) },
+          null,
+          2
+        );
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+    const btnSpinwheelSmsTest = $("btnSpinwheelSmsTest");
+    if (btnSpinwheelSmsTest) btnSpinwheelSmsTest.addEventListener("click", runSpinwheelSmsSandboxTest);
+    const btnSpinwheelSmsVerifyTest = $("btnSpinwheelSmsVerifyTest");
+    if (btnSpinwheelSmsVerifyTest) btnSpinwheelSmsVerifyTest.addEventListener("click", runSpinwheelSmsVerifySandboxTest);
+
+    /** TEMP: Spinwheel sandbox — POST /spinwheel/users/me/debt-profile (Spinwheel exige creditReport o creditScore en el body). */
+    async function runSpinwheelDebtProfileSandboxTest() {
+      const out = $("spinwheelSmsTestOutput");
+      const btn = $("btnSpinwheelDebtProfileTest");
+      if (!out || !btn) return;
+      setLoading(btn, true, "…");
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          return;
+        }
+        const debtProfilePayload = {
+          creditReport: {
+            type: "1_BUREAU.FULL"
+          }
+        };
+        const res = await fetch(`${API_BASE}/spinwheel/users/me/debt-profile`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(debtProfilePayload),
+          cache: "no-store"
+        });
+        const text = await res.text();
+        let body;
+        try {
+          body = text ? JSON.parse(text) : {};
+        } catch {
+          body = { _parse_error: true, raw: text };
+        }
+        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
+      } catch (e) {
+        out.textContent = JSON.stringify(
+          { ok: false, error: e && e.message ? String(e.message) : String(e) },
+          null,
+          2
+        );
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+    const btnSpinwheelDebtProfileTest = $("btnSpinwheelDebtProfileTest");
+    if (btnSpinwheelDebtProfileTest) btnSpinwheelDebtProfileTest.addEventListener("click", runSpinwheelDebtProfileSandboxTest);
+
+    /** TEMP: Spinwheel sandbox — POST /spinwheel/import-debts (upsert en public.debts). */
+    async function runSpinwheelImportDebtsSandboxTest() {
+      const out = $("spinwheelSmsTestOutput");
+      const btn = $("btnSpinwheelImportDebtsTest");
+      if (!out || !btn) return;
+      setLoading(btn, true, "…");
+      try {
+        const token = await getAccessToken();
+        if (!token) {
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          return;
+        }
+        const res = await fetch(`${API_BASE}/spinwheel/import-debts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({}),
+          cache: "no-store"
+        });
+        const text = await res.text();
+        let body;
+        try {
+          body = text ? JSON.parse(text) : {};
+        } catch {
+          body = { _parse_error: true, raw: text };
+        }
+        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
+      } catch (e) {
+        out.textContent = JSON.stringify(
+          { ok: false, error: e && e.message ? String(e.message) : String(e) },
+          null,
+          2
+        );
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+    const btnSpinwheelImportDebtsTest = $("btnSpinwheelImportDebtsTest");
+    if (btnSpinwheelImportDebtsTest) btnSpinwheelImportDebtsTest.addEventListener("click", runSpinwheelImportDebtsSandboxTest);
+
     function getSelectedMethodEntityIdForMethodApi() {
       const sel = $("methodEntityPick");
       const v = sel && sel.value ? String(sel.value).trim() : "";
@@ -8416,19 +8756,43 @@
       }
     });
 
-    $("btnBuildIntents").addEventListener("click", async () => {
-      const btn = $("btnBuildIntents");
-      setLoading(btn, true, t("building"));
+    async function runPaymentIntentsBuild(triggerBtn) {
+      const btn = triggerBtn;
+      if (btn) setLoading(btn, true, t("building"));
+      const fb = $("intentsBuildFeedback");
+      const pre = $("intentsBuildResultJson");
       try {
-        await api("/payment-intents/build", { method: "POST", body: "{}" });
+        const res = await api("/payment-intents/build", { method: "POST", body: "{}" });
+        if (fb && pre) {
+          pre.textContent = JSON.stringify(res, null, 2);
+          fb.classList.remove("hidden", "error", "success", "warn");
+          fb.classList.add("success");
+        }
         showMessage(globalMessage, t("intents_built"), "success");
         await refreshIntents();
       } catch (err) {
+        if (fb && pre) {
+          pre.textContent = JSON.stringify(
+            { ok: false, error: normalizeErrorMessage(err.message) },
+            null,
+            2
+          );
+          fb.classList.remove("hidden", "success", "warn");
+          fb.classList.add("error");
+        }
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
       } finally {
-        setLoading(btn, false);
+        if (btn) setLoading(btn, false);
       }
-    });
+    }
+
+    const btnBuildIntentsEl = $("btnBuildIntents");
+    if (btnBuildIntentsEl) btnBuildIntentsEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsEl));
+
+    const btnBuildIntentsVisibleEl = $("btnBuildIntentsVisible");
+    if (btnBuildIntentsVisibleEl) {
+      btnBuildIntentsVisibleEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsVisibleEl));
+    }
 
     $("btnApproveVisible").addEventListener("click", async () => {
       const btn = $("btnApproveVisible");

@@ -1,9 +1,13 @@
+const { appendSpinwheelPaymentIntents } = require("../lib/spinwheel-payment-intents");
+
 function registerPlanningRoutes(app, deps) {
   const {
     requireUser,
+    supabaseAdmin,
     callRpc,
     safeNumber,
     stampRecentIntentsFundingFromPlan,
+    getCurrentPaymentPlan,
     appDebug,
     approveIntentDirect,
     executeIntentDirect,
@@ -57,13 +61,22 @@ function registerPlanningRoutes(app, deps) {
         p_user_id: req.user.id
       });
 
+      const spinAppend = await appendSpinwheelPaymentIntents(supabaseAdmin, req.user.id, {
+        safeNumber,
+        getCurrentPaymentPlan
+      }).catch((e) => {
+        appDebug("appendSpinwheelPaymentIntents:", e.message);
+        return { appended: 0, skipped: 0, intents: [], strategy: null, error: e.message };
+      });
+
       await stampRecentIntentsFundingFromPlan(req.user.id).catch((e) => {
         appDebug("stampRecentIntentsFundingFromPlan:", e.message);
       });
 
       return res.json({
         ok: true,
-        data: result
+        data: result,
+        spinwheel_intents: spinAppend
       });
     } catch (error) {
       return jsonError(res, 500, "Error ejecutando build_intents_v2", {
@@ -78,13 +91,22 @@ function registerPlanningRoutes(app, deps) {
         p_user_id: req.user.id
       });
 
+      const spinAppend = await appendSpinwheelPaymentIntents(supabaseAdmin, req.user.id, {
+        safeNumber,
+        getCurrentPaymentPlan
+      }).catch((e) => {
+        appDebug("appendSpinwheelPaymentIntents:", e.message);
+        return { appended: 0, skipped: 0, intents: [], strategy: null, error: e.message };
+      });
+
       await stampRecentIntentsFundingFromPlan(req.user.id).catch((e) => {
         appDebug("stampRecentIntentsFundingFromPlan:", e.message);
       });
 
       return res.json({
         ok: true,
-        data: result
+        data: result,
+        spinwheel_intents: spinAppend
       });
     } catch (error) {
       return jsonError(res, 500, "Error construyendo intents", {
