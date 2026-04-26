@@ -2733,7 +2733,7 @@
       <!-- TEMP: Spinwheel sandbox smoke test (quitar cuando ya no haga falta) -->
       <div
         id="spinwheelSandboxTestWrap"
-        class="card card-soft"
+        class="card card-soft hidden"
         style="margin-bottom:14px;border:1px dashed #94a3b8;background:linear-gradient(180deg,#fffefb,#f8fafc)"
         aria-label="Spinwheel sandbox test"
       >
@@ -2778,6 +2778,21 @@
 
       <div class="page-grid">
         <div class="stack">
+          <section class="card" id="quickFlowPanel">
+            <div class="section-head">
+              <div>
+                <h2 data-i18n="quick_flow_title">Guided steps</h2>
+                <p class="sub" data-i18n="quick_flow_sub">Follow the sequence and use each main action once.</p>
+              </div>
+            </div>
+            <div class="grid-4">
+              <button class="btn btn-primary" type="button" data-scroll-target="operatePanel" data-i18n="quick_step_1">1) Connect and import</button>
+              <button class="btn btn-light" type="button" data-scroll-target="setupPanel" data-i18n="quick_step_2">2) Save debts</button>
+              <button class="btn btn-light" type="button" data-scroll-target="paymentPlanSection" data-i18n="quick_step_3">3) Save plan</button>
+              <button class="btn btn-light" type="button" data-scroll-target="suggestedPaymentsPanel" data-i18n="quick_step_4">4) Build and review payments</button>
+            </div>
+          </section>
+
           <section class="card card-operate" id="operatePanel">
             <div class="section-head section-head-tight">
               <div>
@@ -2959,6 +2974,7 @@
                 <p class="sub" data-i18n="rules_sub">Three ways to steer extra money toward your debts when you apply rules.</p>
               </div>
               <div class="section-actions">
+                <button id="btnApplyRulesInline" class="btn btn-secondary btn-small" type="button" data-i18n="btn_apply_rules">Apply rules</button>
                 <button id="refreshRulesBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
               </div>
             </div>
@@ -3129,6 +3145,8 @@
 
             <div class="intents-build-toolbar" style="margin:0 0 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
               <button id="btnBuildIntentsVisible" class="btn btn-primary" type="button" data-i18n="btn_intents_build">Build payments</button>
+              <button id="btnApproveVisibleInline" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
+              <button id="btnExecuteVisibleInline" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
               <select id="intentsFilterSelect" class="select" style="max-width:220px;">
                 <option value="all" data-i18n-opt="intents_filter_all">All intents</option>
                 <option value="spinwheel" data-i18n-opt="intents_filter_spinwheel">Spinwheel only</option>
@@ -3699,6 +3717,12 @@
         next_step_review_btn: "Review payments",
         next_step_done: "You are set up for now. After new imports, use Actions to apply rules or refresh payments.",
         next_step_done_btn: "Scroll to Actions",
+        quick_flow_title: "Guided steps",
+        quick_flow_sub: "Follow this order for a clean setup and payment cycle.",
+        quick_step_1: "1) Connect and import",
+        quick_step_2: "2) Save debts",
+        quick_step_3: "3) Save plan",
+        quick_step_4: "4) Build and review payments",
         btn_connect_bank: "Connect bank",
         plaid_status_ready: "Plaid connection ready.",
         plaid_status_missing:
@@ -4270,6 +4294,12 @@
         next_step_review_btn: "Ver pagos sugeridos",
         next_step_done: "Por ahora vas al dia. Tras nuevas importaciones, usa Acciones para reglas o pagos.",
         next_step_done_btn: "Ir a Acciones",
+        quick_flow_title: "Pasos guiados",
+        quick_flow_sub: "Sigue este orden para configurar y operar pagos sin perderte.",
+        quick_step_1: "1) Conectar e importar",
+        quick_step_2: "2) Guardar deudas",
+        quick_step_3: "3) Guardar plan",
+        quick_step_4: "4) Construir y revisar pagos",
         btn_connect_bank: "Conectar banco",
         plaid_status_ready: "Conexion Plaid lista.",
         plaid_status_missing:
@@ -6322,6 +6352,16 @@
       if (s === "avalanche") return `<span class="pill blue">${escapeHtml(t("strategy_avalanche"))}</span>`;
       if (s === "snowball") return `<span class="pill blue">${escapeHtml(t("strategy_snowball"))}</span>`;
       return `<span class="pill">${escapeHtml(s || "-")}</span>`;
+    }
+
+    function scrollToPanel(panelId) {
+      const el = panelId ? document.getElementById(panelId) : null;
+      if (!el) return;
+      try {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (_) {
+        el.scrollIntoView();
+      }
     }
 
     function renderIntents() {
@@ -8823,8 +8863,8 @@
       }
     });
 
-    $("btnApplyRules").addEventListener("click", async () => {
-      const btn = $("btnApplyRules");
+    async function runApplyRules(triggerBtn) {
+      const btn = triggerBtn || null;
       setLoading(btn, true, t("applying"));
       try {
         const res = await api("/rules/apply", { method: "POST", body: "{}" });
@@ -8834,7 +8874,11 @@
       } finally {
         setLoading(btn, false);
       }
-    });
+    }
+    const btnApplyRulesMainEl = $("btnApplyRules");
+    if (btnApplyRulesMainEl) btnApplyRulesMainEl.addEventListener("click", () => runApplyRules(btnApplyRulesMainEl));
+    const btnApplyRulesInlineEl = $("btnApplyRulesInline");
+    if (btnApplyRulesInlineEl) btnApplyRulesInlineEl.addEventListener("click", () => runApplyRules(btnApplyRulesInlineEl));
 
     async function runPaymentIntentsBuild(triggerBtn) {
       const btn = triggerBtn;
@@ -8881,8 +8925,8 @@
       });
     }
 
-    $("btnApproveVisible").addEventListener("click", async () => {
-      const btn = $("btnApproveVisible");
+    async function runApproveVisible(triggerBtn) {
+      const btn = triggerBtn || null;
       setLoading(btn, true, t("approving"));
       try {
         const res = await api("/payment-intents/approve-visible", { method: "POST", body: "{}" });
@@ -8893,10 +8937,18 @@
       } finally {
         setLoading(btn, false);
       }
-    });
+    }
+    const btnApproveVisibleMainEl = $("btnApproveVisible");
+    if (btnApproveVisibleMainEl) {
+      btnApproveVisibleMainEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleMainEl));
+    }
+    const btnApproveVisibleInlineEl = $("btnApproveVisibleInline");
+    if (btnApproveVisibleInlineEl) {
+      btnApproveVisibleInlineEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleInlineEl));
+    }
 
-    $("btnExecuteVisible").addEventListener("click", async () => {
-      const btn = $("btnExecuteVisible");
+    async function runExecuteVisible(triggerBtn) {
+      const btn = triggerBtn || null;
       setLoading(btn, true, t("executing"));
       try {
         const res = await api("/payment-intents/execute-visible", { method: "POST", body: "{}" });
@@ -8907,6 +8959,21 @@
       } finally {
         setLoading(btn, false);
       }
+    }
+    const btnExecuteVisibleMainEl = $("btnExecuteVisible");
+    if (btnExecuteVisibleMainEl) {
+      btnExecuteVisibleMainEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleMainEl));
+    }
+    const btnExecuteVisibleInlineEl = $("btnExecuteVisibleInline");
+    if (btnExecuteVisibleInlineEl) {
+      btnExecuteVisibleInlineEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleInlineEl));
+    }
+
+    document.querySelectorAll("[data-scroll-target]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const panelId = btn.getAttribute("data-scroll-target");
+        scrollToPanel(panelId);
+      });
     });
 
     $("reconcileRecentBtn").addEventListener("click", async () => {
