@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v33-visible-payment-buttons" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v34-top-visible-payment-actions" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2731,10 +2731,14 @@
 
       <div id="globalMessage" class="notice global-message-toast hidden" role="status" aria-live="polite"></div>
       <div
-        id="flowProofBanner"
-        style="margin:0 0 14px;padding:10px 12px;border-radius:12px;background:#111827;color:#ffffff;font-weight:800;letter-spacing:.01em"
+        id="topPaymentActionsBar"
+        class="card"
+        style="margin:0 0 14px;padding:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;border:2px solid #c7d2fe"
       >
-        FLOW V29: PASO 1 PLAID -> PASO 2 SPINWHEEL
+        <strong style="font-size:13px;color:#1f2937" data-i18n="top_payment_actions_label">Pagos: acciones rapidas</strong>
+        <button id="btnBuildIntentsTop" class="btn btn-primary" type="button" data-i18n="btn_intents_build">Build payments</button>
+        <button id="btnApproveVisibleTop" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
+        <button id="btnExecuteVisibleTop" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
       </div>
 
       <div class="page-grid">
@@ -3662,6 +3666,7 @@
         btn_import_tx: "Import transactions",
         btn_intents_build: "Build payments",
         intents_build_response_label: "Last build response (JSON)",
+        top_payment_actions_label: "Payments: quick actions",
         stat_total_debt: "Total debt",
         stat_active_debts: "Active debts",
         stat_pending_intents: "Suggested payments waiting",
@@ -4240,6 +4245,7 @@
         btn_import_tx: "Importar transacciones",
         btn_intents_build: "Construir pagos",
         intents_build_response_label: "Ultima respuesta del servidor (JSON)",
+        top_payment_actions_label: "Pagos: acciones rapidas",
         stat_total_debt: "Deuda total",
         stat_active_debts: "Deudas activas",
         stat_pending_intents: "Pagos sugeridos en espera",
@@ -8772,6 +8778,10 @@
     if (btnBuildIntentsVisibleEl) {
       btnBuildIntentsVisibleEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsVisibleEl));
     }
+    const btnBuildIntentsTopEl = $("btnBuildIntentsTop");
+    if (btnBuildIntentsTopEl) {
+      btnBuildIntentsTopEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsTopEl));
+    }
 
     async function runApproveVisible(btn) {
       setLoading(btn, true, t("approving"));
@@ -8790,6 +8800,8 @@
     if (btnApproveVisibleEl) btnApproveVisibleEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleEl));
     const btnApproveVisibleMainEl = $("btnApproveVisibleMain");
     if (btnApproveVisibleMainEl) btnApproveVisibleMainEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleMainEl));
+    const btnApproveVisibleTopEl = $("btnApproveVisibleTop");
+    if (btnApproveVisibleTopEl) btnApproveVisibleTopEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleTopEl));
 
     async function runExecuteVisible(btn) {
       setLoading(btn, true, t("executing"));
@@ -8808,6 +8820,8 @@
     if (btnExecuteVisibleEl) btnExecuteVisibleEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleEl));
     const btnExecuteVisibleMainEl = $("btnExecuteVisibleMain");
     if (btnExecuteVisibleMainEl) btnExecuteVisibleMainEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleMainEl));
+    const btnExecuteVisibleTopEl = $("btnExecuteVisibleTop");
+    if (btnExecuteVisibleTopEl) btnExecuteVisibleTopEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleTopEl));
 
     $("reconcileRecentBtn").addEventListener("click", async () => {
       const btn = $("reconcileRecentBtn");
