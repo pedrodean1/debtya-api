@@ -33,8 +33,8 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v31-fix-mobile-step-order" />
-  <title>DebtYa V31</title>
+  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v32-clean-stable-step-flow" />
+  <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2298,22 +2298,6 @@
   </style>
 </head>
 <body>
-  <div style="position:sticky;top:0;z-index:99999;background:#7f1d1d;color:#fff;padding:10px 14px;font-weight:800;text-align:center;letter-spacing:.02em">
-    V30 EN VIVO - PASO 1 PLAID - PASO 2 SPINWHEEL
-  </div>
-  <script>
-    (function showLiveProofOnce() {
-      try {
-        var revMeta = document.querySelector('meta[name="debtya-ui-rev"]');
-        var rev = revMeta && revMeta.content ? String(revMeta.content) : "unknown";
-        var key = "DEBTYA_V30_PROOF_SHOWN";
-        if (sessionStorage.getItem(key) === rev) return;
-        sessionStorage.setItem(key, rev);
-        var msg = "DebtYa " + rev + " | host: " + location.host + " | path: " + location.pathname;
-        alert(msg);
-      } catch (_e) {}
-    })();
-  </script>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
   <script>
     (function () {
