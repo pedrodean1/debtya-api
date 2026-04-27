@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v27-plaid-spinwheel-only" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v28-ordered-steps-no-method-ui" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -3699,7 +3699,7 @@
         btn_execute_visible: "Run payments",
         operate_note: "Most days: Connect → Import. Rules and preparing payments live under More.",
         operate_legal_html: 'By connecting accounts, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers (for example Plaid for bank data and Stripe for subscription billing). Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
-        method_panel_title: "Debts via Method",
+        method_panel_title: "Legacy liabilities",
         method_panel_hint: "Method discovers liabilities. Plaid stays for the bank you pay from. Create a Method profile, run Connect, sync, then import each debt into DebtYa.",
         method_panel_disabled:
           "Method is not enabled on this API host. Add METHOD_API_KEY to the Node service on Render and redeploy; open /health and confirm method_configured is true.",
@@ -4277,7 +4277,7 @@
         btn_execute_visible: "Ejecutar pagos",
         operate_note: "Lo usual: Conectar → Importar. Reglas y preparar pagos estan en Mas.",
         operate_legal_html: 'Al conectar cuentas, autorizas a DebtYa a recibir la informacion financiera necesaria a traves de proveedores de confianza (por ejemplo Plaid para el banco conectado y Stripe para la suscripcion). Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
-        method_panel_title: "Deudas con Method",
+        method_panel_title: "Pasivos heredados",
         method_panel_hint: "Method descubre liabilities (deudas). Plaid sigue siendo el banco del que pagas. Crea perfil Method, ejecuta Conectar, sincroniza e importa cada deuda a DebtYa.",
         method_panel_disabled:
           "Method no esta activo en esta API: falta METHOD_API_KEY en el servicio Node (Render) o la API desplegada no es la ultima version. Abre /health y comprueba method_configured: true.",
@@ -5992,14 +5992,7 @@
           : "";
         const src = String(debt.source || "manual");
         const sourcePills = [];
-        if (src === "method") {
-          sourcePills.push(`<span class="pill purple debt-source-pill">${escapeHtml(t("debt_source_method"))}</span>`);
-          if (debt.payment_capable) {
-            sourcePills.push(`<span class="pill green">${escapeHtml(t("debt_method_payable"))}</span>`);
-          } else {
-            sourcePills.push(`<span class="pill gray">${escapeHtml(t("debt_method_info_only"))}</span>`);
-          }
-        } else if (src === "spinwheel") {
+        if (src === "spinwheel") {
           sourcePills.push(`<span class="pill teal debt-source-pill">${escapeHtml(t("debt_source_spinwheel"))}</span>`);
           if (debt.payment_capable) {
             sourcePills.push(`<span class="pill green">${escapeHtml(t("debt_spinwheel_payable"))}</span>`);
