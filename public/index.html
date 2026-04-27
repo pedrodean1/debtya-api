@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v34-top-visible-payment-actions" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v35-floating-payment-actions" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2740,6 +2740,15 @@
         <button id="btnApproveVisibleTop" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
         <button id="btnExecuteVisibleTop" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
       </div>
+      <div
+        id="floatingPaymentActionsBar"
+        class="hidden"
+        style="position:fixed;right:14px;bottom:14px;z-index:99998;background:#ffffff;border:2px solid #c7d2fe;border-radius:14px;padding:10px;display:flex;gap:8px;flex-wrap:wrap;box-shadow:0 14px 30px rgba(18,32,51,.18)"
+      >
+        <button id="btnBuildIntentsFab" class="btn btn-primary" type="button" data-i18n="btn_intents_build">Build payments</button>
+        <button id="btnApproveVisibleFab" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
+        <button id="btnExecuteVisibleFab" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
+      </div>
 
       <div class="page-grid">
         <div class="stack">
@@ -4905,8 +4914,16 @@
       if (f) f.remove();
     }
 
+    function setFloatingPaymentActionsVisible(visible) {
+      const bar = $("floatingPaymentActionsBar");
+      if (!bar) return;
+      if (visible) bar.classList.remove("hidden");
+      else bar.classList.add("hidden");
+    }
+
     function showLanding() {
       removeDisconnectFallbackFab();
+      setFloatingPaymentActionsVisible(false);
       landingView.classList.remove("hidden");
       authView.classList.add("hidden");
       appView.classList.add("hidden");
@@ -4914,6 +4931,7 @@
 
     function showAuth(mode = "login") {
       removeDisconnectFallbackFab();
+      setFloatingPaymentActionsVisible(false);
       clearPwRecoveryPending();
       hidePasswordRecoveryPanel();
       state.signupVerificationPending = false;
@@ -4928,6 +4946,7 @@
     }
 
     function showApp() {
+      setFloatingPaymentActionsVisible(true);
       landingView.classList.add("hidden");
       authView.classList.add("hidden");
       appView.classList.remove("hidden");
@@ -8782,6 +8801,10 @@
     if (btnBuildIntentsTopEl) {
       btnBuildIntentsTopEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsTopEl));
     }
+    const btnBuildIntentsFabEl = $("btnBuildIntentsFab");
+    if (btnBuildIntentsFabEl) {
+      btnBuildIntentsFabEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsFabEl));
+    }
 
     async function runApproveVisible(btn) {
       setLoading(btn, true, t("approving"));
@@ -8802,6 +8825,8 @@
     if (btnApproveVisibleMainEl) btnApproveVisibleMainEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleMainEl));
     const btnApproveVisibleTopEl = $("btnApproveVisibleTop");
     if (btnApproveVisibleTopEl) btnApproveVisibleTopEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleTopEl));
+    const btnApproveVisibleFabEl = $("btnApproveVisibleFab");
+    if (btnApproveVisibleFabEl) btnApproveVisibleFabEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleFabEl));
 
     async function runExecuteVisible(btn) {
       setLoading(btn, true, t("executing"));
@@ -8822,6 +8847,8 @@
     if (btnExecuteVisibleMainEl) btnExecuteVisibleMainEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleMainEl));
     const btnExecuteVisibleTopEl = $("btnExecuteVisibleTop");
     if (btnExecuteVisibleTopEl) btnExecuteVisibleTopEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleTopEl));
+    const btnExecuteVisibleFabEl = $("btnExecuteVisibleFab");
+    if (btnExecuteVisibleFabEl) btnExecuteVisibleFabEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleFabEl));
 
     $("reconcileRecentBtn").addEventListener("click", async () => {
       const btn = $("reconcileRecentBtn");
