@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v32-clean-stable-step-flow" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v33-visible-payment-buttons" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -3084,6 +3084,8 @@
 
             <div class="intents-build-toolbar" style="margin:0 0 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
               <button id="btnBuildIntentsVisible" class="btn btn-primary" type="button" data-i18n="btn_intents_build">Build payments</button>
+              <button id="btnApproveVisibleMain" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
+              <button id="btnExecuteVisibleMain" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
             </div>
 
             <div id="intentsBuildFeedback" class="notice hidden" style="margin-bottom:14px;" role="region" aria-live="polite">
@@ -8771,8 +8773,7 @@
       btnBuildIntentsVisibleEl.addEventListener("click", () => runPaymentIntentsBuild(btnBuildIntentsVisibleEl));
     }
 
-    $("btnApproveVisible").addEventListener("click", async () => {
-      const btn = $("btnApproveVisible");
+    async function runApproveVisible(btn) {
       setLoading(btn, true, t("approving"));
       try {
         const res = await api("/payment-intents/approve-visible", { method: "POST", body: "{}" });
@@ -8783,10 +8784,14 @@
       } finally {
         setLoading(btn, false);
       }
-    });
+    }
 
-    $("btnExecuteVisible").addEventListener("click", async () => {
-      const btn = $("btnExecuteVisible");
+    const btnApproveVisibleEl = $("btnApproveVisible");
+    if (btnApproveVisibleEl) btnApproveVisibleEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleEl));
+    const btnApproveVisibleMainEl = $("btnApproveVisibleMain");
+    if (btnApproveVisibleMainEl) btnApproveVisibleMainEl.addEventListener("click", () => runApproveVisible(btnApproveVisibleMainEl));
+
+    async function runExecuteVisible(btn) {
       setLoading(btn, true, t("executing"));
       try {
         const res = await api("/payment-intents/execute-visible", { method: "POST", body: "{}" });
@@ -8797,7 +8802,12 @@
       } finally {
         setLoading(btn, false);
       }
-    });
+    }
+
+    const btnExecuteVisibleEl = $("btnExecuteVisible");
+    if (btnExecuteVisibleEl) btnExecuteVisibleEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleEl));
+    const btnExecuteVisibleMainEl = $("btnExecuteVisibleMain");
+    if (btnExecuteVisibleMainEl) btnExecuteVisibleMainEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleMainEl));
 
     $("reconcileRecentBtn").addEventListener("click", async () => {
       const btn = $("reconcileRecentBtn");

@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-26-v32-clean-stable-step-flow";
+const SERVER_VERSION = "debtya-2026-04-26-v33-visible-payment-buttons";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
