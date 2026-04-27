@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v26-step-block-flow" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-26-v27-plaid-spinwheel-only" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -2735,8 +2735,8 @@
           <section class="card card-operate" id="operatePanel">
             <div class="section-head section-head-tight">
               <div>
-                <h2 class="section-title-step"><span class="section-step-badge" data-step="1">1</span><span data-i18n="operate_title">Actions</span></h2>
-                <p class="sub sub-lead" data-i18n="operate_sub">Connect the bank, import data, then use More when you need rules or payment prep.</p>
+                <h2 class="section-title-step"><span class="section-step-badge" data-step="1">1</span><span data-i18n="operate_title">Connect bank (Plaid)</span></h2>
+                <p class="sub sub-lead" data-i18n="operate_sub">Step 1: connect your bank and import accounts/transactions.</p>
               </div>
             </div>
 
@@ -2766,57 +2766,6 @@
             </div>
 
             <div class="operate-advanced-stack">
-              <p class="operate-rail-label operate-rail-label-adv" data-i18n="operate_rail_advanced">Advanced</p>
-
-              <div id="methodDebtsPanel" class="method-debts-panel method-panel-pro">
-                <div class="method-panel-head">
-                  <span class="method-panel-eyebrow" data-i18n="method_panel_eyebrow">Optional</span>
-                  <h3 class="method-panel-h" data-i18n="method_panel_title">Debts via Method</h3>
-                </div>
-                <p id="methodPanelHint" class="method-panel-lead" data-i18n="method_panel_hint">Conecta liabilities en Method y sincroniza. Luego importa cada deuda a DebtYa.</p>
-                <div class="method-panel-fields grid-2">
-                  <div class="field">
-                    <label class="label" for="methodFirstName" data-i18n="method_lbl_first">Nombre</label>
-                    <input id="methodFirstName" class="input" type="text" autocomplete="given-name" />
-                  </div>
-                  <div class="field">
-                    <label class="label" for="methodLastName" data-i18n="method_lbl_last">Apellido</label>
-                    <input id="methodLastName" class="input" type="text" autocomplete="family-name" />
-                  </div>
-                  <div class="field">
-                    <label class="label" for="methodPhone" data-i18n="method_lbl_phone">Teléfono (E.164)</label>
-                    <input id="methodPhone" class="input" type="tel" autocomplete="tel" placeholder="+1..." />
-                  </div>
-                  <div class="field">
-                    <label class="label" for="methodEmail" data-i18n="method_lbl_email">Correo</label>
-                    <input id="methodEmail" class="input" type="email" autocomplete="email" />
-                  </div>
-                  <div class="field method-field-span">
-                    <label class="label" for="methodDob" data-i18n="method_lbl_dob">Fecha de nacimiento (opcional, ISO)</label>
-                    <input id="methodDob" class="input" type="text" autocomplete="bday" placeholder="1990-01-15" />
-                  </div>
-                </div>
-                <div class="field method-entity-field">
-                  <label class="label" for="methodEntityPick" data-i18n="method_entity_label">Entidad Method</label>
-                  <select id="methodEntityPick" class="select">
-                    <option value="">—</option>
-                  </select>
-                  <p id="methodEntityPickHint" class="method-entity-hint" aria-live="polite"></p>
-                </div>
-                <div class="method-actions-grid">
-                  <button id="btnMethodCreateEntity" class="btn btn-outline" type="button" data-i18n="method_btn_create_entity">Crear perfil Method</button>
-                  <button id="btnMethodConnect" class="btn btn-outline" type="button" data-i18n="method_btn_connect">Conectar liabilities</button>
-                  <button id="btnMethodSync" class="btn btn-outline" type="button" data-i18n="method_btn_sync">Sincronizar</button>
-                </div>
-                <div class="method-reset-row">
-                  <button id="btnMethodReset" class="btn btn-light btn-small" type="button" data-i18n="method_btn_reset">Limpiar perfil Method</button>
-                </div>
-                <p class="method-panel-foot" data-i18n="method_reset_blurb">
-                  Quita la entidad guardada en DebtYa, las cuentas sincronizadas y el historial de Connect para este usuario. Las deudas importadas desde Method pasan a manual.
-                </p>
-                <div id="methodAccountsList" class="method-accounts-list"></div>
-              </div>
-
               <details class="ux-advanced-details ux-operate-advanced">
                 <summary data-i18n="advanced_operate_toggle">More — rules &amp; payments</summary>
                 <div class="ux-advanced-inner">
@@ -2829,9 +2778,7 @@
                 </div>
               </details>
 
-              <div class="section-note section-note-operate" data-i18n="operate_note">
-                Most days: Connect → Import. Rules and preparing payments live under More.
-              </div>
+              <div class="section-note section-note-operate" data-i18n="operate_note">Use this block only for Plaid connection and imports.</div>
 
               <div class="legal-note legal-note-operate" data-i18n-html="operate_legal_html">By connecting an account, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers. Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.</div>
             </div>
@@ -3751,7 +3698,7 @@
         btn_approve_visible: "Approve payments",
         btn_execute_visible: "Run payments",
         operate_note: "Most days: Connect → Import. Rules and preparing payments live under More.",
-        operate_legal_html: 'By connecting accounts, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers (for example Plaid for bank data you connect, Method where you use liability integrations, and Stripe for subscription billing). Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
+        operate_legal_html: 'By connecting accounts, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers (for example Plaid for bank data and Stripe for subscription billing). Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
         method_panel_title: "Debts via Method",
         method_panel_hint: "Method discovers liabilities. Plaid stays for the bank you pay from. Create a Method profile, run Connect, sync, then import each debt into DebtYa.",
         method_panel_disabled:
@@ -4329,7 +4276,7 @@
         btn_approve_visible: "Aprobar pagos",
         btn_execute_visible: "Ejecutar pagos",
         operate_note: "Lo usual: Conectar → Importar. Reglas y preparar pagos estan en Mas.",
-        operate_legal_html: 'Al conectar cuentas, autorizas a DebtYa a recibir la informacion financiera necesaria a traves de proveedores de confianza (por ejemplo Plaid para el banco conectado, Method si usas deudas por ese canal, y Stripe para la suscripcion). Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
+        operate_legal_html: 'Al conectar cuentas, autorizas a DebtYa a recibir la informacion financiera necesaria a traves de proveedores de confianza (por ejemplo Plaid para el banco conectado y Stripe para la suscripcion). Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
         method_panel_title: "Deudas con Method",
         method_panel_hint: "Method descubre liabilities (deudas). Plaid sigue siendo el banco del que pagas. Crea perfil Method, ejecuta Conectar, sincroniza e importa cada deuda a DebtYa.",
         method_panel_disabled:
