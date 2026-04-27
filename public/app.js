@@ -2981,12 +2981,13 @@
           : "";
         const item = document.createElement("div");
         item.className = "item";
-        const actionsHtml = isSpinIntent
+        const spinPlanNote = isSpinIntent
           ? `<div class="muted" style="margin-top:10px;font-size:13px;">${escapeHtml(t("intent_spinwheel_plan_only"))}</div>`
-          : `<div class="item-actions">
+          : "";
+        const actionsHtml = `<div class="item-actions">
             <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
             <button class="btn btn-primary btn-small" type="button" onclick="executeIntent('${intent.id}')">${escapeHtml(t("btn_execute"))}</button>
-          </div>`;
+          </div>${spinPlanNote}`;
         item.innerHTML = `
           <div class="item-top">
             <div>
