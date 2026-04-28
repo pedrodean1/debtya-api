@@ -2416,6 +2416,15 @@
         } else {
           parts.push("Pago recomendado seg\u00fan tu plan");
         }
+        if (Number.isFinite(balance)) {
+          parts.push(`Balance actual: ${fmtMoney(balance)}`);
+        }
+        if (apr !== null && Number.isFinite(balance) && balance >= 0 && apr >= 0) {
+          const monthlyInterest = (balance * apr) / 100 / 12;
+          if (Number.isFinite(monthlyInterest)) {
+            parts.push(`Intereses mensuales aprox: ${fmtMoney(monthlyInterest)}`);
+          }
+        }
         if (isAvalanche) parts.push("Reduce intereses totales");
         if (isSnowball) parts.push("Ayuda a cerrar cuentas m\u00E1s r\u00E1pido");
         if (isSpin) parts.push("Datos basados en perfil de deuda (Spinwheel)");
