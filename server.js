@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-28-v55-spinwheel-validate-button";
+const SERVER_VERSION = "debtya-2026-04-28-v56-spinwheel-payer-id-required";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;

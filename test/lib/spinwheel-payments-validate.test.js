@@ -46,6 +46,27 @@ describe("lib/spinwheel-payments validateSpinwheelPaymentPayload", () => {
     assert.equal(r.details.code, "spinwheel_not_configured");
   });
 
+  it("rechaza si falta SPINWHEEL_SANDBOX_PAYER_ID antes de llamar a Spinwheel", async () => {
+    let fetchCalled = false;
+    global.fetch = async () => {
+      fetchCalled = true;
+      return { ok: true, status: 200, text: async () => "{}" };
+    };
+    const { payload } = createSpinwheelPaymentIntent(
+      { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", external_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
+      {
+        debtyaUserId: "u1",
+        spinwheelUserId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        safeNumber: (v, fb) => (typeof fb === "number" ? fb : Number(v) || 0)
+      }
+    );
+    const r = await validateSpinwheelPaymentPayload(payload);
+    assert.equal(r.valid, false);
+    assert.equal(r.error, "Missing SPINWHEEL_SANDBOX_PAYER_ID");
+    assert.equal(r.details.code, "spinwheel_missing_sandbox_payer_id");
+    assert.equal(fetchCalled, false);
+  });
+
   it("200 → valid true con cuerpo Spinwheel", async () => {
     let seenUrl;
     let seenBody;
@@ -59,6 +80,7 @@ describe("lib/spinwheel-payments validateSpinwheelPaymentPayload", () => {
           JSON.stringify({ status: { code: 200, desc: "success" }, data: { extRequestId: seenBody.extRequestId } })
       };
     };
+    process.env.SPINWHEEL_SANDBOX_PAYER_ID = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
     const { payload } = createSpinwheelPaymentIntent(
       {
         id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
@@ -77,11 +99,13 @@ describe("lib/spinwheel-payments validateSpinwheelPaymentPayload", () => {
     assert.ok(seenUrl.includes("sandbox-api.spinwheel.io"));
     assert.ok(seenUrl.endsWith("/v1/payments/requests"));
     assert.equal(seenBody.userId, "cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+    assert.equal(seenBody.payerId, "dddddddd-dddd-4ddd-8ddd-dddddddddddd");
     assert.equal(seenBody.amount, 12.34);
     assert.equal(seenBody.useOfFunds.allocation[0].creditCardId, "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
   });
 
   it("422 → valid false con error y details", async () => {
+    process.env.SPINWHEEL_SANDBOX_PAYER_ID = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
     global.fetch = async () => ({
       ok: false,
       status: 422,
@@ -110,6 +134,7 @@ describe("lib/spinwheel-payments validateSpinwheelPaymentPayload", () => {
   });
 
   it("401 → valid false", async () => {
+    process.env.SPINWHEEL_SANDBOX_PAYER_ID = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
     global.fetch = async () => ({
       ok: false,
       status: 401,
