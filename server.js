@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-27-v43-payoff-simulation";
+const SERVER_VERSION = "debtya-2026-04-27-v47-ui-runtime-inject";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -156,7 +156,15 @@ function injectDebtyaApiBaseIntoHtml(html) {
 }
 
 function injectIntoIndexHtml(html) {
-  return injectDebtyaApiBaseIntoHtml(html);
+  let s = String(html || "");
+  const v = encodeURIComponent(SERVER_VERSION);
+  s = s.replace(
+    /<meta\s+name="debtya-ui-rev"\s+content="[^"]*"\s*\/?>/i,
+    `<meta name="debtya-ui-rev" content="${SERVER_VERSION}" />`
+  );
+  s = s.replace(/href="\/styles\.css(\?[^"]*)?"/gi, `href="/styles.css?v=${v}"`);
+  s = s.replace(/src="\/app\.js(\?[^"]*)?"/gi, `src="/app.js?v=${v}"`);
+  return injectDebtyaApiBaseIntoHtml(s);
 }
 
 function sendNoCacheIndexHtml(res) {
@@ -275,6 +283,13 @@ app.use(
       if (normalized.endsWith("debtya-bank-strip.js")) {
         res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
         res.setHeader("Surrogate-Control", "no-store");
+      }
+      if (normalized.endsWith("/app.js") || normalized.endsWith("/styles.css")) {
+        res.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+        res.setHeader("Surrogate-Control", "no-store");
+        res.setHeader("CDN-Cache-Control", "no-store");
       }
     }
   })

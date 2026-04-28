@@ -2353,13 +2353,87 @@
       minEl.textContent = fmtMoney(totalMinimumPayment);
       strategyEl.textContent = strategy;
       countsEl.textContent =
-        `Deudas activas: ${activeDebts} · Spinwheel: ${spinwheelDebts} · Payment capable: ${paymentCapableDebts}`;
+        `Deudas activas: ${activeDebts} ? Spinwheel: ${spinwheelDebts} ? Payment capable: ${paymentCapableDebts}`;
 
       if (urgentDebt) {
         const debtName = String(urgentDebt.name || urgentDebt.id || "Deuda sin nombre");
         urgentEl.textContent = `${debtName} (${urgentApr.toFixed(2)}% APR)`;
       } else {
         urgentEl.textContent = "Sin datos de APR por ahora.";
+      }
+    }
+
+    function normalizeIntentMetadata(raw) {
+      if (raw == null) return {};
+      if (typeof raw === "string") {
+        try {
+          const p = JSON.parse(raw);
+          return typeof p === "object" && p && !Array.isArray(p) ? p : {};
+        } catch {
+          return {};
+        }
+      }
+      return typeof raw === "object" && raw && !Array.isArray(raw) ? raw : {};
+    }
+
+    function formatIntentWhyPaymentHtml(intent) {
+      try {
+        const meta = normalizeIntentMetadata(intent.metadata);
+        const did = intent.debt_id != null ? String(intent.debt_id) : "";
+        const debt =
+          (Array.isArray(state.debts) ? state.debts : []).find((d) => d && String(d.id) === did) || null;
+
+        let apr = debt ? parseAprValue(debt) : null;
+        if (apr === null && meta.interest_rate != null && meta.interest_rate !== "") {
+          const n = Number(meta.interest_rate);
+          if (Number.isFinite(n)) apr = n;
+        }
+
+        let bal = debt ? toNum(debt.balance) : NaN;
+        if (!Number.isFinite(bal) || bal <= 0) {
+          const b = Number(meta.balance_snapshot);
+          if (Number.isFinite(b) && b > 0) bal = b;
+        }
+
+        const stratRaw = String(
+          intent.strategy || meta.strategy || state.plan?.strategy || ""
+        ).toLowerCase();
+        const strat = stratRaw === "snowball" ? "snowball" : stratRaw === "avalanche" ? "avalanche" : "";
+
+        const lines = [];
+        if (apr !== null && apr >= 15) {
+          lines.push(`Alta prioridad por tasa de inter\u00E9s alta (${apr.toFixed(0)}%)`);
+        }
+        if (Number.isFinite(bal) && bal > 0 && bal < 2000) {
+          lines.push("Balance bajo, se puede eliminar r\u00E1pido");
+        }
+        if (strat === "avalanche") {
+          lines.push("Priorizado para reducir intereses totales");
+        } else if (strat === "snowball") {
+          lines.push("Priorizado para cerrar cuentas m\u00E1s r\u00E1pido");
+        }
+
+        const amt = intent.total_amount ?? intent.amount ?? 0;
+        lines.push(`Pago recomendado: ${fmtMoney(amt)}`);
+
+        if (String(intent.source || "").toLowerCase() === "spinwheel") {
+          lines.push("Datos basados en perfil de deuda (Spinwheel)");
+        }
+
+        const body = lines
+          .map((line) => `<div class="intent-why-line">${escapeHtml(line)}</div>`)
+          .join("");
+        return `
+        <div class="intent-why-pay">
+          <div class="intent-why-pay-title">Por qu\u00E9 este pago</div>
+          ${body}
+        </div>`;
+      } catch {
+        return `
+        <div class="intent-why-pay">
+          <div class="intent-why-pay-title">Por qu\u00E9 este pago</div>
+          <div class="intent-why-line">${escapeHtml("Pago recomendado: " + fmtMoney(intent.total_amount ?? intent.amount ?? 0))}</div>
+        </div>`;
       }
     }
 
@@ -3025,6 +3099,7 @@
 
     function renderIntents() {
       const box = $("intentsList");
+      if (!box) return;
       box.innerHTML = "";
 
       if (!state.intents.length) {
@@ -3035,7 +3110,7 @@
       }
 
       state.intents.forEach((intent) => {
-        const meta = intent.metadata || {};
+        const meta = normalizeIntentMetadata(intent.metadata);
         const isSpinIntent = String(intent.source || "").toLowerCase() === "spinwheel";
         const spinPill = isSpinIntent
           ? ` <span class="pill teal">${escapeHtml(t("intent_pill_spinwheel"))}</span>`
@@ -3045,7 +3120,7 @@
         const actionsHtml = isSpinIntent
           ? `<div class="item-actions">
             <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
-            <span class="muted" style="align-self:center;font-size:13px;">Solo planificaci?n - pago real pendiente de rail</span>
+            <span class="muted" style="align-self:center;font-size:13px;">Solo planificaci\u00F3n \u2014 pago real pendiente de rail</span>
           </div>`
           : `<div class="item-actions">
             <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
@@ -3060,6 +3135,7 @@
                 ${escapeHtml(t("meta_pay_toward"))}: <strong>${escapeHtml(describeIntentPayToward(intent))}</strong><br />
                 ${escapeHtml(t("meta_debt"))}: <strong>${escapeHtml(intent.debt_id || "-")}</strong><br />
                 ${escapeHtml(t("meta_total"))}: <strong>${fmtMoney(intent.total_amount ?? intent.amount ?? 0)}</strong><br />
+                ${formatIntentWhyPaymentHtml(intent)}
                 ${escapeHtml(t("meta_created"))}: <strong>${fmtDate(intent.created_at)}</strong><br />
                 ${escapeHtml(t("meta_approved"))}: <strong>${fmtDate(intent.approved_at)}</strong><br />
                 ${escapeHtml(t("meta_executed"))}: <strong>${fmtDate(intent.executed_at)}</strong>
