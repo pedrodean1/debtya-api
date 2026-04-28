@@ -99,6 +99,42 @@ describe("lib/spinwheel-debt-import", () => {
     assert.equal(row.payment_capable, true);
   });
 
+  it("spinwheelItemToDebtPayload lee liability.payments.billPayment.availability", () => {
+    const data = {
+      creditCards: [
+        {
+          creditCardId: "e5555555-5555-4555-8555-555555555555",
+          displayName: "LiabPath",
+          cardProfile: { status: "OPEN", liabilitySubtype: "CreditCard", debtType: "UNSECURED" },
+          balanceDetails: { outstandingBalance: 40 },
+          statementSummary: { minimumPaymentAmount: 4, dueDate: "2024-06-15T00:00:00.000Z" },
+          liability: { payments: { billPayment: { availability: "SUPPORTED" } } }
+        }
+      ]
+    };
+    const li = collectOpenLiabilitiesForImport(data)[0];
+    const row = spinwheelItemToDebtPayload(userId, li.collection, li.item, safeNumber);
+    assert.equal(row.payment_capable, true);
+  });
+
+  it("spinwheelItemToDebtPayload liability NOT_SUPPORTED deja payment_capable false", () => {
+    const data = {
+      creditCards: [
+        {
+          creditCardId: "f6666666-6666-4666-8666-666666666666",
+          displayName: "NoPay",
+          cardProfile: { status: "OPEN", liabilitySubtype: "CreditCard", debtType: "UNSECURED" },
+          balanceDetails: { outstandingBalance: 30 },
+          statementSummary: { minimumPaymentAmount: 3, dueDate: "2024-06-15T00:00:00.000Z" },
+          liability: { payments: { billPayment: { availability: "NOT_SUPPORTED" } } }
+        }
+      ]
+    };
+    const li = collectOpenLiabilitiesForImport(data)[0];
+    const row = spinwheelItemToDebtPayload(userId, li.collection, li.item, safeNumber);
+    assert.equal(row.payment_capable, false);
+  });
+
   it("importDebtsFromSpinwheelApi upsert una fila (primera vez = inserted)", async () => {
     const sampleBody = {
       status: { code: 200, desc: "success" },

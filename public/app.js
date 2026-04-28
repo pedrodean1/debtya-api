@@ -428,8 +428,8 @@
         method_imported_badge: "Imported",
         debt_source_method: "Method",
         debt_source_spinwheel: "Spinwheel",
-        debt_spinwheel_payable: "Spinwheel bill pay",
-        debt_spinwheel_plan_only: "Spinwheel (planning)",
+        debt_spinwheel_payable: "Payable with Spinwheel",
+        debt_spinwheel_plan_only: "Planning only",
         intent_pill_spinwheel: "Spinwheel",
         intent_spinwheel_plan_only: "Planning only ? run is disabled until bill pay is connected.",
         debt_source_plaid: "Plaid",
@@ -1009,8 +1009,8 @@
         method_imported_badge: "Ya importada",
         debt_source_method: "Method",
         debt_source_spinwheel: "Spinwheel",
-        debt_spinwheel_payable: "Spinwheel ? pago de factura",
-        debt_spinwheel_plan_only: "Spinwheel (solo plan)",
+        debt_spinwheel_payable: "Pagable con Spinwheel",
+        debt_spinwheel_plan_only: "Solo planificaci\u00F3n",
         intent_pill_spinwheel: "Spinwheel",
         intent_spinwheel_plan_only: "Solo planificacion: la ejecucion queda desactivada hasta conectar el pago real.",
         debt_source_plaid: "Plaid",
@@ -2360,7 +2360,7 @@
       minEl.textContent = fmtMoney(totalMinimumPayment);
       strategyEl.textContent = strategy;
       countsEl.textContent =
-        `Deudas activas: ${activeDebts} · Spinwheel: ${spinwheelDebts} · Payment capable: ${paymentCapableDebts}`;
+        `Deudas activas: ${activeDebts} ? Spinwheel: ${spinwheelDebts} ? Payment capable: ${paymentCapableDebts}`;
 
       if (urgentDebt) {
         const debtName = String(urgentDebt.name || urgentDebt.id || "Deuda sin nombre");
