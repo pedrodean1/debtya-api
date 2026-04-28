@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-27-v50-interest-logic-fix" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-27-v51-savings-estimate" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -476,6 +476,13 @@
               </div>
             </div>
             <p id="simCountsLine" class="sub" style="margin:10px 0 0;">Deudas activas: 0 · Spinwheel: 0 · Payment capable: 0</p>
+            <div id="payoffSavingsEstimate" class="payoff-savings-estimate">
+              <p id="simSavingsLine" class="sub payoff-savings-line" style="margin:10px 0 0;"></p>
+              <p id="simMonthsLine" class="sub payoff-savings-line" style="margin:4px 0 0;"></p>
+              <p class="sub payoff-savings-disclaimer" style="margin:8px 0 0;font-size:11px;color:var(--muted);">
+                Estimación aproximada basada en tu perfil
+              </p>
+            </div>
             <p class="sub" style="margin:10px 0 0;">Esto es una simulación. No ejecuta pagos reales.</p>
             <div class="payoff-sim-help">
               <p style="margin:0 0 4px;"><strong>Avalanche:</strong> pagar primero APR más alto para reducir intereses.</p>

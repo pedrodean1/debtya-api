@@ -2353,13 +2353,36 @@
       minEl.textContent = fmtMoney(totalMinimumPayment);
       strategyEl.textContent = strategy;
       countsEl.textContent =
-        `Deudas activas: ${activeDebts} ? Spinwheel: ${spinwheelDebts} ? Payment capable: ${paymentCapableDebts}`;
+        `Deudas activas: ${activeDebts} · Spinwheel: ${spinwheelDebts} · Payment capable: ${paymentCapableDebts}`;
 
       if (urgentDebt) {
         const debtName = String(urgentDebt.name || urgentDebt.id || "Deuda sin nombre");
         urgentEl.textContent = `${debtName} (${urgentApr.toFixed(2)}% APR)`;
       } else {
         urgentEl.textContent = "Sin datos de APR por ahora.";
+      }
+
+      const aprValues = debts
+        .map((d) => parseAprValue(d))
+        .filter((a) => a !== null && Number.isFinite(a) && a > 0);
+      const avgApr = aprValues.length ? aprValues.reduce((s, a) => s + a, 0) / aprValues.length : 0;
+      const annualInterestApprox = totalDebtBalance * (avgApr / 100);
+      const savingsEstimate = annualInterestApprox * 0.25;
+      const savingsLineEl = $("simSavingsLine");
+      const monthsLineEl = $("simMonthsLine");
+      if (savingsLineEl && monthsLineEl) {
+        savingsLineEl.textContent = `Ahorro estimado: ~${fmtMoney(savingsEstimate)}`;
+        let reducedMonths = 1;
+        if (savingsEstimate > 0 && totalMinimumPayment > 0) {
+          reducedMonths = Math.round(savingsEstimate / Math.max(totalMinimumPayment * 0.25, 20));
+          reducedMonths = Math.max(1, Math.min(48, reducedMonths));
+        } else if (savingsEstimate > 0) {
+          reducedMonths = Math.max(1, Math.min(36, Math.round(Math.sqrt(totalDebtBalance + 1) / 15)));
+        }
+        monthsLineEl.textContent =
+          reducedMonths === 1
+            ? "Tiempo estimado reducido: ~1 mes"
+            : `Tiempo estimado reducido: ~${reducedMonths} meses`;
       }
     }
 
