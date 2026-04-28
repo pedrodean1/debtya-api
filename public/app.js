@@ -667,6 +667,9 @@
         meta_amount: "Amount",
         btn_approve: "Approve",
         btn_execute: "Execute",
+        btn_spinwheel_validate: "Validate Spinwheel payment",
+        spinwheel_validation_ok: "Spinwheel validation completed.",
+        spinwheel_validation_fail: "Spinwheel validation failed.",
         balance_applied: "Balance applied",
         prev_balance: "Previous",
         new_balance: "New",
@@ -1244,6 +1247,9 @@
         meta_amount: "Monto",
         btn_approve: "Aprobar",
         btn_execute: "Ejecutar",
+        btn_spinwheel_validate: "Validar pago Spinwheel",
+        spinwheel_validation_ok: "Validacion Spinwheel completada.",
+        spinwheel_validation_fail: "Validacion Spinwheel fallo.",
         balance_applied: "Balance aplicado",
         prev_balance: "Previo",
         new_balance: "Nuevo",
@@ -1532,7 +1538,8 @@
       methodEntities: [],
       methodAccounts: [],
       methodEntitiesLoadError: null,
-      methodEntityCreating: false
+      methodEntityCreating: false,
+      spinwheelValidationByIntentId: {}
     };
 
     const $ = (id) => document.getElementById(id);
@@ -3146,9 +3153,11 @@
           : "";
         const item = document.createElement("div");
         item.className = "item";
+        const spinwheelValidation = state.spinwheelValidationByIntentId[String(intent.id || "")] || null;
         const actionsHtml = isSpinIntent
           ? `<div class="item-actions">
             <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
+            <button class="btn btn-light btn-small" type="button" onclick="validateSpinwheelIntent('${intent.id}')">${escapeHtml(t("btn_spinwheel_validate"))}</button>
             <span class="muted" style="align-self:center;font-size:13px;">Solo planificaci\u00F3n \u2014 pago real pendiente de rail</span>
           </div>`
           : `<div class="item-actions">
@@ -3184,6 +3193,16 @@
             </div>
           </div>
           ${actionsHtml}
+          ${
+            isSpinIntent && spinwheelValidation
+              ? `<div class="item-meta" style="margin-top:10px;">
+                   <strong>Spinwheel validate-payment JSON:</strong>
+                   <pre style="margin-top:6px;white-space:pre-wrap;word-break:break-word;background:#f6f8fb;border:1px solid #d9e2ef;border-radius:8px;padding:10px;font-size:12px;line-height:1.35;">${escapeHtml(
+                     JSON.stringify(spinwheelValidation, null, 2)
+                   )}</pre>
+                 </div>`
+              : ""
+          }
         `;
         box.appendChild(item);
       });
@@ -4606,6 +4625,27 @@
       }
     }
 
+    async function validateSpinwheelIntent(id) {
+      try {
+        const res = await api("/spinwheel/validate-payment", {
+          method: "POST",
+          body: JSON.stringify({ intent_id: id })
+        });
+        state.spinwheelValidationByIntentId[String(id)] = res;
+        if (res && res.valid === true) {
+          showMessage(globalMessage, t("spinwheel_validation_ok"), "success");
+        } else {
+          showMessage(globalMessage, t("spinwheel_validation_fail"), "error");
+        }
+        renderIntents();
+      } catch (e) {
+        const msg = normalizeErrorMessage(e.message);
+        state.spinwheelValidationByIntentId[String(id)] = { ok: false, error: msg };
+        showMessage(globalMessage, msg, "error");
+        renderIntents();
+      }
+    }
+
     async function deleteRule(id) {
       if (!id) return;
       const confirmed = window.confirm(t("rule_delete_confirm"));
@@ -4664,6 +4704,7 @@
 
     window.approveIntent = approveIntent;
     window.executeIntent = executeIntent;
+    window.validateSpinwheelIntent = validateSpinwheelIntent;
     window.deleteRule = deleteRule;
     window.beginEditRule = beginEditRule;
 
