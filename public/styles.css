@@ -805,27 +805,11 @@
       line-height:1.5;
     }
 
-    .intent-why-pay{
-      display:block !important;
-      visibility:visible !important;
-      opacity:1 !important;
-      margin:10px 0 8px;
-      padding:10px 0 2px;
-      border-top:1px dashed var(--line);
-      border-bottom:1px dashed var(--line);
+    .intent-reason{
       font-size:12px;
+      color:#888;
+      margin-top:6px;
       line-height:1.45;
-      color:#5c6b82;
-    }
-    .intent-why-pay-title{
-      margin:0 0 6px;
-      font-weight:700;
-      font-size:12px;
-      color:var(--muted);
-    }
-    .intent-why-line{
-      margin:0 0 4px;
-      padding-left:2px;
     }
 
     .item-actions{

@@ -2376,64 +2376,54 @@
       return typeof raw === "object" && raw && !Array.isArray(raw) ? raw : {};
     }
 
-    function formatIntentWhyPaymentHtml(intent) {
+    function formatIntentReasonHtml(intent) {
       try {
         const meta = normalizeIntentMetadata(intent.metadata);
         const did = intent.debt_id != null ? String(intent.debt_id) : "";
         const debt =
           (Array.isArray(state.debts) ? state.debts : []).find((d) => d && String(d.id) === did) || null;
 
-        let apr = debt ? parseAprValue(debt) : null;
+        const rawApr = debt ? debt.apr ?? debt.interest_rate : null;
+        let apr = null;
+        if (rawApr !== null && rawApr !== undefined && rawApr !== "") {
+          const cleaned = String(rawApr).replace("%", "").replace(",", ".").trim();
+          const n = Number(cleaned);
+          if (Number.isFinite(n)) apr = n;
+        }
         if (apr === null && meta.interest_rate != null && meta.interest_rate !== "") {
           const n = Number(meta.interest_rate);
           if (Number.isFinite(n)) apr = n;
         }
 
-        let bal = debt ? toNum(debt.balance) : NaN;
-        if (!Number.isFinite(bal) || bal <= 0) {
+        let balance = debt != null ? toNum(debt.balance) : NaN;
+        if (!Number.isFinite(balance)) {
           const b = Number(meta.balance_snapshot);
-          if (Number.isFinite(b) && b > 0) bal = b;
+          if (Number.isFinite(b)) balance = b;
         }
 
         const stratRaw = String(
           intent.strategy || meta.strategy || state.plan?.strategy || ""
         ).toLowerCase();
-        const strat = stratRaw === "snowball" ? "snowball" : stratRaw === "avalanche" ? "avalanche" : "";
+        const isAvalanche = stratRaw === "avalanche";
+        const isSnowball = stratRaw === "snowball";
+        const isSpin = String(intent.source || "").toLowerCase() === "spinwheel";
 
-        const lines = [];
-        if (apr !== null && apr >= 15) {
-          lines.push(`Alta prioridad por tasa de inter\u00E9s alta (${apr.toFixed(0)}%)`);
+        const parts = [];
+        if (apr !== null && apr >= 20) {
+          parts.push(`Alta prioridad por APR alto (${apr.toFixed(0)}%)`);
+        } else if (Number.isFinite(balance) && balance < 500) {
+          parts.push("Balance bajo, se puede eliminar r\u00E1pido");
+        } else {
+          parts.push("Pago recomendado seg\u00fan tu plan");
         }
-        if (Number.isFinite(bal) && bal > 0 && bal < 2000) {
-          lines.push("Balance bajo, se puede eliminar r\u00E1pido");
-        }
-        if (strat === "avalanche") {
-          lines.push("Priorizado para reducir intereses totales");
-        } else if (strat === "snowball") {
-          lines.push("Priorizado para cerrar cuentas m\u00E1s r\u00E1pido");
-        }
+        if (isAvalanche) parts.push("Reduce intereses totales");
+        if (isSnowball) parts.push("Ayuda a cerrar cuentas m\u00E1s r\u00E1pido");
+        if (isSpin) parts.push("Datos basados en perfil de deuda (Spinwheel)");
 
-        const amt = intent.total_amount ?? intent.amount ?? 0;
-        lines.push(`Pago recomendado: ${fmtMoney(amt)}`);
-
-        if (String(intent.source || "").toLowerCase() === "spinwheel") {
-          lines.push("Datos basados en perfil de deuda (Spinwheel)");
-        }
-
-        const body = lines
-          .map((line) => `<div class="intent-why-line">${escapeHtml(line)}</div>`)
-          .join("");
-        return `
-        <div class="intent-why-pay">
-          <div class="intent-why-pay-title">Por qu\u00E9 este pago</div>
-          ${body}
-        </div>`;
+        const inner = parts.map((p) => escapeHtml(p)).join("<br />");
+        return `<div class="intent-reason">${inner}</div>`;
       } catch {
-        return `
-        <div class="intent-why-pay">
-          <div class="intent-why-pay-title">Por qu\u00E9 este pago</div>
-          <div class="intent-why-line">${escapeHtml("Pago recomendado: " + fmtMoney(intent.total_amount ?? intent.amount ?? 0))}</div>
-        </div>`;
+        return `<div class="intent-reason">${escapeHtml("Pago recomendado seg\u00fan tu plan")}</div>`;
       }
     }
 
@@ -3135,7 +3125,7 @@
                 ${escapeHtml(t("meta_pay_toward"))}: <strong>${escapeHtml(describeIntentPayToward(intent))}</strong><br />
                 ${escapeHtml(t("meta_debt"))}: <strong>${escapeHtml(intent.debt_id || "-")}</strong><br />
                 ${escapeHtml(t("meta_total"))}: <strong>${fmtMoney(intent.total_amount ?? intent.amount ?? 0)}</strong><br />
-                ${formatIntentWhyPaymentHtml(intent)}
+                ${formatIntentReasonHtml(intent)}
                 ${escapeHtml(t("meta_created"))}: <strong>${fmtDate(intent.created_at)}</strong><br />
                 ${escapeHtml(t("meta_approved"))}: <strong>${fmtDate(intent.approved_at)}</strong><br />
                 ${escapeHtml(t("meta_executed"))}: <strong>${fmtDate(intent.executed_at)}</strong>
