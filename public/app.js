@@ -2300,6 +2300,67 @@
       $("statDebtCount").textContent = String(state.debts.length);
       $("statPendingIntents").textContent = String(pending);
       $("statExecutedIntents").textContent = String(executed);
+      renderPayoffSimulation();
+    }
+
+    function toNum(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function parseAprValue(debt) {
+      const raw = debt?.apr ?? debt?.interest_rate ?? null;
+      if (raw === null || raw === undefined || raw === "") return null;
+      const cleaned = String(raw).replace("%", "").replace(",", ".").trim();
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function isPaymentCapableDebt(debt) {
+      const v = debt?.payment_capable;
+      if (v === true || v === 1 || v === "1") return true;
+      const s = String(v || "").toLowerCase().trim();
+      return s === "true" || s === "yes";
+    }
+
+    function renderPayoffSimulation() {
+      const totalEl = $("simTotalDebtBalance");
+      const minEl = $("simTotalMinimumPayment");
+      const urgentEl = $("simUrgentDebtByApr");
+      const strategyEl = $("simRecommendedStrategy");
+      const countsEl = $("simCountsLine");
+      if (!totalEl || !minEl || !urgentEl || !strategyEl || !countsEl) return;
+
+      const debts = Array.isArray(state.debts) ? state.debts : [];
+      const totalDebtBalance = debts.reduce((sum, d) => sum + toNum(d.balance), 0);
+      const totalMinimumPayment = debts.reduce((sum, d) => sum + toNum(d.minimum_payment), 0);
+      const activeDebts = debts.filter((d) => toNum(d.balance) > 0).length;
+      const spinwheelDebts = debts.filter((d) => String(d?.source || "").toLowerCase() === "spinwheel").length;
+      const paymentCapableDebts = debts.filter((d) => isPaymentCapableDebt(d)).length;
+
+      let urgentDebt = null;
+      let urgentApr = -1;
+      debts.forEach((debt) => {
+        const apr = parseAprValue(debt);
+        if (apr !== null && apr > urgentApr) {
+          urgentApr = apr;
+          urgentDebt = debt;
+        }
+      });
+
+      const strategy = urgentDebt ? "Avalanche" : "Snowball";
+      totalEl.textContent = fmtMoney(totalDebtBalance);
+      minEl.textContent = fmtMoney(totalMinimumPayment);
+      strategyEl.textContent = strategy;
+      countsEl.textContent =
+        `Deudas activas: ${activeDebts} · Spinwheel: ${spinwheelDebts} · Payment capable: ${paymentCapableDebts}`;
+
+      if (urgentDebt) {
+        const debtName = String(urgentDebt.name || urgentDebt.id || "Deuda sin nombre");
+        urgentEl.textContent = `${debtName} (${urgentApr.toFixed(2)}% APR)`;
+      } else {
+        urgentEl.textContent = "Sin datos de APR por ahora.";
+      }
     }
 
     function renderDebtTargetOptions() {

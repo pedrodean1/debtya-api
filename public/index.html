@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-27-v41-exclude-spinwheel-from-execute-visible" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-27-v43-payoff-simulation" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -454,6 +454,34 @@
               <div id="statExecutedIntents" class="v">0</div>
             </div>
           </div>
+
+          <section id="payoffSimulationCard" class="payoff-simulation-card" aria-live="polite">
+            <h3>Simulación de salida de deuda</h3>
+            <div class="payoff-sim-grid">
+              <div class="payoff-sim-item">
+                <div class="k">Balance total de deudas</div>
+                <div id="simTotalDebtBalance" class="v">$0.00</div>
+              </div>
+              <div class="payoff-sim-item">
+                <div class="k">Pagos mínimos mensuales estimados</div>
+                <div id="simTotalMinimumPayment" class="v">$0.00</div>
+              </div>
+              <div class="payoff-sim-item payoff-sim-item-wide">
+                <div class="k">Deuda más urgente por APR</div>
+                <div id="simUrgentDebtByApr" class="v">Sin datos de APR por ahora.</div>
+              </div>
+              <div class="payoff-sim-item payoff-sim-item-wide">
+                <div class="k">Estrategia recomendada</div>
+                <div id="simRecommendedStrategy" class="v">Snowball</div>
+              </div>
+            </div>
+            <p id="simCountsLine" class="sub" style="margin:10px 0 0;">Deudas activas: 0 · Spinwheel: 0 · Payment capable: 0</p>
+            <p class="sub" style="margin:10px 0 0;">Esto es una simulación. No ejecuta pagos reales.</p>
+            <div class="payoff-sim-help">
+              <p style="margin:0 0 4px;"><strong>Avalanche:</strong> pagar primero APR más alto para reducir intereses.</p>
+              <p style="margin:0;"><strong>Snowball:</strong> pagar primero balance bajo para cerrar cuentas más rápido.</p>
+            </div>
+          </section>
 
           <div id="promoCompWrap" class="hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(15,23,42,0.08);">
             <p id="promoCompServerHint" class="sub hidden" style="margin:0 0 10px;color:#b45309;"></p>
