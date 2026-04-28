@@ -2419,10 +2419,17 @@
         if (Number.isFinite(balance)) {
           parts.push(`Balance actual: ${fmtMoney(balance)}`);
         }
-        if (apr !== null && Number.isFinite(balance) && balance >= 0 && apr >= 0) {
+        const hasValidApr = apr !== null && Number.isFinite(apr) && apr > 0;
+        if (!hasValidApr) {
+          parts.push("Tasa de inter\u00E9s no disponible");
+        } else if (Number.isFinite(balance) && balance >= 0) {
           const monthlyInterest = (balance * apr) / 100 / 12;
-          if (Number.isFinite(monthlyInterest)) {
+          if (!Number.isFinite(monthlyInterest)) {
+            parts.push("Tasa de inter\u00E9s no disponible");
+          } else if (monthlyInterest >= 1) {
             parts.push(`Intereses mensuales aprox: ${fmtMoney(monthlyInterest)}`);
+          } else {
+            parts.push("Intereses muy bajos actualmente");
           }
         }
         if (isAvalanche) parts.push("Reduce intereses totales");
