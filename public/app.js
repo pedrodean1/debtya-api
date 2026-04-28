@@ -119,7 +119,7 @@
       const ui = m && m.content ? String(m.content).trim() : "?";
       const api =
         apiServerVersion != null && String(apiServerVersion).trim() ? String(apiServerVersion).trim() : "?";
-      el.textContent = "UI " + ui + " · API " + api;
+      el.textContent = "UI " + ui + " ? API " + api;
     }
 
     async function probeDebtyaDeployBadge() {
@@ -142,7 +142,7 @@
       }
     }
 
-    /** Quita grid .hero heredado y fuerza ancho si el HTML servido aun es antiguo o hay caché raro */
+    /** Quita grid .hero heredado y fuerza ancho si el HTML servido aun es antiguo o hay cach? raro */
     function patchOverviewPanelLayout() {
       try {
         const panel = document.getElementById("overviewPanel");
@@ -178,7 +178,7 @@
         brand_tagline: "Pay down debt with more structure and less stress.",
         land_pill: "Built for real monthly use",
         land_hero_title: "A calmer way to tackle debt.",
-        land_hero_copy: "Connect your bank, list what you owe, and follow a simple plan—all in one place.",
+        land_hero_copy: "Connect your bank, list what you owe, and follow a simple plan?all in one place.",
         land_features_toggle: "What DebtYa gives you",
         land_steps_toggle: "Start in 4 steps",
         land_btn_demo: "See how it works",
@@ -255,13 +255,13 @@
         help_g4_t: "4. Rules and suggested payments",
         help_g4_p: "Apply rules when you are ready, review suggested payments, then approve and run them from Actions.",
         help_g5_t: "5. Need more?",
-        help_g5_p: "Use the FAQ tab, this assistant for general guidance, or email support—we never replace your statement or professional advice.",
+        help_g5_p: "Use the FAQ tab, this assistant for general guidance, or email support?we never replace your statement or professional advice.",
         help_jump_faq: "Scroll to FAQ on this page",
         guide_assistant_off:
           "The assistant is not available here yet. Use the FAQ tab or email support@debtya.com.",
         help_ask_disclaimer:
           "The assistant explains how DebtYa works. It is not financial or legal advice. For exact numbers, use your statement or your lender.",
-        help_ask_placeholder: "Ask how something works in DebtYa…",
+        help_ask_placeholder: "Ask how something works in DebtYa?",
         help_ask_send: "Send",
         help_fab_aria: "Open help and guide",
         guide_assistant_empty: "Type a question first.",
@@ -285,8 +285,8 @@
           "The email changed after the code was sent. Press Log in again to request a new code.",
         signup_email_changed_reenter:
           "The email changed after the code was sent. Press Create account again to request a new code.",
-        signup_sending_code: "Sending code…",
-        login_sending_code: "Checking credentials and sending code…",
+        signup_sending_code: "Sending code?",
+        login_sending_code: "Checking credentials and sending code?",
         ph_email: "you@email.com",
         ph_password: "Your password",
         ph_password_confirm: "Repeat password",
@@ -299,7 +299,7 @@
         pw_recovery_save: "Save new password",
         pw_recovery_cancel: "Cancel and sign out",
         pw_recovery_code_sent: "Check your email for the 6-digit code.",
-        pw_recovery_done: "Password updated. Loading your account…",
+        pw_recovery_done: "Password updated. Loading your account?",
         auth_footer_hint: "Sign in to connect your bank, activate your plan, and use your own numbers.",
         app_welcome_default: "Home",
         badge_session: "Signed in",
@@ -308,7 +308,7 @@
         btn_activate_plan: "Activate plan",
         btn_manage_plan: "Manage plan",
         btn_logout: "Log out",
-        advanced_operate_toggle: "More — rules & payments",
+        advanced_operate_toggle: "More ? rules & payments",
         advanced_plan_toggle: "More plan options",
         advanced_intents_toggle: "More list options",
         nav_hint:
@@ -317,7 +317,7 @@
         nav_operate: "Actions",
         nav_setup: "Debts & plan",
         hero_title: "See your plan. Take the next step.",
-        hero_copy: "Debt balances, bank data, and your next payoff move—in one place.",
+        hero_copy: "Debt balances, bank data, and your next payoff move?in one place.",
         next_step_bank: "Next: connect your bank and import accounts so DebtYa can use real balances.",
         next_step_bank_btn: "Go to Actions",
         next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
@@ -326,7 +326,7 @@
         next_step_plan_btn: "Open payment plan",
         next_step_rules: "Next: create one paydown rule when you are ready.",
         next_step_rules_btn: "Go to rules",
-        next_step_prepare: "Next: prepare suggested payments from your plan (Actions → More).",
+        next_step_prepare: "Next: prepare suggested payments from your plan (Actions ? More).",
         next_step_prepare_btn: "Open Actions",
         next_step_review: "Next: you have suggested payments waiting for approval or execution.",
         next_step_review_btn: "Review payments",
@@ -387,7 +387,7 @@
         btn_apply_rules: "Apply rules",
         btn_approve_visible: "Approve payments",
         btn_execute_visible: "Run payments",
-        operate_note: "Most days: Connect → Import. Rules and preparing payments live under More.",
+        operate_note: "Most days: Connect ? Import. Rules and preparing payments live under More.",
         operate_legal_html: 'By connecting accounts, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers (for example Plaid for bank data and Stripe for subscription billing). Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
         method_panel_title: "Legacy liabilities",
         method_panel_hint: "Method discovers liabilities. Plaid stays for the bank you pay from. Create a Method profile, run Connect, sync, then import each debt into DebtYa.",
@@ -421,7 +421,7 @@
         method_entity_hint_none:
           "No Method profile saved in DebtYa yet. Fill the form and press Create Method profile, or fix the load error below.",
         method_entity_hint_count: "{{n}} Method profile saved. Pick it for Connect / Sync.",
-        method_entity_hint_creating: "Creating Method profile…",
+        method_entity_hint_creating: "Creating Method profile?",
         method_entity_load_err_generic: "Could not load Method profiles from the server.",
         method_entity_pick_empty: "(no profile yet)",
         method_empty_sync: "No Method liabilities synced yet.",
@@ -431,7 +431,7 @@
         debt_spinwheel_payable: "Spinwheel bill pay",
         debt_spinwheel_plan_only: "Spinwheel (planning)",
         intent_pill_spinwheel: "Spinwheel",
-        intent_spinwheel_plan_only: "Planning only — run is disabled until bill pay is connected.",
+        intent_spinwheel_plan_only: "Planning only ? run is disabled until bill pay is connected.",
         debt_source_plaid: "Plaid",
         debt_method_payable: "Payable (Method)",
         debt_method_info_only: "Informational",
@@ -463,19 +463,19 @@
         rule_disabled_ok: "Rules turned off.",
         lbl_rule_way: "Pay-down style",
         lbl_mode_rule: "Mode",
-        rule_way_monthly_fixed: "1 — Fixed extra when rules run",
-        rule_way_purchase_percent: "2 — Percent of each purchase",
-        rule_way_spare_change: "3 — Round up spare change",
+        rule_way_monthly_fixed: "1 ? Fixed extra when rules run",
+        rule_way_purchase_percent: "2 ? Percent of each purchase",
+        rule_way_spare_change: "3 ? Round up spare change",
         rule_mode_hint_fixed: "Adds the same dollar amount each time you apply rules, toward one debt.",
         rule_mode_hint_percent: "Takes a percent of each eligible purchase and sends it toward your target debt.",
-        rule_mode_hint_roundup: "Sends the “spare change” needed to reach the next step (for example the next dollar).",
+        rule_mode_hint_roundup: "Sends the ?spare change? needed to reach the next step (for example the next dollar).",
         rule_mode_hint_default: "Choose how this rule builds paydown amounts from your spending.",
         rule_hint_monthly_fixed:
           "Same extra amount applied when you run Apply rules (for example after each import), toward the debt you choose below.",
         rule_hint_purchase_percent:
           "Example: 10% on a $10 purchase adds $1 toward your target debt. Your Supabase apply_rules_v2 logic must use this percent on eligible spending.",
         rule_hint_spare_change:
-          "Example: spend $10.30 with a $1 step — the spare change is $0.70 toward your debt (next whole dollar is $11). Use step 1 for classic “round to next dollar.”",
+          "Example: spend $10.30 with a $1 step ? the spare change is $0.70 toward your debt (next whole dollar is $11). Use step 1 for classic ?round to next dollar.?",
         lbl_roundup_step: "Round up step ($)",
         rule_roundup_pct: "Percent of purchase",
         rule_fixed: "Fixed extra",
@@ -523,9 +523,9 @@
         intents_title: "Suggested payments",
         intents_sub: "Step 5: build, review, approve, and run payments.",
         btn_reconcile: "Update recent payments",
-        tag_approved: "Approved — ready to run",
-        tag_pending: "Draft or waiting — needs your OK",
-        tag_executed: "Done — applied to your balances",
+        tag_approved: "Approved ? ready to run",
+        tag_pending: "Draft or waiting ? needs your OK",
+        tag_executed: "Done ? applied to your balances",
         history_title: "History",
         history_sub: "See payments and how your balances changed.",
         accounts_title: "Connected accounts",
@@ -536,9 +536,9 @@
         bank_role_modal_title: "What is this bank for?",
         bank_role_modal_sub:
           "Choose where to list this connection. All accounts still import; this only groups the bank in your workspace.",
-        bank_role_funding_btn: "Pay from here — checking, savings",
-        bank_role_liabilities_btn: "Debts here — cards, loans",
-        bank_role_both_btn: "Both — funding and debts at this bank",
+        bank_role_funding_btn: "Pay from here ? checking, savings",
+        bank_role_liabilities_btn: "Debts here ? cards, loans",
+        bank_role_both_btn: "Both ? funding and debts at this bank",
         bank_role_cancel: "Cancel",
         sync_bank_default: "Bank",
         sync_bank_disconnect_aria: "Remove bank",
@@ -595,17 +595,17 @@
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
         empty_rules: "You have no saved rules yet.",
-        empty_intents: "No suggested payments yet. Use Build payments above (or Actions → More) after applying rules and importing transactions.",
+        empty_intents: "No suggested payments yet. Use Build payments above (or Actions ? More) after applying rules and importing transactions.",
         empty_trace: "No history available yet.",
         empty_accounts: "No imported accounts yet.",
         empty_compare: "No comparison available yet.",
         lbl_debt_from_account: "Create debt from imported account",
         debt_from_account_none: "Manual entry (no pre-fill)",
-        debt_from_account_hint: "Choose a credit or loan account you already imported to pre-fill this form. APR and minimum payment are starter values—adjust them to match your statement.",
-        debt_name_suggested_hint: "We simplified the bank label—you can rename it anytime.",
+        debt_from_account_hint: "Choose a credit or loan account you already imported to pre-fill this form. APR and minimum payment are starter values?adjust them to match your statement.",
+        debt_name_suggested_hint: "We simplified the bank label?you can rename it anytime.",
         debt_min_from_import_hint: "This minimum payment came from your imported account data. Please confirm it on your statement.",
         debt_apr_from_import_hint: "This APR came from your imported account data. Please confirm it on your statement.",
-        debt_form_review_note: "Before you save, review APR and minimum payment. They may be suggested starting values—compare with your statement and edit if needed. Highlighted fields came from your import and are easy to change.",
+        debt_form_review_note: "Before you save, review APR and minimum payment. They may be suggested starting values?compare with your statement and edit if needed. Highlighted fields came from your import and are easy to change.",
         debt_suggest_personal_loan: "Personal loan",
         debt_suggest_loan: "Loan",
         debt_suggest_credit: "Credit card",
@@ -839,7 +839,7 @@
           "El asistente no esta disponible en este servidor todavia. Usa la pestana FAQ o escribe a support@debtya.com.",
         help_ask_disclaimer:
           "El asistente explica como funciona DebtYa. No es asesoria financiera ni legal. Para cifras exactas, usa tu estado de cuenta o tu prestamista.",
-        help_ask_placeholder: "Pregunta como funciona algo en DebtYa…",
+        help_ask_placeholder: "Pregunta como funciona algo en DebtYa?",
         help_ask_send: "Enviar",
         help_fab_aria: "Abrir ayuda y guia",
         guide_assistant_empty: "Escribe una pregunta primero.",
@@ -847,27 +847,27 @@
         guide_assistant_rate: "Demasiadas solicitudes. Espera un momento e intentalo de nuevo.",
         lbl_email: "Email",
         lbl_password: "Contrasena",
-        lbl_password_confirm: "Confirmar contraseña",
-        err_password_mismatch: "Las contraseñas no coinciden.",
+        lbl_password_confirm: "Confirmar contrase?a",
+        err_password_mismatch: "Las contrase?as no coinciden.",
         err_signup_password_pair_required:
-          "Escribe la contraseña y confírmala en ambos campos.",
+          "Escribe la contrase?a y conf?rmala en ambos campos.",
         err_password_policy:
-          "La contraseña debe tener al menos 8 caracteres e incluir una mayúscula, una minúscula, un número y un carácter especial.",
-        lbl_signup_verification_code: "Código de verificación",
-        err_signup_code_invalid: "El código debe tener 6 dígitos.",
+          "La contrase?a debe tener al menos 8 caracteres e incluir una may?scula, una min?scula, un n?mero y un car?cter especial.",
+        lbl_signup_verification_code: "C?digo de verificaci?n",
+        err_signup_code_invalid: "El c?digo debe tener 6 d?gitos.",
         signup_check_email_code:
-          "Te enviamos un código de 6 dígitos a tu correo. Escríbelo abajo y vuelve a pulsar Crear cuenta para terminar.",
+          "Te enviamos un c?digo de 6 d?gitos a tu correo. Escr?belo abajo y vuelve a pulsar Crear cuenta para terminar.",
         login_check_email_code:
-          "Te enviamos un código de 6 dígitos a tu correo. Escríbelo abajo y vuelve a pulsar Entrar para terminar.",
+          "Te enviamos un c?digo de 6 d?gitos a tu correo. Escr?belo abajo y vuelve a pulsar Entrar para terminar.",
         login_email_changed_reenter:
-          "Cambiaste el correo después de enviar el código. Pulsa Entrar otra vez para pedir un código nuevo.",
+          "Cambiaste el correo despu?s de enviar el c?digo. Pulsa Entrar otra vez para pedir un c?digo nuevo.",
         signup_email_changed_reenter:
-          "Cambiaste el correo después de enviar el código. Pulsa Crear cuenta otra vez para pedir un código nuevo.",
-        signup_sending_code: "Enviando código…",
-        login_sending_code: "Comprobando datos y enviando código…",
+          "Cambiaste el correo despu?s de enviar el c?digo. Pulsa Crear cuenta otra vez para pedir un c?digo nuevo.",
+        signup_sending_code: "Enviando c?digo?",
+        login_sending_code: "Comprobando datos y enviando c?digo?",
         ph_email: "tu@email.com",
-        ph_password: "Tu contraseña",
-        ph_password_confirm: "Repite la contraseña",
+        ph_password: "Tu contrase?a",
+        ph_password_confirm: "Repite la contrase?a",
         btn_reset_pw: "Enviar link para cambiar contrasena",
         pw_recovery_title: "Elige una contrasena nueva",
         pw_recovery_sub:
@@ -877,7 +877,7 @@
         pw_recovery_save: "Guardar contrasena nueva",
         pw_recovery_cancel: "Cancelar y cerrar sesion",
         pw_recovery_code_sent: "Revisa tu correo para el codigo de 6 digitos.",
-        pw_recovery_done: "Contrasena actualizada. Cargando tu cuenta…",
+        pw_recovery_done: "Contrasena actualizada. Cargando tu cuenta?",
         auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y usar tus datos reales.",
         app_welcome_default: "Panel principal",
         badge_session: "Sesion activa",
@@ -886,7 +886,7 @@
         btn_activate_plan: "Activar plan",
         btn_manage_plan: "Administrar plan",
         btn_logout: "Salir",
-        advanced_operate_toggle: "Mas — reglas y pagos",
+        advanced_operate_toggle: "Mas ? reglas y pagos",
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_intents_toggle: "Mas opciones de la lista",
         nav_hint:
@@ -895,7 +895,7 @@
         nav_operate: "Acciones",
         nav_setup: "Deudas y plan",
         hero_title: "Ve tu plan. Da el siguiente paso.",
-        hero_copy: "Deudas, banco y tu siguiente paso para bajarlas—en un solo lugar.",
+        hero_copy: "Deudas, banco y tu siguiente paso para bajarlas?en un solo lugar.",
         next_step_bank: "Siguiente: conecta tu banco e importa cuentas para usar saldos reales.",
         next_step_bank_btn: "Ir a Acciones",
         next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
@@ -904,7 +904,7 @@
         next_step_plan_btn: "Abrir plan de pago",
         next_step_rules: "Siguiente: crea una regla de abono cuando quieras.",
         next_step_rules_btn: "Ir a reglas",
-        next_step_prepare: "Siguiente: prepara pagos sugeridos desde tu plan (Acciones → Mas).",
+        next_step_prepare: "Siguiente: prepara pagos sugeridos desde tu plan (Acciones ? Mas).",
         next_step_prepare_btn: "Abrir Acciones",
         next_step_review: "Siguiente: tienes pagos sugeridos pendientes de aprobacion o ejecucion.",
         next_step_review_btn: "Ver pagos sugeridos",
@@ -912,7 +912,7 @@
         next_step_done_btn: "Ir a Acciones",
         btn_connect_bank: "Conectar banco",
         btn_disconnect_bank: "Desconectar banco",
-        sync_bank_pick_title: "¿Que banco quieres quitar?",
+        sync_bank_pick_title: "?Que banco quieres quitar?",
         sync_bank_pick_sub: "Elige la conexion. En el siguiente paso te pediremos confirmacion.",
         sync_bank_pick_label: "Conexion bancaria",
         sync_bank_pick_continue: "Continuar",
@@ -965,7 +965,7 @@
         btn_apply_rules: "Aplicar reglas",
         btn_approve_visible: "Aprobar pagos",
         btn_execute_visible: "Ejecutar pagos",
-        operate_note: "Lo usual: Conectar → Importar. Reglas y preparar pagos estan en Mas.",
+        operate_note: "Lo usual: Conectar ? Importar. Reglas y preparar pagos estan en Mas.",
         operate_legal_html: 'Al conectar cuentas, autorizas a DebtYa a recibir la informacion financiera necesaria a traves de proveedores de confianza (por ejemplo Plaid para el banco conectado y Stripe para la suscripcion). Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
         method_panel_title: "Pasivos heredados",
         method_panel_hint: "Method descubre liabilities (deudas). Plaid sigue siendo el banco del que pagas. Crea perfil Method, ejecuta Conectar, sincroniza e importa cada deuda a DebtYa.",
@@ -984,7 +984,7 @@
         method_reset_blurb:
           "Quita la entidad Method, las liabilities sincronizadas y el historial de Connect guardados en DebtYa para tu usuario. Las deudas que venian de Method pasan a manual (conservan nombre y montos).",
         method_reset_confirm:
-          "¿Borrar en DebtYa los datos Method de tu cuenta (entidad, sync, Connect)? Podras crear un perfil Method nuevo despues.",
+          "?Borrar en DebtYa los datos Method de tu cuenta (entidad, sync, Connect)? Podras crear un perfil Method nuevo despues.",
         method_reset_ok: "Listo: datos Method borrados en DebtYa. Ya puedes crear un perfil nuevo.",
         method_capable_badge: "Pagable con Method",
         method_info_badge: "Solo informativa",
@@ -999,14 +999,14 @@
         method_entity_hint_none:
           "Aun no hay perfil Method guardado en DebtYa. Rellena el formulario y pulsa Crear perfil Method, o corrige el error de carga abajo.",
         method_entity_hint_count: "{{n}} perfil Method guardado. Eligelo para Conectar / Sincronizar.",
-        method_entity_hint_creating: "Creando perfil Method…",
+        method_entity_hint_creating: "Creando perfil Method?",
         method_entity_load_err_generic: "No se pudieron cargar los perfiles Method desde el servidor.",
         method_entity_pick_empty: "(sin perfil aun)",
         method_empty_sync: "Aun no hay liabilities Method sincronizadas.",
         method_imported_badge: "Ya importada",
         debt_source_method: "Method",
         debt_source_spinwheel: "Spinwheel",
-        debt_spinwheel_payable: "Spinwheel — pago de factura",
+        debt_spinwheel_payable: "Spinwheel ? pago de factura",
         debt_spinwheel_plan_only: "Spinwheel (solo plan)",
         intent_pill_spinwheel: "Spinwheel",
         intent_spinwheel_plan_only: "Solo planificacion: la ejecucion queda desactivada hasta conectar el pago real.",
@@ -1041,9 +1041,9 @@
         rule_disabled_ok: "Reglas desactivadas.",
         lbl_rule_way: "Forma de abonar",
         lbl_mode_rule: "Modo",
-        rule_way_monthly_fixed: "1 — Monto fijo al aplicar reglas",
-        rule_way_purchase_percent: "2 — Porcentaje de cada compra",
-        rule_way_spare_change: "3 — Redondear vueltos",
+        rule_way_monthly_fixed: "1 ? Monto fijo al aplicar reglas",
+        rule_way_purchase_percent: "2 ? Porcentaje de cada compra",
+        rule_way_spare_change: "3 ? Redondear vueltos",
         rule_mode_hint_fixed: "Suma el mismo monto cada vez que aplicas reglas, hacia una deuda.",
         rule_mode_hint_percent: "Toma un porcentaje de cada compra elegible y lo envia a la deuda objetivo.",
         rule_mode_hint_roundup: "Envia el cambio que falta para llegar al siguiente paso (por ejemplo el siguiente dolar).",
@@ -1053,7 +1053,7 @@
         rule_hint_purchase_percent:
           "Ejemplo: 10% sobre $10 de compra suma $1 hacia tu deuda. Tu apply_rules_v2 en Supabase debe usar este porcentaje sobre gastos elegibles.",
         rule_hint_spare_change:
-          "Ejemplo: gastas $10.30 con paso $1 — el vueltito es $0.70 hacia la deuda (el siguiente entero es $11). Paso 1 = redondear al siguiente dolar.",
+          "Ejemplo: gastas $10.30 con paso $1 ? el vueltito es $0.70 hacia la deuda (el siguiente entero es $11). Paso 1 = redondear al siguiente dolar.",
         lbl_roundup_step: "Paso de redondeo ($)",
         rule_roundup_pct: "Porcentaje de la compra",
         rule_fixed: "Extra fijo",
@@ -1101,9 +1101,9 @@
         intents_title: "Pagos sugeridos",
         intents_sub: "Quinto paso: construir, revisar, aprobar y ejecutar pagos.",
         btn_reconcile: "Actualizar pagos recientes",
-        tag_approved: "Aprobados — listos para ejecutar",
-        tag_pending: "Borrador o en espera — falta tu visto bueno",
-        tag_executed: "Listos — ya aplicados a tus balances",
+        tag_approved: "Aprobados ? listos para ejecutar",
+        tag_pending: "Borrador o en espera ? falta tu visto bueno",
+        tag_executed: "Listos ? ya aplicados a tus balances",
         history_title: "Historial",
         history_sub: "Pagos y como cambiaron tus balances.",
         accounts_title: "Cuentas conectadas",
@@ -1111,18 +1111,18 @@
         sync_banks_title: "Bancos sincronizados",
         sync_banks_funding_title: "Bancos desde los que pagas",
         sync_banks_liabilities_title: "Bancos con deudas a las que va el dinero",
-        bank_role_modal_title: "¿Para que usas este banco?",
+        bank_role_modal_title: "?Para que usas este banco?",
         bank_role_modal_sub:
           "Elige en que grupo mostrar esta conexion. Igual se importan todas las cuentas; solo organiza el banco en la app.",
-        bank_role_funding_btn: "Sacar dinero de aqui — cuenta corriente, ahorros",
-        bank_role_liabilities_btn: "Deudas aqui — tarjetas, prestamos",
-        bank_role_both_btn: "Ambos — origen y deudas en este banco",
+        bank_role_funding_btn: "Sacar dinero de aqui ? cuenta corriente, ahorros",
+        bank_role_liabilities_btn: "Deudas aqui ? tarjetas, prestamos",
+        bank_role_both_btn: "Ambos ? origen y deudas en este banco",
         bank_role_cancel: "Cancelar",
         sync_bank_default: "Banco",
         sync_bank_disconnect_aria: "Quitar banco",
         sync_bank_disconnect_confirm:
-          "¿Quitar esta conexion bancaria? Se borraran en DebtYa las cuentas, enlaces con deudas, cuenta de origen del plan y movimientos importados de este banco.",
-        sync_bank_modal_title: "¿Seguro?",
+          "?Quitar esta conexion bancaria? Se borraran en DebtYa las cuentas, enlaces con deudas, cuenta de origen del plan y movimientos importados de este banco.",
+        sync_bank_modal_title: "?Seguro?",
         sync_bank_modal_body:
           "Vas a quitar {bank} de DebtYa. Se borraran las cuentas importadas, enlaces con deudas, la cuenta de origen del plan si aplica y el historial de movimientos de este banco. Luego puedes volver a conectar si quieres.",
         sync_bank_modal_cancel: "Mejor no",
@@ -1172,7 +1172,7 @@
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
         empty_rules: "Todavia no tienes reglas guardadas.",
-        empty_intents: "Aun no hay pagos sugeridos. Pulsa Construir pagos arriba (o Acciones → Mas) despues de aplicar reglas e importar movimientos.",
+        empty_intents: "Aun no hay pagos sugeridos. Pulsa Construir pagos arriba (o Acciones ? Mas) despues de aplicar reglas e importar movimientos.",
         empty_trace: "Todavia no hay historial disponible.",
         empty_accounts: "Todavia no hay cuentas importadas.",
         empty_compare: "Todavia no hay comparacion disponible.",
@@ -1182,7 +1182,7 @@
         debt_name_suggested_hint: "Simplificamos el nombre del banco; puedes cambiarlo cuando quieras.",
         debt_min_from_import_hint: "Este pago minimo viene de los datos importados de la cuenta. Confirmalo en tu estado de cuenta.",
         debt_apr_from_import_hint: "Este APR viene de los datos importados de la cuenta. Confirmalo en tu estado de cuenta.",
-        debt_form_review_note: "Antes de guardar, revisa el APR y el pago minimo. Pueden ser valores sugeridos al inicio—comparalos con tu estado de cuenta y editalos si hace falta. Los campos resaltados vinieron del importe y puedes cambiarlos.",
+        debt_form_review_note: "Antes de guardar, revisa el APR y el pago minimo. Pueden ser valores sugeridos al inicio?comparalos con tu estado de cuenta y editalos si hace falta. Los campos resaltados vinieron del importe y puedes cambiarlos.",
         debt_suggest_personal_loan: "Prestamo personal",
         debt_suggest_loan: "Prestamo",
         debt_suggest_credit: "Tarjeta de credito",
@@ -1260,13 +1260,13 @@
         plan_mode_full: "Automatico total",
         bill_active: "Activa",
         promo_comp_hint:
-          "Si te compartieron un código de invitación (amigos o familia), escríbelo en el campo de abajo y pulsa «Aplicar código» para usar la app sin pasar por el pago.",
-        promo_comp_label: "Código de invitación",
-        promo_comp_apply: "Aplicar código",
+          "Si te compartieron un c?digo de invitaci?n (amigos o familia), escr?belo en el campo de abajo y pulsa ?Aplicar c?digo? para usar la app sin pasar por el pago.",
+        promo_comp_label: "C?digo de invitaci?n",
+        promo_comp_apply: "Aplicar c?digo",
         promo_comp_ok: "Acceso activado.",
         promo_comp_already: "Esta cuenta ya tiene acceso complementario.",
         promo_comp_err: "No se pudo aplicar el codigo.",
-        promo_comp_need: "Escribe un código primero.",
+        promo_comp_need: "Escribe un c?digo primero.",
         promo_comp_server_off:
           "Este servidor no tiene codigos de promocion configurados (define DEBTYA_COMP_PROMO_CODES o DEBTYA_COMP_PROMO_CODE en el host y redeploy).",
         bill_trialing: "En prueba",
@@ -1477,7 +1477,7 @@
         return false;
       }
     }
-    /** Antes de createClient: leer hash/query y quitar JWT viejo para que el recovery no pierda contra sesión guardada. */
+    /** Antes de createClient: leer hash/query y quitar JWT viejo para que el recovery no pierda contra sesi?n guardada. */
     (function capturePwRecoveryFromUrlEarly() {
       try {
         const h = (window.location.hash || "").replace(/^#/, "");
@@ -1665,7 +1665,7 @@
       }
     }
 
-    /** Toasts: se ocultan solos (éxito ~4.5s, aviso ~5.5s, error ~8s). Clic en el cartel también cierra. `persist` evita auto-cierre. */
+    /** Toasts: se ocultan solos (?xito ~4.5s, aviso ~5.5s, error ~8s). Clic en el cartel tambi?n cierra. `persist` evita auto-cierre. */
     function showMessage(target, text, type = "success", persist = false) {
       const el = resolveToastEl(target);
       if (!el) return;
@@ -1790,8 +1790,8 @@
       } catch (_) {
         nfc = raw;
       }
-      if (/Respuesta\s+inv[aá]lida\s+de\s+Method\s+al\s+crear\s+entidad/i.test(nfc)) return true;
-      if (/Method\s+al\s+crear\s+entidad/i.test(nfc) && /inv[aá]lida/i.test(nfc) && /respuesta/i.test(nfc)) return true;
+      if (/Respuesta\s+inv[a?]lida\s+de\s+Method\s+al\s+crear\s+entidad/i.test(nfc)) return true;
+      if (/Method\s+al\s+crear\s+entidad/i.test(nfc) && /inv[a?]lida/i.test(nfc) && /respuesta/i.test(nfc)) return true;
       if (
         folded.includes("respuesta") &&
         folded.includes("invalida") &&
@@ -1893,7 +1893,7 @@
 
         if (!res.ok) {
           const parts = collectJsonErrorParts(json);
-          let msg = [...new Set(parts)].join(" — ").trim();
+          let msg = [...new Set(parts)].join(" ? ").trim();
           if (!msg) {
             const raw = String(text || "").trim();
             const looksHtml = raw.startsWith("<") || /<html[\s>]/i.test(raw) || /<body[\s>]/i.test(raw);
@@ -1906,7 +1906,7 @@
 
         if (json && Object.prototype.hasOwnProperty.call(json, "ok") && json.ok === false) {
           const parts = collectJsonErrorParts(json);
-          let msg = [...new Set(parts)].join(" — ").trim();
+          let msg = [...new Set(parts)].join(" ? ").trim();
           if (!msg) {
             const raw = String(text || "").trim();
             msg = raw.length > 400 ? `${raw.slice(0, 397)}...` : raw || "Respuesta inesperada del servidor";
@@ -2063,7 +2063,7 @@
           return;
         }
         const reply = await postGuideAssistantMessage(msg);
-        appendHelpChatBubble("bot", reply || "—");
+        appendHelpChatBubble("bot", reply || "?");
       } catch (err) {
         const st = err.status;
         if (st === 429) {
@@ -2075,7 +2075,7 @@
           if (off2) off2.classList.remove("hidden");
         } else {
           let raw = String(err.message || "").trim();
-          if (raw.length > 500) raw = raw.slice(0, 497) + "…";
+          if (raw.length > 500) raw = raw.slice(0, 497) + "?";
           if (!raw) {
             appendHelpChatBubble("err", t("guide_assistant_error"));
           } else {
@@ -2131,7 +2131,7 @@
       }
     }
 
-    /** Sin máscara cuando el campo está vacío; al escribir pasa a type=password (máscara solo con contenido). */
+    /** Sin m?scara cuando el campo est? vac?o; al escribir pasa a type=password (m?scara solo con contenido). */
     function wireAuthPasswordMaskBehavior(pwEl, confirmEl) {
       const wire = (el) => {
         if (!el) return;
@@ -2325,7 +2325,7 @@
     }
 
     function buildAccountOptionLabel(acc) {
-      const mask = acc.mask ? ` · ****${escapeHtml(acc.mask)}` : "";
+      const mask = acc.mask ? ` ? ****${escapeHtml(acc.mask)}` : "";
       return `${escapeHtml(acc.name || t("acct_default"))}${mask} (${escapeHtml(acc.type || "-")})`;
     }
 
@@ -2374,8 +2374,8 @@
           <div class="debt-plaid-details">
             <div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("debt_link_account_label"))}</span><span class="debt-plaid-v"><strong>${escapeHtml(linked.name || t("acct_default"))}</strong></span></div>
             ${maskRow}
-            <div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("acct_type"))}</span><span class="debt-plaid-v">${escapeHtml(linked.type || "—")}</span></div>
-            <div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("acct_subtype"))}</span><span class="debt-plaid-v">${escapeHtml(linked.subtype || "—")}</span></div>
+            <div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("acct_type"))}</span><span class="debt-plaid-v">${escapeHtml(linked.type || "?")}</span></div>
+            <div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("acct_subtype"))}</span><span class="debt-plaid-v">${escapeHtml(linked.subtype || "?")}</span></div>
           </div>
           <div class="debt-balance-compare">
             <div class="debt-balance-box">
@@ -2641,7 +2641,7 @@
       eligible.forEach((acc) => {
         const id = acc.plaid_account_id || "";
         if (!id) return;
-        const maskBit = acc.mask ? ` · ****${escapeHtml(String(acc.mask))}` : "";
+        const maskBit = acc.mask ? ` ? ****${escapeHtml(String(acc.mask))}` : "";
         const label = `${escapeHtml(acc.name || t("acct_default"))}${maskBit}`;
         const pick = prev === id ? " selected" : "";
         html += `<option value="${escapeHtml(id)}"${pick}>${label}</option>`;
@@ -2701,9 +2701,9 @@
                 ${linkPill}${sourcePillsHtml}
               </div>
               <div class="item-meta">
-                ${escapeHtml(t("apr_label"))}: <strong>${Number(debt.apr || 0).toFixed(2)}%</strong> ·
-                ${escapeHtml(t("min_label"))}: <strong>${fmtMoney(debt.minimum_payment)}</strong> ·
-                ${escapeHtml(t("day_label"))}: <strong>${debt.due_day ?? "-"}</strong> ·
+                ${escapeHtml(t("apr_label"))}: <strong>${Number(debt.apr || 0).toFixed(2)}%</strong> ?
+                ${escapeHtml(t("min_label"))}: <strong>${fmtMoney(debt.minimum_payment)}</strong> ?
+                ${escapeHtml(t("day_label"))}: <strong>${debt.due_day ?? "-"}</strong> ?
                 ${escapeHtml(t("type_label"))}: <strong>${escapeHtml(
                   debt.type === "credit_card" ? t("debt_type_cc") :
                   debt.type === "personal_loan" ? t("debt_type_pl") :
@@ -2784,7 +2784,7 @@
           `${escapeHtml(t("rule_min_purchase_lbl"))}: <strong>${fmtMoney(rule.min_purchase_amount || 0)}</strong>`
         );
       }
-      return parts.join(" · ");
+      return parts.join(" ? ");
     }
 
     function syncRuleModeFields() {
@@ -2981,13 +2981,15 @@
           : "";
         const item = document.createElement("div");
         item.className = "item";
-        const spinPlanNote = isSpinIntent
-          ? `<div class="muted" style="margin-top:10px;font-size:13px;">${escapeHtml(t("intent_spinwheel_plan_only"))}</div>`
-          : "";
-        const actionsHtml = `<div class="item-actions">
+        const actionsHtml = isSpinIntent
+          ? `<div class="item-actions">
+            <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
+            <span class="muted" style="align-self:center;font-size:13px;">Solo planificaci?n - pago real pendiente de rail</span>
+          </div>`
+          : `<div class="item-actions">
             <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
             <button class="btn btn-primary btn-small" type="button" onclick="executeIntent('${intent.id}')">${escapeHtml(t("btn_execute"))}</button>
-          </div>${spinPlanNote}`;
+          </div>`;
         item.innerHTML = `
           <div class="item-top">
             <div>
@@ -3040,7 +3042,7 @@
         item.innerHTML = `
           <div class="item-top">
             <div>
-              <div class="item-title">${escapeHtml((row.id || "").slice(0, 8))} · ${escapeHtml(row.status || "-")}</div>
+              <div class="item-title">${escapeHtml((row.id || "").slice(0, 8))} ? ${escapeHtml(row.status || "-")}</div>
               <div class="item-meta">
                 ${escapeHtml(t("meta_debt"))}: <strong>${escapeHtml(row.debt_id || "-")}</strong><br />
                 ${escapeHtml(t("meta_amount"))}: <strong>${fmtMoney(row.total_amount ?? row.amount ?? 0)}</strong><br />
@@ -3359,10 +3361,10 @@
         <div class="item">
           <div class="item-top">
             <div>
-              <div class="item-title">${escapeHtml(acc.name || t("acct_default"))} ${acc.mask ? `· ****${escapeHtml(acc.mask)}` : ""}</div>
+              <div class="item-title">${escapeHtml(acc.name || t("acct_default"))} ${acc.mask ? `? ****${escapeHtml(acc.mask)}` : ""}</div>
               ${kindLine}
               <div class="item-meta">
-                ${escapeHtml(t("acct_type"))}: <strong>${escapeHtml(acc.type || "-")}</strong> ·
+                ${escapeHtml(t("acct_type"))}: <strong>${escapeHtml(acc.type || "-")}</strong> ?
                 ${escapeHtml(t("acct_subtype"))}: <strong>${escapeHtml(acc.subtype || "-")}</strong>
               </div>
             </div>
@@ -3418,7 +3420,7 @@
 
     function accountLabelPlain(acc) {
       if (!acc) return "";
-      const mask = acc.mask ? ` · ****${acc.mask}` : "";
+      const mask = acc.mask ? ` ? ****${acc.mask}` : "";
       return `${acc.name || t("acct_default")}${mask}`;
     }
 
@@ -3427,15 +3429,15 @@
       if (!pid) return t("intent_pay_from_unknown");
       const acc = (state.accounts || []).find((a) => String(a.plaid_account_id) === pid);
       if (acc) return accountLabelPlain(acc);
-      return pid.length > 10 ? `${pid.slice(0, 8)}…` : pid;
+      return pid.length > 10 ? `${pid.slice(0, 8)}?` : pid;
     }
 
     function describeIntentPayToward(intent) {
       const did = String(intent.debt_id || "").trim();
-      if (!did) return "—";
+      if (!did) return "?";
       const d = (state.debts || []).find((x) => String(x.id) === did);
       if (d) return d.name || t("debt_label");
-      return did.length > 12 ? `${did.slice(0, 8)}…` : did;
+      return did.length > 12 ? `${did.slice(0, 8)}?` : did;
     }
 
     function populatePlanRoutingSelects() {
@@ -3470,7 +3472,7 @@
         if (!d?.id) return;
         const op = document.createElement("option");
         op.value = d.id;
-        op.textContent = `${d.name || t("debt_label")} · ${fmtMoney(d.balance)}`;
+        op.textContent = `${d.name || t("debt_label")} ? ${fmtMoney(d.balance)}`;
         debtSel.appendChild(op);
       });
 
@@ -3817,7 +3819,7 @@
         const name = li && li.name ? String(li.name).trim() : "";
         const mask = li && li.mask ? String(li.mask).trim() : "";
         if (name) return name;
-        if (mask) return `${t("debt_label")} · ****${mask}`;
+        if (mask) return `${t("debt_label")} ? ****${mask}`;
         return row.method_account_id || t("debt_label");
       } catch (_) {
         return row.method_account_id || t("debt_label");
@@ -3866,7 +3868,7 @@
       if (!sel) return;
       const rows = Array.isArray(state.methodEntities) ? state.methodEntities : [];
       const prev = sel.value;
-      let placeholder = "—";
+      let placeholder = "?";
       if (state.methodConfigured && !state.methodEntitiesLoadError && !state.methodEntityCreating) {
         const n = rows.filter((r) => r && r.method_entity_id).length;
         if (!n) placeholder = t("method_entity_pick_empty");
@@ -3875,7 +3877,7 @@
       rows.forEach((r) => {
         const mid = r.method_entity_id || "";
         if (!mid) return;
-        const label = `${mid}${r.status ? " · " + String(r.status) : ""}`;
+        const label = `${mid}${r.status ? " ? " + String(r.status) : ""}`;
         html += `<option value="${escapeHtml(mid)}">${escapeHtml(label)}</option>`;
       });
       sel.innerHTML = html;
@@ -4189,7 +4191,7 @@
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         const parts = [json.error, json.details].filter(Boolean);
-        throw new Error(parts.join(" — ") || `HTTP ${res.status}`);
+        throw new Error(parts.join(" ? ") || `HTTP ${res.status}`);
       }
       return json;
     }
@@ -4642,7 +4644,7 @@
             const sendJson = await sendRes.json().catch(() => ({}));
             if (!sendRes.ok) {
               const parts = [sendJson.error, sendJson.details].filter(Boolean);
-              throw new Error(parts.join(" — ") || `HTTP ${sendRes.status}`);
+              throw new Error(parts.join(" ? ") || `HTTP ${sendRes.status}`);
             }
             state.loginVerificationPending = true;
             state.loginVerificationEmail = emailNorm;
@@ -4677,7 +4679,7 @@
           const loginJson = await loginRes.json().catch(() => ({}));
           if (!loginRes.ok) {
             const parts = [loginJson.error, loginJson.details].filter(Boolean);
-            throw new Error(parts.join(" — ") || `HTTP ${loginRes.status}`);
+            throw new Error(parts.join(" ? ") || `HTTP ${loginRes.status}`);
           }
           if (!loginJson.session?.access_token || !loginJson.session?.refresh_token) {
             throw new Error(t("err_generic"));
@@ -4718,7 +4720,7 @@
             const sendJson = await sendRes.json().catch(() => ({}));
             if (!sendRes.ok) {
               const parts = [sendJson.error, sendJson.details].filter(Boolean);
-              throw new Error(parts.join(" — ") || `HTTP ${sendRes.status}`);
+              throw new Error(parts.join(" ? ") || `HTTP ${sendRes.status}`);
             }
             state.signupVerificationPending = true;
             state.signupVerificationEmail = emailNorm;
@@ -4753,7 +4755,7 @@
           const regJson = await regRes.json().catch(() => ({}));
           if (!regRes.ok) {
             const parts = [regJson.error, regJson.details].filter(Boolean);
-            throw new Error(parts.join(" — ") || `HTTP ${regRes.status}`);
+            throw new Error(parts.join(" ? ") || `HTTP ${regRes.status}`);
           }
           state.signupVerificationPending = false;
           state.signupVerificationEmail = null;
@@ -4807,7 +4809,7 @@
         const json = await res.json().catch(() => ({}));
         if (!res.ok) {
           const parts = [json.error, json.details].filter(Boolean);
-          throw new Error(parts.join(" — ") || `HTTP ${res.status}`);
+          throw new Error(parts.join(" ? ") || `HTTP ${res.status}`);
         }
         showMessage(pwRecoveryMsg, json?.message || t("pw_recovery_code_sent"), "success");
       } catch (e) {
@@ -4842,7 +4844,7 @@
         const json = await res.json().catch(() => ({}));
         if (!res.ok) {
           const parts = [json.error, json.details].filter(Boolean);
-          throw new Error(parts.join(" — ") || `HTTP ${res.status}`);
+          throw new Error(parts.join(" ? ") || `HTTP ${res.status}`);
         }
         clearPwRecoveryPending();
         hidePasswordRecoveryPanel();
@@ -4893,7 +4895,7 @@
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
 
-    /** TEMP: Spinwheel sandbox — POST /spinwheel/connect/sms con JWT Supabase (misma base que api()). */
+    /** TEMP: Spinwheel sandbox ? POST /spinwheel/connect/sms con JWT Supabase (misma base que api()). */
     async function runSpinwheelSmsSandboxTest() {
       const out = $("spinwheelSmsTestOutput");
       const phoneEl = $("spinwheelTestPhone");
@@ -4910,11 +4912,11 @@
         );
         return;
       }
-      setLoading(btn, true, "…");
+      setLoading(btn, true, "?");
       try {
         const token = await getAccessToken();
         if (!token) {
-          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesi?n (token)." }, null, 2);
           return;
         }
         const res = await fetch(`${API_BASE}/spinwheel/connect/sms`, {
@@ -4944,7 +4946,7 @@
         setLoading(btn, false);
       }
     }
-    /** TEMP: Spinwheel sandbox — POST /spinwheel/users/me/connect/sms/verify */
+    /** TEMP: Spinwheel sandbox ? POST /spinwheel/users/me/connect/sms/verify */
     async function runSpinwheelSmsVerifySandboxTest() {
       const out = $("spinwheelSmsTestOutput");
       const codeEl = $("spinwheelTestSmsCode");
@@ -4955,11 +4957,11 @@
         out.textContent = JSON.stringify({ ok: false, error: "Completa smsCode." }, null, 2);
         return;
       }
-      setLoading(btn, true, "…");
+      setLoading(btn, true, "?");
       try {
         const token = await getAccessToken();
         if (!token) {
-          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesi?n (token)." }, null, 2);
           return;
         }
         const res = await fetch(`${API_BASE}/spinwheel/users/me/connect/sms/verify`, {
@@ -4994,16 +4996,16 @@
     const btnSpinwheelSmsVerifyTest = $("btnSpinwheelSmsVerifyTest");
     if (btnSpinwheelSmsVerifyTest) btnSpinwheelSmsVerifyTest.addEventListener("click", runSpinwheelSmsVerifySandboxTest);
 
-    /** TEMP: Spinwheel sandbox — POST /spinwheel/users/me/debt-profile (Spinwheel exige creditReport o creditScore en el body). */
+    /** TEMP: Spinwheel sandbox ? POST /spinwheel/users/me/debt-profile (Spinwheel exige creditReport o creditScore en el body). */
     async function runSpinwheelDebtProfileSandboxTest() {
       const out = $("spinwheelSmsTestOutput");
       const btn = $("btnSpinwheelDebtProfileTest");
       if (!out || !btn) return;
-      setLoading(btn, true, "…");
+      setLoading(btn, true, "?");
       try {
         const token = await getAccessToken();
         if (!token) {
-          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesi?n (token)." }, null, 2);
           return;
         }
         const debtProfilePayload = {
@@ -5041,16 +5043,16 @@
     const btnSpinwheelDebtProfileTest = $("btnSpinwheelDebtProfileTest");
     if (btnSpinwheelDebtProfileTest) btnSpinwheelDebtProfileTest.addEventListener("click", runSpinwheelDebtProfileSandboxTest);
 
-    /** TEMP: Spinwheel sandbox — POST /spinwheel/import-debts (upsert en public.debts). */
+    /** TEMP: Spinwheel sandbox ? POST /spinwheel/import-debts (upsert en public.debts). */
     async function runSpinwheelImportDebtsSandboxTest() {
       const out = $("spinwheelSmsTestOutput");
       const btn = $("btnSpinwheelImportDebtsTest");
       if (!out || !btn) return;
-      setLoading(btn, true, "…");
+      setLoading(btn, true, "?");
       try {
         const token = await getAccessToken();
         if (!token) {
-          out.textContent = JSON.stringify({ ok: false, error: "Sin sesión (token)." }, null, 2);
+          out.textContent = JSON.stringify({ ok: false, error: "Sin sesi?n (token)." }, null, 2);
           return;
         }
         const res = await fetch(`${API_BASE}/spinwheel/import-debts`, {
@@ -5100,7 +5102,7 @@
         state.methodEntityCreating = true;
         state.methodEntitiesLoadError = null;
         populateMethodEntityPick();
-        setLoading(btn, true, "…");
+        setLoading(btn, true, "?");
         const body = {
           individual: {
             first_name: $("methodFirstName")?.value?.trim() || null,
@@ -5155,7 +5157,7 @@
         if (!state.methodConfigured) throw new Error(t("method_panel_disabled"));
         const ent = getSelectedMethodEntityIdForMethodApi();
         if (!ent) throw new Error(t("method_err_entity"));
-        setLoading(btn, true, "…");
+        setLoading(btn, true, "?");
         const entTrim = String(ent).trim();
         console.info("[Debtya][Method] connect click", {
           entity_id_len: entTrim.length,
@@ -5199,7 +5201,7 @@
         if (!state.methodConfigured) throw new Error(t("method_panel_disabled"));
         const ent = getSelectedMethodEntityIdForMethodApi();
         if (!ent) throw new Error(t("method_err_entity"));
-        setLoading(btn, true, "…");
+        setLoading(btn, true, "?");
         await api("/method/accounts/sync", {
           method: "POST",
           body: JSON.stringify({ method_entity_id: ent })
@@ -5219,7 +5221,7 @@
         const token = await getAccessToken();
         if (!token) throw new Error(t("sign_in_first"));
         if (!window.confirm(t("method_reset_confirm"))) return;
-        setLoading(btn, true, "…");
+        setLoading(btn, true, "?");
         const res = await api("/method/entities/reset", { method: "POST", body: "{}" });
         console.info("[Debtya][Method] reset ok", {
           removed_entities: res && res.data && res.data.removed_entities,
@@ -5476,8 +5478,31 @@
     async function runExecuteVisible(btn) {
       setLoading(btn, true, t("executing"));
       try {
-        const res = await api("/payment-intents/execute-visible", { method: "POST", body: "{}" });
-        showMessage(globalMessage, `${t("executed_n")}: ${res.executed_count ?? 0}.`, "success");
+        const intents = Array.isArray(state.intents) ? state.intents : [];
+        const executable = intents.filter((intent) => {
+          const src = String(intent?.source || "").toLowerCase();
+          const st = String(intent?.status || "").toLowerCase();
+          return src !== "spinwheel" && st === "approved";
+        });
+        const hasSpinwheel = intents.some((intent) => String(intent?.source || "").toLowerCase() === "spinwheel");
+        if (!executable.length) {
+          if (hasSpinwheel) {
+            showMessage(
+              globalMessage,
+              "Estos pagos son solo planificaci\u00F3n por ahora. No hay pagos reales pendientes de ejecuci\u00F3n.",
+              "warn"
+            );
+          } else {
+            showMessage(globalMessage, `${t("executed_n")}: 0.`, "success");
+          }
+          return;
+        }
+        let executedCount = 0;
+        for (const intent of executable) {
+          await api(`/payment-intents/${intent.id}/execute`, { method: "POST", body: "{}" });
+          executedCount += 1;
+        }
+        showMessage(globalMessage, `${t("executed_n")}: ${executedCount}.`, "success");
         await Promise.all([refreshIntents(), refreshDebts(), refreshTrace()]);
       } catch (err) {
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
@@ -5490,6 +5515,36 @@
     if (btnExecuteVisibleEl) btnExecuteVisibleEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleEl));
     const btnExecuteVisibleMainEl = $("btnExecuteVisibleMain");
     if (btnExecuteVisibleMainEl) btnExecuteVisibleMainEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleMainEl));
+
+    const btnPaymentIntentsBuildAlways = $("btnPaymentIntentsBuildAlways");
+    if (btnPaymentIntentsBuildAlways) {
+      btnPaymentIntentsBuildAlways.addEventListener("click", () => runPaymentIntentsBuild(btnPaymentIntentsBuildAlways));
+    }
+    const btnPaymentIntentsApproveVisibleAlways = $("btnPaymentIntentsApproveVisibleAlways");
+    if (btnPaymentIntentsApproveVisibleAlways) {
+      btnPaymentIntentsApproveVisibleAlways.addEventListener("click", () =>
+        runApproveVisible(btnPaymentIntentsApproveVisibleAlways)
+      );
+    }
+    const btnPaymentIntentsExecuteVisibleAlways = $("btnPaymentIntentsExecuteVisibleAlways");
+    if (btnPaymentIntentsExecuteVisibleAlways) {
+      btnPaymentIntentsExecuteVisibleAlways.addEventListener("click", () =>
+        runExecuteVisible(btnPaymentIntentsExecuteVisibleAlways)
+      );
+    }
+    const btnPaymentIntentsRefreshAlways = $("btnPaymentIntentsRefreshAlways");
+    if (btnPaymentIntentsRefreshAlways) {
+      btnPaymentIntentsRefreshAlways.addEventListener("click", async () => {
+        setLoading(btnPaymentIntentsRefreshAlways, true, t("proc"));
+        try {
+          await refreshIntents();
+        } catch (err) {
+          showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        } finally {
+          setLoading(btnPaymentIntentsRefreshAlways, false);
+        }
+      });
+    }
 
     $("reconcileRecentBtn").addEventListener("click", async () => {
       const btn = $("reconcileRecentBtn");

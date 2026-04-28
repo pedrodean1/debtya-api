@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-27-v37-payment-buttons-always-visible" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-27-v41-exclude-spinwheel-from-execute-visible" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -835,6 +835,18 @@
               <span class="pill blue" data-i18n="tag_approved">Approved — ready to run</span>
               <span class="pill orange" data-i18n="tag_pending">Draft or waiting — needs your OK</span>
               <span class="pill" data-i18n="tag_executed">Done — applied to your balances</span>
+            </div>
+
+            <div
+              id="paymentIntentsAlwaysToolbar"
+              class="payment-intents-always-toolbar"
+              role="toolbar"
+              aria-label="Payment intents actions"
+            >
+              <button id="btnPaymentIntentsBuildAlways" class="btn btn-primary" type="button" data-i18n="btn_intents_build">Build payments</button>
+              <button id="btnPaymentIntentsApproveVisibleAlways" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
+              <button id="btnPaymentIntentsExecuteVisibleAlways" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
+              <button id="btnPaymentIntentsRefreshAlways" class="btn btn-light" type="button" data-i18n="btn_refresh">Refresh</button>
             </div>
 
             <div id="intentsList" class="list list-scroll-sm"></div>

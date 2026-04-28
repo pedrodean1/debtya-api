@@ -112,6 +112,34 @@
     #setupPanel{order:3}
     #paymentPlanSection{order:4}
     #suggestedPaymentsPanel{order:5}
+
+    /* Payment intents: barra principal siempre visible (evita duplicado con toolbar legacy oculto) */
+    #suggestedPaymentsPanel .intents-build-toolbar{
+      display:none !important;
+    }
+    #suggestedPaymentsPanel #paymentIntentsAlwaysToolbar.payment-intents-always-toolbar{
+      display:flex !important;
+      visibility:visible !important;
+      opacity:1 !important;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      margin:0 0 14px;
+      padding:12px 14px;
+      position:sticky;
+      top:max(8px, env(safe-area-inset-top, 0px));
+      z-index:25;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:var(--shadow-soft);
+      box-sizing:border-box;
+    }
+    #suggestedPaymentsPanel #paymentIntentsAlwaysToolbar.payment-intents-always-toolbar .btn{
+      visibility:visible !important;
+      opacity:1 !important;
+      display:inline-flex !important;
+    }
     #rulesPanel{order:6}
     #historyPanel{order:7}
     #accountsPanel{order:8}

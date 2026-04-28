@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-27-v37-payment-buttons-always-visible";
+const SERVER_VERSION = "debtya-2026-04-27-v41-exclude-spinwheel-from-execute-visible";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
