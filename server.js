@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-04-27-v51-savings-estimate";
+const SERVER_VERSION = "debtya-2026-04-27-v53-spinwheel-payment-prep";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2216,7 +2216,8 @@ app.use((req, res, next) => {
     !req.path.startsWith("/payment-trace") &&
     !req.path.startsWith("/strategy") &&
     !req.path.startsWith("/cron") &&
-    !req.path.startsWith("/auth")
+    !req.path.startsWith("/auth") &&
+    !req.path.startsWith("/spinwheel")
   ) {
     return sendSpaFallbackIndexHtml(res);
   }
