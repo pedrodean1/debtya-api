@@ -19,7 +19,7 @@ const {
   importDebtsFromSpinwheelApi,
   spinwheelRawResponseHasDebtProfileData
 } = require("../lib/spinwheel-debt-import");
-const { createSpinwheelPaymentIntent } = require("../lib/spinwheel-payments");
+const { createSpinwheelPaymentIntent, validateSpinwheelPaymentPayload } = require("../lib/spinwheel-payments");
 
 function spinwheelInfo(req, ...parts) {
   const rid = req && req.requestId ? req.requestId : "-";
@@ -458,6 +458,88 @@ function registerSpinwheelRoutes(app, deps) {
       const msg = e && e.message ? String(e.message) : String(e);
       spinwheelInfo(req, "prepare-payment.error", { message: msg });
       return jsonError(res, 500, "Error preparando pago Spinwheel", { details: msg });
+    }
+  });
+
+  app.post("/spinwheel/validate-payment", requireUser, async (req, res) => {
+    if (!requireSpinwheelClient(res)) return undefined;
+    const env = readSpinwheelEnv();
+    try {
+      const intentId =
+        req.body && req.body.intent_id != null
+          ? String(req.body.intent_id).trim()
+          : req.body && req.body.intentId != null
+            ? String(req.body.intentId).trim()
+            : "";
+      if (!intentId || !isUuid(intentId)) {
+        return jsonError(res, 400, "intent_id inválido o faltante", { code: "intent_id_invalid" });
+      }
+
+      const { data: intent, error: intentErr } = await supabaseAdmin
+        .from("payment_intents")
+        .select("*")
+        .eq("id", intentId)
+        .eq("user_id", req.user.id)
+        .maybeSingle();
+
+      if (intentErr) throw intentErr;
+      if (!intent) {
+        return jsonError(res, 404, "Intent no encontrado", { code: "intent_not_found" });
+      }
+
+      if (String(intent.source || "").toLowerCase() !== "spinwheel") {
+        return jsonError(res, 400, "Solo intents con source spinwheel", { code: "intent_not_spinwheel" });
+      }
+
+      const extId = String(intent.external_id || "").trim();
+      if (!extId) {
+        return jsonError(res, 400, "Intent Spinwheel sin external_id (liability)", {
+          code: "spinwheel_intent_missing_external_id"
+        });
+      }
+
+      const mapping = await getSpinwheelMappingForUser(supabaseAdmin, req.user.id, env);
+      if (!mapping || !mapping.spinwheel_user_id) {
+        return jsonError(res, 404, "Sin vínculo Spinwheel para este entorno", {
+          code: "spinwheel_mapping_not_found",
+          environment: env
+        });
+      }
+
+      const { payload, payload_preview } = createSpinwheelPaymentIntent(intent, {
+        debtyaUserId: req.user.id,
+        spinwheelUserId: String(mapping.spinwheel_user_id),
+        safeNumber
+      });
+
+      const validation = await validateSpinwheelPaymentPayload(payload);
+
+      const httpStatus = validation.valid ? null : validation.details && validation.details.http_status;
+      spinwheelInfo(req, "Spinwheel payment validation result", {
+        intent_id: intentId,
+        valid: validation.valid,
+        spinwheel_http_status: httpStatus
+      });
+
+      const spinwheel_response = validation.valid
+        ? validation.response
+        : {
+            error: validation.error,
+            http_status: validation.details && validation.details.http_status,
+            body: validation.details && validation.details.body,
+            request_sent: validation.details && validation.details.request_sent
+          };
+
+      return res.json({
+        ok: true,
+        valid: validation.valid,
+        preview: payload_preview,
+        spinwheel_response
+      });
+    } catch (e) {
+      const msg = e && e.message ? String(e.message) : String(e);
+      spinwheelInfo(req, "validate-payment.error", { message: msg });
+      return jsonError(res, 500, "Error validando pago Spinwheel", { details: msg });
     }
   });
 
