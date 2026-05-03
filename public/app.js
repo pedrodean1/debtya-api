@@ -436,6 +436,7 @@
         sw_connect_code_lbl: "Code from text message",
         sw_connect_verify_btn: "Verify code",
         sw_connect_success: "Debts connected successfully.",
+        sw_connect_already_synced: "Your debts were already linked. We refreshed your information.",
         sw_connect_err_generic: "We could not complete that step. Check your details and try again.",
         sw_connect_err_phone: "Enter the phone number you use with your lenders.",
         sw_connect_err_phone_invalid: "Enter a phone number with country code (for example +1 for the United States).",
@@ -1029,6 +1030,7 @@
         sw_connect_code_lbl: "C\u00f3digo recibido por SMS",
         sw_connect_verify_btn: "Verificar c\u00f3digo",
         sw_connect_success: "Deudas conectadas correctamente.",
+        sw_connect_already_synced: "Tus deudas ya estaban conectadas. Actualizamos tu informaci\u00f3n.",
         sw_connect_err_generic: "No pudimos completar ese paso. Revisa los datos e intentalo de nuevo.",
         sw_connect_err_phone: "Escribe el telefono que usas con tus acreedores.",
         sw_connect_err_phone_invalid: "Escribe el telefono con codigo de pais (por ejemplo +1 en Estados Unidos).",
@@ -3863,6 +3865,48 @@
       renderDebts();
     }
 
+    function isSpinwheelMeNoMappingError(err) {
+      const msg = String(err && err.message ? err.message : "").toLowerCase();
+      return (
+        msg.includes("spinwheel_mapping_not_found") ||
+        msg.includes("sin v\u00ednculo spinwheel") ||
+        msg.includes("sin vinculo spinwheel") ||
+        /\b404\b/.test(msg)
+      );
+    }
+
+    function isSpinwheelUserAlreadyConnectedMessage(msg) {
+      const m = String(msg || "").toLowerCase();
+      return (
+        m.includes("user already connected") ||
+        m.includes("already connected") ||
+        m.includes("usuario ya conectado") ||
+        m.includes("useralreadyconnected")
+      );
+    }
+
+    function spinwheelBodySaysUserAlreadyConnected(sw, seen, depth) {
+      const s = seen instanceof Set ? seen : new Set();
+      const d = typeof depth === "number" ? depth : 0;
+      if (!sw || d > 14) return false;
+      if (typeof sw === "string") {
+        return /user already connected|already connected|usuario ya conectado/i.test(sw);
+      }
+      if (typeof sw !== "object") return false;
+      if (s.has(sw)) return false;
+      s.add(sw);
+      if (Array.isArray(sw)) {
+        for (const x of sw) {
+          if (spinwheelBodySaysUserAlreadyConnected(x, s, d + 1)) return true;
+        }
+        return false;
+      }
+      for (const v of Object.values(sw)) {
+        if (spinwheelBodySaysUserAlreadyConnected(v, s, d + 1)) return true;
+      }
+      return false;
+    }
+
     function spinwheelConnectionStatusFromApiPayload(payload) {
       const sw =
         payload && payload.spinwheel && typeof payload.spinwheel === "object" ? payload.spinwheel : null;
@@ -3933,6 +3977,19 @@
       await api("/spinwheel/import-debts", { method: "POST", body: "{}" });
     }
 
+    /**
+     * @param {"sw_connect_success"|"sw_connect_already_synced"} i18nKey
+     */
+    async function swConnectCompleteDebtProfileFlow(i18nKey) {
+      swConnectShowErr("");
+      await runSpinwheelDebtProfileAndImport();
+      swConnectClearSensitiveFields();
+      const vb = $("swConnectVerifyBlock");
+      if (vb) vb.classList.add("hidden");
+      swConnectShowOk(t(i18nKey));
+      await refreshDebts();
+    }
+
     function swConnectClearSensitiveFields() {
       const p = $("swConnectPhone");
       const d = $("swConnectDob");
@@ -3943,39 +4000,56 @@
     }
 
     async function onSwConnectSearchClick() {
-      const phoneEl = $("swConnectPhone");
-      const dobEl = $("swConnectDob");
-      const phoneRaw = phoneEl ? String(phoneEl.value || "").trim() : "";
-      const dob = dobEl ? String(dobEl.value || "").trim() : "";
       swConnectShowErr("");
       const okEl = $("swConnectFlowMsg");
       if (okEl) {
         okEl.classList.add("hidden");
         okEl.textContent = "";
       }
-      if (!phoneRaw) {
-        swConnectShowErr(t("sw_connect_err_phone"));
-        return;
-      }
-      if (!dob) {
-        swConnectShowErr(t("sw_connect_err_dob"));
-        return;
-      }
-      const phoneNumber = normalizePhoneForSpinwheel(phoneRaw);
-      const digitCount = phoneNumber.replace(/\D/g, "").length;
-      if (digitCount < 10) {
-        swConnectShowErr(t("sw_connect_err_phone_invalid"));
-        return;
-      }
       const btn = $("swConnectSearchBtn");
       const vb0 = $("swConnectVerifyBlock");
       if (vb0) vb0.classList.add("hidden");
       setLoading(btn, true);
       try {
+        let me = null;
+        try {
+          me = await api("/spinwheel/me");
+        } catch (e) {
+          if (!isSpinwheelMeNoMappingError(e)) throw e;
+          me = null;
+        }
+        if (me && me.ok && me.mapping && String(me.mapping.spinwheel_user_id || "").trim()) {
+          await swConnectCompleteDebtProfileFlow("sw_connect_already_synced");
+          return;
+        }
+
+        const phoneEl = $("swConnectPhone");
+        const dobEl = $("swConnectDob");
+        const phoneRaw = phoneEl ? String(phoneEl.value || "").trim() : "";
+        const dob = dobEl ? String(dobEl.value || "").trim() : "";
+        if (!phoneRaw) {
+          swConnectShowErr(t("sw_connect_err_phone"));
+          return;
+        }
+        if (!dob) {
+          swConnectShowErr(t("sw_connect_err_dob"));
+          return;
+        }
+        const phoneNumber = normalizePhoneForSpinwheel(phoneRaw);
+        const digitCount = phoneNumber.replace(/\D/g, "").length;
+        if (digitCount < 10) {
+          swConnectShowErr(t("sw_connect_err_phone_invalid"));
+          return;
+        }
+
         const res = await api("/spinwheel/connect/sms", {
           method: "POST",
           body: JSON.stringify({ phoneNumber, dateOfBirth: dob })
         });
+        if (spinwheelBodySaysUserAlreadyConnected(res.spinwheel)) {
+          await swConnectCompleteDebtProfileFlow("sw_connect_already_synced");
+          return;
+        }
         const cs = spinwheelConnectionStatusFromApiPayload(res);
         if (cs === "IN_PROGRESS") {
           const vb = $("swConnectVerifyBlock");
@@ -3988,17 +4062,21 @@
           return;
         }
         if (cs === "SUCCESS") {
-          const vb = $("swConnectVerifyBlock");
-          if (vb) vb.classList.add("hidden");
-          await runSpinwheelDebtProfileAndImport();
-          swConnectClearSensitiveFields();
-          swConnectShowOk(t("sw_connect_success"));
-          await refreshDebts();
+          await swConnectCompleteDebtProfileFlow("sw_connect_success");
           return;
         }
         swConnectShowErr(t("sw_connect_err_unexpected_link"));
       } catch (e) {
-        swConnectShowErr(friendlyDebtConnectError(e));
+        const raw = e && e.message != null ? String(e.message) : "";
+        if (isSpinwheelUserAlreadyConnectedMessage(raw)) {
+          try {
+            await swConnectCompleteDebtProfileFlow("sw_connect_already_synced");
+          } catch (e2) {
+            swConnectShowErr(friendlyDebtConnectError(e2));
+          }
+        } else {
+          swConnectShowErr(friendlyDebtConnectError(e));
+        }
       } finally {
         setLoading(btn, false);
       }
@@ -4026,18 +4104,22 @@
         });
         const cs = spinwheelConnectionStatusFromApiPayload(res);
         if (cs === "SUCCESS") {
-          const vb = $("swConnectVerifyBlock");
-          if (vb) vb.classList.add("hidden");
           if (codeIn) codeIn.value = "";
-          await runSpinwheelDebtProfileAndImport();
-          swConnectClearSensitiveFields();
-          swConnectShowOk(t("sw_connect_success"));
-          await refreshDebts();
+          await swConnectCompleteDebtProfileFlow("sw_connect_success");
           return;
         }
         swConnectShowErr(t("sw_connect_err_verify"));
       } catch (e) {
-        swConnectShowErr(friendlyDebtConnectError(e));
+        const raw = e && e.message != null ? String(e.message) : "";
+        if (isSpinwheelUserAlreadyConnectedMessage(raw)) {
+          try {
+            await swConnectCompleteDebtProfileFlow("sw_connect_already_synced");
+          } catch (e2) {
+            swConnectShowErr(friendlyDebtConnectError(e2));
+          }
+        } else {
+          swConnectShowErr(friendlyDebtConnectError(e));
+        }
       } finally {
         setLoading(btn, false);
       }
