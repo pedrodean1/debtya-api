@@ -107,6 +107,36 @@
 
     .page-grid > .stack{display:contents}
 
+    .dashboard-next-step-card{
+      margin:0 0 16px;
+      padding:14px 16px;
+      border-radius:14px;
+      border:1px solid rgba(31,111,255,0.32);
+      background:linear-gradient(135deg, rgba(31,111,255,0.1), rgba(255,255,255,0.96));
+      box-shadow:0 4px 18px rgba(15,23,42,0.07);
+    }
+    .dashboard-next-step-heading{
+      margin:0 0 8px;
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:0.02em;
+      color:var(--primary);
+      text-transform:uppercase;
+    }
+    .dashboard-next-step-primary{
+      margin:0;
+      font-size:16px;
+      line-height:1.45;
+      font-weight:600;
+      color:var(--text);
+    }
+    .dashboard-next-step-secondary{
+      margin:10px 0 0;
+      font-size:13px;
+      line-height:1.4;
+      color:var(--muted);
+    }
+
     #operatePanel{order:1}
     #setupPanel{order:2}
     #paymentPlanSection{order:3}

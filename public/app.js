@@ -318,6 +318,12 @@
         nav_setup: "Debts & plan",
         hero_title: "See your plan. Take the next step.",
         hero_copy: "Debt balances, bank data, and your next payoff move?in one place.",
+        dashboard_next_step_title: "Your next step",
+        dashboard_next_no_debts: "Add your debts to get started.",
+        dashboard_next_no_plan: "Create your payment plan.",
+        dashboard_next_no_intents: "Generate your suggested payments.",
+        dashboard_next_pay_today: "Today you should pay: {amount} toward {debt}",
+        dashboard_next_impact: "Impact: paying now helps reduce interest over time.",
         next_step_bank: "Next: connect your bank and import accounts so DebtYa can use real balances.",
         next_step_bank_btn: "Go to Actions",
         next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
@@ -884,6 +890,12 @@
         nav_setup: "Deudas y plan",
         hero_title: "Ve tu plan. Da el siguiente paso.",
         hero_copy: "Deudas, banco y tu siguiente paso para bajarlas?en un solo lugar.",
+        dashboard_next_step_title: "Tu pr\u00F3ximo paso",
+        dashboard_next_no_debts: "Agrega tus deudas para empezar",
+        dashboard_next_no_plan: "Crea tu plan de pago",
+        dashboard_next_no_intents: "Genera tus pagos sugeridos",
+        dashboard_next_pay_today: "Hoy deber\u00EDas pagar: {amount} a {debt}",
+        dashboard_next_impact: "Impacto: reduces intereses",
         next_step_bank: "Siguiente: conecta tu banco e importa cuentas para usar saldos reales.",
         next_step_bank_btn: "Ir a Acciones",
         next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
@@ -2265,6 +2277,82 @@
       renderNextStepCallout();
     }
 
+    /**
+     * Intent destacado para el bloque "Tu próximo paso": prioriza abiertos y mayor monto.
+     * @param {object[]} intents
+     */
+    function pickFeaturedIntentForDashboard(intents) {
+      const list = Array.isArray(intents) ? intents.filter((x) => x) : [];
+      if (!list.length) return null;
+      const openStatuses = new Set([
+        "draft",
+        "pending",
+        "built",
+        "proposed",
+        "ready",
+        "pending_review",
+        "approved",
+        "queued"
+      ]);
+      const rows = list.map((intent) => {
+        const st = String(intent.status || "").toLowerCase();
+        const isOpen = openStatuses.has(st);
+        const amt = toNum(intent.total_amount ?? intent.amount);
+        const sched = intent.scheduled_for != null ? String(intent.scheduled_for) : "";
+        return { intent, isOpen, amt, sched };
+      });
+      const pool = rows.some((r) => r.isOpen) ? rows.filter((r) => r.isOpen) : rows;
+      pool.sort((a, b) => {
+        if (a.sched && b.sched && a.sched !== b.sched) return a.sched.localeCompare(b.sched);
+        return b.amt - a.amt;
+      });
+      return pool[0].intent;
+    }
+
+    function renderDashboardNextStep() {
+      const card = $("dashboardNextStepCard");
+      const primaryEl = $("dashboardNextStepPrimary");
+      const secondaryEl = $("dashboardNextStepSecondary");
+      if (!card || !primaryEl || !secondaryEl) return;
+      if (!appView || appView.classList.contains("hidden")) {
+        card.classList.add("hidden");
+        return;
+      }
+
+      const debts = Array.isArray(state.debts) ? state.debts : [];
+      const plan = state.plan;
+      const intents = Array.isArray(state.intents) ? state.intents : [];
+
+      secondaryEl.textContent = "";
+      secondaryEl.classList.add("hidden");
+      card.classList.remove("hidden");
+
+      if (debts.length === 0) {
+        primaryEl.textContent = t("dashboard_next_no_debts");
+        return;
+      }
+      if (!plan || !plan.id) {
+        primaryEl.textContent = t("dashboard_next_no_plan");
+        return;
+      }
+      if (intents.length === 0) {
+        primaryEl.textContent = t("dashboard_next_no_intents");
+        return;
+      }
+
+      const intent = pickFeaturedIntentForDashboard(intents);
+      if (!intent) {
+        primaryEl.textContent = t("dashboard_next_no_intents");
+        return;
+      }
+      const amount = fmtMoney(intent.total_amount ?? intent.amount ?? 0);
+      let debtLabel = describeIntentPayToward(intent);
+      if (!debtLabel || debtLabel === "?") debtLabel = t("debt_label");
+      primaryEl.textContent = tf("dashboard_next_pay_today", { amount, debt: debtLabel });
+      secondaryEl.textContent = t("dashboard_next_impact");
+      secondaryEl.classList.remove("hidden");
+    }
+
     function renderStats() {
       const totalDebt = state.debts.reduce((sum, d) => sum + Number(d.balance || 0), 0);
       const pending = state.intents.filter(x =>
@@ -2277,6 +2365,7 @@
       $("statPendingIntents").textContent = String(pending);
       $("statExecutedIntents").textContent = String(executed);
       renderPayoffSimulation();
+      renderDashboardNextStep();
     }
 
     function toNum(value) {
