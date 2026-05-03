@@ -108,10 +108,9 @@
     .page-grid > .stack{display:contents}
 
     #operatePanel{order:1}
-    #spinwheelSandboxTestWrap{order:2}
-    #setupPanel{order:3}
-    #paymentPlanSection{order:4}
-    #suggestedPaymentsPanel{order:5}
+    #setupPanel{order:2}
+    #paymentPlanSection{order:3}
+    #suggestedPaymentsPanel{order:4}
 
     /* Payment intents: barra principal siempre visible (evita duplicado con toolbar legacy oculto) */
     #suggestedPaymentsPanel .intents-build-toolbar{

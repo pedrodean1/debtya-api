@@ -367,20 +367,6 @@
         operate_title: "Connect bank (Plaid)",
         operate_sub:
           "Step 1: connect your bank and import accounts/transactions.",
-        spinwheel_step_title: "Connect Spinwheel",
-        spinwheel_step_sub:
-          "Step 2: verify by SMS, fetch debt profile, and import debts.",
-        spinwheel_phone_label: "Phone (E.164)",
-        spinwheel_phone_placeholder: "+15555550123",
-        spinwheel_dob_label: "Birth date (YYYY-MM-DD)",
-        spinwheel_dob_placeholder: "1990-01-15",
-        spinwheel_sms_code_label: "SMS code",
-        spinwheel_sms_code_placeholder: "123456",
-        spinwheel_btn_step_1: "1) Request SMS code",
-        spinwheel_btn_step_2: "2) Verify SMS code",
-        spinwheel_btn_step_3: "3) Get debt profile",
-        spinwheel_btn_step_4: "4) Import Spinwheel debts",
-        spinwheel_response_label: "Response (JSON):",
         operate_rail_main: "Start here",
         operate_rail_advanced: "Advanced",
         method_panel_eyebrow: "Liability data (Method)",
@@ -431,12 +417,14 @@
         debt_spinwheel_payable: "Payable with Spinwheel",
         debt_spinwheel_plan_only: "Planning only",
         intent_pill_spinwheel: "Spinwheel",
-        intent_spinwheel_plan_only: "Planning only ? run is disabled until bill pay is connected.",
+        intent_spinwheel_coming_soon: "Automatic payments coming soon.",
+        sim_counts_active_label: "Active debts",
+        sim_counts_line_placeholder: "Active debts: 0",
         debt_source_plaid: "Plaid",
         debt_method_payable: "Payable (Method)",
         debt_method_info_only: "Informational",
         debts_title: "Debts",
-        debts_sub: "Step 3: review/add your debts and adjust key amounts.",
+        debts_sub: "Step 2: review/add your debts and adjust key amounts.",
         lbl_name: "Name",
         ph_debt_name: "e.g. Chase Freedom",
         lbl_balance: "Balance",
@@ -487,7 +475,7 @@
         lbl_target_debt: "Target debt",
         btn_save_rule: "Save rule",
         payplan_title: "Payment plan",
-        payplan_sub: "Step 4: define strategy, mode, and monthly budget.",
+        payplan_sub: "Step 3: define strategy, mode, and monthly budget.",
         plan_manual: "Manual",
         plan_safe_auto: "Safe auto",
         plan_full_auto: "Full auto",
@@ -521,7 +509,7 @@
         btn_compare: "Compare strategies",
         btn_refresh_plan: "Refresh plan",
         intents_title: "Suggested payments",
-        intents_sub: "Step 5: build, review, approve, and run payments.",
+        intents_sub: "Step 4: build, review, approve, and run payments.",
         btn_reconcile: "Update recent payments",
         tag_approved: "Approved ? ready to run",
         tag_pending: "Draft or waiting ? needs your OK",
@@ -667,9 +655,6 @@
         meta_amount: "Amount",
         btn_approve: "Approve",
         btn_execute: "Execute",
-        btn_spinwheel_validate: "Validate Spinwheel payment",
-        spinwheel_validation_ok: "Spinwheel validation completed.",
-        spinwheel_validation_fail: "Spinwheel validation failed.",
         balance_applied: "Balance applied",
         prev_balance: "Previous",
         new_balance: "New",
@@ -948,20 +933,6 @@
         operate_title: "Conectar banco (Plaid)",
         operate_sub:
           "Primer paso: conecta tu banco e importa cuentas/movimientos.",
-        spinwheel_step_title: "Conectar Spinwheel",
-        spinwheel_step_sub:
-          "Segundo paso: verifica por SMS, trae el perfil de deuda e importa deudas.",
-        spinwheel_phone_label: "Telefono (E.164)",
-        spinwheel_phone_placeholder: "+15555550123",
-        spinwheel_dob_label: "Fecha de nacimiento (YYYY-MM-DD)",
-        spinwheel_dob_placeholder: "1990-01-15",
-        spinwheel_sms_code_label: "Codigo SMS",
-        spinwheel_sms_code_placeholder: "123456",
-        spinwheel_btn_step_1: "1) Solicitar codigo SMS",
-        spinwheel_btn_step_2: "2) Verificar codigo SMS",
-        spinwheel_btn_step_3: "3) Obtener perfil de deuda",
-        spinwheel_btn_step_4: "4) Importar deudas Spinwheel",
-        spinwheel_response_label: "Respuesta (JSON):",
         operate_rail_main: "Empieza aqui",
         operate_rail_advanced: "Avanzado",
         method_panel_eyebrow: "Datos de pasivos (Method)",
@@ -1012,12 +983,14 @@
         debt_spinwheel_payable: "Pagable con Spinwheel",
         debt_spinwheel_plan_only: "Solo planificaci\u00F3n",
         intent_pill_spinwheel: "Spinwheel",
-        intent_spinwheel_plan_only: "Solo planificacion: la ejecucion queda desactivada hasta conectar el pago real.",
+        intent_spinwheel_coming_soon: "Pr\u00F3ximamente pagos autom\u00E1ticos",
+        sim_counts_active_label: "Deudas activas",
+        sim_counts_line_placeholder: "Deudas activas: 0",
         debt_source_plaid: "Plaid",
         debt_method_payable: "Pagable (Method)",
         debt_method_info_only: "Informativa",
         debts_title: "Deudas",
-        debts_sub: "Tercer paso: revisa/agrega deudas y ajusta montos clave.",
+        debts_sub: "Segundo paso: revisa/agrega deudas y ajusta montos clave.",
         lbl_name: "Nombre",
         ph_debt_name: "Ej: Chase Freedom",
         lbl_balance: "Balance",
@@ -1068,7 +1041,7 @@
         lbl_target_debt: "Deuda objetivo",
         btn_save_rule: "Guardar regla",
         payplan_title: "Plan de pagos",
-        payplan_sub: "Cuarto paso: define estrategia, modo y presupuesto mensual.",
+        payplan_sub: "Tercer paso: define estrategia, modo y presupuesto mensual.",
         plan_manual: "Manual",
         plan_safe_auto: "Automatico seguro",
         plan_full_auto: "Automatico total",
@@ -1102,7 +1075,7 @@
         btn_compare: "Comparar estrategias",
         btn_refresh_plan: "Refrescar plan",
         intents_title: "Pagos sugeridos",
-        intents_sub: "Quinto paso: construir, revisar, aprobar y ejecutar pagos.",
+        intents_sub: "Cuarto paso: construir, revisar, aprobar y ejecutar pagos.",
         btn_reconcile: "Actualizar pagos recientes",
         tag_approved: "Aprobados ? listos para ejecutar",
         tag_pending: "Borrador o en espera ? falta tu visto bueno",
@@ -1247,9 +1220,6 @@
         meta_amount: "Monto",
         btn_approve: "Aprobar",
         btn_execute: "Ejecutar",
-        btn_spinwheel_validate: "Validar pago Spinwheel",
-        spinwheel_validation_ok: "Validacion Spinwheel completada.",
-        spinwheel_validation_fail: "Validacion Spinwheel fallo.",
         balance_applied: "Balance aplicado",
         prev_balance: "Previo",
         new_balance: "Nuevo",
@@ -1538,8 +1508,7 @@
       methodEntities: [],
       methodAccounts: [],
       methodEntitiesLoadError: null,
-      methodEntityCreating: false,
-      spinwheelValidationByIntentId: {}
+      methodEntityCreating: false
     };
 
     const $ = (id) => document.getElementById(id);
@@ -2323,13 +2292,6 @@
       return Number.isFinite(n) ? n : null;
     }
 
-    function isPaymentCapableDebt(debt) {
-      const v = debt?.payment_capable;
-      if (v === true || v === 1 || v === "1") return true;
-      const s = String(v || "").toLowerCase().trim();
-      return s === "true" || s === "yes";
-    }
-
     function renderPayoffSimulation() {
       const totalEl = $("simTotalDebtBalance");
       const minEl = $("simTotalMinimumPayment");
@@ -2342,8 +2304,6 @@
       const totalDebtBalance = debts.reduce((sum, d) => sum + toNum(d.balance), 0);
       const totalMinimumPayment = debts.reduce((sum, d) => sum + toNum(d.minimum_payment), 0);
       const activeDebts = debts.filter((d) => toNum(d.balance) > 0).length;
-      const spinwheelDebts = debts.filter((d) => String(d?.source || "").toLowerCase() === "spinwheel").length;
-      const paymentCapableDebts = debts.filter((d) => isPaymentCapableDebt(d)).length;
 
       let urgentDebt = null;
       let urgentApr = -1;
@@ -2359,8 +2319,7 @@
       totalEl.textContent = fmtMoney(totalDebtBalance);
       minEl.textContent = fmtMoney(totalMinimumPayment);
       strategyEl.textContent = strategy;
-      countsEl.textContent =
-        `Deudas activas: ${activeDebts} ? Spinwheel: ${spinwheelDebts} ? Payment capable: ${paymentCapableDebts}`;
+      countsEl.textContent = `${t("sim_counts_active_label")}: ${activeDebts}`;
 
       if (urgentDebt) {
         const debtName = String(urgentDebt.name || urgentDebt.id || "Deuda sin nombre");
@@ -2436,7 +2395,6 @@
         ).toLowerCase();
         const isAvalanche = stratRaw === "avalanche";
         const isSnowball = stratRaw === "snowball";
-        const isSpin = String(intent.source || "").toLowerCase() === "spinwheel";
 
         const parts = [];
         if (apr !== null && apr >= 20) {
@@ -2464,7 +2422,6 @@
         }
         if (isAvalanche) parts.push("Reduce intereses totales");
         if (isSnowball) parts.push("Ayuda a cerrar cuentas m\u00E1s r\u00E1pido");
-        if (isSpin) parts.push("Datos basados en perfil de deuda (Spinwheel)");
 
         const inner = parts.map((p) => escapeHtml(p)).join("<br />");
         return `<div class="intent-reason">${inner}</div>`;
@@ -3153,12 +3110,10 @@
           : "";
         const item = document.createElement("div");
         item.className = "item";
-        const spinwheelValidation = state.spinwheelValidationByIntentId[String(intent.id || "")] || null;
         const actionsHtml = isSpinIntent
           ? `<div class="item-actions">
             <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
-            <button class="btn btn-light btn-small" type="button" onclick="validateSpinwheelIntent('${intent.id}')">${escapeHtml(t("btn_spinwheel_validate"))}</button>
-            <span class="muted" style="align-self:center;font-size:13px;">Solo planificaci\u00F3n \u2014 pago real pendiente de rail</span>
+            <span class="muted" style="align-self:center;font-size:13px;">${escapeHtml(t("intent_spinwheel_coming_soon"))}</span>
           </div>`
           : `<div class="item-actions">
             <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
@@ -3193,16 +3148,6 @@
             </div>
           </div>
           ${actionsHtml}
-          ${
-            isSpinIntent && spinwheelValidation
-              ? `<div class="item-meta" style="margin-top:10px;">
-                   <strong>Spinwheel validate-payment JSON:</strong>
-                   <pre style="margin-top:6px;white-space:pre-wrap;word-break:break-word;background:#f6f8fb;border:1px solid #d9e2ef;border-radius:8px;padding:10px;font-size:12px;line-height:1.35;">${escapeHtml(
-                     JSON.stringify(spinwheelValidation, null, 2)
-                   )}</pre>
-                 </div>`
-              : ""
-          }
         `;
         box.appendChild(item);
       });
@@ -4625,27 +4570,6 @@
       }
     }
 
-    async function validateSpinwheelIntent(id) {
-      try {
-        const res = await api("/spinwheel/validate-payment", {
-          method: "POST",
-          body: JSON.stringify({ intent_id: id })
-        });
-        state.spinwheelValidationByIntentId[String(id)] = res;
-        if (res && res.valid === true) {
-          showMessage(globalMessage, t("spinwheel_validation_ok"), "success");
-        } else {
-          showMessage(globalMessage, t("spinwheel_validation_fail"), "error");
-        }
-        renderIntents();
-      } catch (e) {
-        const msg = normalizeErrorMessage(e.message);
-        state.spinwheelValidationByIntentId[String(id)] = { ok: false, error: msg };
-        showMessage(globalMessage, msg, "error");
-        renderIntents();
-      }
-    }
-
     async function deleteRule(id) {
       if (!id) return;
       const confirmed = window.confirm(t("rule_delete_confirm"));
@@ -4704,7 +4628,6 @@
 
     window.approveIntent = approveIntent;
     window.executeIntent = executeIntent;
-    window.validateSpinwheelIntent = validateSpinwheelIntent;
     window.deleteRule = deleteRule;
     window.beginEditRule = beginEditRule;
 
@@ -5101,196 +5024,6 @@
     if (billingManageBtn) billingManageBtn.addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
-
-    /** TEMP: Spinwheel sandbox ? POST /spinwheel/connect/sms con JWT Supabase (misma base que api()). */
-    async function runSpinwheelSmsSandboxTest() {
-      const out = $("spinwheelSmsTestOutput");
-      const phoneEl = $("spinwheelTestPhone");
-      const dobEl = $("spinwheelTestDob");
-      const btn = $("btnSpinwheelSmsTest");
-      if (!out || !phoneEl || !dobEl || !btn) return;
-      const phoneNumber = String(phoneEl.value || "").trim();
-      const dateOfBirth = String(dobEl.value || "").trim();
-      if (!phoneNumber || !dateOfBirth) {
-        out.textContent = JSON.stringify(
-          { ok: false, error: "Completa phoneNumber (E.164) y dateOfBirth (YYYY-MM-DD)." },
-          null,
-          2
-        );
-        return;
-      }
-      setLoading(btn, true, "?");
-      try {
-        const token = await getAccessToken();
-        if (!token) {
-          out.textContent = JSON.stringify({ ok: false, error: "Sin sesi?n (token)." }, null, 2);
-          return;
-        }
-        const res = await fetch(`${API_BASE}/spinwheel/connect/sms`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ phoneNumber, dateOfBirth }),
-          cache: "no-store"
-        });
-        const text = await res.text();
-        let body;
-        try {
-          body = text ? JSON.parse(text) : {};
-        } catch {
-          body = { _parse_error: true, raw: text };
-        }
-        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
-      } catch (e) {
-        out.textContent = JSON.stringify(
-          { ok: false, error: e && e.message ? String(e.message) : String(e) },
-          null,
-          2
-        );
-      } finally {
-        setLoading(btn, false);
-      }
-    }
-    /** TEMP: Spinwheel sandbox ? POST /spinwheel/users/me/connect/sms/verify */
-    async function runSpinwheelSmsVerifySandboxTest() {
-      const out = $("spinwheelSmsTestOutput");
-      const codeEl = $("spinwheelTestSmsCode");
-      const btn = $("btnSpinwheelSmsVerifyTest");
-      if (!out || !codeEl || !btn) return;
-      const code = String(codeEl.value || "").trim();
-      if (!code) {
-        out.textContent = JSON.stringify({ ok: false, error: "Completa smsCode." }, null, 2);
-        return;
-      }
-      setLoading(btn, true, "?");
-      try {
-        const token = await getAccessToken();
-        if (!token) {
-          out.textContent = JSON.stringify({ ok: false, error: "Sin sesi?n (token)." }, null, 2);
-          return;
-        }
-        const res = await fetch(`${API_BASE}/spinwheel/users/me/connect/sms/verify`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ code }),
-          cache: "no-store"
-        });
-        const text = await res.text();
-        let body;
-        try {
-          body = text ? JSON.parse(text) : {};
-        } catch {
-          body = { _parse_error: true, raw: text };
-        }
-        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
-      } catch (e) {
-        out.textContent = JSON.stringify(
-          { ok: false, error: e && e.message ? String(e.message) : String(e) },
-          null,
-          2
-        );
-      } finally {
-        setLoading(btn, false);
-      }
-    }
-    const btnSpinwheelSmsTest = $("btnSpinwheelSmsTest");
-    if (btnSpinwheelSmsTest) btnSpinwheelSmsTest.addEventListener("click", runSpinwheelSmsSandboxTest);
-    const btnSpinwheelSmsVerifyTest = $("btnSpinwheelSmsVerifyTest");
-    if (btnSpinwheelSmsVerifyTest) btnSpinwheelSmsVerifyTest.addEventListener("click", runSpinwheelSmsVerifySandboxTest);
-
-    /** TEMP: Spinwheel sandbox ? POST /spinwheel/users/me/debt-profile (Spinwheel exige creditReport o creditScore en el body). */
-    async function runSpinwheelDebtProfileSandboxTest() {
-      const out = $("spinwheelSmsTestOutput");
-      const btn = $("btnSpinwheelDebtProfileTest");
-      if (!out || !btn) return;
-      setLoading(btn, true, "?");
-      try {
-        const token = await getAccessToken();
-        if (!token) {
-          out.textContent = JSON.stringify({ ok: false, error: "Sin sesi?n (token)." }, null, 2);
-          return;
-        }
-        const debtProfilePayload = {
-          creditReport: {
-            type: "1_BUREAU.FULL"
-          }
-        };
-        const res = await fetch(`${API_BASE}/spinwheel/users/me/debt-profile`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify(debtProfilePayload),
-          cache: "no-store"
-        });
-        const text = await res.text();
-        let body;
-        try {
-          body = text ? JSON.parse(text) : {};
-        } catch {
-          body = { _parse_error: true, raw: text };
-        }
-        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
-      } catch (e) {
-        out.textContent = JSON.stringify(
-          { ok: false, error: e && e.message ? String(e.message) : String(e) },
-          null,
-          2
-        );
-      } finally {
-        setLoading(btn, false);
-      }
-    }
-    const btnSpinwheelDebtProfileTest = $("btnSpinwheelDebtProfileTest");
-    if (btnSpinwheelDebtProfileTest) btnSpinwheelDebtProfileTest.addEventListener("click", runSpinwheelDebtProfileSandboxTest);
-
-    /** TEMP: Spinwheel sandbox ? POST /spinwheel/import-debts (upsert en public.debts). */
-    async function runSpinwheelImportDebtsSandboxTest() {
-      const out = $("spinwheelSmsTestOutput");
-      const btn = $("btnSpinwheelImportDebtsTest");
-      if (!out || !btn) return;
-      setLoading(btn, true, "?");
-      try {
-        const token = await getAccessToken();
-        if (!token) {
-          out.textContent = JSON.stringify({ ok: false, error: "Sin sesi?n (token)." }, null, 2);
-          return;
-        }
-        const res = await fetch(`${API_BASE}/spinwheel/import-debts`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({}),
-          cache: "no-store"
-        });
-        const text = await res.text();
-        let body;
-        try {
-          body = text ? JSON.parse(text) : {};
-        } catch {
-          body = { _parse_error: true, raw: text };
-        }
-        out.textContent = JSON.stringify({ http_status: res.status, ok: res.ok, body }, null, 2);
-      } catch (e) {
-        out.textContent = JSON.stringify(
-          { ok: false, error: e && e.message ? String(e.message) : String(e) },
-          null,
-          2
-        );
-      } finally {
-        setLoading(btn, false);
-      }
-    }
-    const btnSpinwheelImportDebtsTest = $("btnSpinwheelImportDebtsTest");
-    if (btnSpinwheelImportDebtsTest) btnSpinwheelImportDebtsTest.addEventListener("click", runSpinwheelImportDebtsSandboxTest);
 
     function getSelectedMethodEntityIdForMethodApi() {
       const sel = $("methodEntityPick");
@@ -5694,11 +5427,7 @@
         const hasSpinwheel = intents.some((intent) => String(intent?.source || "").toLowerCase() === "spinwheel");
         if (!executable.length) {
           if (hasSpinwheel) {
-            showMessage(
-              globalMessage,
-              "Estos pagos son solo planificaci\u00F3n por ahora. No hay pagos reales pendientes de ejecuci\u00F3n.",
-              "warn"
-            );
+            showMessage(globalMessage, t("intent_spinwheel_coming_soon"), "warn");
           } else {
             showMessage(globalMessage, `${t("executed_n")}: 0.`, "success");
           }

@@ -33,7 +33,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-28-v57-spinwheel-payment-capability" />
+  <meta name="debtya-ui-rev" content="debtya-2026-04-29-v58-clean-ui-beta" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -475,7 +475,7 @@
                 <div id="simRecommendedStrategy" class="v">Snowball</div>
               </div>
             </div>
-            <p id="simCountsLine" class="sub" style="margin:10px 0 0;">Deudas activas: 0 · Spinwheel: 0 · Payment capable: 0</p>
+            <p id="simCountsLine" class="sub" style="margin:10px 0 0;" data-i18n="sim_counts_line_placeholder"></p>
             <div id="payoffSavingsEstimate" class="payoff-savings-estimate">
               <p id="simSavingsLine" class="sub payoff-savings-line" style="margin:10px 0 0;"></p>
               <p id="simMonthsLine" class="sub payoff-savings-line" style="margin:4px 0 0;"></p>
@@ -564,58 +564,10 @@
             </div>
           </section>
 
-          <section
-            id="spinwheelSandboxTestWrap"
-            class="card card-soft"
-            style="border:1px dashed #94a3b8;background:linear-gradient(180deg,#fffefb,#f8fafc)"
-            aria-label="Spinwheel setup"
-          >
-            <div class="section-head section-head-tight">
-              <div>
-                <h2 class="section-title-step"><span class="section-step-badge" data-step="2">2</span><span data-i18n="spinwheel_step_title">Conectar Spinwheel</span></h2>
-                <p class="sub sub-lead" data-i18n="spinwheel_step_sub">Verifica por SMS, trae tu perfil de deuda e importa tus deudas para planificarlas.</p>
-              </div>
-            </div>
-            <div class="grid-2" style="gap:10px;align-items:flex-end;margin-bottom:10px">
-              <div class="field">
-                <label class="label" for="spinwheelTestPhone" data-i18n="spinwheel_phone_label">Phone (E.164)</label>
-                <input id="spinwheelTestPhone" class="input" type="tel" inputmode="tel" autocomplete="off" data-i18n-placeholder="spinwheel_phone_placeholder" placeholder="+15555550123" />
-              </div>
-              <div class="field">
-                <label class="label" for="spinwheelTestDob" data-i18n="spinwheel_dob_label">Birth date (YYYY-MM-DD)</label>
-                <input id="spinwheelTestDob" class="input" type="text" inputmode="numeric" autocomplete="off" data-i18n-placeholder="spinwheel_dob_placeholder" placeholder="1990-01-15" />
-              </div>
-            </div>
-            <div class="field" style="margin-bottom:10px;max-width:360px">
-              <label class="label" for="spinwheelTestSmsCode" data-i18n="spinwheel_sms_code_label">SMS code</label>
-              <input
-                id="spinwheelTestSmsCode"
-                class="input"
-                type="text"
-                inputmode="numeric"
-                autocomplete="one-time-code"
-                maxlength="12"
-                data-i18n-placeholder="spinwheel_sms_code_placeholder"
-                placeholder="123456"
-              />
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-              <button id="btnSpinwheelSmsTest" class="btn btn-light" type="button" data-i18n="spinwheel_btn_step_1">1) Request SMS code</button>
-              <button id="btnSpinwheelSmsVerifyTest" class="btn btn-light" type="button" data-i18n="spinwheel_btn_step_2">2) Verify SMS code</button>
-              <button id="btnSpinwheelDebtProfileTest" class="btn btn-light" type="button" data-i18n="spinwheel_btn_step_3">3) Get debt profile</button>
-              <button id="btnSpinwheelImportDebtsTest" class="btn btn-primary" type="button" data-i18n="spinwheel_btn_step_4">4) Import Spinwheel debts</button>
-            </div>
-            <p class="sub" style="margin:10px 0 6px;font-size:12px" data-i18n="spinwheel_response_label">Response (JSON):</p>
-            <pre
-              id="spinwheelSmsTestOutput"
-              style="margin:0;max-height:280px;overflow:auto;padding:10px 12px;border-radius:12px;background:#0f172a;color:#e2e8f0;font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word;border:1px solid #1e293b"
-            >{}</pre>
-          </section>
-
           <section class="card" id="setupPanel">
             <div class="section-head">
               <div>
-                <h2 class="section-title-step"><span class="section-step-badge" data-step="3">3</span><span data-i18n="debts_title">Debts</span></h2>
+                <h2 class="section-title-step"><span class="section-step-badge" data-step="2">2</span><span data-i18n="debts_title">Debts</span></h2>
                 <p class="sub" data-i18n="debts_sub">Add cards and loans. Link a bank account when it helps.</p>
               </div>
               <div class="section-actions">
@@ -763,7 +715,7 @@
           <section class="card" id="paymentPlanSection">
             <div class="section-head">
               <div>
-                <h2 class="section-title-step"><span class="section-step-badge" data-step="4">4</span><span data-i18n="payplan_title">Payment plan</span></h2>
+                <h2 class="section-title-step"><span class="section-step-badge" data-step="3">3</span><span data-i18n="payplan_title">Payment plan</span></h2>
                 <p class="sub" data-i18n="payplan_sub">Set strategy, mode, and monthly budget.</p>
               </div>
             </div>
@@ -841,7 +793,7 @@
           <section class="card" id="suggestedPaymentsPanel">
             <div class="section-head">
               <div>
-                <h2 class="section-title-step"><span class="section-step-badge" data-step="5">5</span><span data-i18n="intents_title">Suggested payments</span></h2>
+                <h2 class="section-title-step"><span class="section-step-badge" data-step="4">4</span><span data-i18n="intents_title">Suggested payments</span></h2>
                 <p class="sub" data-i18n="intents_sub">Review suggested amounts, approve what looks right, then run them when you are ready.</p>
               </div>
               <div class="section-actions">
