@@ -313,8 +313,10 @@
         dashboard_next_no_debts: "Add your debts to get started.",
         dashboard_next_no_plan: "Create your payment plan.",
         dashboard_next_no_intents: "Generate your suggested payments.",
-        dashboard_next_pay_today: "Today you should pay: {amount} toward {debt}",
-        dashboard_next_impact: "Impact: paying now helps reduce interest over time.",
+        dashboard_next_pay_line: "Pay {amount} to {debt} today",
+        dashboard_next_interest_saved: "You save ~{amount} in interest this month",
+        dashboard_next_interest_na: "Add APR on this debt for a sharper interest estimate.",
+        dashboard_next_accel: "This speeds up your path out of debt.",
         next_step_bank: "Next: connect your bank and import accounts so DebtYa can use real balances.",
         next_step_bank_btn: "Go to Actions",
         next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
@@ -906,8 +908,10 @@
         dashboard_next_no_debts: "Agrega tus deudas para empezar",
         dashboard_next_no_plan: "Crea tu plan de pago",
         dashboard_next_no_intents: "Genera tus pagos sugeridos",
-        dashboard_next_pay_today: "Hoy deber\u00EDas pagar: {amount} a {debt}",
-        dashboard_next_impact: "Impacto: reduces intereses",
+        dashboard_next_pay_line: "Paga {amount} a {debt} hoy",
+        dashboard_next_interest_saved: "Ahorras ~{amount} en intereses este mes",
+        dashboard_next_interest_na: "A\u00F1ade el APR en esta deuda para estimar mejor los intereses.",
+        dashboard_next_accel: "Esto acelera tu salida de deuda.",
         next_step_bank: "Siguiente: conecta tu banco e importa cuentas para usar saldos reales.",
         next_step_bank_btn: "Ir a Acciones",
         next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
@@ -2323,6 +2327,24 @@
     }
 
     /**
+     * Estima intereses evitados este mes: (balance*apr/100)/12 * min(1, pago/balance).
+     * @param {object} intent
+     * @param {object|null} debt
+     * @returns {number|null}
+     */
+    function approximateMonthlyInterestSavedByPayment(intent, debt) {
+      const payment = toNum(intent.total_amount ?? intent.amount);
+      if (!debt || payment <= 0) return null;
+      const balance = toNum(debt.balance);
+      if (balance <= 0) return null;
+      const apr = parseAprValue(debt);
+      if (apr === null || !Number.isFinite(apr) || apr <= 0) return null;
+      const monthlyInterest = (balance * apr) / 100 / 12;
+      const payVsBalance = Math.min(1, payment / balance);
+      return monthlyInterest * payVsBalance;
+    }
+
+    /**
      * Intent destacado para el bloque "Tu pr?ximo paso": prioriza abiertos y mayor monto.
      * @param {object[]} intents
      */
@@ -2358,9 +2380,21 @@
       const card = $("dashboardNextStepCard");
       const primaryEl = $("dashboardNextStepPrimary");
       const secondaryEl = $("dashboardNextStepSecondary");
+      const tertiaryEl = $("dashboardNextStepTertiary");
       if (!card || !primaryEl || !secondaryEl) return;
+
+      const resetExtraLines = () => {
+        secondaryEl.textContent = "";
+        secondaryEl.classList.add("hidden");
+        if (tertiaryEl) {
+          tertiaryEl.textContent = "";
+          tertiaryEl.classList.add("hidden");
+        }
+      };
+
       if (!appView || appView.classList.contains("hidden")) {
         card.classList.add("hidden");
+        resetExtraLines();
         return;
       }
 
@@ -2368,8 +2402,7 @@
       const plan = state.plan;
       const intents = Array.isArray(state.intents) ? state.intents : [];
 
-      secondaryEl.textContent = "";
-      secondaryEl.classList.add("hidden");
+      resetExtraLines();
       card.classList.remove("hidden");
 
       if (debts.length === 0) {
@@ -2393,9 +2426,20 @@
       const amount = fmtMoney(intent.total_amount ?? intent.amount ?? 0);
       let debtLabel = describeIntentPayToward(intent);
       if (!debtLabel || debtLabel === "?") debtLabel = t("debt_label");
-      primaryEl.textContent = tf("dashboard_next_pay_today", { amount, debt: debtLabel });
-      secondaryEl.textContent = t("dashboard_next_impact");
+      primaryEl.textContent = tf("dashboard_next_pay_line", { amount, debt: debtLabel });
+
+      const did = String(intent.debt_id || "").trim();
+      const debtRow = did ? debts.find((d) => String(d.id) === did) : null;
+      const savings = approximateMonthlyInterestSavedByPayment(intent, debtRow);
+      secondaryEl.textContent =
+        savings !== null
+          ? tf("dashboard_next_interest_saved", { amount: fmtMoney(savings) })
+          : t("dashboard_next_interest_na");
       secondaryEl.classList.remove("hidden");
+      if (tertiaryEl) {
+        tertiaryEl.textContent = t("dashboard_next_accel");
+        tertiaryEl.classList.remove("hidden");
+      }
     }
 
     function renderStats() {
@@ -5124,17 +5168,19 @@
     });
     $("landingSignupBtn").addEventListener("click", () => showAuth("signup"));
     $("landingStartBtn").addEventListener("click", () => startCheckout($("landingStartBtn")));
-    const landingDemoBtn = $("landingDemoBtn");
-    if (landingDemoBtn) {
-      landingDemoBtn.addEventListener("click", () => {
-        openHelpModal();
-        setHelpModalTab("faq");
-      });
-    }
     $("pricingStartBtn").addEventListener("click", () => startCheckout($("pricingStartBtn")));
     $("pricingLoginBtn").addEventListener("click", () => {
       trackEvent("login_click", { cta_id: "pricingLoginBtn" });
       showAuth("login");
+    });
+
+    document.addEventListener("click", (ev) => {
+      const bubble = ev.target && ev.target.closest(".info-bubble-btn");
+      if (!bubble) return;
+      const hint = String(bubble.getAttribute("title") || "").trim();
+      if (!hint) return;
+      ev.preventDefault();
+      showMessage(globalMessage, hint, "success");
     });
 
     const helpFabBtn = $("helpFab");
@@ -5510,6 +5556,19 @@
     $("planStrategy").addEventListener("change", updatePlanFieldHints);
     $("planMode").addEventListener("change", updatePlanFieldHints);
     $("refreshIntentsBtn").addEventListener("click", refreshIntents);
+    const refreshIntentsToolbarBtn = $("refreshIntentsToolbarBtn");
+    if (refreshIntentsToolbarBtn) {
+      refreshIntentsToolbarBtn.addEventListener("click", async () => {
+        setLoading(refreshIntentsToolbarBtn, true, t("proc"));
+        try {
+          await refreshIntents();
+        } catch (err) {
+          showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        } finally {
+          setLoading(refreshIntentsToolbarBtn, false);
+        }
+      });
+    }
     $("refreshTraceBtn").addEventListener("click", refreshTrace);
     $("refreshAccountsBtn").addEventListener("click", refreshAccounts);
     const refreshBillingBtn = $("refreshBillingBtn");
@@ -5523,163 +5582,6 @@
     if (billingManageBtn) billingManageBtn.addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
-
-    function getSelectedMethodEntityIdForMethodApi() {
-      const sel = $("methodEntityPick");
-      const v = sel && sel.value ? String(sel.value).trim() : "";
-      if (v) return v;
-      const first = state.methodEntities && state.methodEntities[0];
-      return first && first.method_entity_id ? String(first.method_entity_id) : "";
-    }
-
-    $("btnMethodCreateEntity")?.addEventListener("click", async () => {
-      const btn = $("btnMethodCreateEntity");
-      try {
-        const token = await getAccessToken();
-        if (!token) throw new Error(t("sign_in_first"));
-        if (!state.methodConfigured) throw new Error(t("method_panel_disabled"));
-        state.methodEntityCreating = true;
-        state.methodEntitiesLoadError = null;
-        populateMethodEntityPick();
-        setLoading(btn, true, "?");
-        const body = {
-          individual: {
-            first_name: $("methodFirstName")?.value?.trim() || null,
-            last_name: $("methodLastName")?.value?.trim() || null,
-            phone: $("methodPhone")?.value?.trim() || null,
-            email: $("methodEmail")?.value?.trim() || null,
-            dob: $("methodDob")?.value?.trim() || null
-          }
-        };
-        console.info("[Debtya][Method] create_entity request", {
-          has_first: !!body.individual.first_name,
-          has_last: !!body.individual.last_name,
-          has_phone: !!body.individual.phone,
-          has_email: !!body.individual.email,
-          has_dob: !!body.individual.dob
-        });
-        const createdRes = await api("/method/entities", { method: "POST", body: JSON.stringify(body) });
-        const row = createdRes && createdRes.data && createdRes.data.row;
-        const mid = row && row.method_entity_id ? String(row.method_entity_id).trim() : "";
-        console.info("[Debtya][Method] create_entity response", {
-          ok: !!(createdRes && createdRes.ok),
-          method_entity_id: mid || null,
-          row_id: row && row.id ? row.id : null
-        });
-        if (!mid) {
-          console.error("[Debtya][Method] create_entity missing method_entity_id on row", createdRes);
-          throw new Error(
-            "La API respondio OK pero la fila guardada no trae method_entity_id. Revisa Supabase (method_entities) y los logs del servidor."
-          );
-        }
-        showMessage(globalMessage, t("method_action_ok"), "success");
-        await refreshMethodSection();
-      } catch (e) {
-        const rawMsg = e && typeof e.message === "string" ? e.message : e ? String(e) : "";
-        const display = displayMethodSectionError(rawMsg);
-        state.methodEntitiesLoadError = display;
-        populateMethodEntityPick();
-        console.warn("[Debtya][Method] create_entity failed", { display, raw: e && e.message });
-        showMessage(globalMessage, display, "error");
-      } finally {
-        state.methodEntityCreating = false;
-        populateMethodEntityPick();
-        setLoading(btn, false);
-      }
-    });
-
-    $("btnMethodConnect")?.addEventListener("click", async () => {
-      const btn = $("btnMethodConnect");
-      try {
-        const token = await getAccessToken();
-        if (!token) throw new Error(t("sign_in_first"));
-        if (!state.methodConfigured) throw new Error(t("method_panel_disabled"));
-        const ent = getSelectedMethodEntityIdForMethodApi();
-        if (!ent) throw new Error(t("method_err_entity"));
-        setLoading(btn, true, "?");
-        const entTrim = String(ent).trim();
-        console.info("[Debtya][Method] connect click", {
-          entity_id_len: entTrim.length,
-          entity_id_prefix: entTrim.slice(0, 8),
-          method_configured: !!state.methodConfigured
-        });
-        const connectRes = await api(`/method/entities/${encodeURIComponent(entTrim)}/connect`, {
-          method: "POST",
-          body: "{}"
-        });
-        const d = connectRes && connectRes.data;
-        const keys = d && typeof d === "object" ? Object.keys(d) : [];
-        console.info("[Debtya][Method] connect api ok", {
-          ok: !!(connectRes && connectRes.ok),
-          data_keys: keys.slice(0, 24),
-          has_id: !!(d && d.id),
-          has_status: !!(d && d.status),
-          has_element_token: !!(d && (d.element_token || d.token)),
-          has_connect_url: !!(d && (d.url || d.connect_url || d.link))
-        });
-        showMessage(globalMessage, t("method_action_ok"), "success");
-        await refreshMethodSection();
-      } catch (e) {
-        const raw = e && typeof e.message === "string" ? e.message : e ? String(e) : "";
-        console.warn("[Debtya][Method] connect failed", {
-          message_len: raw.length,
-          looks_empty_payload: /\bempty\b|\bvacio\b|undefined|null/i.test(raw),
-          looks_auth: /authorization|token invalid|401/i.test(raw)
-        });
-        showMessage(globalMessage, normalizeErrorMessage(raw), "error");
-      } finally {
-        setLoading(btn, false);
-      }
-    });
-
-    $("btnMethodSync")?.addEventListener("click", async () => {
-      const btn = $("btnMethodSync");
-      try {
-        const token = await getAccessToken();
-        if (!token) throw new Error(t("sign_in_first"));
-        if (!state.methodConfigured) throw new Error(t("method_panel_disabled"));
-        const ent = getSelectedMethodEntityIdForMethodApi();
-        if (!ent) throw new Error(t("method_err_entity"));
-        setLoading(btn, true, "?");
-        await api("/method/accounts/sync", {
-          method: "POST",
-          body: JSON.stringify({ method_entity_id: ent })
-        });
-        showMessage(globalMessage, t("method_action_ok"), "success");
-        await refreshMethodSection();
-      } catch (e) {
-        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
-      } finally {
-        setLoading(btn, false);
-      }
-    });
-
-    $("btnMethodReset")?.addEventListener("click", async () => {
-      const btn = $("btnMethodReset");
-      try {
-        const token = await getAccessToken();
-        if (!token) throw new Error(t("sign_in_first"));
-        if (!window.confirm(t("method_reset_confirm"))) return;
-        setLoading(btn, true, "?");
-        const res = await api("/method/entities/reset", { method: "POST", body: "{}" });
-        console.info("[Debtya][Method] reset ok", {
-          removed_entities: res && res.data && res.data.removed_entities,
-          debts_unlinked: res && res.data && res.data.debts_unlinked
-        });
-        state.methodEntitiesLoadError = null;
-        state.methodEntities = [];
-        state.methodAccounts = [];
-        populateMethodEntityPick();
-        renderMethodAccountsList();
-        await refreshMethodSection();
-        await refreshDebts();
-        showMessage(globalMessage, t("method_reset_ok"), "success");
-      } catch (e) {
-        showMessage(globalMessage, normalizeErrorMessage(e && e.message ? String(e.message) : ""), "error");
-      } finally {
-        setLoading(btn, false);
-      }
-    });
 
     $("navOverview").addEventListener("click", () => setNav("overview"));
     $("navOperate").addEventListener("click", () => setNav("operate"));
@@ -5950,36 +5852,6 @@
     if (btnExecuteVisibleEl) btnExecuteVisibleEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleEl));
     const btnExecuteVisibleMainEl = $("btnExecuteVisibleMain");
     if (btnExecuteVisibleMainEl) btnExecuteVisibleMainEl.addEventListener("click", () => runExecuteVisible(btnExecuteVisibleMainEl));
-
-    const btnPaymentIntentsBuildAlways = $("btnPaymentIntentsBuildAlways");
-    if (btnPaymentIntentsBuildAlways) {
-      btnPaymentIntentsBuildAlways.addEventListener("click", () => runPaymentIntentsBuild(btnPaymentIntentsBuildAlways));
-    }
-    const btnPaymentIntentsApproveVisibleAlways = $("btnPaymentIntentsApproveVisibleAlways");
-    if (btnPaymentIntentsApproveVisibleAlways) {
-      btnPaymentIntentsApproveVisibleAlways.addEventListener("click", () =>
-        runApproveVisible(btnPaymentIntentsApproveVisibleAlways)
-      );
-    }
-    const btnPaymentIntentsExecuteVisibleAlways = $("btnPaymentIntentsExecuteVisibleAlways");
-    if (btnPaymentIntentsExecuteVisibleAlways) {
-      btnPaymentIntentsExecuteVisibleAlways.addEventListener("click", () =>
-        runExecuteVisible(btnPaymentIntentsExecuteVisibleAlways)
-      );
-    }
-    const btnPaymentIntentsRefreshAlways = $("btnPaymentIntentsRefreshAlways");
-    if (btnPaymentIntentsRefreshAlways) {
-      btnPaymentIntentsRefreshAlways.addEventListener("click", async () => {
-        setLoading(btnPaymentIntentsRefreshAlways, true, t("proc"));
-        try {
-          await refreshIntents();
-        } catch (err) {
-          showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
-        } finally {
-          setLoading(btnPaymentIntentsRefreshAlways, false);
-        }
-      });
-    }
 
     $("reconcileRecentBtn").addEventListener("click", async () => {
       const btn = $("reconcileRecentBtn");

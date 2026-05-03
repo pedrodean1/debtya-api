@@ -136,17 +136,20 @@
       line-height:1.4;
       color:var(--muted);
     }
+    .dashboard-next-step-tertiary{
+      margin:6px 0 0;
+      font-size:13px;
+      line-height:1.4;
+      color:var(--muted);
+    }
 
     #operatePanel{order:1}
     #setupPanel{order:2}
     #paymentPlanSection{order:3}
     #suggestedPaymentsPanel{order:4}
 
-    /* Payment intents: barra principal siempre visible (evita duplicado con toolbar legacy oculto) */
+    /* Suggested payments: toolbar siempre visible y sticky */
     #suggestedPaymentsPanel .intents-build-toolbar{
-      display:none !important;
-    }
-    #suggestedPaymentsPanel #paymentIntentsAlwaysToolbar.payment-intents-always-toolbar{
       display:flex !important;
       visibility:visible !important;
       opacity:1 !important;
@@ -164,7 +167,7 @@
       box-shadow:var(--shadow-soft);
       box-sizing:border-box;
     }
-    #suggestedPaymentsPanel #paymentIntentsAlwaysToolbar.payment-intents-always-toolbar .btn{
+    #suggestedPaymentsPanel .intents-build-toolbar .btn{
       visibility:visible !important;
       opacity:1 !important;
       display:inline-flex !important;
