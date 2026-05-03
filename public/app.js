@@ -3973,7 +3973,10 @@
     }
 
     async function runSpinwheelDebtProfileAndImport() {
-      await api("/spinwheel/users/me/debt-profile", { method: "POST", body: "{}" });
+      await api("/spinwheel/users/me/debt-profile", {
+        method: "POST",
+        body: JSON.stringify({ creditReport: true })
+      });
       await api("/spinwheel/import-debts", { method: "POST", body: "{}" });
     }
 

@@ -338,10 +338,15 @@ function registerSpinwheelRoutes(app, deps) {
     const targetId = await resolveSpinwheelUserIdForRequest(req, res);
     if (!targetId) return undefined;
     try {
+      const raw =
+        req.body && typeof req.body === "object" && !Array.isArray(req.body) ? { ...req.body } : {};
+      if (raw.creditReport == null && raw.creditScore == null) {
+        raw.creditReport = true;
+      }
       const out = await client.requestDetailed(
         "POST",
         `/v1/users/${encodeURIComponent(targetId)}/debtProfile`,
-        req.body && typeof req.body === "object" ? req.body : {},
+        raw,
         "default"
       );
       const persist = await persistSpinwheelResponse(req, targetId, out.body);
