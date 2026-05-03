@@ -23,7 +23,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta
     name="description"
-    content="DebtYa helps you connect bank accounts, organize debts, choose a payoff strategy, and track payments—with clear third-party limits."
+    lang="en"
+    content="DebtYa helps you get out of debt with a clear plan. Know exactly what to pay, when to pay it, and how to reduce interest faster."
+  />
+  <meta
+    name="description"
+    lang="es"
+    content="DebtYa te ayuda a salir de deudas con un plan claro. Sabrás exactamente qué pagar, cuándo hacerlo y cómo reducir intereses más rápido."
   />
   <meta name="theme-color" content="#1f6fff" />
   <!-- Si el HTML es estatico en www y la API en otro host, pon aqui la URL base de la API (https://...) -->
@@ -33,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-04-29-v59-next-step-ui" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-03-v62-spinwheel-payable-diagnostics" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -73,84 +79,47 @@
 
       <section class="landing-grid">
         <div class="card landing-hero card-soft">
-          <h2 class="landing-title" data-i18n="land_hero_title">A calmer way to tackle debt.</h2>
+          <h2 class="landing-title" data-i18n="land_hero_title">Get out of debt with a clear plan &mdash; no guessing</h2>
           <p class="landing-copy" data-i18n="land_hero_copy">
-            Connect your bank, list what you owe, and follow a simple plan—all in one place.
+            DebtYa analyzes your debts and tells you exactly what to pay, when, and why.
           </p>
 
           <div class="landing-actions">
-            <button id="landingStartBtn" class="btn btn-primary" type="button" data-i18n="btn_start_now">Get started</button>
-            <button id="landingDemoBtn" class="btn btn-light" type="button" data-i18n="land_btn_demo">See how it works</button>
+            <button id="landingStartBtn" class="btn btn-primary" type="button" data-i18n="land_btn_start_free">Start free</button>
           </div>
-
-          <details class="landing-fold">
-            <summary data-i18n="land_features_toggle">What DebtYa gives you</summary>
-            <div class="landing-fold-body">
-              <div class="feature-grid">
-                <div class="feature-card">
-                  <h3 data-i18n="land_feat1_t">Connect your accounts</h3>
-                  <p data-i18n="land_feat1_p">Import real accounts and transactions so you always work with up-to-date information.</p>
-                </div>
-                <div class="feature-card">
-                  <h3 data-i18n="land_feat2_t">Choose your strategy</h3>
-                  <p data-i18n="land_feat2_p">Compare avalanche and snowball to pick the approach that fits you best.</p>
-                </div>
-                <div class="feature-card">
-                  <h3 data-i18n="land_feat3_t">Move from plan to action</h3>
-                  <p data-i18n="land_feat3_p">Prepare suggested payments, approve them, run them, and keep a clear history.</p>
-                </div>
-              </div>
-            </div>
-          </details>
         </div>
 
-        <div class="card">
-          <details class="landing-fold">
-            <summary data-i18n="land_steps_toggle">Start in 4 steps</summary>
-            <div class="landing-fold-body">
-              <p class="sub" style="margin:0 0 12px;" data-i18n="land_steps_sub">The simplest way to begin.</p>
-              <div class="steps">
-                <div class="step">
-                  <div class="step-num">1</div>
-                  <div>
-                    <h3 data-i18n="land_step1_t">Create your account or log in</h3>
-                    <p data-i18n="land_step1_p">Start with your personal dashboard to save your system and work with your real data.</p>
-                  </div>
-                </div>
-
-                <div class="step">
-                  <div class="step-num">2</div>
-                  <div>
-                    <h3 data-i18n="land_step2_t">Connect your bank</h3>
-                    <p data-i18n="land_step2_p">Import real accounts and transactions so your numbers stay current.</p>
-                  </div>
-                </div>
-
-                <div class="step">
-                  <div class="step-num">3</div>
-                  <div>
-                    <h3 data-i18n="land_step3_t">Organize your plan</h3>
-                    <p data-i18n="land_step3_p">Add debts, define your strategy, and create simple rules to reduce guesswork.</p>
-                  </div>
-                </div>
-
-                <div class="step">
-                  <div class="step-num">4</div>
-                  <div>
-                    <h3 data-i18n="land_step4_t">Activate your plan</h3>
-                    <p data-i18n="land_step4_p">Tap &quot;Get started&quot; to complete payment and return here with your plan active.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="divider"></div>
-
-              <div class="notice">
-                <strong data-i18n="land_ideal_strong">Ideal for:</strong><br />
-                <span data-i18n="land_ideal_body">People juggling multiple debts who want a clear, repeatable system that is easier to sustain month to month.</span>
+        <div class="card landing-steps-card">
+          <h2 class="landing-steps-title" data-i18n="land_conv_steps_title">Three simple steps</h2>
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div>
+                <h3 data-i18n="land_conv_step1_t">Connect your bank</h3>
               </div>
             </div>
-          </details>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div>
+                <h3 data-i18n="land_conv_step2_t">See your personalized plan</h3>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div>
+                <h3 data-i18n="land_conv_step3_t">Follow your suggested payments</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card landing-benefits-card card-soft">
+          <h2 class="landing-benefits-heading" data-i18n="land_benefits_title">Why DebtYa</h2>
+          <ul class="landing-benefits-list">
+            <li data-i18n="land_benefit1">Save on interest</li>
+            <li data-i18n="land_benefit2">Reduce financial stress</li>
+            <li data-i18n="land_benefit3">Have a clear plan</li>
+          </ul>
         </div>
 
         <div id="faqSection" class="card faq-landing-card card-soft">
@@ -240,9 +209,18 @@
         </div>
       </section>
 
-      <section id="landingIntegrationsNotice" class="card integrations-notice" role="region">
-        <div data-i18n-html="integrations_notice_html"></div>
-      </section>
+      <footer class="landing-footer-clean" role="contentinfo">
+        <p class="landing-footer-copy" data-i18n="land_footer_copy">
+          DebtYa helps you organize and pay down debt. For help: support@debtya.com
+        </p>
+        <div class="legal-links landing-footer-links">
+          <a class="legal-link" href="/legal.html#terminos" data-i18n="legal_link_terms">Terms</a>
+          <a class="legal-link" href="/legal.html#privacidad" data-i18n="legal_link_privacy">Privacy</a>
+          <a class="legal-link" href="/legal.html#cancelacion" data-i18n="legal_link_cancel">Cancellation</a>
+          <a class="legal-link" href="/legal.html#reembolsos" data-i18n="legal_link_refund">Refunds</a>
+          <a class="legal-link" href="mailto:support@debtya.com" data-i18n="legal_link_support">Support</a>
+        </div>
+      </footer>
     </div>
   </div>
 
@@ -893,6 +871,21 @@
           </section>
 
           <div class="page-endcap">
+            <section id="spinwheelPayableDiagSection" class="card spinwheel-payable-diag hidden" aria-labelledby="spinwheelPayableDiagTitle">
+              <div class="section-head">
+                <div>
+                  <h2 id="spinwheelPayableDiagTitle" data-i18n="spinwheel_diag_title">Spinwheel payment status (dev)</h2>
+                  <p class="sub" data-i18n="spinwheel_diag_sub">Counts from your imported Spinwheel debts. No payments are run.</p>
+                </div>
+                <div class="section-actions">
+                  <button id="spinwheelPayableDiagRefreshBtn" type="button" class="btn btn-light btn-small" data-i18n="btn_refresh">Refresh</button>
+                </div>
+              </div>
+              <p id="spinwheelPayableDiagError" class="notice hidden" role="alert"></p>
+              <div id="spinwheelPayableDiagBody" class="spinwheel-payable-diag-body"></div>
+              <p class="mini spinwheel-payable-diag-hint" data-i18n="spinwheel_diag_hint"></p>
+            </section>
+
             <section id="integrationsNotice" class="card integrations-notice" role="region">
               <div data-i18n-html="integrations_notice_html"></div>
             </section>

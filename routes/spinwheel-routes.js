@@ -20,6 +20,7 @@ const {
   spinwheelRawResponseHasDebtProfileData
 } = require("../lib/spinwheel-debt-import");
 const { createSpinwheelPaymentIntent, validateSpinwheelPaymentPayload } = require("../lib/spinwheel-payments");
+const { buildSpinwheelPayableSummary } = require("../lib/spinwheel-payable-summary");
 
 function spinwheelInfo(req, ...parts) {
   const rid = req && req.requestId ? req.requestId : "-";
@@ -184,6 +185,28 @@ function registerSpinwheelRoutes(app, deps) {
     } catch (e) {
       appError("[Spinwheel] GET /spinwheel/me", e && e.message ? e.message : e);
       return jsonError(res, 500, "Error cargando vínculo Spinwheel", {
+        details: e && e.message ? String(e.message) : String(e)
+      });
+    }
+  });
+
+  app.get("/spinwheel/payable-debts-summary", requireUser, async (req, res) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from("debts")
+        .select(
+          "id,name,balance,minimum_payment,apr,spinwheel_external_id,payment_capable,raw_spinwheel,is_active,source"
+        )
+        .eq("user_id", req.user.id)
+        .eq("source", "spinwheel");
+
+      if (error) throw error;
+
+      const summary = buildSpinwheelPayableSummary(data || [], safeNumber);
+      return res.json({ ok: true, ...summary });
+    } catch (e) {
+      appError("[Spinwheel] GET /spinwheel/payable-debts-summary", e && e.message ? e.message : e);
+      return jsonError(res, 500, "Error resumiendo deudas Spinwheel", {
         details: e && e.message ? String(e.message) : String(e)
       });
     }

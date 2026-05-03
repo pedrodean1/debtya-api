@@ -1526,6 +1526,50 @@
       font-weight:700;
     }
 
+    .spinwheel-payable-diag{
+      margin-top:0;
+      margin-bottom:14px;
+      padding:18px 20px 16px;
+      border:1px dashed #b8c9e6;
+      border-radius:var(--radius);
+      background:#fbfcff;
+    }
+    .spinwheel-payable-diag-body{
+      font-size:14px;
+      line-height:1.55;
+      margin-top:8px;
+    }
+    .spinwheel-payable-diag-hint{
+      margin:12px 0 0;
+      color:var(--muted);
+    }
+    .spinwheel-diag-stats{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      gap:10px 14px;
+      margin-bottom:12px;
+    }
+    .spinwheel-diag-stats .k{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:2px;
+    }
+    .spinwheel-diag-subh{
+      margin:14px 0 6px;
+      font-size:14px;
+      font-weight:800;
+      color:var(--text);
+    }
+    .spinwheel-diag-list{
+      margin:0;
+      padding-left:1.1rem;
+      color:var(--text);
+    }
+    .spinwheel-diag-list li{
+      margin-bottom:6px;
+    }
+
     #integrationsNotice.integrations-notice{
       margin-top:0;
       padding:22px 22px 20px;
@@ -2121,6 +2165,85 @@
     .debt-field-suggested .input{
       border-color:#7ea8ff;
       box-shadow:0 0 0 3px rgba(31,111,255,.09);
+    }
+
+    .landing-grid .landing-benefits-card{
+      grid-column:1 / -1;
+    }
+
+    .landing-steps-card{
+      padding:18px 20px 16px;
+    }
+
+    .landing-steps-title{
+      margin:0 0 14px;
+      font-size:17px;
+      font-weight:800;
+      letter-spacing:-.02em;
+    }
+
+    .landing-steps-card .step h3{
+      margin:0;
+    }
+
+    .landing-benefits-card{
+      padding:18px 20px 20px;
+    }
+
+    .landing-benefits-heading{
+      margin:0 0 4px;
+      font-size:17px;
+      font-weight:800;
+      letter-spacing:-.02em;
+    }
+
+    .landing-benefits-list{
+      list-style:none;
+      margin:12px 0 0;
+      padding:0;
+      display:grid;
+      gap:12px;
+    }
+
+    .landing-benefits-list li{
+      position:relative;
+      padding-left:28px;
+      font-size:15px;
+      font-weight:650;
+      line-height:1.45;
+      color:var(--text);
+    }
+
+    .landing-benefits-list li::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:.42em;
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:var(--primary);
+      box-shadow:0 0 0 3px rgba(31,111,255,.12);
+    }
+
+    .landing-footer-clean{
+      margin-top:6px;
+      padding:22px 4px 10px;
+      border-top:1px solid var(--line);
+    }
+
+    .landing-footer-copy{
+      margin:0 auto 14px;
+      max-width:640px;
+      text-align:center;
+      font-size:14px;
+      line-height:1.55;
+      color:var(--muted);
+    }
+
+    .landing-footer-links{
+      margin-top:0;
+      justify-content:center;
     }
 
     .landing-grid .faq-landing-card{

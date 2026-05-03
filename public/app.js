@@ -177,29 +177,20 @@
         btn_start_now: "Get started",
         brand_tagline: "Pay down debt with more structure and less stress.",
         land_pill: "Built for real monthly use",
-        land_hero_title: "A calmer way to tackle debt.",
-        land_hero_copy: "Connect your bank, list what you owe, and follow a simple plan?all in one place.",
-        land_features_toggle: "What DebtYa gives you",
-        land_steps_toggle: "Start in 4 steps",
-        land_btn_demo: "See how it works",
-        land_feat1_t: "Connect your accounts",
-        land_feat1_p: "Import real accounts and transactions so you always work with up-to-date information.",
-        land_feat2_t: "Choose your strategy",
-        land_feat2_p: "Compare avalanche and snowball to pick the approach that fits you best.",
-        land_feat3_t: "Move from plan to action",
-        land_feat3_p: "Prepare suggested payments, approve them, run them, and keep a clear history.",
-        land_steps_title: "Start in 4 steps",
-        land_steps_sub: "The simplest way to begin.",
-        land_step1_t: "Create your account or log in",
-        land_step1_p: "Start with your personal dashboard to save your system and work with your real data.",
-        land_step2_t: "Connect your bank",
-        land_step2_p: "Import real accounts and transactions so your numbers stay current.",
-        land_step3_t: "Organize your plan",
-        land_step3_p: "Add debts, define your strategy, and create simple rules to reduce guesswork.",
-        land_step4_t: "Activate your plan",
-        land_step4_p: 'Tap "Get started" to complete payment and return here with your plan active.',
-        land_ideal_strong: "Ideal for:",
-        land_ideal_body: "People juggling multiple debts who want a clear, repeatable system that is easier to sustain month to month.",
+        land_hero_title: "Get out of debt with a clear plan\u2014no guessing",
+        land_hero_copy:
+          "DebtYa analyzes your debts and tells you exactly what to pay, when, and why.",
+        land_btn_start_free: "Start free",
+        land_conv_steps_title: "Three simple steps",
+        land_conv_step1_t: "Connect your bank",
+        land_conv_step2_t: "See your personalized plan",
+        land_conv_step3_t: "Follow your suggested payments",
+        land_benefits_title: "Why DebtYa",
+        land_benefit1: "Save on interest",
+        land_benefit2: "Reduce financial stress",
+        land_benefit3: "Have a clear plan",
+        land_footer_copy:
+          "DebtYa helps you organize and pay down debt. For help: support@debtya.com",
         price_name: "DebtYa Beta",
         price_copy: "Everything you need to connect accounts, organize debts, automate useful rules, and turn your strategy into real payments.",
         price_freq: "per month",
@@ -424,6 +415,19 @@
         debt_spinwheel_plan_only: "Planning only",
         intent_pill_spinwheel: "Spinwheel",
         intent_spinwheel_coming_soon: "Automatic payments coming soon.",
+        spinwheel_diag_title: "Spinwheel payment status (dev)",
+        spinwheel_diag_sub:
+          "Counts from your imported Spinwheel debts. Uses raw_spinwheel and payment_capable. No payments are run.",
+        spinwheel_diag_loading: "Loading summary...",
+        spinwheel_diag_total: "Spinwheel debt rows",
+        spinwheel_diag_payable: "Payable (bill pay supported)",
+        spinwheel_diag_planning: "Planning only (not bill-payable)",
+        spinwheel_diag_field: "Field or data issues",
+        spinwheel_diag_not_sup: "Bill pay not supported",
+        spinwheel_diag_blocked: "Others (not payable)",
+        spinwheel_diag_payable_list: "Payable debts",
+        spinwheel_diag_hint:
+          "Dev panel: URL hash #spinwheel-payable-diag, query ?swdiag=1, or localStorage DEBTYA_SPINWHEEL_PAY_DIAG=1, then refresh.",
         sim_counts_active_label: "Active debts",
         sim_counts_line_placeholder: "Active debts: 0",
         debt_source_plaid: "Plaid",
@@ -749,29 +753,20 @@
         btn_start_now: "Empieza ahora",
         brand_tagline: "Paga tus deudas con mas orden y menos estres.",
         land_pill: "Pensado para el dia a dia",
-        land_hero_title: "Una forma mas tranquila de atender tus deudas.",
-        land_hero_copy: "Conecta tu banco, anota lo que debes y sigue un plan sencillo, todo en un solo lugar.",
-        land_features_toggle: "Que hace DebtYa por ti",
-        land_steps_toggle: "Empieza en 4 pasos",
-        land_btn_demo: "Ver como funciona",
-        land_feat1_t: "Conecta tus cuentas",
-        land_feat1_p: "Importa cuentas y movimientos reales para trabajar con informacion actual.",
-        land_feat2_t: "Elige tu estrategia",
-        land_feat2_p: "Compara avalancha y bola de nieve para elegir la estrategia que mejor encaje contigo.",
-        land_feat3_t: "Pasa del plan a la accion",
-        land_feat3_p: "Prepara pagos sugeridos, apruebalos, ejecutalos y manten un historial claro.",
-        land_steps_title: "Empieza en 4 pasos",
-        land_steps_sub: "La forma mas simple de comenzar.",
-        land_step1_t: "Crea tu cuenta o entra",
-        land_step1_p: "Empieza con tu panel personal para guardar tu sistema y operar sobre tu informacion real.",
-        land_step2_t: "Conecta tu banco",
-        land_step2_p: "Importa cuentas y transacciones reales para trabajar con datos actualizados.",
-        land_step3_t: "Organiza tu plan",
-        land_step3_p: "Agrega deudas, define tu estrategia y crea reglas simples para reducir la improvisacion.",
-        land_step4_t: "Activa tu plan",
-        land_step4_p: 'Con "Empieza ahora" completas el pago y vuelves aqui con tu plan activo.',
-        land_ideal_strong: "Ideal para:",
-        land_ideal_body: "Personas con varias deudas que quieren un sistema claro, repetible y mucho mas facil de sostener cada mes.",
+        land_hero_title: "Sal de deudas con un plan claro \u2014 sin adivinar",
+        land_hero_copy:
+          "DebtYa analiza tus deudas y te dice exactamente qu\u00e9 pagar, cu\u00e1ndo y por qu\u00e9.",
+        land_btn_start_free: "Empezar gratis",
+        land_conv_steps_title: "Tres pasos sencillos",
+        land_conv_step1_t: "Conecta tu banco",
+        land_conv_step2_t: "Ve tu plan personalizado",
+        land_conv_step3_t: "Sigue tus pagos sugeridos",
+        land_benefits_title: "Por qu\u00e9 DebtYa",
+        land_benefit1: "Ahorra intereses",
+        land_benefit2: "Reduce estr\u00e9s financiero",
+        land_benefit3: "Ten un plan claro",
+        land_footer_copy:
+          "DebtYa te ayuda a organizar y pagar tus deudas. Ayuda: support@debtya.com",
         price_name: "DebtYa Beta",
         price_copy: "Todo lo necesario para conectar tus cuentas, organizar tus deudas, automatizar reglas utiles y convertir tu estrategia en pagos reales.",
         price_freq: "al mes",
@@ -996,6 +991,19 @@
         debt_spinwheel_plan_only: "Solo planificaci\u00F3n",
         intent_pill_spinwheel: "Spinwheel",
         intent_spinwheel_coming_soon: "Pr\u00F3ximamente pagos autom\u00E1ticos",
+        spinwheel_diag_title: "Estado de pagos Spinwheel",
+        spinwheel_diag_sub:
+          "Conteos de tus deudas Spinwheel importadas. Usa raw_spinwheel y payment_capable. No se ejecutan pagos.",
+        spinwheel_diag_loading: "Cargando resumen...",
+        spinwheel_diag_total: "Filas de deuda Spinwheel",
+        spinwheel_diag_payable: "Pagables (bill pay soportado)",
+        spinwheel_diag_planning: "Solo plan (sin bill pay)",
+        spinwheel_diag_field: "Problemas de datos o validaci\u00F3n",
+        spinwheel_diag_not_sup: "Bill pay no soportado",
+        spinwheel_diag_blocked: "Resto (no pagables)",
+        spinwheel_diag_payable_list: "Deudas pagables",
+        spinwheel_diag_hint:
+          "Panel dev: hash #spinwheel-payable-diag, query ?swdiag=1, o localStorage DEBTYA_SPINWHEEL_PAY_DIAG=1, luego recarga.",
         sim_counts_active_label: "Deudas activas",
         sim_counts_line_placeholder: "Deudas activas: 0",
         debt_source_plaid: "Plaid",
@@ -1407,6 +1415,7 @@
           dfab.textContent = t("btn_disconnect_bank");
           dfab.setAttribute("aria-label", t("btn_disconnect_bank"));
         }
+        void refreshSpinwheelPayableDiag();
       } else {
         $("sessionBadge").className = "pill blue";
         $("sessionBadge").textContent = t("badge_session");
@@ -1596,6 +1605,7 @@
       appView.classList.remove("hidden");
       patchOverviewPanelLayout();
       mountFallbackDisconnectFabIfMissing();
+      void refreshSpinwheelPayableDiag();
     }
 
     function setNav(active) {
@@ -2278,7 +2288,7 @@
     }
 
     /**
-     * Intent destacado para el bloque "Tu próximo paso": prioriza abiertos y mayor monto.
+     * Intent destacado para el bloque "Tu pr?ximo paso": prioriza abiertos y mayor monto.
      * @param {object[]} intents
      */
     function pickFeaturedIntentForDashboard(intents) {
@@ -3820,6 +3830,93 @@
       renderDebts();
     }
 
+    function spinwheelPayableDiagEnabled() {
+      try {
+        if (typeof window === "undefined") return false;
+        const h = String(window.location.hash || "").toLowerCase();
+        if (h === "#spinwheel-payable-diag") return true;
+        const qs = new URLSearchParams(window.location.search || "");
+        if (qs.get("swdiag") === "1") return true;
+        if (window.localStorage && window.localStorage.getItem("DEBTYA_SPINWHEEL_PAY_DIAG") === "1") return true;
+      } catch (_) {}
+      return false;
+    }
+
+    function renderSpinwheelPayableDiagBody(payload) {
+      const j = payload && typeof payload === "object" ? payload : {};
+      const parts = [];
+      parts.push('<div class="spinwheel-diag-stats">');
+      parts.push(
+        `<div><span class="k">${escapeHtml(t("spinwheel_diag_total"))}</span> <strong>${escapeHtml(String(j.total_spinwheel_debts ?? 0))}</strong></div>`
+      );
+      parts.push(
+        `<div><span class="k">${escapeHtml(t("spinwheel_diag_payable"))}</span> <strong>${escapeHtml(String(j.payable_count ?? 0))}</strong></div>`
+      );
+      parts.push(
+        `<div><span class="k">${escapeHtml(t("spinwheel_diag_planning"))}</span> <strong>${escapeHtml(String(j.planning_only_count ?? 0))}</strong></div>`
+      );
+      parts.push(
+        `<div><span class="k">${escapeHtml(t("spinwheel_diag_field"))}</span> <strong>${escapeHtml(String(j.field_error_count ?? 0))}</strong></div>`
+      );
+      parts.push(
+        `<div><span class="k">${escapeHtml(t("spinwheel_diag_not_sup"))}</span> <strong>${escapeHtml(String(j.not_supported_count ?? 0))}</strong></div>`
+      );
+      parts.push("</div>");
+
+      const payable = Array.isArray(j.payable_debts) ? j.payable_debts : [];
+      if (payable.length) {
+        parts.push(`<h4 class="spinwheel-diag-subh">${escapeHtml(t("spinwheel_diag_payable_list"))}</h4>`);
+        parts.push('<ul class="spinwheel-diag-list">');
+        for (const p of payable) {
+          parts.push(
+            `<li>${escapeHtml(String(p.name || ""))} \u2014 ${escapeHtml(fmtMoney(p.balance))} <span class="muted">(${escapeHtml(String(p.spinwheel_external_id || "").slice(0, 8))}\u2026)</span></li>`
+          );
+        }
+        parts.push("</ul>");
+      }
+
+      const blocked = Array.isArray(j.blocked_debts) ? j.blocked_debts : [];
+      if (blocked.length) {
+        parts.push(`<h4 class="spinwheel-diag-subh">${escapeHtml(t("spinwheel_diag_blocked"))}</h4>`);
+        parts.push('<ul class="spinwheel-diag-list">');
+        for (const b of blocked) {
+          parts.push(
+            `<li><strong>${escapeHtml(String(b.name || ""))}</strong> \u2014 ${escapeHtml(fmtMoney(b.balance))} <span class="muted">${escapeHtml(String(b.category || ""))}: ${escapeHtml(String(b.reason || ""))}</span></li>`
+          );
+        }
+        parts.push("</ul>");
+      }
+
+      return parts.join("");
+    }
+
+    async function refreshSpinwheelPayableDiag() {
+      const wrap = $("spinwheelPayableDiagSection");
+      if (!wrap) return;
+      if (!spinwheelPayableDiagEnabled()) {
+        wrap.classList.add("hidden");
+        return;
+      }
+      wrap.classList.remove("hidden");
+      const body = $("spinwheelPayableDiagBody");
+      const errEl = $("spinwheelPayableDiagError");
+      if (body) body.innerHTML = `<p class="sub">${escapeHtml(t("spinwheel_diag_loading"))}</p>`;
+      if (errEl) {
+        errEl.textContent = "";
+        errEl.classList.add("hidden");
+      }
+      try {
+        const j = await api("/spinwheel/payable-debts-summary");
+        if (body) body.innerHTML = renderSpinwheelPayableDiagBody(j);
+      } catch (e) {
+        if (body) body.innerHTML = "";
+        if (errEl) {
+          errEl.textContent = normalizeErrorMessage(e && e.message ? String(e.message) : String(e));
+          errEl.classList.remove("hidden");
+        }
+      }
+    }
+
     async function refreshRules() {
       const res = await api("/rules");
       state.rules = res.data || [];
@@ -4305,6 +4402,9 @@
         showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
       }
       try {
+        await refreshSpinwheelPayableDiag();
+      } catch (_) {}
+      try {
         await refreshMethodSection();
       } catch (e2) {
         state.methodEntitiesLoadError = displayMethodSectionError(e2 && e2.message ? String(e2.message) : "");
@@ -4726,10 +4826,13 @@
     });
     $("landingSignupBtn").addEventListener("click", () => showAuth("signup"));
     $("landingStartBtn").addEventListener("click", () => startCheckout($("landingStartBtn")));
-    $("landingDemoBtn").addEventListener("click", () => {
-      openHelpModal();
-      setHelpModalTab("faq");
-    });
+    const landingDemoBtn = $("landingDemoBtn");
+    if (landingDemoBtn) {
+      landingDemoBtn.addEventListener("click", () => {
+        openHelpModal();
+        setHelpModalTab("faq");
+      });
+    }
     $("pricingStartBtn").addEventListener("click", () => startCheckout($("pricingStartBtn")));
     $("pricingLoginBtn").addEventListener("click", () => {
       trackEvent("login_click", { cta_id: "pricingLoginBtn" });
@@ -5095,6 +5198,11 @@
 
     $("logoutBtn").addEventListener("click", logout);
     $("refreshDebtsBtn").addEventListener("click", refreshDebts);
+    const spinwheelPayableDiagRefreshBtn = $("spinwheelPayableDiagRefreshBtn");
+    if (spinwheelPayableDiagRefreshBtn) {
+      spinwheelPayableDiagRefreshBtn.addEventListener("click", () => void refreshSpinwheelPayableDiag());
+    }
+    window.addEventListener("hashchange", () => void refreshSpinwheelPayableDiag());
     $("refreshRulesBtn").addEventListener("click", refreshRules);
     $("refreshPlanBtn").addEventListener("click", refreshPlan);
     $("planStrategy").addEventListener("change", updatePlanFieldHints);

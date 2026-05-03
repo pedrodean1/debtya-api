@@ -20,6 +20,10 @@ function makeDeps(overrides = {}) {
     isUuid,
     appError: () => {},
     supabaseAdmin: overrides.supabaseAdmin,
+    safeNumber: (v, fb = 0) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fb;
+    },
     ...overrides
   };
 }
@@ -153,5 +157,56 @@ describe("routes/spinwheel-routes", () => {
       .send({ code: "123456" });
     assert.equal(res.status, 403);
     assert.equal(res.body.code, "spinwheel_user_id_forbidden");
+  });
+
+  it("GET /spinwheel/payable-debts-summary 200 con conteos", async () => {
+    const debtId = "a10e8400-e29b-41d4-a716-446655440099";
+    const supabaseAdmin = {
+      from(t) {
+        assert.equal(t, "debts");
+        return {
+          select() {
+            return {
+              eq() {
+                return {
+                  eq() {
+                    return Promise.resolve({
+                      data: [
+                        {
+                          id: debtId,
+                          name: "Card",
+                          balance: 100,
+                          minimum_payment: 10,
+                          apr: 15,
+                          spinwheel_external_id: "b10e8400-e29b-41d4-a716-446655440099",
+                          payment_capable: true,
+                          raw_spinwheel: {
+                            liability: { payments: { billPayment: { availability: "SUPPORTED" } } }
+                          },
+                          is_active: true,
+                          source: "spinwheel"
+                        }
+                      ],
+                      error: null
+                    });
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+    };
+    const app = mount(makeDeps({ supabaseAdmin }));
+    const res = await request(app).get("/spinwheel/payable-debts-summary").set("Authorization", "Bearer x");
+    assert.equal(res.status, 200);
+    assert.equal(res.body.ok, true);
+    assert.equal(res.body.total_spinwheel_debts, 1);
+    assert.equal(res.body.payable_count, 1);
+    assert.equal(res.body.field_error_count, 0);
+    assert.equal(res.body.planning_only_count, 0);
+    assert.equal(res.body.not_supported_count, 0);
+    assert.equal(res.body.payable_debts.length, 1);
+    assert.equal(res.body.blocked_debts.length, 0);
   });
 });
