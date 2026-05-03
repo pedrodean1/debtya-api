@@ -3975,7 +3975,7 @@
     async function runSpinwheelDebtProfileAndImport() {
       await api("/spinwheel/users/me/debt-profile", {
         method: "POST",
-        body: JSON.stringify({ creditReport: true })
+        body: JSON.stringify({ creditReport: { type: "1_BUREAU.FULL" } })
       });
       await api("/spinwheel/import-debts", { method: "POST", body: "{}" });
     }

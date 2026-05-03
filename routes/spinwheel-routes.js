@@ -341,7 +341,7 @@ function registerSpinwheelRoutes(app, deps) {
       const raw =
         req.body && typeof req.body === "object" && !Array.isArray(req.body) ? { ...req.body } : {};
       if (raw.creditReport == null && raw.creditScore == null) {
-        raw.creditReport = true;
+        raw.creditReport = { type: "1_BUREAU.FULL" };
       }
       const out = await client.requestDetailed(
         "POST",
