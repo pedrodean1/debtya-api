@@ -415,9 +415,8 @@
         debt_spinwheel_plan_only: "Planning only",
         intent_pill_spinwheel: "Spinwheel",
         intent_spinwheel_coming_soon: "Automatic payments coming soon.",
-        spinwheel_diag_title: "Spinwheel payment status (dev)",
-        spinwheel_diag_sub:
-          "Counts from your imported Spinwheel debts. Uses raw_spinwheel and payment_capable. No payments are run.",
+        spinwheel_diag_title: "Spinwheel payment summary",
+        spinwheel_diag_sub: "Counts of Spinwheel-linked debts for your account. No payments are started from here.",
         spinwheel_diag_loading: "Loading summary...",
         spinwheel_diag_total: "Spinwheel debt rows",
         spinwheel_diag_payable: "Payable (bill pay supported)",
@@ -427,7 +426,24 @@
         spinwheel_diag_blocked: "Others (not payable)",
         spinwheel_diag_payable_list: "Payable debts",
         spinwheel_diag_hint:
-          "Dev panel: URL hash #spinwheel-payable-diag, query ?swdiag=1, or localStorage DEBTYA_SPINWHEEL_PAY_DIAG=1, then refresh.",
+          "This block is off by default. Your team can enable it with a URL fragment or saved browser flag (see release notes).",
+        sw_debts_connect_title: "Connect your debts",
+        sw_debts_connect_sub: "DebtYa can look up your real debts to build your plan automatically.",
+        sw_connect_phone_lbl: "Phone",
+        sw_connect_phone_ph: "+1 555 123 4567",
+        sw_connect_dob_lbl: "Date of birth",
+        sw_connect_search_btn: "Find my debts",
+        sw_connect_code_lbl: "Code from text message",
+        sw_connect_verify_btn: "Verify code",
+        sw_connect_success: "Debts connected successfully.",
+        sw_connect_err_generic: "We could not complete that step. Check your details and try again.",
+        sw_connect_err_phone: "Enter the phone number you use with your lenders.",
+        sw_connect_err_phone_invalid: "Enter a phone number with country code (for example +1 for the United States).",
+        sw_connect_err_dob: "Enter your date of birth.",
+        sw_connect_err_code: "Enter the code from your text message.",
+        sw_connect_err_verify: "That code did not work. Request a new code and try again.",
+        sw_connect_err_unexpected_link: "The link step returned an unexpected status. Try again or contact support.",
+        sw_connect_unavailable: "Debt lookup is not available right now. Please try again later.",
         sim_counts_active_label: "Active debts",
         sim_counts_line_placeholder: "Active debts: 0",
         debt_source_plaid: "Plaid",
@@ -993,7 +1009,7 @@
         intent_spinwheel_coming_soon: "Pr\u00F3ximamente pagos autom\u00E1ticos",
         spinwheel_diag_title: "Estado de pagos Spinwheel",
         spinwheel_diag_sub:
-          "Conteos de tus deudas Spinwheel importadas. Usa raw_spinwheel y payment_capable. No se ejecutan pagos.",
+          "Conteos de deudas vinculadas a Spinwheel en tu cuenta. Desde aqui no se inician pagos.",
         spinwheel_diag_loading: "Cargando resumen...",
         spinwheel_diag_total: "Filas de deuda Spinwheel",
         spinwheel_diag_payable: "Pagables (bill pay soportado)",
@@ -1003,7 +1019,24 @@
         spinwheel_diag_blocked: "Resto (no pagables)",
         spinwheel_diag_payable_list: "Deudas pagables",
         spinwheel_diag_hint:
-          "Panel dev: hash #spinwheel-payable-diag, query ?swdiag=1, o localStorage DEBTYA_SPINWHEEL_PAY_DIAG=1, luego recarga.",
+          "Este bloque va apagado por defecto. Tu equipo puede activarlo con un fragmento de URL o una marca en el navegador (ver notas de version).",
+        sw_debts_connect_title: "Conecta tus deudas",
+        sw_debts_connect_sub: "DebtYa puede buscar tus deudas reales para crear tu plan autom\u00e1ticamente.",
+        sw_connect_phone_lbl: "Telefono",
+        sw_connect_phone_ph: "+1 555 123 4567",
+        sw_connect_dob_lbl: "Fecha de nacimiento",
+        sw_connect_search_btn: "Buscar mis deudas",
+        sw_connect_code_lbl: "C\u00f3digo recibido por SMS",
+        sw_connect_verify_btn: "Verificar c\u00f3digo",
+        sw_connect_success: "Deudas conectadas correctamente.",
+        sw_connect_err_generic: "No pudimos completar ese paso. Revisa los datos e intentalo de nuevo.",
+        sw_connect_err_phone: "Escribe el telefono que usas con tus acreedores.",
+        sw_connect_err_phone_invalid: "Escribe el telefono con codigo de pais (por ejemplo +1 en Estados Unidos).",
+        sw_connect_err_dob: "Escribe tu fecha de nacimiento.",
+        sw_connect_err_code: "Escribe el codigo del SMS.",
+        sw_connect_err_verify: "Ese codigo no funciono. Pide uno nuevo e intentalo.",
+        sw_connect_err_unexpected_link: "El enlace devolvio un estado inesperado. Reintenta o contacta soporte.",
+        sw_connect_unavailable: "La busqueda de deudas no esta disponible ahora. Intentalo mas tarde.",
         sim_counts_active_label: "Deudas activas",
         sim_counts_line_placeholder: "Deudas activas: 0",
         debt_source_plaid: "Plaid",
@@ -3830,6 +3863,186 @@
       renderDebts();
     }
 
+    function spinwheelConnectionStatusFromApiPayload(payload) {
+      const sw =
+        payload && payload.spinwheel && typeof payload.spinwheel === "object" ? payload.spinwheel : null;
+      if (!sw) return "";
+      const d = sw.data && typeof sw.data === "object" ? sw.data : {};
+      let cs = d.connectionStatus != null ? String(d.connectionStatus).trim().toUpperCase() : "";
+      if (!cs && sw.connectionStatus != null) cs = String(sw.connectionStatus).trim().toUpperCase();
+      return cs || "";
+    }
+
+    function friendlyDebtConnectError(err) {
+      const raw = err && err.message != null ? String(err.message) : String(err || "");
+      if (/spinwheel not configured|spinwheel_not_configured|Spinwheel no configurado/i.test(raw)) {
+        return t("sw_connect_unavailable");
+      }
+      if (/Timeout en \/spinwheel/i.test(raw) || raw.includes("Timeout en")) return t("err_timeout");
+      let s = normalizeErrorMessage(raw);
+      s = s.replace(/\brequest[_-]?id\s*[:=]\s*[^\s]+/gi, "").trim();
+      s = s.replace(/\brequest_id\b[^.!?]*[.!?]?/gi, "").trim();
+      s = s.replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, "").replace(/\s{2,}/g, " ").trim();
+      if (/^[\{\[]/.test(s) || /^\s*["']?\s*\{/.test(s)) return t("sw_connect_err_generic");
+      if (s.length > 240) return `${s.slice(0, 237)}...`;
+      return s || t("sw_connect_err_generic");
+    }
+
+    function swConnectShowErr(msg) {
+      const errEl = $("swConnectFlowErr");
+      const okEl = $("swConnectFlowMsg");
+      if (okEl) {
+        okEl.classList.add("hidden");
+        okEl.textContent = "";
+      }
+      if (!errEl) return;
+      if (!msg) {
+        errEl.textContent = "";
+        errEl.classList.add("hidden");
+        return;
+      }
+      errEl.textContent = msg;
+      errEl.classList.remove("hidden");
+    }
+
+    function swConnectShowOk(msg) {
+      const okEl = $("swConnectFlowMsg");
+      const errEl = $("swConnectFlowErr");
+      if (errEl) {
+        errEl.textContent = "";
+        errEl.classList.add("hidden");
+      }
+      if (!okEl) return;
+      okEl.textContent = msg;
+      okEl.classList.remove("hidden");
+    }
+
+    function normalizePhoneForSpinwheel(raw) {
+      const p = String(raw || "").trim();
+      if (!p) return "";
+      if (p.startsWith("+")) return p;
+      const digits = p.replace(/\D/g, "");
+      if (digits.length === 10) return `+1${digits}`;
+      if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+      if (digits.length > 0) return `+${digits}`;
+      return p;
+    }
+
+    async function runSpinwheelDebtProfileAndImport() {
+      await api("/spinwheel/users/me/debt-profile", { method: "POST", body: "{}" });
+      await api("/spinwheel/import-debts", { method: "POST", body: "{}" });
+    }
+
+    function swConnectClearSensitiveFields() {
+      const p = $("swConnectPhone");
+      const d = $("swConnectDob");
+      const c = $("swConnectSmsCode");
+      if (p) p.value = "";
+      if (d) d.value = "";
+      if (c) c.value = "";
+    }
+
+    async function onSwConnectSearchClick() {
+      const phoneEl = $("swConnectPhone");
+      const dobEl = $("swConnectDob");
+      const phoneRaw = phoneEl ? String(phoneEl.value || "").trim() : "";
+      const dob = dobEl ? String(dobEl.value || "").trim() : "";
+      swConnectShowErr("");
+      const okEl = $("swConnectFlowMsg");
+      if (okEl) {
+        okEl.classList.add("hidden");
+        okEl.textContent = "";
+      }
+      if (!phoneRaw) {
+        swConnectShowErr(t("sw_connect_err_phone"));
+        return;
+      }
+      if (!dob) {
+        swConnectShowErr(t("sw_connect_err_dob"));
+        return;
+      }
+      const phoneNumber = normalizePhoneForSpinwheel(phoneRaw);
+      const digitCount = phoneNumber.replace(/\D/g, "").length;
+      if (digitCount < 10) {
+        swConnectShowErr(t("sw_connect_err_phone_invalid"));
+        return;
+      }
+      const btn = $("swConnectSearchBtn");
+      const vb0 = $("swConnectVerifyBlock");
+      if (vb0) vb0.classList.add("hidden");
+      setLoading(btn, true);
+      try {
+        const res = await api("/spinwheel/connect/sms", {
+          method: "POST",
+          body: JSON.stringify({ phoneNumber, dateOfBirth: dob })
+        });
+        const cs = spinwheelConnectionStatusFromApiPayload(res);
+        if (cs === "IN_PROGRESS") {
+          const vb = $("swConnectVerifyBlock");
+          if (vb) vb.classList.remove("hidden");
+          const codeIn = $("swConnectSmsCode");
+          if (codeIn) {
+            codeIn.value = "";
+            codeIn.focus();
+          }
+          return;
+        }
+        if (cs === "SUCCESS") {
+          const vb = $("swConnectVerifyBlock");
+          if (vb) vb.classList.add("hidden");
+          await runSpinwheelDebtProfileAndImport();
+          swConnectClearSensitiveFields();
+          swConnectShowOk(t("sw_connect_success"));
+          await refreshDebts();
+          return;
+        }
+        swConnectShowErr(t("sw_connect_err_unexpected_link"));
+      } catch (e) {
+        swConnectShowErr(friendlyDebtConnectError(e));
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function onSwConnectVerifyClick() {
+      const codeIn = $("swConnectSmsCode");
+      const code = codeIn ? String(codeIn.value || "").trim() : "";
+      swConnectShowErr("");
+      const okEl = $("swConnectFlowMsg");
+      if (okEl) {
+        okEl.classList.add("hidden");
+        okEl.textContent = "";
+      }
+      if (!code) {
+        swConnectShowErr(t("sw_connect_err_code"));
+        return;
+      }
+      const btn = $("swConnectVerifyBtn");
+      setLoading(btn, true);
+      try {
+        const res = await api("/spinwheel/users/me/connect/sms/verify", {
+          method: "POST",
+          body: JSON.stringify({ code })
+        });
+        const cs = spinwheelConnectionStatusFromApiPayload(res);
+        if (cs === "SUCCESS") {
+          const vb = $("swConnectVerifyBlock");
+          if (vb) vb.classList.add("hidden");
+          if (codeIn) codeIn.value = "";
+          await runSpinwheelDebtProfileAndImport();
+          swConnectClearSensitiveFields();
+          swConnectShowOk(t("sw_connect_success"));
+          await refreshDebts();
+          return;
+        }
+        swConnectShowErr(t("sw_connect_err_verify"));
+      } catch (e) {
+        swConnectShowErr(friendlyDebtConnectError(e));
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
     function spinwheelPayableDiagEnabled() {
       try {
         if (typeof window === "undefined") return false;
@@ -5202,6 +5415,10 @@
     if (spinwheelPayableDiagRefreshBtn) {
       spinwheelPayableDiagRefreshBtn.addEventListener("click", () => void refreshSpinwheelPayableDiag());
     }
+    const swConnectSearchBtn = $("swConnectSearchBtn");
+    if (swConnectSearchBtn) swConnectSearchBtn.addEventListener("click", () => void onSwConnectSearchClick());
+    const swConnectVerifyBtn = $("swConnectVerifyBtn");
+    if (swConnectVerifyBtn) swConnectVerifyBtn.addEventListener("click", () => void onSwConnectVerifyClick());
     window.addEventListener("hashchange", () => void refreshSpinwheelPayableDiag());
     $("refreshRulesBtn").addEventListener("click", refreshRules);
     $("refreshPlanBtn").addEventListener("click", refreshPlan);

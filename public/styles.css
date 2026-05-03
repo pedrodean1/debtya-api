@@ -1526,6 +1526,38 @@
       font-weight:700;
     }
 
+    .spinwheel-debts-connect{
+      margin:0 0 18px;
+      padding:16px 18px 18px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:linear-gradient(165deg, #fbfdff 0%, #f6f9ff 100%);
+    }
+    .spinwheel-debts-connect-title{
+      margin:0 0 6px;
+      font-size:17px;
+      font-weight:800;
+      letter-spacing:-.02em;
+      color:var(--text);
+    }
+    .spinwheel-debts-connect-sub{
+      margin:0 0 4px;
+    }
+    .spinwheel-debts-connect-fields{
+      margin-top:10px;
+    }
+    .spinwheel-debts-connect-actions{
+      margin-top:14px;
+    }
+    .spinwheel-debts-verify{
+      margin-top:16px;
+      padding-top:16px;
+      border-top:1px solid var(--line);
+    }
+    .spinwheel-debts-verify .field{
+      margin-bottom:12px;
+    }
+
     .spinwheel-payable-diag{
       margin-top:0;
       margin-bottom:14px;

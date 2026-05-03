@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-03-v62-spinwheel-payable-diagnostics" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-03-v63-real-debt-connect-flow" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
@@ -564,6 +564,35 @@
               </div>
             </div>
 
+            <div id="spinwheelDebtsConnectCard" class="spinwheel-debts-connect">
+              <h3 class="spinwheel-debts-connect-title" data-i18n="sw_debts_connect_title">Connect your debts</h3>
+              <p class="sub spinwheel-debts-connect-sub" data-i18n="sw_debts_connect_sub">
+                DebtYa can look up your real debts to build your plan automatically.
+              </p>
+              <div class="grid-2 spinwheel-debts-connect-fields">
+                <div class="field">
+                  <label class="label" for="swConnectPhone" data-i18n="sw_connect_phone_lbl">Phone</label>
+                  <input id="swConnectPhone" class="input" type="tel" autocomplete="tel" data-i18n-placeholder="sw_connect_phone_ph" placeholder="+1 555 123 4567" />
+                </div>
+                <div class="field">
+                  <label class="label" for="swConnectDob" data-i18n="sw_connect_dob_lbl">Date of birth</label>
+                  <input id="swConnectDob" class="input" type="date" />
+                </div>
+              </div>
+              <div class="spinwheel-debts-connect-actions">
+                <button type="button" id="swConnectSearchBtn" class="btn btn-primary" data-i18n="sw_connect_search_btn">Find my debts</button>
+              </div>
+              <div id="swConnectVerifyBlock" class="spinwheel-debts-verify hidden">
+                <div class="field">
+                  <label class="label" for="swConnectSmsCode" data-i18n="sw_connect_code_lbl">Code from text message</label>
+                  <input id="swConnectSmsCode" class="input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="12" />
+                </div>
+                <button type="button" id="swConnectVerifyBtn" class="btn btn-primary" data-i18n="sw_connect_verify_btn">Verify code</button>
+              </div>
+              <p id="swConnectFlowMsg" class="notice success hidden" role="status"></p>
+              <p id="swConnectFlowErr" class="notice error hidden" role="alert"></p>
+            </div>
+
             <p class="debt-form-review-note" data-i18n="debt_form_review_note">Before you save, review APR and minimum payment. They may be suggested starting values—compare with your statement and edit if needed. Highlighted fields came from your import and are easy to change.</p>
 
             <form id="debtForm" class="grid-3" style="margin-bottom:16px;">
@@ -874,8 +903,8 @@
             <section id="spinwheelPayableDiagSection" class="card spinwheel-payable-diag hidden" aria-labelledby="spinwheelPayableDiagTitle">
               <div class="section-head">
                 <div>
-                  <h2 id="spinwheelPayableDiagTitle" data-i18n="spinwheel_diag_title">Spinwheel payment status (dev)</h2>
-                  <p class="sub" data-i18n="spinwheel_diag_sub">Counts from your imported Spinwheel debts. No payments are run.</p>
+                  <h2 id="spinwheelPayableDiagTitle" data-i18n="spinwheel_diag_title">Spinwheel payment summary</h2>
+                  <p class="sub" data-i18n="spinwheel_diag_sub">Counts of Spinwheel-linked debts for your account.</p>
                 </div>
                 <div class="section-actions">
                   <button id="spinwheelPayableDiagRefreshBtn" type="button" class="btn btn-light btn-small" data-i18n="btn_refresh">Refresh</button>
