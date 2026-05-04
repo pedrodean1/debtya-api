@@ -2318,7 +2318,7 @@
      * @returns {number|null}
      */
     function approximateMonthlyInterestSavedByPayment(intent, debt) {
-      const payment = toNum(intent.total_amount ?? intent.amount);
+      const payment = intentPaymentAmount(intent);
       if (!debt || payment <= 0) return null;
       const balance = toNum(debt.balance);
       if (balance <= 0) return null;
@@ -2327,6 +2327,22 @@
       const monthlyInterest = (balance * apr) / 100 / 12;
       const payVsBalance = Math.min(1, payment / balance);
       return monthlyInterest * payVsBalance;
+    }
+
+    /**
+     * Monto a mostrar u ordenar para un intent (campos reales seg?n filas Supabase / legacy).
+     * @param {object} intent
+     */
+    function intentPaymentAmount(intent) {
+      if (!intent) return 0;
+      let n = toNum(intent.total_amount ?? intent.amount);
+      if (n > 0) return n;
+      if (intent.amount_cents != null) {
+        const c = toNum(intent.amount_cents);
+        if (c > 0) return c / 100;
+      }
+      n = toNum(intent.payment_amount ?? intent.suggested_amount ?? intent.amount_due);
+      return n > 0 ? n : 0;
     }
 
     /**
@@ -2347,9 +2363,9 @@
         "queued"
       ]);
       const rows = list.map((intent) => {
-        const st = String(intent.status || "").toLowerCase();
+        const st = String(intent.status || "").toLowerCase().trim();
         const isOpen = openStatuses.has(st);
-        const amt = toNum(intent.total_amount ?? intent.amount);
+        const amt = intentPaymentAmount(intent);
         const sched = intent.scheduled_for != null ? String(intent.scheduled_for) : "";
         return { intent, isOpen, amt, sched };
       });
@@ -2408,7 +2424,7 @@
         primaryEl.textContent = t("dashboard_next_no_intents");
         return;
       }
-      const amount = fmtMoney(intent.total_amount ?? intent.amount ?? 0);
+      const amount = fmtMoney(intentPaymentAmount(intent));
       let debtLabel = describeIntentPayToward(intent);
       if (!debtLabel || debtLabel === "?") debtLabel = t("debt_label");
       primaryEl.textContent = tf("dashboard_next_pay_line", { amount, debt: debtLabel });
@@ -3255,7 +3271,11 @@
 
     function renderIntents() {
       const box = $("intentsList");
-      if (!box) return;
+      if (!box) {
+        renderStats();
+        updateNextActionGuide();
+        return;
+      }
       box.innerHTML = "";
 
       if (!state.intents.length) {
@@ -3290,7 +3310,7 @@
                 ${escapeHtml(t("meta_pay_from"))}: <strong>${escapeHtml(describeIntentPayFrom(intent))}</strong><br />
                 ${escapeHtml(t("meta_pay_toward"))}: <strong>${escapeHtml(describeIntentPayToward(intent))}</strong><br />
                 ${escapeHtml(t("meta_debt"))}: <strong>${escapeHtml(intent.debt_id || "-")}</strong><br />
-                ${escapeHtml(t("meta_total"))}: <strong>${fmtMoney(intent.total_amount ?? intent.amount ?? 0)}</strong><br />
+                ${escapeHtml(t("meta_total"))}: <strong>${fmtMoney(intentPaymentAmount(intent))}</strong><br />
                 ${formatIntentReasonHtml(intent)}
                 ${escapeHtml(t("meta_created"))}: <strong>${fmtDate(intent.created_at)}</strong><br />
                 ${escapeHtml(t("meta_approved"))}: <strong>${fmtDate(intent.approved_at)}</strong><br />
@@ -4259,7 +4279,13 @@
 
     async function refreshIntents() {
       const res = await api("/payment-intents");
-      state.intents = res.data || [];
+      let list = res && res.data;
+      if (!Array.isArray(list)) {
+        if (Array.isArray(res?.intents)) list = res.intents;
+        else if (res?.data != null && typeof res.data === "object" && Array.isArray(res.data.intents)) list = res.data.intents;
+        else list = [];
+      }
+      state.intents = list;
       renderIntents();
     }
 
@@ -5755,6 +5781,18 @@
         }
         showMessage(globalMessage, t("intents_built"), "success");
         await refreshIntents();
+        const swApp = toNum(res?.spinwheel_intents?.appended);
+        let legacyCreated = 0;
+        const pdata = res?.data;
+        if (Array.isArray(pdata) && pdata[0] && typeof pdata[0] === "object") {
+          legacyCreated = toNum(pdata[0].intents_created ?? pdata[0].intentsCreated);
+        } else if (pdata && typeof pdata === "object" && !Array.isArray(pdata)) {
+          legacyCreated = toNum(pdata.intents_created ?? pdata.intentsCreated);
+        }
+        if (swApp > 0 || legacyCreated > 0) {
+          await refreshIntents();
+          updateNextActionGuide();
+        }
       } catch (err) {
         if (fb && pre) {
           pre.textContent = JSON.stringify(

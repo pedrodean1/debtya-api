@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-03-v75-spinwheel-pending-review-status";
+const SERVER_VERSION = "debtya-2026-05-03-v76-ui-read-pending-review-intents";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
