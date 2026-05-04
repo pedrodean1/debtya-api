@@ -313,6 +313,9 @@
         dashboard_next_interest_saved: "You save ~{amount} in interest this month",
         dashboard_next_interest_na: "Add APR on this debt for a sharper interest estimate.",
         dashboard_next_accel: "This speeds up your path out of debt.",
+        dashboard_next_pay_outside_app:
+          "Make this payment outside DebtYa, then record it as done in your own records when you are ready.",
+        dashboard_next_paid_btn: "I paid it",
         next_step_bank: "Next: connect your bank and import accounts so DebtYa can use real balances.",
         next_step_bank_btn: "Go to Actions",
         next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
@@ -904,6 +907,9 @@
         dashboard_next_interest_saved: "Ahorras ~{amount} en intereses este mes",
         dashboard_next_interest_na: "A\u00F1ade el APR en esta deuda para estimar mejor los intereses.",
         dashboard_next_accel: "Esto acelera tu salida de deuda.",
+        dashboard_next_pay_outside_app:
+          "Haz este pago fuera de DebtYa y luego m\u00E1rcalo como realizado.",
+        dashboard_next_paid_btn: "Ya lo pagu\u00E9",
         next_step_bank: "Siguiente: conecta tu banco e importa cuentas para usar saldos reales.",
         next_step_bank_btn: "Ir a Acciones",
         next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
@@ -2188,6 +2194,13 @@
       });
     }
 
+    function paymentIntentListCoalesced() {
+      const a = state.paymentIntents;
+      const b = state.intents;
+      if (Array.isArray(a) && a.length) return a;
+      return Array.isArray(b) ? b : [];
+    }
+
     function completedGuideSteps() {
       const done = new Set();
       if ((state.accounts || []).length > 0) done.add("1");
@@ -2233,6 +2246,15 @@
           btnKey: "next_step_debts_btn",
           nav: "setup",
           scrollId: "setupPanel",
+          openOperateMore: false
+        };
+      }
+      if (hasFeaturedPayableIntent()) {
+        return {
+          textKey: "next_step_review",
+          btnKey: "next_step_review_btn",
+          nav: "setup",
+          scrollId: "suggestedPaymentsPanel",
           openOperateMore: false
         };
       }
@@ -2312,6 +2334,7 @@
       if (!appView || appView.classList.contains("hidden")) return;
       renderGuideStepProgress();
       renderNextStepCallout();
+      renderDashboardNextStep();
     }
 
     /**
@@ -2388,6 +2411,11 @@
       return pool[0]?.intent || null;
     }
 
+    function hasFeaturedPayableIntent() {
+      const f = pickFeaturedIntentForDashboard(paymentIntentListCoalesced());
+      return !!(f && intentPaymentAmount(f) > 0);
+    }
+
     function renderDashboardNextStep() {
       const card = $("dashboardNextStepCard");
       const primaryEl = $("dashboardNextStepPrimary");
@@ -2402,6 +2430,11 @@
           tertiaryEl.textContent = "";
           tertiaryEl.classList.add("hidden");
         }
+        const paidBtn = $("dashboardNextStepPaidBtn");
+        if (paidBtn) {
+          paidBtn.classList.add("hidden");
+          paidBtn.onclick = null;
+        }
       };
 
       if (!appView || appView.classList.contains("hidden")) {
@@ -2411,10 +2444,44 @@
       }
 
       const debts = Array.isArray(state.debts) ? state.debts : [];
-      const intents = Array.isArray(state.intents) ? state.intents : [];
+      const intents = paymentIntentListCoalesced();
 
       resetExtraLines();
       card.classList.remove("hidden");
+
+      const intent = pickFeaturedIntentForDashboard(intents);
+      const payAmt = intent ? intentPaymentAmount(intent) : 0;
+
+      if (intent && payAmt > 0) {
+        const amount = fmtMoney(payAmt);
+        let debtLabel = describeIntentPayToward(intent);
+        if (!debtLabel || debtLabel === "?" || !String(debtLabel).trim()) {
+          debtLabel = t("dashboard_debt_fallback");
+        }
+        primaryEl.textContent = tf("dashboard_next_pay_line", { amount, debt: debtLabel });
+        secondaryEl.textContent = t("dashboard_next_pay_outside_app");
+        secondaryEl.classList.remove("hidden");
+        const did = String(intent.debt_id || "").trim();
+        const debtRow = did ? debts.find((d) => String(d.id) === did) : null;
+        const savings = approximateMonthlyInterestSavedByPayment(intent, debtRow);
+        if (tertiaryEl) {
+          tertiaryEl.textContent =
+            savings !== null
+              ? tf("dashboard_next_interest_saved", { amount: fmtMoney(savings) })
+              : t("dashboard_next_interest_na");
+          tertiaryEl.classList.remove("hidden");
+        }
+        const paidBtn = $("dashboardNextStepPaidBtn");
+        if (paidBtn) {
+          paidBtn.textContent = t("dashboard_next_paid_btn");
+          paidBtn.classList.remove("hidden");
+          paidBtn.onclick = () => {
+            setNav("setup");
+            window.requestAnimationFrame(() => scrollToAppSection("suggestedPaymentsPanel"));
+          };
+        }
+        return;
+      }
 
       if (debts.length === 0) {
         primaryEl.textContent = t("dashboard_next_no_debts");
@@ -2424,31 +2491,11 @@
         primaryEl.textContent = t("dashboard_next_no_intents");
         return;
       }
-
-      const intent = pickFeaturedIntentForDashboard(intents);
       if (!intent) {
         primaryEl.textContent = t("dashboard_next_no_intents");
         return;
       }
-      const amount = fmtMoney(intentPaymentAmount(intent));
-      let debtLabel = describeIntentPayToward(intent);
-      if (!debtLabel || debtLabel === "?" || !String(debtLabel).trim()) {
-        debtLabel = t("dashboard_debt_fallback");
-      }
-      primaryEl.textContent = tf("dashboard_next_pay_line", { amount, debt: debtLabel });
-
-      const did = String(intent.debt_id || "").trim();
-      const debtRow = did ? debts.find((d) => String(d.id) === did) : null;
-      const savings = approximateMonthlyInterestSavedByPayment(intent, debtRow);
-      secondaryEl.textContent =
-        savings !== null
-          ? tf("dashboard_next_interest_saved", { amount: fmtMoney(savings) })
-          : t("dashboard_next_interest_na");
-      secondaryEl.classList.remove("hidden");
-      if (tertiaryEl) {
-        tertiaryEl.textContent = t("dashboard_next_accel");
-        tertiaryEl.classList.remove("hidden");
-      }
+      primaryEl.textContent = t("dashboard_next_no_intents");
     }
 
     function renderStats() {
