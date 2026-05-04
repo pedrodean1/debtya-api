@@ -316,6 +316,8 @@
         dashboard_next_pay_outside_app:
           "Make this payment outside DebtYa, then record it as done in your own records when you are ready.",
         dashboard_next_paid_btn: "I paid it",
+        manual_pay_ok: "Payment marked as done. Your progress was updated.",
+        manual_pay_err: "Could not confirm the payment. Try again.",
         next_step_bank: "Next: connect your bank and import accounts so DebtYa can use real balances.",
         next_step_bank_btn: "Go to Actions",
         next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
@@ -910,6 +912,8 @@
         dashboard_next_pay_outside_app:
           "Haz este pago fuera de DebtYa y luego m\u00E1rcalo como realizado.",
         dashboard_next_paid_btn: "Ya lo pagu\u00E9",
+        manual_pay_ok: "Pago marcado como realizado. Tu progreso fue actualizado.",
+        manual_pay_err: "No se pudo confirmar el pago. Int\u00E9ntalo de nuevo.",
         next_step_bank: "Siguiente: conecta tu banco e importa cuentas para usar saldos reales.",
         next_step_bank_btn: "Ir a Acciones",
         next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
@@ -2475,9 +2479,22 @@
         if (paidBtn) {
           paidBtn.textContent = t("dashboard_next_paid_btn");
           paidBtn.classList.remove("hidden");
-          paidBtn.onclick = () => {
-            setNav("setup");
-            window.requestAnimationFrame(() => scrollToAppSection("suggestedPaymentsPanel"));
+          const intentId = intent && intent.id != null ? String(intent.id) : "";
+          paidBtn.onclick = async () => {
+            if (!intentId) return;
+            paidBtn.disabled = true;
+            try {
+              await api(`/payment-intents/${encodeURIComponent(intentId)}/confirm-manual`, {
+                method: "POST",
+                body: "{}"
+              });
+              showMessage(globalMessage, t("manual_pay_ok"), "success");
+              await Promise.all([refreshDebts(), refreshIntents()]);
+            } catch (e) {
+              showMessage(globalMessage, normalizeErrorMessage(e.message || t("manual_pay_err")), "error");
+            } finally {
+              paidBtn.disabled = false;
+            }
           };
         }
         return;

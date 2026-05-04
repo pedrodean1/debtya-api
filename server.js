@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v79-render-featured-intent-card";
+const SERVER_VERSION = "debtya-2026-05-04-v80-manual-payment-confirmation";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -386,14 +386,18 @@ function getBaseUrl(req) {
 }
 
 function getIntentAmount(intent) {
-  return safeNumber(
-    intent?.total_amount ??
-      intent?.amount ??
-      intent?.executed_amount ??
-      intent?.suggested_amount ??
-      intent?.payment_amount ??
-      0
+  let n = safeNumber(intent?.total_amount ?? intent?.amount ?? intent?.executed_amount ?? 0);
+  if (n > 0) return n;
+  if (intent?.amount_cents != null) {
+    const c = safeNumber(intent.amount_cents);
+    if (c > 0) return c / 100;
+  }
+  n = safeNumber(
+    intent?.suggested_amount ?? intent?.payment_amount ?? intent?.amount_due ?? 0
   );
+  if (n > 0) return n;
+  const meta = getIntentMetadata(intent);
+  return safeNumber(meta.amount ?? meta.total_amount ?? meta.suggested_amount ?? meta.payment_amount ?? 0);
 }
 
 function getIntentMetadata(intent) {
@@ -2122,6 +2126,115 @@ async function executeIntentDirect(userId, intentId) {
   };
 }
 
+/**
+ * Usuario confirma que pagó fuera de DebtYa (sin rail de pago). Marca intent ejecutado,
+ * registra payment_executions y rebaja balance como executeIntentDirect, incl. Spinwheel.
+ */
+async function confirmManualPaymentIntentDirect(userId, intentId) {
+  if (!isUuid(intentId)) {
+    const err = new Error("intent_id inválido");
+    err.status = 400;
+    throw err;
+  }
+
+  const { data: intent, error: intentError } = await supabaseAdmin
+    .from("payment_intents")
+    .select("*")
+    .eq("id", intentId)
+    .eq("user_id", userId)
+    .single();
+
+  if (intentError || !intent) {
+    const err = new Error("Intent no encontrado");
+    err.status = 404;
+    throw err;
+  }
+
+  const st = String(intent.status || "").toLowerCase().trim();
+  if (st === "executed") {
+    const err = new Error("Este intent ya está marcado como ejecutado.");
+    err.status = 400;
+    throw err;
+  }
+  if (!["pending_review", "approved"].includes(st)) {
+    const err = new Error(
+      "Solo se puede confirmar manualmente un intent en pending_review o approved."
+    );
+    err.status = 400;
+    throw err;
+  }
+
+  const amount = getIntentAmount(intent);
+  if (amount <= 0) {
+    const err = new Error("Monto del intent no válido para confirmar.");
+    err.status = 400;
+    throw err;
+  }
+
+  const debtId = intent.debt_id || intent.target_debt_id || null;
+  if (!debtId || !isUuid(String(debtId))) {
+    const err = new Error("El intent no tiene una deuda asociada válida.");
+    err.status = 400;
+    throw err;
+  }
+
+  const now = new Date().toISOString();
+  const meta = {
+    ...getIntentMetadata(intent),
+    manual_confirmed: true,
+    paid_outside_app: true,
+    confirmed_at: now
+  };
+
+  const { data: updatedIntent, error: updateIntentError } = await supabaseAdmin
+    .from("payment_intents")
+    .update({
+      status: "executed",
+      executed_at: now,
+      updated_at: now,
+      metadata: meta
+    })
+    .eq("id", intentId)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (updateIntentError) throw updateIntentError;
+
+  const executionPayload = {
+    user_id: userId,
+    payment_intent_id: updatedIntent.id,
+    amount,
+    status: "executed",
+    executed_at: now,
+    created_at: now,
+    updated_at: now
+  };
+
+  const { error: executionError } = await supabaseAdmin
+    .from("payment_executions")
+    .upsert(executionPayload, { onConflict: "payment_intent_id" });
+
+  if (executionError) {
+    appDebug("No se pudo registrar payment_execution (manual):", executionError.message);
+  }
+
+  const debtApply = await applyExecutedIntentToDebt(userId, updatedIntent).catch((e) => ({
+    ok: false,
+    error: e.message
+  }));
+
+  return {
+    ok: true,
+    intent_id: updatedIntent.id,
+    debt_id: String(debtId),
+    amount_confirmed: amount,
+    new_balance: debtApply.next_balance ?? null,
+    data: updatedIntent,
+    debt_apply: debtApply
+  };
+}
+
 registerAllRoutes(app, {
   SERVER_VERSION,
   SUPABASE_URL,
@@ -2149,6 +2262,7 @@ registerAllRoutes(app, {
   stampRecentIntentsFundingFromPlan,
   approveIntentDirect,
   executeIntentDirect,
+  confirmManualPaymentIntentDirect,
   reconcileRecentExecutedIntents,
   isoDaysAgo,
   stripe,

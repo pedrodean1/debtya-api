@@ -10,6 +10,7 @@ function registerPaymentIntentRoutes(app, deps) {
     safeNumber,
     approveIntentDirect,
     executeIntentDirect,
+    confirmManualPaymentIntentDirect,
     reconcileRecentExecutedIntents,
     isoDaysAgo,
     jsonError
@@ -104,6 +105,32 @@ function registerPaymentIntentRoutes(app, deps) {
       });
     } catch (error) {
       return jsonError(res, error.status || 500, "Error ejecutando intent", {
+        details: error.message
+      });
+    }
+  });
+
+  app.post("/payment-intents/:id/confirm-manual", requireUser, async (req, res) => {
+    try {
+      const intentId = req.params.id;
+      const idErr = validateIntentRouteParamId(intentId);
+      if (idErr) {
+        return jsonError(res, 400, idErr);
+      }
+      const result = await confirmManualPaymentIntentDirect(req.user.id, intentId);
+
+      return res.json({
+        ok: true,
+        bypass_sql_function: true,
+        intent_id: result.intent_id,
+        debt_id: result.debt_id,
+        amount_confirmed: result.amount_confirmed,
+        new_balance: result.new_balance,
+        debt_apply: result.debt_apply,
+        data: result.data
+      });
+    } catch (error) {
+      return jsonError(res, error.status || 500, "Error confirmando pago manual", {
         details: error.message
       });
     }

@@ -24,6 +24,17 @@ function makeDeps(overrides = {}) {
     safeNumber,
     approveIntentDirect: overrides.approveIntentDirect || (async () => ({})),
     executeIntentDirect: overrides.executeIntentDirect || (async () => ({})),
+    confirmManualPaymentIntentDirect:
+      overrides.confirmManualPaymentIntentDirect ||
+      (async () => ({
+        ok: true,
+        intent_id: intentId,
+        debt_id: "770e8400-e29b-41d4-a716-446655440000",
+        amount_confirmed: 25,
+        new_balance: 100,
+        data: { id: intentId, status: "executed" },
+        debt_apply: { ok: true, next_balance: 100 }
+      })),
     reconcileRecentExecutedIntents: overrides.reconcileRecentExecutedIntents || (async () => ({})),
     isoDaysAgo: () => new Date().toISOString(),
     jsonError,
@@ -62,6 +73,22 @@ describe("routes/payment-intents-routes", () => {
     assert.equal(res.status, 400);
     assert.equal(res.body.http_status, 400);
     assert.match(res.body.error, /inválido/);
+  });
+
+  it("POST confirm-manual id no uuid => 400", async () => {
+    const app = mount(makeDeps({ supabaseAdmin: {} }));
+    const res = await request(app).post("/payment-intents/not-a-uuid/confirm-manual").send({});
+    assert.equal(res.status, 400);
+    assert.equal(res.body.http_status, 400);
+  });
+
+  it("POST confirm-manual ok cuando el handler resuelve", async () => {
+    const app = mount(makeDeps({}));
+    const res = await request(app).post(`/payment-intents/${intentId}/confirm-manual`).send({});
+    assert.equal(res.status, 200);
+    assert.equal(res.body.ok, true);
+    assert.equal(res.body.intent_id, intentId);
+    assert.equal(res.body.amount_confirmed, 25);
   });
 
   it("POST crea intent cuando insert ok", async () => {
