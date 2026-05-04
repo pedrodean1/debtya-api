@@ -132,7 +132,7 @@ describe("lib/spinwheel-payment-intents", () => {
     assert.equal(inserts[0].source, "spinwheel");
     assert.equal(inserts[0].external_id, "sw-ext-1");
     assert.equal(inserts[0].status, "draft");
-    assert.equal(inserts[0].execution_mode, "manual");
+    assert.equal(inserts[0].execution_mode, "safe");
     assert.equal(inserts[0].execution_frequency, "daily");
     assert.equal(inserts[0].metadata.interest_rate, 18.9);
     assert.equal(inserts[0].amount, 25);
