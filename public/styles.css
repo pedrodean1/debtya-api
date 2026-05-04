@@ -1151,13 +1151,6 @@
       line-height:1.55;
     }
 
-    .top-nav{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-bottom:8px;
-    }
-
     .section-title-step{
       display:inline-flex;
       align-items:center;
@@ -1331,27 +1324,6 @@
       font-size:13px;
       line-height:1.45;
       color:var(--muted);
-    }
-
-    .nav-chip{
-      border:1px solid var(--line);
-      background:#fff;
-      color:var(--text);
-      border-radius:999px;
-      padding:10px 14px;
-      font-size:13px;
-      font-weight:700;
-      cursor:pointer;
-    }
-
-    .nav-chip.active{
-      background:#eef4ff;
-      color:var(--primary);
-      border-color:#d7e6ff;
-    }
-    .nav-chip:focus-visible{
-      outline:2px solid var(--primary);
-      outline-offset:2px;
     }
 
     .pricing-wrap{
@@ -1676,7 +1648,7 @@
     }
     #appView .topbar-app{
       display:grid;
-      grid-template-columns:minmax(0,auto) minmax(0,1fr) auto;
+      grid-template-columns:minmax(0,1fr) auto;
       align-items:center;
       column-gap:14px;
       row-gap:10px;
@@ -1698,19 +1670,6 @@
       color:#64748b;
       letter-spacing:.02em;
     }
-    #appView .top-nav-app{
-      justify-content:center;
-      justify-self:stretch;
-      width:100%;
-      margin:0;
-      flex-wrap:wrap;
-      gap:5px;
-      padding:6px 8px;
-      border-radius:14px;
-      background:linear-gradient(180deg,#f6f8fc 0%,#eef2f7 100%);
-      border:1px solid #c9d4e6;
-      box-shadow:0 1px 0 rgba(255,255,255,.85) inset;
-    }
     #appView .topbar-right-cluster.top-actions,
     #appView .top-actions.topbar-right-cluster{
       display:flex;
@@ -1725,27 +1684,11 @@
       border:1px solid #c9d4e4;
       box-shadow:0 1px 0 rgba(255,255,255,.9) inset;
     }
-    #appView .top-nav-app .nav-chip{
-      padding:8px 13px;
-      font-size:12px;
-      font-weight:800;
-      background:transparent;
-      border-color:transparent;
-    }
-    #appView .top-nav-app .nav-chip:not(.active){
-      color:#475569;
-    }
-    #appView .top-nav-app .nav-chip.active{
-      background:#fff;
-      border-color:#b8c8e0;
-      box-shadow:0 1px 3px rgba(18,32,51,.08);
-    }
     @media (max-width:720px){
       #appView .topbar-app{
         grid-template-columns:1fr;
         justify-items:stretch;
       }
-      #appView .top-nav-app{justify-content:flex-start}
       #appView .topbar-right-cluster.top-actions{width:100%;justify-content:space-between}
     }
 

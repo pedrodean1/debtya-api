@@ -302,11 +302,6 @@
         advanced_operate_toggle: "More ? rules & payments",
         advanced_plan_toggle: "More plan options",
         advanced_intents_toggle: "More list options",
-        nav_hint:
-          "Overview is your snapshot. Actions syncs your bank and runs payment steps. Debts & plan is where you enter balances, rules, and strategy.",
-        nav_overview: "Overview",
-        nav_operate: "Actions",
-        nav_setup: "Debts & plan",
         hero_title: "See your plan. Take the next step.",
         hero_copy: "Debt balances, bank data, and your next payoff move?in one place.",
         dashboard_next_step_title: "Your next step",
@@ -897,11 +892,6 @@
         advanced_operate_toggle: "Mas ? reglas y pagos",
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_intents_toggle: "Mas opciones de la lista",
-        nav_hint:
-          "Resumen es tu panorama. Acciones sincroniza el banco y los pasos de pago. Deudas y plan es donde cargas saldos, reglas y estrategia.",
-        nav_overview: "Resumen",
-        nav_operate: "Acciones",
-        nav_setup: "Deudas y plan",
         hero_title: "Ve tu plan. Da el siguiente paso.",
         hero_copy: "Deudas, banco y tu siguiente paso para bajarlas?en un solo lugar.",
         dashboard_next_step_title: "Tu pr\u00F3ximo paso",
@@ -1648,11 +1638,6 @@
     }
 
     function setNav(active) {
-      const ids = ["navOverview","navOperate","navSetup"];
-      ids.forEach(id => $(id).classList.remove("active"));
-      if (active === "overview") $("navOverview").classList.add("active");
-      if (active === "operate") $("navOperate").classList.add("active");
-      if (active === "setup") $("navSetup").classList.add("active");
       if (active === "operate") void refreshMethodSection();
     }
 
@@ -5582,10 +5567,6 @@
     if (billingManageBtn) billingManageBtn.addEventListener("click", () => openBillingPortal($("billingManageBtn")));
     $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
     $("btnConnectBank").addEventListener("click", connectBankDirect);
-
-    $("navOverview").addEventListener("click", () => setNav("overview"));
-    $("navOperate").addEventListener("click", () => setNav("operate"));
-    $("navSetup").addEventListener("click", () => setNav("setup"));
 
     const heroRulesSwitchEl = $("heroRulesEnabledSwitch");
     if (heroRulesSwitchEl) heroRulesSwitchEl.addEventListener("change", onHeroRulesSwitchChange);
