@@ -63,6 +63,7 @@ describe("lib/spinwheel-payment-intents", () => {
                                 data: [
                                   {
                                     id: "22222222-2222-4222-8222-222222222222",
+                                    name: "Test Card",
                                     balance: 200,
                                     minimum_payment: 25,
                                     apr: 18.9,
@@ -126,6 +127,7 @@ describe("lib/spinwheel-payment-intents", () => {
     });
 
     assert.equal(r.appended, 1);
+    assert.deepEqual(r.skipped_details, []);
     assert.equal(inserts.length, 1);
     assert.equal(inserts[0].source, "spinwheel");
     assert.equal(inserts[0].external_id, "sw-ext-1");
@@ -153,6 +155,7 @@ describe("lib/spinwheel-payment-intents", () => {
                                 data: [
                                   {
                                     id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                                    name: "Dup Debt",
                                     balance: 100,
                                     minimum_payment: 10,
                                     apr: 12,
@@ -208,5 +211,66 @@ describe("lib/spinwheel-payment-intents", () => {
 
     assert.equal(r.appended, 0);
     assert.equal(r.skipped, 1);
+    assert.equal(r.skipped_details.length, 1);
+    assert.equal(r.skipped_details[0].reason, "existing_intent");
+    assert.equal(r.skipped_details[0].spinwheel_external_id, "dup");
+    assert.equal(r.skipped_details[0].name, "Dup Debt");
+  });
+
+  it("appendSpinwheelPaymentIntents skipped_details missing_external_id", async () => {
+    const userId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    const supabaseAdmin = {
+      from(table) {
+        if (table === "debts") {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    eq() {
+                      return {
+                        eq() {
+                          return {
+                            gt() {
+                              return Promise.resolve({
+                                data: [
+                                  {
+                                    id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+                                    name: "No Ext",
+                                    balance: 50,
+                                    minimum_payment: 5,
+                                    apr: 10,
+                                    spinwheel_external_id: null,
+                                    payment_capable: true,
+                                    is_active: true,
+                                    source: "spinwheel"
+                                  }
+                                ],
+                                error: null
+                              });
+                            }
+                          };
+                        }
+                      };
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+        throw new Error("unexpected table " + table);
+      }
+    };
+
+    const r = await appendSpinwheelPaymentIntents(supabaseAdmin, userId, {
+      safeNumber,
+      getCurrentPaymentPlan: async () => ({ strategy: "avalanche" })
+    });
+
+    assert.equal(r.appended, 0);
+    assert.equal(r.skipped, 1);
+    assert.equal(r.skipped_details[0].reason, "missing_external_id");
+    assert.equal(r.skipped_details[0].debt_id, "dddddddd-dddd-4ddd-8ddd-dddddddddddd");
   });
 });

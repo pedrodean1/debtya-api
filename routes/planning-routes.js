@@ -66,7 +66,7 @@ function registerPlanningRoutes(app, deps) {
         getCurrentPaymentPlan
       }).catch((e) => {
         appDebug("appendSpinwheelPaymentIntents:", e.message);
-        return { appended: 0, skipped: 0, intents: [], strategy: null, error: e.message };
+        return { appended: 0, skipped: 0, skipped_details: [], intents: [], strategy: null, error: e.message };
       });
 
       await stampRecentIntentsFundingFromPlan(req.user.id).catch((e) => {
@@ -96,7 +96,7 @@ function registerPlanningRoutes(app, deps) {
         getCurrentPaymentPlan
       }).catch((e) => {
         appDebug("appendSpinwheelPaymentIntents:", e.message);
-        return { appended: 0, skipped: 0, intents: [], strategy: null, error: e.message };
+        return { appended: 0, skipped: 0, skipped_details: [], intents: [], strategy: null, error: e.message };
       });
 
       await stampRecentIntentsFundingFromPlan(req.user.id).catch((e) => {
