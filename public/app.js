@@ -309,6 +309,7 @@
         dashboard_next_no_plan: "Create your payment plan.",
         dashboard_next_no_intents: "Generate your suggested payments.",
         dashboard_next_pay_line: "Pay {amount} to {debt} today",
+        dashboard_debt_fallback: "this debt",
         dashboard_next_interest_saved: "You save ~{amount} in interest this month",
         dashboard_next_interest_na: "Add APR on this debt for a sharper interest estimate.",
         dashboard_next_accel: "This speeds up your path out of debt.",
@@ -899,6 +900,7 @@
         dashboard_next_no_plan: "Crea tu plan de pago",
         dashboard_next_no_intents: "Genera tus pagos sugeridos",
         dashboard_next_pay_line: "Paga {amount} a {debt} hoy",
+        dashboard_debt_fallback: "esta deuda",
         dashboard_next_interest_saved: "Ahorras ~{amount} en intereses este mes",
         dashboard_next_interest_na: "A\u00F1ade el APR en esta deuda para estimar mejor los intereses.",
         dashboard_next_accel: "Esto acelera tu salida de deuda.",
@@ -2342,6 +2344,9 @@
         if (c > 0) return c / 100;
       }
       n = toNum(intent.payment_amount ?? intent.suggested_amount ?? intent.amount_due);
+      if (n > 0) return n;
+      const meta = normalizeIntentMetadata(intent.metadata);
+      n = toNum(meta.amount ?? meta.total_amount ?? meta.suggested_amount ?? meta.payment_amount);
       return n > 0 ? n : 0;
     }
 
@@ -2352,6 +2357,7 @@
     function pickFeaturedIntentForDashboard(intents) {
       const list = Array.isArray(intents) ? intents.filter((x) => x) : [];
       if (!list.length) return null;
+      const actionableStatuses = new Set(["pending_review", "approved"]);
       const openStatuses = new Set([
         "draft",
         "pending",
@@ -2364,17 +2370,21 @@
       ]);
       const rows = list.map((intent) => {
         const st = String(intent.status || "").toLowerCase().trim();
+        const isActionable = actionableStatuses.has(st);
         const isOpen = openStatuses.has(st);
         const amt = intentPaymentAmount(intent);
         const sched = intent.scheduled_for != null ? String(intent.scheduled_for) : "";
-        return { intent, isOpen, amt, sched };
+        return { intent, st, isActionable, isOpen, amt, sched };
       });
-      const pool = rows.some((r) => r.isOpen) ? rows.filter((r) => r.isOpen) : rows;
+      let pool = rows.filter((r) => r.isActionable);
+      if (!pool.length) {
+        pool = rows.some((r) => r.isOpen) ? rows.filter((r) => r.isOpen) : rows;
+      }
       pool.sort((a, b) => {
         if (a.sched && b.sched && a.sched !== b.sched) return a.sched.localeCompare(b.sched);
         return b.amt - a.amt;
       });
-      return pool[0].intent;
+      return pool[0]?.intent || null;
     }
 
     function renderDashboardNextStep() {
@@ -2400,7 +2410,6 @@
       }
 
       const debts = Array.isArray(state.debts) ? state.debts : [];
-      const plan = state.plan;
       const intents = Array.isArray(state.intents) ? state.intents : [];
 
       resetExtraLines();
@@ -2408,10 +2417,6 @@
 
       if (debts.length === 0) {
         primaryEl.textContent = t("dashboard_next_no_debts");
-        return;
-      }
-      if (!plan || !plan.id) {
-        primaryEl.textContent = t("dashboard_next_no_plan");
         return;
       }
       if (intents.length === 0) {
@@ -2426,7 +2431,9 @@
       }
       const amount = fmtMoney(intentPaymentAmount(intent));
       let debtLabel = describeIntentPayToward(intent);
-      if (!debtLabel || debtLabel === "?") debtLabel = t("debt_label");
+      if (!debtLabel || debtLabel === "?" || !String(debtLabel).trim()) {
+        debtLabel = t("dashboard_debt_fallback");
+      }
       primaryEl.textContent = tf("dashboard_next_pay_line", { amount, debt: debtLabel });
 
       const did = String(intent.debt_id || "").trim();
@@ -3746,11 +3753,26 @@
     }
 
     function describeIntentPayToward(intent) {
+      if (!intent) return t("dashboard_debt_fallback");
       const did = String(intent.debt_id || "").trim();
-      if (!did) return "?";
-      const d = (state.debts || []).find((x) => String(x.id) === did);
-      if (d) return d.name || t("debt_label");
-      return did.length > 12 ? `${did.slice(0, 8)}?` : did;
+      if (did) {
+        const d = (state.debts || []).find((x) => String(x.id) === did);
+        if (d) {
+          const nm = d.name != null ? String(d.name).trim() : "";
+          if (nm) return nm;
+        }
+      }
+      const flat = intent.creditor_name || intent.debt_name || intent.name || "";
+      if (flat && String(flat).trim()) return String(flat).trim();
+      const meta = normalizeIntentMetadata(intent.metadata);
+      const fromMeta =
+        meta.creditor_name ||
+        meta.debt_name ||
+        meta.name ||
+        meta.debtName ||
+        "";
+      if (fromMeta && String(fromMeta).trim()) return String(fromMeta).trim();
+      return t("dashboard_debt_fallback");
     }
 
     function populatePlanRoutingSelects() {
@@ -4286,6 +4308,9 @@
         else list = [];
       }
       state.intents = list;
+      const featuredIntent = pickFeaturedIntentForDashboard(list);
+      console.log("[DebtYa payment intents loaded]", list);
+      console.log("[DebtYa featured intent]", featuredIntent);
       renderIntents();
     }
 
