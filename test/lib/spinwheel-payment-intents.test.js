@@ -273,4 +273,102 @@ describe("lib/spinwheel-payment-intents", () => {
     assert.equal(r.skipped_details[0].reason, "missing_external_id");
     assert.equal(r.skipped_details[0].debt_id, "dddddddd-dddd-4ddd-8ddd-dddddddddddd");
   });
+
+  it("appendSpinwheelPaymentIntents other incluye error_message y error_code", async () => {
+    const userId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+    const supabaseAdmin = {
+      from(table) {
+        if (table === "debts") {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    eq() {
+                      return {
+                        eq() {
+                          return {
+                            gt() {
+                              return Promise.resolve({
+                                data: [
+                                  {
+                                    id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+                                    name: "Err Debt",
+                                    balance: 300,
+                                    minimum_payment: 20,
+                                    apr: 15,
+                                    spinwheel_external_id: "sw-err-1",
+                                    payment_capable: true,
+                                    is_active: true,
+                                    source: "spinwheel"
+                                  }
+                                ],
+                                error: null
+                              });
+                            }
+                          };
+                        }
+                      };
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+        if (table === "payment_intents") {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    eq() {
+                      return {
+                        in() {
+                          return Promise.resolve({ data: [], error: null });
+                        }
+                      };
+                    }
+                  };
+                }
+              };
+            },
+            insert() {
+              return {
+                select() {
+                  return {
+                    single() {
+                      return Promise.resolve({
+                        data: null,
+                        error: {
+                          code: "23514",
+                          message: "row violates check constraint",
+                          details: "Failing row contains",
+                          hint: "See policy"
+                        }
+                      });
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+        throw new Error("unexpected table " + table);
+      }
+    };
+
+    const r = await appendSpinwheelPaymentIntents(supabaseAdmin, userId, {
+      safeNumber,
+      getCurrentPaymentPlan: async () => ({ strategy: "avalanche" })
+    });
+
+    assert.equal(r.appended, 0);
+    assert.equal(r.skipped, 1);
+    assert.equal(r.skipped_details[0].reason, "other");
+    assert.equal(r.skipped_details[0].error_code, "23514");
+    assert.match(r.skipped_details[0].error_message, /row violates/);
+    assert.match(r.skipped_details[0].error_details, /Failing row contains/);
+    assert.match(r.skipped_details[0].error_details, /See policy/);
+  });
 });
