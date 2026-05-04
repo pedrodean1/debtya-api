@@ -1550,6 +1550,7 @@
       rules: [],
       plan: null,
       intents: [],
+      paymentIntents: [],
       trace: [],
       accounts: [],
       plaidItems: [],
@@ -4308,10 +4309,12 @@
         else list = [];
       }
       state.intents = list;
+      state.paymentIntents = list;
       const featuredIntent = pickFeaturedIntentForDashboard(list);
       console.log("[DebtYa payment intents loaded]", list);
       console.log("[DebtYa featured intent]", featuredIntent);
       renderIntents();
+      updateNextActionGuide();
     }
 
     async function refreshTrace() {
