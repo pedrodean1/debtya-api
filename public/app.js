@@ -1608,7 +1608,9 @@
       methodEntitiesLoadError: null,
       methodEntityCreating: false,
       /** Prioridad servidor/cliente para elegir intent en dashboard (manual-first). */
-      manualPriorityDebtId: null
+      manualPriorityDebtId: null,
+      /** Ultima respuesta de POST /payment-intents/build (solo metadata para ?debugPlan=1). */
+      lastPlanBuildResponse: null
     };
 
     const $ = (id) => document.getElementById(id);
@@ -2360,11 +2362,120 @@
       wrap.classList.remove("hidden");
     }
 
+    function isPlanDebugUrl() {
+      try {
+        return new URLSearchParams(window.location.search || "").get("debugPlan") === "1";
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function recordPlanBuildResponse(res) {
+      state.lastPlanBuildResponse = res && typeof res === "object" ? res : null;
+      renderPlanDebugPanel();
+    }
+
+    function recordPlanBuildFailure(err) {
+      state.lastPlanBuildResponse = {
+        _requestError: true,
+        message: normalizeErrorMessage(err?.message || String(err || ""))
+      };
+      renderPlanDebugPanel();
+    }
+
+    function renderPlanDebugPanel() {
+      const wrap = $("planDebugPanel");
+      const body = $("planDebugPanelBody");
+      if (!wrap || !body) return;
+      const appHidden = !appView || appView.classList.contains("hidden");
+      if (appHidden || !isPlanDebugUrl()) {
+        wrap.classList.add("hidden");
+        wrap.setAttribute("aria-hidden", "true");
+        return;
+      }
+      wrap.classList.remove("hidden");
+      wrap.setAttribute("aria-hidden", "false");
+
+      const raw = state.lastPlanBuildResponse;
+      const intents = paymentIntentListCoalesced();
+      const normSt = (i) => String(i?.status || "").toLowerCase().trim();
+      const nPending = intents.filter((i) => normSt(i) === "pending_review").length;
+      const nApproved = intents.filter((i) => normSt(i) === "approved").length;
+
+      const featured = pickFeaturedIntentForDashboard(intents);
+      const fmeta = featured ? normalizeIntentMetadata(featured.metadata) : {};
+      const fMfPri =
+        fmeta.manual_first_priority === true ||
+        String(fmeta.manual_first_priority || "").toLowerCase() === "true";
+
+      let manualStr;
+      if (!raw || typeof raw !== "object") {
+        manualStr = "missing";
+      } else if (raw._requestError) {
+        manualStr = "missing";
+      } else if (!Object.prototype.hasOwnProperty.call(raw, "manual_first_reconcile")) {
+        manualStr = "missing";
+      } else {
+        const m = raw.manual_first_reconcile;
+        if (m == null) {
+          manualStr = "missing";
+        } else if (typeof m !== "object") {
+          manualStr = String(m);
+        } else {
+          manualStr = {
+            ok: m.ok,
+            canceled: m.canceled,
+            intent_id: m.intent_id ?? null,
+            priorityDebtName: m.priorityDebtName ?? null,
+            amount: m.amount ?? null,
+            strategy: m.strategy ?? null
+          };
+          const pe = m.priorityDebtId != null ? m.priorityDebtId : m.priority_debt_id;
+          if (pe != null) manualStr.priorityDebtId = pe;
+          if (m.error != null && String(m.error).trim() !== "") manualStr.error = m.error;
+          if (m.skipped != null) manualStr.skipped = m.skipped;
+          if (m.reason != null) manualStr.reason = m.reason;
+        }
+      }
+
+      const out = {
+        manual_first_reconcile: manualStr,
+        actionable_intent_counts: {
+          pending_review: nPending,
+          approved: nApproved,
+          pending_review_or_approved_total: nPending + nApproved
+        },
+        dashboard_selected_intent: featured
+          ? {
+              id: featured.id ?? null,
+              status: featured.status ?? null,
+              debt_id: featured.debt_id ?? null,
+              amount: intentPaymentAmount(featured),
+              manual_first_priority: fMfPri,
+              source: featured.source != null && featured.source !== "" ? featured.source : null
+            }
+          : null
+      };
+
+      if (raw && typeof raw === "object" && raw._requestError) {
+        out.build_http_error = raw.message;
+      }
+      if (!raw || typeof raw !== "object") {
+        out.hint = "Guarda el plan, Refresh plan o Build intents para capturar POST /payment-intents/build.";
+      }
+
+      body.textContent = JSON.stringify(out, null, 2);
+    }
+
     function updateNextActionGuide() {
-      if (!appView || appView.classList.contains("hidden")) return;
+      if (!appView || appView.classList.contains("hidden")) {
+        renderPlanDebugPanel();
+        return;
+      }
       renderGuideStepProgress();
       renderNextStepCallout();
       renderDashboardNextStep();
+      renderPlanDebugPanel();
     }
 
     /**
@@ -5836,10 +5947,12 @@
       try {
         await refreshPlan();
         const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
+        recordPlanBuildResponse(buildRes);
         ingestManualFirstReconcile(buildRes);
         await refreshIntents();
         updateNextActionGuide();
       } catch (err) {
+        recordPlanBuildFailure(err);
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
       } finally {
         setLoading(btn, false);
@@ -5993,10 +6106,12 @@
         await refreshPlan();
         try {
           const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
+          recordPlanBuildResponse(buildRes);
           ingestManualFirstReconcile(buildRes);
           await refreshIntents();
           updateNextActionGuide();
         } catch (e) {
+          recordPlanBuildFailure(e);
           showMessage(
             globalMessage,
             normalizeErrorMessage(e?.message || String(e || "")),
@@ -6060,10 +6175,12 @@
           showMessage(globalMessage, `${t("rules_applied")}: ${res.created ?? 0}.`, "success");
           try {
             const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
+            recordPlanBuildResponse(buildRes);
             ingestManualFirstReconcile(buildRes);
             await refreshIntents();
             updateNextActionGuide();
           } catch (e) {
+            recordPlanBuildFailure(e);
             showMessage(globalMessage, normalizeErrorMessage(e?.message || String(e)), "error");
           }
         } catch (err) {
@@ -6081,6 +6198,7 @@
       const pre = $("intentsBuildResultJson");
       try {
         const res = await api("/payment-intents/build", { method: "POST", body: "{}" });
+        recordPlanBuildResponse(res);
         ingestManualFirstReconcile(res);
         const spPanel = $("suggestedPaymentsPanel");
         const panelHidden = !!(spPanel && spPanel.classList.contains("hidden"));
@@ -6098,6 +6216,7 @@
         await refreshIntents();
         updateNextActionGuide();
       } catch (err) {
+        recordPlanBuildFailure(err);
         const spPanel = $("suggestedPaymentsPanel");
         const panelHidden = !!(spPanel && spPanel.classList.contains("hidden"));
         if (fb && pre) {

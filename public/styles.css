@@ -162,6 +162,32 @@
       white-space:pre-wrap;
     }
 
+    .plan-debug-panel{
+      margin-top:14px;
+      padding:10px 12px;
+      border:1px dashed var(--line);
+      border-radius:12px;
+      background:var(--card-2);
+      font-size:12px;
+    }
+    .plan-debug-kicker{
+      margin:0 0 8px;
+      font-weight:700;
+      color:var(--muted);
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.04em;
+    }
+    .plan-debug-pre{
+      margin:0;
+      white-space:pre-wrap;
+      word-break:break-word;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-size:11px;
+      line-height:1.4;
+      color:var(--text);
+    }
+
     #operatePanel{order:1}
     #setupPanel{order:2}
     #paymentPlanSection{order:3}

@@ -39,13 +39,13 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-04-v84-2-debug-force-manual-first-plan" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-04-v84-3-plan-debug-visible" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-04-v84-2-debug-force-manual-first-plan">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-04-v84-3-plan-debug-visible">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -403,6 +403,10 @@
               <h4 id="dashboardAiCoachTitle" class="dashboard-ai-coach-title"></h4>
               <button type="button" id="dashboardAiCoachBtn" class="btn btn-light btn-small"></button>
               <div id="dashboardAiCoachOut" class="dashboard-ai-coach-out"></div>
+            </div>
+            <div id="planDebugPanel" class="plan-debug-panel hidden" aria-hidden="true">
+              <p class="plan-debug-kicker">Plan debug (?debugPlan=1)</p>
+              <pre id="planDebugPanelBody" class="plan-debug-pre"></pre>
             </div>
           </section>
           <h2 class="hero-title" data-i18n="hero_title">See your plan. Take the next step.</h2>
@@ -1080,6 +1084,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-04-v84-2-debug-force-manual-first-plan"></script>
+  <script src="/app.js?v=debtya-2026-05-04-v84-3-plan-debug-visible"></script>
 </body>
 </html>
