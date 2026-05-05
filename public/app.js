@@ -1609,6 +1609,8 @@
       methodEntityCreating: false,
       /** Prioridad servidor/cliente para elegir intent en dashboard (manual-first). */
       manualPriorityDebtId: null,
+      /** Intent_id devuelto por manual_first_reconcile (prioridad absoluta en dashboard). */
+      manualPriorityIntentId: null,
       /** Ultima respuesta de POST /payment-intents/build (solo metadata para ?debugPlan=1). */
       lastPlanBuildResponse: null
     };
@@ -2438,8 +2440,23 @@
         }
       }
 
+      let serverIntentIdFromPayload = null;
+      if (
+        raw &&
+        typeof raw === "object" &&
+        !raw._requestError &&
+        raw.manual_first_reconcile &&
+        typeof raw.manual_first_reconcile === "object"
+      ) {
+        serverIntentIdFromPayload = raw.manual_first_reconcile.intent_id ?? null;
+      }
+
       const out = {
         manual_first_reconcile: manualStr,
+        state_manual_priority: {
+          manualPriorityIntentId: state.manualPriorityIntentId,
+          manualPriorityDebtId: state.manualPriorityDebtId
+        },
         actionable_intent_counts: {
           pending_review: nPending,
           approved: nApproved,
@@ -2454,7 +2471,12 @@
               manual_first_priority: fMfPri,
               source: featured.source != null && featured.source !== "" ? featured.source : null
             }
-          : null
+          : null,
+        dashboard_matches_manual_first_intent_id:
+          serverIntentIdFromPayload != null &&
+          serverIntentIdFromPayload !== "" &&
+          featured &&
+          String(featured.id) === String(serverIntentIdFromPayload)
       };
 
       if (raw && typeof raw === "object" && raw._requestError) {
@@ -2604,19 +2626,19 @@
       );
     }
 
-    function intentDashboardSelectionTier(intent, computedDebtId) {
-      if (intentManualFirstPriorityFlag(intent)) return 4;
+    function intentExternalIntegrationSource(intent) {
       const src = String(intent?.source || "").toLowerCase();
-      const did = intent.debt_id != null ? String(intent.debt_id).trim() : "";
-      const cd = computedDebtId != null ? String(computedDebtId).trim() : "";
-      if (cd && did === cd && src !== "spinwheel") return 3;
-      if (cd && (src === "spinwheel" || src === "method" || src === "plaid")) return 0;
-      return 2;
+      return (
+        src === "spinwheel" || src === "method" || src === "plaid" || src === "legacy"
+      );
     }
 
     /**
-     * Prioriza metadata.manual_first_priority; si hay deuda focal calculada, degrada Spinwheel/legacy.
-     * Empate: created_at mas reciente (no mayor monto).
+     * 1) manualPriorityIntentId (servidor)
+     * 2) metadata.manual_first_priority
+     * 3) debt_id === manualPriorityDebtId (no integraciones antes que manual)
+     * Degradar spinwheel/method/plaid si hay ancla y no coinciden con debt focal.
+     * Sin orden por monto.
      * @param {object[]} intents
      */
     function pickFeaturedIntentForDashboard(intents) {
@@ -2625,12 +2647,35 @@
       const actionable = list.filter((intent) => intentStatusDashboardActionable(intent));
       if (!actionable.length) return null;
 
-      const computedDebtId =
-        state.manualPriorityDebtId || pickManualPriorityDebtIdForDashboard();
+      const forcedIdRaw =
+        state.manualPriorityIntentId != null ? String(state.manualPriorityIntentId).trim() : "";
+      if (forcedIdRaw) {
+        const hit = actionable.find((i) => String(i?.id || "").trim() === forcedIdRaw);
+        if (hit) return hit;
+        state.manualPriorityIntentId = null;
+      }
+
+      const anchorDebtRaw =
+        state.manualPriorityDebtId != null ? String(state.manualPriorityDebtId).trim() : "";
+      const computedDebtId = anchorDebtRaw || pickManualPriorityDebtIdForDashboard();
+      const debtRef = computedDebtId != null ? String(computedDebtId).trim() : "";
+      const hasAnchor = !!(anchorDebtRaw || forcedIdRaw || debtRef);
+
+      function tier(intent) {
+        if (intentManualFirstPriorityFlag(intent)) return 5;
+        const did = intent.debt_id != null ? String(intent.debt_id).trim() : "";
+        const ext = intentExternalIntegrationSource(intent);
+
+        if (debtRef && did === debtRef && !ext) return 4;
+        if (debtRef && did === debtRef && ext) return 3;
+
+        if (hasAnchor && ext && did !== debtRef) return 0;
+        return 2;
+      }
 
       const rows = actionable.map((intent) => ({
         intent,
-        tier: intentDashboardSelectionTier(intent, computedDebtId),
+        tier: tier(intent),
         createdAt: intent.created_at != null ? String(intent.created_at) : ""
       }));
       rows.sort((a, b) => {
@@ -4650,9 +4695,17 @@
         if (m.ok === false) return;
         if (m.skipped && m.reason === "no_positive_balance_debt") {
           state.manualPriorityDebtId = null;
+          state.manualPriorityIntentId = null;
           return;
         }
         const pid = m.priorityDebtId != null ? m.priorityDebtId : m.priority_debt_id;
+        const iid = m.intent_id != null ? String(m.intent_id).trim() : "";
+        if (m.ok === true && iid && !m.skipped) {
+          state.manualPriorityIntentId = iid;
+          if (pid != null) state.manualPriorityDebtId = String(pid);
+          return;
+        }
+        state.manualPriorityIntentId = null;
         if (pid != null) state.manualPriorityDebtId = String(pid);
       } catch (_) {}
     }

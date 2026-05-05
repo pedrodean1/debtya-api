@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v84-3-plan-debug-visible";
+const SERVER_VERSION = "debtya-2026-05-04-v84-4-select-manual-first-intent-id";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
