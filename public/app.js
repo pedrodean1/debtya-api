@@ -303,7 +303,8 @@
         advanced_plan_toggle: "More plan options",
         advanced_intents_toggle: "More payment list options",
         hero_title: "See your plan. Take the next step.",
-        hero_copy: "Total debt, progress, your next payment line, and history?in one place. DebtYa does not move money; you enter what you know from your statements.",
+        hero_copy:
+          "Total debt, progress, your next payment line, and history in one place. DebtYa never moves money; you keep balances from your statements and mark I paid it when you finish paying your lender.",
         dashboard_next_step_title: "Your next step",
         dashboard_next_no_debts: "Add your debts to get started.",
         dashboard_next_no_plan: "Create your payment plan.",
@@ -315,13 +316,13 @@
         dashboard_next_interest_na: "Add APR on this debt for a sharper interest estimate.",
         dashboard_next_accel: "This speeds up your path out of debt.",
         dashboard_next_pay_outside_app:
-          "Pay your lender using your usual app or website, then tap I paid it so DebtYa updates your balance and progress.",
+          "DebtYa never moves money. Pay your lender as you usually do, then tap I paid it so DebtYa updates your balance and progress.",
         dashboard_next_paid_btn: "I paid it",
         dashboard_next_all_clear_primary: "All caught up for now",
         dashboard_next_all_clear_sub:
           "You have no pending payments. Add another debt or update your plan whenever you want to calculate your next payment.",
         dashboard_next_all_clear_update_plan_btn: "Update plan",
-        manual_pay_ok: "Payment marked as done. Your progress was updated.",
+        manual_pay_ok: "Marked as paid. Balances and progress updated in DebtYa. Your payment still went directly to your lender, not through DebtYa.",
         manual_pay_err: "Could not confirm the payment. Try again.",
         ai_coach_title: "Why this payment",
         ai_coach_btn: "Explain with AI",
@@ -427,7 +428,8 @@
         debt_spinwheel_payable: "Payable with Spinwheel",
         debt_spinwheel_plan_only: "Planning only",
         intent_pill_spinwheel: "Spinwheel",
-        intent_spinwheel_coming_soon: "Automatic payments coming soon.",
+        intent_spinwheel_coming_soon:
+          "DebtYa cannot send this payment from the app. Pay your lender yourself, then use I paid it on the dashboard.",
         spinwheel_diag_title: "Spinwheel payment summary",
         spinwheel_diag_sub: "Counts of Spinwheel-linked debts for your account. No payments are started from here.",
         spinwheel_diag_loading: "Loading summary...",
@@ -515,9 +517,10 @@
         lbl_target_debt: "Target debt",
         btn_save_rule: "Save rule",
         payplan_title: "Your payment plan",
-        payplan_sub: "Step 2: choose Avalanche or Snowball so DebtYa knows which debt to tackle first.",
+        payplan_sub:
+          "Step 2: choose Avalanche or Snowball. DebtYa never moves money; it ranks your debts and suggests what to pay next.",
         plan_manual_first_card:
-          "DebtYa uses your strategy and balances to recommend your next payment. You pay your lender outside DebtYa, then tap I paid it so balances and progress update.",
+          "DebtYa never moves money. It reads your strategy and balances, suggests the next payment, and updates balances and progress when you tap I paid it after you pay your lender outside DebtYa.",
         plan_mode_advanced_summary: "Optional legacy automation mode",
         plan_manual: "Manual (recommended)",
         plan_safe_auto: "Legacy: extra guardrails",
@@ -528,10 +531,8 @@
           "Puts extra payments toward the smallest balance first. Can feel faster because accounts drop off sooner.",
         hint_mode_manual:
           "DebtYa suggests amounts from your debts and plan; you pay your lender yourself and mark I paid it here.",
-        hint_mode_safe_auto:
-          "Older option for teams that used extra in-app guardrails. Most people stay on Manual.",
-        hint_mode_full_auto:
-          "Older option with more in-app automation. Most people stay on Manual.",
+        hint_mode_safe_auto: "Older optional mode. Most people stay on Manual.",
+        hint_mode_full_auto: "Older optional mode with more in-app steps. Most people stay on Manual.",
         lbl_plan_pay_from: "Optional pay-from label",
         lbl_plan_pay_toward: "Optional focus debt",
         plan_pay_from_hint:
@@ -652,11 +653,11 @@
         debt_link_account_label: "Account",
         debt_link_mask_label: "Mask",
         debt_balance_manual_label: "Balance in DebtYa (manual)",
-        debt_balance_imported_label: "Snapshot balance",
+        debt_balance_imported_label: "Reference balance",
         debt_balance_mismatch_hint: "These two amounts differ. Plans and payments still use your manual DebtYa balance until you change it yourself.",
-        debt_balance_match_hint: "Snapshot balance matches your manual balance (within one cent).",
-        btn_sync_imported_balance: "Update to snapshot balance",
-        debt_balance_synced_ok: "Debt balance updated to match the snapshot amount.",
+        debt_balance_match_hint: "Reference balance matches your DebtYa balance (within one cent).",
+        btn_sync_imported_balance: "Match reference balance",
+        debt_balance_synced_ok: "Debt balance updated to match the reference amount.",
         debt_link_orphan: "Saved label not found among snapshots. Pick again or clear.",
         debt_link_saved: "Link updated.",
         err_debt_link_invalid: "That row cannot be used. Pick another snapshot or enter the debt manually.",
@@ -915,7 +916,8 @@
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_intents_toggle: "Mas opciones de la lista de pagos",
         hero_title: "Ve tu plan. Da el siguiente paso.",
-        hero_copy: "Deuda total, progreso, tu linea de proximo pago e historial en un solo lugar. DebtYa no mueve dinero: tu ingresas lo que ves en tus estados de cuenta.",
+        hero_copy:
+          "Deuda total, progreso, tu linea de proximo pago e historial en un solo lugar. DebtYa nunca mueve dinero: tu mantienes los saldos segun tus estados y marcas Ya lo pagu\u00E9 cuando pagaste al acreedor.",
         dashboard_next_step_title: "Tu pr\u00F3ximo paso",
         dashboard_next_no_debts: "Agrega tus deudas para empezar",
         dashboard_next_no_plan: "Crea tu plan de pago",
@@ -927,13 +929,14 @@
         dashboard_next_interest_na: "A\u00F1ade el APR en esta deuda para estimar mejor los intereses.",
         dashboard_next_accel: "Esto acelera tu salida de deuda.",
         dashboard_next_pay_outside_app:
-          "Paga al acreedor con tu app o sitio habitual y luego pulsa Ya lo pagu\u00E9 para que DebtYa actualice saldo y progreso.",
+          "DebtYa nunca mueve dinero. Paga al acreedor como siempre y luego pulsa Ya lo pagu\u00E9 para que DebtYa actualice saldo y progreso.",
         dashboard_next_paid_btn: "Ya lo pagu\u00E9",
         dashboard_next_all_clear_primary: "Listo por ahora",
         dashboard_next_all_clear_sub:
           "No tienes pagos pendientes. Agrega otra deuda o actualiza tu plan cuando quieras calcular el siguiente pago.",
         dashboard_next_all_clear_update_plan_btn: "Actualizar plan",
-        manual_pay_ok: "Pago marcado como realizado. Tu progreso fue actualizado.",
+        manual_pay_ok:
+          "Marcado como pagado. Saldo y progreso actualizados en DebtYa. El dinero va siempre a tu acreedor; DebtYa no lo mueve.",
         manual_pay_err: "No se pudo confirmar el pago. Int\u00E9ntalo de nuevo.",
         ai_coach_title: "Por qu\u00E9 este pago",
         ai_coach_btn: "Explicar con IA",
@@ -1039,7 +1042,8 @@
         debt_spinwheel_payable: "Pagable con Spinwheel",
         debt_spinwheel_plan_only: "Solo planificaci\u00F3n",
         intent_pill_spinwheel: "Spinwheel",
-        intent_spinwheel_coming_soon: "Pr\u00F3ximamente pagos autom\u00E1ticos",
+        intent_spinwheel_coming_soon:
+          "DebtYa no puede enviar este pago desde la app. Paga al acreedor por tu cuenta y luego usa Ya lo pagu\u00E9 en el panel principal.",
         spinwheel_diag_title: "Estado de pagos Spinwheel",
         spinwheel_diag_sub:
           "Conteos de deudas vinculadas a Spinwheel en tu cuenta. Desde aqui no se inician pagos.",
@@ -1128,9 +1132,10 @@
         lbl_target_debt: "Deuda objetivo",
         btn_save_rule: "Guardar regla",
         payplan_title: "Tu plan de pago",
-        payplan_sub: "Paso 2: elige Avalancha o Bola de nieve para que DebtYa sepa que deuda atacar primero.",
+        payplan_sub:
+          "Paso 2: elige Avalancha o Bola de nieve. DebtYa nunca mueve dinero; ordena tus deudas y sugiere el siguiente pago.",
         plan_manual_first_card:
-          "DebtYa usa tu estrategia y tus saldos para recomendar tu proximo pago. Pagas al acreedor fuera de DebtYa y luego pulsas Ya lo pagu\u00E9 para actualizar saldo y progreso.",
+          "DebtYa nunca mueve dinero. Lee tu estrategia y tus saldos, sugiere el proximo pago y actualiza saldo y progreso cuando pulsas Ya lo pagu\u00E9 despues de pagar al acreedor fuera de DebtYa.",
         plan_mode_advanced_summary: "Modo de automatizacion heredado (opcional)",
         plan_manual: "Manual (recomendado)",
         plan_safe_auto: "Heredado: mas limites",
@@ -1141,10 +1146,8 @@
           "Destina los pagos extra al saldo mas pequeno primero. A veces se siente mas rapido porque cierras cuentas antes.",
         hint_mode_manual:
           "DebtYa sugiere montos desde tus deudas y plan; tu pagas al acreedor y marcas Ya lo pagu\u00E9 aqu\u00ED.",
-        hint_mode_safe_auto:
-          "Opcion antigua para equipos que usaban mas limites en la app. La mayoria se queda en Manual.",
-        hint_mode_full_auto:
-          "Opcion antigua con mas automatizacion en la app. La mayoria se queda en Manual.",
+        hint_mode_safe_auto: "Modo opcional heredado. La mayoria se queda en Manual.",
+        hint_mode_full_auto: "Modo opcional heredado con mas pasos en la app. La mayoria se queda en Manual.",
         lbl_plan_pay_from: "Etiqueta opcional de origen",
         lbl_plan_pay_toward: "Deuda foco (opcional)",
         plan_pay_from_hint:
@@ -1264,11 +1267,11 @@
         debt_link_account_label: "Cuenta",
         debt_link_mask_label: "Ultimos digitos",
         debt_balance_manual_label: "Balance en DebtYa (manual)",
-        debt_balance_imported_label: "Saldo de captura",
+        debt_balance_imported_label: "Saldo de referencia",
         debt_balance_mismatch_hint: "Los dos montos no coinciden. El plan y los pagos siguen usando el balance manual en DebtYa hasta que tu lo cambies.",
-        debt_balance_match_hint: "El saldo de captura coincide con tu balance manual (margen de un centavo).",
-        btn_sync_imported_balance: "Actualizar al saldo de captura",
-        debt_balance_synced_ok: "Balance de la deuda actualizado al monto de la captura.",
+        debt_balance_match_hint: "El saldo de referencia coincide con tu saldo en DebtYa (margen de un centavo).",
+        btn_sync_imported_balance: "Igualar al saldo de referencia",
+        debt_balance_synced_ok: "Saldo de la deuda actualizado al monto de referencia.",
         debt_link_orphan: "La etiqueta guardada no aparece entre las capturas. Elige otra o limpia.",
         debt_link_saved: "Enlace actualizado.",
         err_debt_link_invalid: "No se puede usar esa fila. Elige otra captura o crea la deuda a mano.",
@@ -2561,7 +2564,7 @@
               const debtPayload = debtRow2
                 ? {
                     id: debtRow2.id,
-                    name: debtRow2.name,
+                    name: cleanVisibleDebtName(debtRow2.name) || debtRow2.name,
                     balance: debtRow2.balance,
                     apr: debtRow2.apr ?? debtRow2.interest_rate,
                     minimum_payment: debtRow2.minimum_payment
@@ -2641,6 +2644,19 @@
       return Number.isFinite(n) ? n : null;
     }
 
+    /**
+     * UI-only: strip common provider prefixes from stored debt names (DB unchanged).
+     * @param {unknown} raw
+     * @returns {string}
+     */
+    function cleanVisibleDebtName(raw) {
+      let s = String(raw ?? "").replace(/\s+/g, " ").trim();
+      if (!s) return "";
+      const orig = s;
+      while (/^spinwheel\s+/i.test(s)) s = s.replace(/^spinwheel\s+/i, "").trim();
+      return s || orig;
+    }
+
     function renderPayoffSimulation() {
       const totalEl = $("simTotalDebtBalance");
       const minEl = $("simTotalMinimumPayment");
@@ -2671,7 +2687,8 @@
       countsEl.textContent = `${t("sim_counts_active_label")}: ${activeDebts}`;
 
       if (urgentDebt) {
-        const debtName = String(urgentDebt.name || urgentDebt.id || "Deuda sin nombre");
+        const debtName =
+          cleanVisibleDebtName(urgentDebt.name) || String(urgentDebt.id || "").trim() || "Deuda sin nombre";
         urgentEl.textContent = `${debtName} (${urgentApr.toFixed(2)}% APR)`;
       } else {
         urgentEl.textContent = "Sin datos de APR por ahora.";
@@ -2790,7 +2807,7 @@
       state.debts.forEach((debt) => {
         const op = document.createElement("option");
         op.value = debt.id;
-        op.textContent = `${debt.name} - ${fmtMoney(debt.balance)}`;
+        op.textContent = `${cleanVisibleDebtName(debt.name) || t("debt_label")} - ${fmtMoney(debt.balance)}`;
         select.appendChild(op);
       });
     }
@@ -2845,9 +2862,6 @@
 
       return `
         <div class="debt-plaid-panel">
-          <div class="debt-plaid-panel-top">
-            <span class="debt-plaid-badge">${escapeHtml(t("debt_link_badge"))}</span>
-          </div>
           <div class="debt-plaid-details">
             <div class="debt-plaid-kv"><span class="debt-plaid-k">${escapeHtml(t("debt_link_account_label"))}</span><span class="debt-plaid-v"><strong>${escapeHtml(linked.name || t("acct_default"))}</strong></span></div>
             ${maskRow}
@@ -2963,7 +2977,7 @@
         return t("debt_suggest_credit");
       }
 
-      return s;
+      return cleanVisibleDebtName(s) || s;
     }
 
     function pickNumericMinPaymentCandidate(acc) {
@@ -3153,7 +3167,7 @@
         el.innerHTML = `
           <div class="item-top">
             <div>
-              <div class="item-title">${escapeHtml(debt.name || t("debt_label"))}</div>
+              <div class="item-title">${escapeHtml(cleanVisibleDebtName(debt.name) || t("debt_label"))}</div>
               <div class="item-meta">
                 ${escapeHtml(t("apr_label"))}: <strong>${Number(debt.apr || 0).toFixed(2)}%</strong> ?
                 ${escapeHtml(t("min_label"))}: <strong>${fmtMoney(debt.minimum_payment)}</strong> ?
@@ -3478,6 +3492,11 @@
 
       state.trace.slice(0, 30).forEach((row) => {
         const meta = row.metadata || {};
+        const did = String(row.debt_id || "").trim();
+        const dRow = (state.debts || []).find((x) => x && String(x.id) === did);
+        const debtLine = dRow
+          ? cleanVisibleDebtName(dRow.name) || did || "-"
+          : did || "-";
         const item = document.createElement("div");
         item.className = "item";
         item.innerHTML = `
@@ -3485,7 +3504,7 @@
             <div>
               <div class="item-title">${escapeHtml((row.id || "").slice(0, 8))} ? ${escapeHtml(row.status || "-")}</div>
               <div class="item-meta">
-                ${escapeHtml(t("meta_debt"))}: <strong>${escapeHtml(row.debt_id || "-")}</strong><br />
+                ${escapeHtml(t("meta_debt"))}: <strong>${escapeHtml(debtLine)}</strong><br />
                 ${escapeHtml(t("meta_amount"))}: <strong>${fmtMoney(row.total_amount ?? row.amount ?? 0)}</strong><br />
                 ${escapeHtml(t("meta_created"))}: <strong>${fmtDate(row.created_at)}</strong><br />
                 ${escapeHtml(t("meta_executed"))}: <strong>${fmtDate(row.executed_at)}</strong>
@@ -3880,11 +3899,11 @@
         const d = (state.debts || []).find((x) => String(x.id) === did);
         if (d) {
           const nm = d.name != null ? String(d.name).trim() : "";
-          if (nm) return nm;
+          if (nm) return cleanVisibleDebtName(nm) || nm;
         }
       }
       const flat = intent.creditor_name || intent.debt_name || intent.name || "";
-      if (flat && String(flat).trim()) return String(flat).trim();
+      if (flat && String(flat).trim()) return cleanVisibleDebtName(String(flat).trim()) || String(flat).trim();
       const meta = normalizeIntentMetadata(intent.metadata);
       const fromMeta =
         meta.creditor_name ||
@@ -3892,7 +3911,10 @@
         meta.name ||
         meta.debtName ||
         "";
-      if (fromMeta && String(fromMeta).trim()) return String(fromMeta).trim();
+      if (fromMeta && String(fromMeta).trim()) {
+        const m = String(fromMeta).trim();
+        return cleanVisibleDebtName(m) || m;
+      }
       return t("dashboard_debt_fallback");
     }
 
@@ -3928,7 +3950,7 @@
         if (!d?.id) return;
         const op = document.createElement("option");
         op.value = d.id;
-        op.textContent = `${d.name || t("debt_label")} ? ${fmtMoney(d.balance)}`;
+        op.textContent = `${cleanVisibleDebtName(d.name) || t("debt_label")} ? ${fmtMoney(d.balance)}`;
         debtSel.appendChild(op);
       });
 
@@ -4366,7 +4388,7 @@
         parts.push('<ul class="spinwheel-diag-list">');
         for (const p of payable) {
           parts.push(
-            `<li>${escapeHtml(String(p.name || ""))} \u2014 ${escapeHtml(fmtMoney(p.balance))} <span class="muted">(${escapeHtml(String(p.spinwheel_external_id || "").slice(0, 8))}\u2026)</span></li>`
+            `<li>${escapeHtml(cleanVisibleDebtName(String(p.name || "")) || String(p.name || "").trim() || "-")} \u2014 ${escapeHtml(fmtMoney(p.balance))}</li>`
           );
         }
         parts.push("</ul>");
@@ -4378,7 +4400,7 @@
         parts.push('<ul class="spinwheel-diag-list">');
         for (const b of blocked) {
           parts.push(
-            `<li><strong>${escapeHtml(String(b.name || ""))}</strong> \u2014 ${escapeHtml(fmtMoney(b.balance))} <span class="muted">${escapeHtml(String(b.category || ""))}: ${escapeHtml(String(b.reason || ""))}</span></li>`
+            `<li><strong>${escapeHtml(cleanVisibleDebtName(String(b.name || "")) || String(b.name || "").trim() || "-")}</strong> \u2014 ${escapeHtml(fmtMoney(b.balance))} <span class="muted">${escapeHtml(String(b.category || ""))}: ${escapeHtml(String(b.reason || ""))}</span></li>`
           );
         }
         parts.push("</ul>");
@@ -4640,7 +4662,7 @@
         const li = snap.liability || row.liability || {};
         const name = li && li.name ? String(li.name).trim() : "";
         const mask = li && li.mask ? String(li.mask).trim() : "";
-        if (name) return name;
+        if (name) return cleanVisibleDebtName(name) || name;
         if (mask) return `${t("debt_label")} ? ****${mask}`;
         return row.method_account_id || t("debt_label");
       } catch (_) {
@@ -4746,13 +4768,8 @@
         const id = row.method_account_id || "";
         const sid = safeMethodDomId(id);
         const title = escapeHtml(methodDebtTitleFromRow(row));
-        const cap = !!row.payment_capable;
-        const badge = cap
-          ? `<span class="pill green">${escapeHtml(t("method_capable_badge"))}</span>`
-          : `<span class="pill gray">${escapeHtml(t("method_info_badge"))}</span>`;
-        const imported = row.imported_debt_id
-          ? `<span class="pill blue">${escapeHtml(t("method_imported_badge"))}</span>`
-          : "";
+        const badge = "";
+        const imported = "";
         const importBlock = row.imported_debt_id
           ? ""
           : `
@@ -4782,7 +4799,6 @@
                 <div class="item-title">${title}</div>
                 <div class="item-meta" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                   ${badge}${imported}
-                  <span class="muted">${escapeHtml(id)}</span>
                 </div>
               </div>
             </div>
