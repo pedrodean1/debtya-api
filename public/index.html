@@ -39,13 +39,13 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-04-v82-ai-coach-explain-next-payment" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-04-v82-manual-first-payment-plan" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-04-v82-ai-coach-explain-next-payment">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-04-v82-manual-first-payment-plan">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -737,9 +737,13 @@
             <div class="section-head">
               <div>
                 <h2 class="section-title-step"><span class="section-step-badge" data-step="2">2</span><span data-i18n="payplan_title">Payment plan</span></h2>
-                <p class="sub" data-i18n="payplan_sub">Step 2: define strategy, mode, and monthly budget.</p>
+                <p class="sub" data-i18n="payplan_sub">Step 2: choose your strategy so DebtYa can recommend your next payment.</p>
               </div>
             </div>
+
+            <p class="plan-manual-first-card sub" data-i18n="plan_manual_first_card">
+              DebtYa uses your strategy and balances to recommend your next payment. You pay your lender outside DebtYa, then mark it as done.
+            </p>
 
             <form id="planForm" class="grid-2">
               <div class="field">
@@ -750,17 +754,20 @@
                 </select>
                 <p id="planStrategyHint" class="plan-field-hint" aria-live="polite"></p>
               </div>
+              <details class="ux-advanced-details plan-mode-advanced" style="grid-column:1 / -1;">
+                <summary data-i18n="plan_mode_advanced_summary">Optional legacy automation mode</summary>
+                <div class="field" style="margin-top:10px;">
+                  <label class="label" data-i18n="lbl_mode">Mode</label>
+                  <select id="planMode" class="select" aria-describedby="planModeHint">
+                    <option value="manual" data-i18n-opt="plan_manual">Manual</option>
+                    <option value="safe_auto" data-i18n-opt="plan_safe_auto">Safe auto</option>
+                    <option value="full_auto" data-i18n-opt="plan_full_auto">Full auto</option>
+                  </select>
+                  <p id="planModeHint" class="plan-field-hint" aria-live="polite"></p>
+                </div>
+              </details>
               <div class="field">
-                <label class="label" data-i18n="lbl_mode">Mode</label>
-                <select id="planMode" class="select" aria-describedby="planModeHint">
-                  <option value="manual" data-i18n-opt="plan_manual">Manual</option>
-                  <option value="safe_auto" data-i18n-opt="plan_safe_auto">Safe auto</option>
-                  <option value="full_auto" data-i18n-opt="plan_full_auto">Full auto</option>
-                </select>
-                <p id="planModeHint" class="plan-field-hint" aria-live="polite"></p>
-              </div>
-              <div class="field">
-                <label class="label" for="planFundingAccount" data-i18n="lbl_plan_pay_from">Pay from (account)</label>
+                <label class="label" for="planFundingAccount" data-i18n="lbl_plan_pay_from">Optional pay-from label</label>
                 <select id="planFundingAccount" class="select" aria-describedby="planFundingHint">
                   <option value="">—</option>
                 </select>
@@ -769,7 +776,7 @@
                 </p>
               </div>
               <div class="field">
-                <label class="label" for="planPaydownDebt" data-i18n="lbl_plan_pay_toward">Pay toward (debt)</label>
+                <label class="label" for="planPaydownDebt" data-i18n="lbl_plan_pay_toward">Optional focus debt</label>
                 <select id="planPaydownDebt" class="select" aria-describedby="planPaydownHint">
                   <option value="">—</option>
                 </select>
@@ -792,7 +799,7 @@
                 <input id="planExtraPayment" class="input" type="number" step="0.01" placeholder="0.00" />
               </div>
               <div class="field" style="grid-column:1 / -1;">
-                <button id="savePlanBtn" class="btn btn-primary" type="submit" data-i18n="btn_save_plan">Save plan</button>
+                <button id="savePlanBtn" class="btn btn-primary" type="submit" data-i18n="btn_create_plan">Create my plan</button>
               </div>
             </form>
 
@@ -1074,6 +1081,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-04-v82-ai-coach-explain-next-payment"></script>
+  <script src="/app.js?v=debtya-2026-05-04-v82-manual-first-payment-plan"></script>
 </body>
 </html>

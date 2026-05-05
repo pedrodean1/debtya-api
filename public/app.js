@@ -240,7 +240,8 @@
         help_g1_t: "1. Debts",
         help_g1_p: "Enter each debt with balance, APR, and minimum payment from your statements.",
         help_g2_t: "2. Plan",
-        help_g2_p: "Pick strategy and mode, set your monthly budget, then save. Add a rule later if you want extra automation.",
+        help_g2_p:
+          "Choose Avalanche or Snowball, set monthly budget and extra if you like, then save. Rules are optional extras on top.",
         help_g3_t: "3. Next payment",
         help_g3_p: "The dashboard shows what to pay today. Pay your lender yourself, then tap I paid it to update balances.",
         help_g4_t: "4. Progress",
@@ -305,7 +306,8 @@
         dashboard_next_step_title: "Your next step",
         dashboard_next_no_debts: "Add your debts to get started.",
         dashboard_next_no_plan: "Create your payment plan.",
-        dashboard_next_no_intents: "Save your payment plan to refresh your next payment line.",
+        dashboard_next_no_intents:
+          "Create or update your plan, then open the dashboard to see your recommended next payment.",
         dashboard_next_pay_line: "Pay {amount} to {debt} today",
         dashboard_debt_fallback: "this debt",
         dashboard_next_interest_saved: "You save ~{amount} in interest this month",
@@ -324,11 +326,15 @@
         next_step_bank_btn: "Open dashboard",
         next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
         next_step_debts_btn: "Go to Debts & plan",
-        next_step_plan: "Next: save your payment plan (strategy, mode, and monthly budget).",
-        next_step_plan_btn: "Open payment plan",
+        next_step_plan: "Next: create your plan (strategy and monthly amounts).",
+        next_step_plan_btn: "Open plan",
         next_step_rules: "Next: create one paydown rule when you are ready.",
         next_step_rules_btn: "Go to rules",
-        next_step_prepare: "Next: your next payment line updates after you save your plan.",
+        next_step_dashboard_next:
+          "Next: your recommended next payment is on the dashboard. Pay your lender outside DebtYa, then tap I paid it.",
+        next_step_dashboard_next_btn: "Open dashboard",
+        next_step_prepare:
+          "Next: open the dashboard to generate or refresh your next payment line when you are ready.",
         next_step_prepare_btn: "Open dashboard",
         next_step_review: "Next: confirm your payment on the dashboard when you are ready.",
         next_step_review_btn: "See next payment",
@@ -350,7 +356,7 @@
         stat_pending_intents: "Payments waiting for confirmation",
         stat_executed_intents: "Payments completed",
         plan_summary_title: "Plan summary",
-        plan_summary_sub: "Strategy, mode, and monthly extra at a glance.",
+        plan_summary_sub: "Strategy and monthly amounts at a glance.",
         lbl_strategy: "Strategy",
         lbl_mode: "Mode",
         strategy_avalanche: "Avalanche",
@@ -506,23 +512,26 @@
         lbl_min_purchase: "Minimum purchase",
         lbl_target_debt: "Target debt",
         btn_save_rule: "Save rule",
-        payplan_title: "Payment plan",
-        payplan_sub: "Step 2: define strategy, mode, and monthly budget.",
-        plan_manual: "Manual",
-        plan_safe_auto: "Safe auto",
-        plan_full_auto: "Full auto",
+        payplan_title: "Your payment plan",
+        payplan_sub: "Step 2: choose Avalanche or Snowball so DebtYa knows which debt to tackle first.",
+        plan_manual_first_card:
+          "DebtYa uses your strategy and balances to recommend your next payment. You pay your lender outside DebtYa, then tap I paid it so balances and progress update.",
+        plan_mode_advanced_summary: "Optional legacy automation mode",
+        plan_manual: "Manual (recommended)",
+        plan_safe_auto: "Legacy: extra guardrails",
+        plan_full_auto: "Legacy: more automation",
         hint_strategy_avalanche:
           "Puts extra payments toward the highest APR first. Usually saves the most interest overall.",
         hint_strategy_snowball:
           "Puts extra payments toward the smallest balance first. Can feel faster because accounts drop off sooner.",
         hint_mode_manual:
-          "You review the next payment line and confirm what you paid. DebtYa prepares amounts; you stay in control.",
+          "DebtYa suggests amounts from your debts and plan; you pay your lender yourself and mark I paid it here.",
         hint_mode_safe_auto:
-          "DebtYa can prepare payments with extra guardrails. You still confirm important steps in the app.",
+          "Older option for teams that used extra in-app guardrails. Most people stay on Manual.",
         hint_mode_full_auto:
-          "DebtYa prepares payments with the most automation this product supports. You should still monitor your plan.",
-        lbl_plan_pay_from: "Pay from (account)",
-        lbl_plan_pay_toward: "Pay toward (debt)",
+          "Older option with more in-app automation. Most people stay on Manual.",
+        lbl_plan_pay_from: "Optional pay-from label",
+        lbl_plan_pay_toward: "Optional focus debt",
         plan_pay_from_hint:
           "Optional label for where you pay from in real life. Amounts are guidance only; you always pay your lender yourself.",
         plan_pay_toward_hint:
@@ -538,8 +547,10 @@
         hint_monthly_extra:
           "Extra dollars on top of minimums that go to your priority debt first. It works together with your monthly budget.",
         btn_save_plan: "Save plan",
+        btn_create_plan: "Create my plan",
+        btn_update_plan: "Update plan",
         btn_compare: "Compare strategies",
-        btn_refresh_plan: "Refresh plan",
+        btn_refresh_plan: "Refresh next payment line",
         intents_title: "Next payment (advanced list)",
         intents_sub: "Technical list for support. Most people only use the dashboard card and I paid it.",
         btn_reconcile: "Update recent payments",
@@ -615,7 +626,8 @@
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
         empty_rules: "You have no saved rules yet.",
-        empty_intents: "No payment rows yet. Save your plan to refresh the next payment line.",
+        empty_intents:
+          "No payment rows yet. Save or update your plan, then check the dashboard for your next payment line.",
         empty_trace: "No history available yet.",
         empty_accounts: "No optional snapshots yet.",
         empty_compare: "No comparison available yet.",
@@ -748,7 +760,7 @@
         debt_saved: "Debt saved successfully.",
         rule_saved: "Rule saved successfully.",
         rule_deleted: "Rule deleted successfully.",
-        plan_saved: "Plan saved successfully.",
+        plan_saved: "Plan saved. Your next payment line will refresh from this.",
         compare_ok: "Comparison ready.",
         accounts_imp: "Snapshots updated",
         tx_imp: "Activity updated",
@@ -838,7 +850,8 @@
         help_g1_t: "1. Deudas",
         help_g1_p: "Registra cada deuda con saldo, APR y pago minimo segun tus estados de cuenta.",
         help_g2_t: "2. Plan",
-        help_g2_p: "Elige estrategia y modo, define presupuesto mensual y guarda. Las reglas son opcionales si quieres mas automatizacion.",
+        help_g2_p:
+          "Elige Avalancha o Bola de nieve, define presupuesto y extra si quieres, y guarda. Las reglas son extras opcionales.",
         help_g3_t: "3. Proximo pago",
         help_g3_p: "El panel principal muestra que conviene pagar hoy. Paga al acreedor por tu cuenta y pulsa Ya lo pagu\u00E9 para actualizar saldos.",
         help_g4_t: "4. Progreso",
@@ -903,7 +916,8 @@
         dashboard_next_step_title: "Tu pr\u00F3ximo paso",
         dashboard_next_no_debts: "Agrega tus deudas para empezar",
         dashboard_next_no_plan: "Crea tu plan de pago",
-        dashboard_next_no_intents: "Guarda tu plan de pago para refrescar la linea de proximo pago.",
+        dashboard_next_no_intents:
+          "Crea o actualiza tu plan y luego abre el panel principal para ver tu proximo pago recomendado.",
         dashboard_next_pay_line: "Paga {amount} a {debt} hoy",
         dashboard_debt_fallback: "esta deuda",
         dashboard_next_interest_saved: "Ahorras ~{amount} en intereses este mes",
@@ -922,11 +936,15 @@
         next_step_bank_btn: "Ir al panel principal",
         next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
         next_step_debts_btn: "Ir a Deudas y plan",
-        next_step_plan: "Siguiente: guarda tu plan de pago (estrategia, modo y presupuesto).",
-        next_step_plan_btn: "Abrir plan de pago",
+        next_step_plan: "Siguiente: crea tu plan (estrategia y montos mensuales).",
+        next_step_plan_btn: "Abrir plan",
         next_step_rules: "Siguiente: crea una regla de abono cuando quieras.",
         next_step_rules_btn: "Ir a reglas",
-        next_step_prepare: "Siguiente: la linea de proximo pago se actualiza al guardar tu plan.",
+        next_step_dashboard_next:
+          "Siguiente: tu proximo pago recomendado esta en el panel principal. Paga al acreedor fuera de DebtYa y luego pulsa Ya lo pagu\u00E9.",
+        next_step_dashboard_next_btn: "Ir al panel principal",
+        next_step_prepare:
+          "Siguiente: abre el panel principal para generar o actualizar la linea de proximo pago cuando quieras.",
         next_step_prepare_btn: "Ir al panel principal",
         next_step_review: "Siguiente: confirma tu pago en el panel principal cuando estes listo.",
         next_step_review_btn: "Ver proximo pago",
@@ -948,7 +966,7 @@
         stat_pending_intents: "Pagos pendientes de confirmar",
         stat_executed_intents: "Pagos realizados",
         plan_summary_title: "Resumen del plan",
-        plan_summary_sub: "Estrategia, modo y extra mensual de un vistazo.",
+        plan_summary_sub: "Estrategia y montos mensuales de un vistazo.",
         lbl_strategy: "Estrategia",
         lbl_mode: "Modo",
         strategy_avalanche: "Avalancha",
@@ -1105,23 +1123,26 @@
         lbl_min_purchase: "Compra minima",
         lbl_target_debt: "Deuda objetivo",
         btn_save_rule: "Guardar regla",
-        payplan_title: "Plan de pagos",
-        payplan_sub: "Paso 2: define estrategia, modo y presupuesto mensual.",
-        plan_manual: "Manual",
-        plan_safe_auto: "Automatico seguro",
-        plan_full_auto: "Automatico total",
+        payplan_title: "Tu plan de pago",
+        payplan_sub: "Paso 2: elige Avalancha o Bola de nieve para que DebtYa sepa que deuda atacar primero.",
+        plan_manual_first_card:
+          "DebtYa usa tu estrategia y tus saldos para recomendar tu proximo pago. Pagas al acreedor fuera de DebtYa y luego pulsas Ya lo pagu\u00E9 para actualizar saldo y progreso.",
+        plan_mode_advanced_summary: "Modo de automatizacion heredado (opcional)",
+        plan_manual: "Manual (recomendado)",
+        plan_safe_auto: "Heredado: mas limites",
+        plan_full_auto: "Heredado: mas automatizacion en app",
         hint_strategy_avalanche:
           "Destina los pagos extra a la tasa mas alta primero. Suele ahorrar mas intereses en total.",
         hint_strategy_snowball:
           "Destina los pagos extra al saldo mas pequeno primero. A veces se siente mas rapido porque cierras cuentas antes.",
         hint_mode_manual:
-          "Tu revisas la linea de proximo pago y confirmas lo pagado. DebtYa prepara montos; tu mantienes el control.",
+          "DebtYa sugiere montos desde tus deudas y plan; tu pagas al acreedor y marcas Ya lo pagu\u00E9 aqu\u00ED.",
         hint_mode_safe_auto:
-          "DebtYa puede preparar pagos con mas limites de seguridad. Sigues confirmando pasos importantes en la app.",
+          "Opcion antigua para equipos que usaban mas limites en la app. La mayoria se queda en Manual.",
         hint_mode_full_auto:
-          "DebtYa prepara pagos con la automatizacion mas alta que ofrece el producto. De todos modos conviene revisar tu plan.",
-        lbl_plan_pay_from: "Pagar desde (cuenta)",
-        lbl_plan_pay_toward: "Pagar hacia (deuda)",
+          "Opcion antigua con mas automatizacion en la app. La mayoria se queda en Manual.",
+        lbl_plan_pay_from: "Etiqueta opcional de origen",
+        lbl_plan_pay_toward: "Deuda foco (opcional)",
         plan_pay_from_hint:
           "Etiqueta opcional de donde pagas en la vida real. Los montos son orientacion; siempre pagas al acreedor por tu cuenta.",
         plan_pay_toward_hint:
@@ -1137,8 +1158,10 @@
         hint_monthly_extra:
           "Dinero extra por encima de los minimos que va primero a tu deuda prioritaria. Se usa junto con el presupuesto mensual.",
         btn_save_plan: "Guardar plan",
+        btn_create_plan: "Crear mi plan",
+        btn_update_plan: "Actualizar plan",
         btn_compare: "Comparar estrategias",
-        btn_refresh_plan: "Refrescar plan",
+        btn_refresh_plan: "Actualizar linea de proximo pago",
         intents_title: "Proximo pago (lista avanzada)",
         intents_sub: "Lista tecnica para soporte. La mayoria usa solo la tarjeta del panel y Ya lo pagu\u00E9.",
         btn_reconcile: "Actualizar pagos recientes",
@@ -1213,7 +1236,8 @@
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
         empty_rules: "Todavia no tienes reglas guardadas.",
-        empty_intents: "Aun no hay filas de pago. Guarda tu plan para refrescar la linea de proximo pago.",
+        empty_intents:
+          "Aun no hay filas de pago. Guarda o actualiza tu plan y revisa el panel principal para la linea de proximo pago.",
         empty_trace: "Todavia no hay historial disponible.",
         empty_accounts: "Todavia no hay capturas opcionales.",
         empty_compare: "Todavia no hay comparacion disponible.",
@@ -1347,7 +1371,7 @@
         debt_saved: "Deuda guardada correctamente.",
         rule_saved: "Regla guardada correctamente.",
         rule_deleted: "Regla borrada correctamente.",
-        plan_saved: "Plan guardado correctamente.",
+        plan_saved: "Plan guardado. La linea de proximo pago se actualiza con esto.",
         compare_ok: "Comparacion lista.",
         accounts_imp: "Capturas actualizadas",
         tx_imp: "Actividad actualizada",
@@ -2212,7 +2236,7 @@
     function completedGuideSteps() {
       const done = new Set();
       if ((state.debts || []).length > 0) done.add("1");
-      if (state.plan && state.plan.id) done.add("2");
+      if ((state.plan && state.plan.id) || (state.intents || []).length > 0) done.add("2");
       if ((state.intents || []).length > 0 && !hasPendingIntents()) done.add("3");
       if ((state.trace || []).length > 0) done.add("4");
       return done;
@@ -2257,11 +2281,20 @@
         };
       }
       if (!plan || !plan.id) {
+        if (intents.length === 0) {
+          return {
+            textKey: "next_step_plan",
+            btnKey: "next_step_plan_btn",
+            nav: "setup",
+            scrollId: "paymentPlanSection",
+            openOperateMore: false
+          };
+        }
         return {
-          textKey: "next_step_plan",
-          btnKey: "next_step_plan_btn",
+          textKey: "next_step_dashboard_next",
+          btnKey: "next_step_dashboard_next_btn",
           nav: "setup",
-          scrollId: "paymentPlanSection",
+          scrollId: "dashboardNextStepCard",
           openOperateMore: false
         };
       }
@@ -3920,6 +3953,11 @@
       $("planExtraPayment").value = plan.extra_payment_default ?? "";
 
       populatePlanRoutingSelects();
+
+      const savePlanBtn = $("savePlanBtn");
+      if (savePlanBtn) {
+        savePlanBtn.textContent = plan.id ? t("btn_update_plan") : t("btn_create_plan");
+      }
 
       updateNextActionGuide();
       updatePlanFieldHints();

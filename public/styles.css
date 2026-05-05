@@ -2480,6 +2480,14 @@
       box-shadow:var(--shadow-soft);
     }
 
+    .plan-manual-first-card{
+      margin:0 0 14px;
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:var(--surface-2, rgba(0,0,0,.03));
+    }
+
     /* Ultimo bloque: ancho resumen (prioridad sobre caché/CSS viejo) */
     #appView .dashboard-header-region{
       width:100%;
