@@ -2,6 +2,7 @@ const { registerCoreRoutes } = require("./core-routes");
 const { registerPaymentIntentRoutes } = require("./payment-intents-routes");
 const { registerPlanningRoutes } = require("./planning-routes");
 const { registerGuideRoutes } = require("./guide-routes");
+const { registerAiCoachRoutes } = require("./ai-coach-routes");
 const { registerBillingRoutes } = require("./billing-routes");
 const { registerSupabaseRoutes } = require("./supabase-routes");
 const { registerPlaidRoutes } = require("./plaid-routes");
@@ -23,6 +24,7 @@ function registerAllRoutes(app, deps) {
   registerPaymentIntentRoutes(app, deps);
   registerPlanningRoutes(app, deps);
   registerGuideRoutes(app, deps);
+  registerAiCoachRoutes(app, deps);
   registerAuthSignupRoutes(app, deps);
   registerBillingRoutes(app, deps);
   registerSupabaseRoutes(app, deps);

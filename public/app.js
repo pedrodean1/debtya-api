@@ -316,6 +316,10 @@
         dashboard_next_paid_btn: "I paid it",
         manual_pay_ok: "Payment marked as done. Your progress was updated.",
         manual_pay_err: "Could not confirm the payment. Try again.",
+        ai_coach_title: "Why this payment",
+        ai_coach_btn: "Explain with AI",
+        ai_coach_loading: "Preparing explanation...",
+        ai_coach_err: "Could not load an explanation. Try again.",
         next_step_bank: "Next: add optional snapshots only if your workspace uses them.",
         next_step_bank_btn: "Open dashboard",
         next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
@@ -910,6 +914,10 @@
         dashboard_next_paid_btn: "Ya lo pagu\u00E9",
         manual_pay_ok: "Pago marcado como realizado. Tu progreso fue actualizado.",
         manual_pay_err: "No se pudo confirmar el pago. Int\u00E9ntalo de nuevo.",
+        ai_coach_title: "Por qu\u00E9 este pago",
+        ai_coach_btn: "Explicar con IA",
+        ai_coach_loading: "Preparando explicaci\u00F3n...",
+        ai_coach_err: "No se pudo cargar la explicaci\u00F3n. Int\u00E9ntalo de nuevo.",
         next_step_bank: "Siguiente: solo si tu espacio de trabajo usa capturas opcionales.",
         next_step_bank_btn: "Ir al panel principal",
         next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
@@ -2425,6 +2433,15 @@
           paidBtn.classList.add("hidden");
           paidBtn.onclick = null;
         }
+        const coach = $("dashboardAiCoach");
+        const coachBtn = $("dashboardAiCoachBtn");
+        const coachOut = $("dashboardAiCoachOut");
+        if (coach) coach.classList.add("hidden");
+        if (coachBtn) {
+          coachBtn.onclick = null;
+          coachBtn.disabled = false;
+        }
+        if (coachOut) coachOut.textContent = "";
       };
 
       if (!appView || appView.classList.contains("hidden")) {
@@ -2480,6 +2497,66 @@
               showMessage(globalMessage, normalizeErrorMessage(e.message || t("manual_pay_err")), "error");
             } finally {
               paidBtn.disabled = false;
+            }
+          };
+        }
+        const coach = $("dashboardAiCoach");
+        const coachTitle = $("dashboardAiCoachTitle");
+        const coachBtn = $("dashboardAiCoachBtn");
+        const coachOut = $("dashboardAiCoachOut");
+        if (coach && coachTitle && coachBtn && coachOut) {
+          coachTitle.textContent = t("ai_coach_title");
+          coachBtn.textContent = t("ai_coach_btn");
+          coachOut.textContent = "";
+          coach.classList.remove("hidden");
+          coachBtn.onclick = async () => {
+            coachBtn.disabled = true;
+            coachOut.textContent = t("ai_coach_loading");
+            try {
+              const cur = pickFeaturedIntentForDashboard(paymentIntentListCoalesced());
+              const amt = cur ? intentPaymentAmount(cur) : 0;
+              if (!cur || amt <= 0) {
+                coachOut.textContent = t("ai_coach_err");
+                return;
+              }
+              const did2 = String(cur.debt_id || "").trim();
+              const debtRow2 = did2 ? debts.find((d) => String(d.id) === did2) : null;
+              const intentPayload = {
+                id: cur.id,
+                debt_id: cur.debt_id,
+                status: cur.status,
+                total_amount: cur.total_amount,
+                amount: cur.amount,
+                amount_cents: cur.amount_cents,
+                payment_amount: cur.payment_amount,
+                metadata: cur.metadata
+              };
+              const debtPayload = debtRow2
+                ? {
+                    id: debtRow2.id,
+                    name: debtRow2.name,
+                    balance: debtRow2.balance,
+                    apr: debtRow2.apr ?? debtRow2.interest_rate,
+                    minimum_payment: debtRow2.minimum_payment
+                  }
+                : null;
+              const strategy = String(state.plan?.strategy || "avalanche").trim() || "avalanche";
+              const res = await api("/ai/explain-next-payment", {
+                method: "POST",
+                body: JSON.stringify({
+                  lang: uiLang,
+                  strategy,
+                  intent: intentPayload,
+                  debt: debtPayload,
+                  payment_amount: amt
+                })
+              });
+              const exp = res && res.explanation != null ? String(res.explanation) : "";
+              coachOut.textContent = exp || t("ai_coach_err");
+            } catch (e) {
+              coachOut.textContent = normalizeErrorMessage(e.message || t("ai_coach_err"));
+            } finally {
+              coachBtn.disabled = false;
             }
           };
         }

@@ -143,6 +143,25 @@
       color:var(--muted);
     }
 
+    .dashboard-ai-coach{
+      margin-top:14px;
+      padding-top:12px;
+      border-top:1px solid rgba(15,23,42,0.08);
+    }
+    .dashboard-ai-coach-title{
+      margin:0 0 6px;
+      font-size:13px;
+      font-weight:700;
+      color:var(--text);
+    }
+    .dashboard-ai-coach-out{
+      margin:8px 0 0;
+      font-size:13px;
+      line-height:1.45;
+      color:var(--muted);
+      white-space:pre-wrap;
+    }
+
     #operatePanel{order:1}
     #setupPanel{order:2}
     #paymentPlanSection{order:3}
