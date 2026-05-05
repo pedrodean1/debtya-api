@@ -14,12 +14,16 @@ const { isUuid } = require("./lib/validation");
 const { requestIdMiddleware } = require("./lib/request-id");
 const { jsonError } = require("./lib/json-error");
 const { readMethodKeyStatus, readMethodEnv, readMethodApiVersion } = require("./lib/method-env");
+const {
+  pickPriorityDebtForManualPlan,
+  computeManualPriorityPaymentAmount
+} = require("./lib/manual-plan-next-payment");
 
 const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v83-ai-coach-explain-payment";
+const SERVER_VERSION = "debtya-2026-05-04-v84-real-avalanche-snowball-plan";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2235,6 +2239,158 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
   };
 }
 
+const MANUAL_FIRST_RECON_STATUSES = [
+  "pending_review",
+  "approved",
+  "built",
+  "proposed",
+  "ready",
+  "draft",
+  "pending"
+];
+
+function isSpinwheelIntentRow(row) {
+  return String(row?.source || "").toLowerCase() === "spinwheel";
+}
+
+/**
+ * Tras build_intents_v2 (+ opcional Spinwheel): cancela intents abiertos no-Spinwheel y crea
+ * un único pending_review hacia la deuda prioritaria (avalanche/snowball) para el MVP manual-first.
+ */
+async function reconcileManualFirstPriorityIntent(userId) {
+  const plan = await getCurrentPaymentPlan(userId);
+  const strategy = String(plan?.strategy || "avalanche").toLowerCase();
+
+  const { data: debtRows, error: debtErr } = await supabaseAdmin
+    .from("debts")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_active", true);
+
+  if (debtErr) throw debtErr;
+  const debts = debtRows || [];
+
+  let priorityDebt = pickPriorityDebtForManualPlan(strategy, debts, safeNumber);
+
+  const targetId = plan?.payment_target_debt_id;
+  if (targetId && isUuid(String(targetId))) {
+    const locked = debts.find(
+      (d) =>
+        String(d.id) === String(targetId) &&
+        safeNumber(d.balance) > 0 &&
+        d.is_active !== false
+    );
+    if (locked) priorityDebt = locked;
+  }
+
+  const now = new Date().toISOString();
+  const today = now.slice(0, 10);
+
+  const { data: intentRows, error: intentErr } = await supabaseAdmin
+    .from("payment_intents")
+    .select("id,status,source,debt_id")
+    .eq("user_id", userId)
+    .in("status", MANUAL_FIRST_RECON_STATUSES);
+
+  if (intentErr) throw intentErr;
+
+  const nonSw = (intentRows || []).filter((r) => !isSpinwheelIntentRow(r));
+
+  if (!priorityDebt) {
+    if (nonSw.length) {
+      const ids = nonSw.map((r) => r.id);
+      await supabaseAdmin
+        .from("payment_intents")
+        .update({
+          status: "canceled",
+          updated_at: now,
+          notes: "Sin deudas con saldo — plan manual-first"
+        })
+        .in("id", ids)
+        .eq("user_id", userId);
+    }
+    return {
+      ok: true,
+      skipped: true,
+      reason: "no_positive_balance_debt",
+      canceled: nonSw.length
+    };
+  }
+
+  const amount = computeManualPriorityPaymentAmount(priorityDebt, plan, safeNumber);
+  if (!(amount > 0)) {
+    if (nonSw.length) {
+      const ids = nonSw.map((r) => r.id);
+      await supabaseAdmin
+        .from("payment_intents")
+        .update({
+          status: "canceled",
+          updated_at: now,
+          notes: "Monto recomendado no disponible — plan manual-first"
+        })
+        .in("id", ids)
+        .eq("user_id", userId);
+    }
+    return {
+      ok: true,
+      skipped: true,
+      reason: "zero_recommended_amount",
+      priority_debt_id: priorityDebt.id,
+      canceled: nonSw.length
+    };
+  }
+
+  if (nonSw.length) {
+    const ids = nonSw.map((r) => r.id);
+    await supabaseAdmin
+      .from("payment_intents")
+      .update({
+        status: "canceled",
+        updated_at: now,
+        notes: "Reemplazado por recomendacion manual-first unica"
+      })
+      .in("id", ids)
+      .eq("user_id", userId);
+  }
+
+  const insertPayload = {
+    user_id: userId,
+    debt_id: priorityDebt.id,
+    strategy: strategy === "snowball" ? "snowball" : "avalanche",
+    amount,
+    total_amount: amount,
+    status: "pending_review",
+    execution_mode: "safe",
+    execution_frequency: "daily",
+    scheduled_for: today,
+    notes: "DebtYa — proximo pago recomendado (plan manual-first)",
+    metadata: {
+      manual_first_priority: true,
+      plan_strategy: strategy,
+      computed_at: now
+    },
+    updated_at: now,
+    created_at: now
+  };
+
+  const { data: ins, error: insErr } = await supabaseAdmin
+    .from("payment_intents")
+    .insert(insertPayload)
+    .select("id")
+    .single();
+
+  if (insErr) throw insErr;
+
+  return {
+    ok: true,
+    intent_id: ins?.id,
+    debt_id: priorityDebt.id,
+    amount,
+    strategy,
+    canceled: nonSw.length
+  };
+}
+
 registerAllRoutes(app, {
   SERVER_VERSION,
   SUPABASE_URL,
@@ -2260,6 +2416,7 @@ registerAllRoutes(app, {
   safeBoolean,
   safeNullableNumber,
   stampRecentIntentsFundingFromPlan,
+  reconcileManualFirstPriorityIntent,
   approveIntentDirect,
   executeIntentDirect,
   confirmManualPaymentIntentDirect,

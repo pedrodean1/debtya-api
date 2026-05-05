@@ -7,6 +7,7 @@ function registerPlanningRoutes(app, deps) {
     callRpc,
     safeNumber,
     stampRecentIntentsFundingFromPlan,
+    reconcileManualFirstPriorityIntent,
     getCurrentPaymentPlan,
     appDebug,
     approveIntentDirect,
@@ -73,10 +74,16 @@ function registerPlanningRoutes(app, deps) {
         appDebug("stampRecentIntentsFundingFromPlan:", e.message);
       });
 
+      const manualFirst = await reconcileManualFirstPriorityIntent(req.user.id).catch((e) => {
+        appDebug("reconcileManualFirstPriorityIntent:", e.message);
+        return { ok: false, error: e.message };
+      });
+
       return res.json({
         ok: true,
         data: result,
-        spinwheel_intents: spinAppend
+        spinwheel_intents: spinAppend,
+        manual_first_reconcile: manualFirst
       });
     } catch (error) {
       return jsonError(res, 500, "Error ejecutando build_intents_v2", {
@@ -103,10 +110,16 @@ function registerPlanningRoutes(app, deps) {
         appDebug("stampRecentIntentsFundingFromPlan:", e.message);
       });
 
+      const manualFirst = await reconcileManualFirstPriorityIntent(req.user.id).catch((e) => {
+        appDebug("reconcileManualFirstPriorityIntent:", e.message);
+        return { ok: false, error: e.message };
+      });
+
       return res.json({
         ok: true,
         data: result,
-        spinwheel_intents: spinAppend
+        spinwheel_intents: spinAppend,
+        manual_first_reconcile: manualFirst
       });
     } catch (error) {
       return jsonError(res, 500, "Error construyendo intents", {

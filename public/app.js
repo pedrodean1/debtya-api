@@ -2420,8 +2420,12 @@
     function pickFeaturedIntentForDashboard(intents) {
       const list = Array.isArray(intents) ? intents.filter((x) => x) : [];
       if (!list.length) return null;
-      const rows = list
-        .filter((intent) => intentStatusDashboardActionable(intent))
+      const actionable = list.filter((intent) => intentStatusDashboardActionable(intent));
+      const manualPool = actionable.filter(
+        (intent) => String(intent?.source || "").toLowerCase() !== "spinwheel"
+      );
+      const pool = manualPool.length ? manualPool : actionable;
+      const rows = pool
         .map((intent) => {
           const st = String(intent.status || "").toLowerCase().trim();
           const amt = intentPaymentAmount(intent);
