@@ -2448,7 +2448,11 @@
         raw.manual_first_reconcile &&
         typeof raw.manual_first_reconcile === "object"
       ) {
-        serverIntentIdFromPayload = raw.manual_first_reconcile.intent_id ?? null;
+        serverIntentIdFromPayload =
+          raw.manual_first_reconcile.intent_id ??
+          raw.manual_first_reconcile.intentId ??
+          raw.manual_first_reconcile.id ??
+          null;
       }
 
       const out = {
@@ -2652,7 +2656,6 @@
       if (forcedIdRaw) {
         const hit = actionable.find((i) => String(i?.id || "").trim() === forcedIdRaw);
         if (hit) return hit;
-        state.manualPriorityIntentId = null;
       }
 
       const anchorDebtRaw =
@@ -4699,15 +4702,30 @@
           return;
         }
         const pid = m.priorityDebtId != null ? m.priorityDebtId : m.priority_debt_id;
-        const iid = m.intent_id != null ? String(m.intent_id).trim() : "";
+        const iidRaw = m.intent_id ?? m.intentId ?? m.id ?? null;
+        const iid = iidRaw != null ? String(iidRaw).trim() : "";
         if (m.ok === true && iid && !m.skipped) {
           state.manualPriorityIntentId = iid;
           if (pid != null) state.manualPriorityDebtId = String(pid);
           return;
         }
-        state.manualPriorityIntentId = null;
         if (pid != null) state.manualPriorityDebtId = String(pid);
       } catch (_) {}
+    }
+
+    async function refreshIntentsWithManualPriorityRetry(options = {}) {
+      const forcedRaw =
+        options.manualPriorityIntentId != null
+          ? String(options.manualPriorityIntentId).trim()
+          : "";
+      await refreshIntents();
+      if (!forcedRaw) return;
+      const existsNow = paymentIntentListCoalesced().some(
+        (i) => String(i?.id || "").trim() === forcedRaw
+      );
+      if (existsNow) return;
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      await refreshIntents();
     }
 
     async function refreshIntents() {
@@ -6002,7 +6020,10 @@
         const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
         recordPlanBuildResponse(buildRes);
         ingestManualFirstReconcile(buildRes);
-        await refreshIntents();
+        await refreshIntentsWithManualPriorityRetry({
+          manualPriorityIntentId: state.manualPriorityIntentId
+        });
+        renderDashboardNextStep();
         updateNextActionGuide();
       } catch (err) {
         recordPlanBuildFailure(err);
@@ -6161,7 +6182,10 @@
           const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
           recordPlanBuildResponse(buildRes);
           ingestManualFirstReconcile(buildRes);
-          await refreshIntents();
+          await refreshIntentsWithManualPriorityRetry({
+            manualPriorityIntentId: state.manualPriorityIntentId
+          });
+          renderDashboardNextStep();
           updateNextActionGuide();
         } catch (e) {
           recordPlanBuildFailure(e);
@@ -6230,7 +6254,10 @@
             const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
             recordPlanBuildResponse(buildRes);
             ingestManualFirstReconcile(buildRes);
-            await refreshIntents();
+            await refreshIntentsWithManualPriorityRetry({
+              manualPriorityIntentId: state.manualPriorityIntentId
+            });
+            renderDashboardNextStep();
             updateNextActionGuide();
           } catch (e) {
             recordPlanBuildFailure(e);
@@ -6266,7 +6293,10 @@
           }
         }
         showMessage(globalMessage, t("intents_built"), "success");
-        await refreshIntents();
+        await refreshIntentsWithManualPriorityRetry({
+          manualPriorityIntentId: state.manualPriorityIntentId
+        });
+        renderDashboardNextStep();
         updateNextActionGuide();
       } catch (err) {
         recordPlanBuildFailure(err);
