@@ -192,12 +192,13 @@
         land_footer_copy:
           "DebtYa helps you organize and pay down debt. For help: support@debtya.com",
         price_name: "DebtYa Beta",
-        price_copy: "Everything you need to organize debts manually, automate useful rules, and turn your strategy into a clear next payment.",
+        price_copy:
+          "Everything you need to organize debts manually, follow a clear plan, and see your next payment line.",
         price_freq: "per month",
         price_i1: "Manual debt tracking with clear balances and progress",
         price_i2: "Payment plan and avalanche vs snowball comparison",
         price_i3: "Next payment line aligned to your strategy",
-        price_i4: "Automatic rules such as roundup or fixed amount",
+        price_i4: "Progress tracking as you pay down balances",
         price_i5: "Payment history you can review anytime",
         price_i6: "Confirm what you paid and track progress",
         price_i7: "Stripe-secured subscription billing",
@@ -215,7 +216,7 @@
         faq_sub: "Short answers about how DebtYa fits into your routine.",
         faq_q1: "What is DebtYa?",
         faq_a1:
-          "DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and mark what you paid. DebtYa does not move money for you. Subscription billing runs through Stripe.",
+          "DebtYa is a workspace to list your debts, choose a payoff strategy, see a recommended next payment, and mark what you paid. DebtYa does not move money for you. Subscription billing runs through Stripe.",
         faq_q2: "Does DebtYa need my login credentials?",
         faq_a2:
           "No. You enter balances and details yourself from your statements. That keeps you in control and avoids sharing logins with DebtYa.",
@@ -241,7 +242,7 @@
         help_g1_p: "Enter each debt with balance, APR, and minimum payment from your statements.",
         help_g2_t: "2. Plan",
         help_g2_p:
-          "Choose Avalanche or Snowball, set monthly budget and extra if you like, then save. Rules are optional extras on top.",
+          "Choose Avalanche or Snowball, set monthly budget and extra if you like, then save so DebtYa can recommend your next payment.",
         help_g3_t: "3. Next payment",
         help_g3_p: "The dashboard shows what to pay today. Pay your lender yourself, then tap I paid it to update balances.",
         help_g4_t: "4. Progress",
@@ -298,7 +299,7 @@
         btn_activate_plan: "Activate plan",
         btn_manage_plan: "Manage plan",
         btn_logout: "Log out",
-        advanced_operate_toggle: "More ? rules & payments",
+        advanced_operate_toggle: "More ? legacy payment tools",
         advanced_plan_toggle: "More plan options",
         advanced_intents_toggle: "More payment list options",
         hero_title: "See your plan. Take the next step.",
@@ -328,8 +329,6 @@
         next_step_debts_btn: "Go to Debts & plan",
         next_step_plan: "Next: create your plan (strategy and monthly amounts).",
         next_step_plan_btn: "Open plan",
-        next_step_rules: "Next: create one paydown rule when you are ready.",
-        next_step_rules_btn: "Go to rules",
         next_step_dashboard_next:
           "Next: your recommended next payment is on the dashboard. Pay your lender outside DebtYa, then tap I paid it.",
         next_step_dashboard_next_btn: "Open dashboard",
@@ -378,7 +377,6 @@
         operate_rail_main: "Start here",
         operate_rail_advanced: "Advanced",
         method_panel_eyebrow: "Liability data (Method)",
-        btn_apply_rules: "Apply rules",
         btn_approve_visible: "Approve payments",
         btn_execute_visible: "Run payments",
         operate_note: "Most people only need manual debts and the dashboard next payment line.",
@@ -802,12 +800,13 @@
         land_footer_copy:
           "DebtYa te ayuda a organizar y pagar tus deudas. Ayuda: support@debtya.com",
         price_name: "DebtYa Beta",
-        price_copy: "Todo lo necesario para organizar tus deudas a mano, automatizar reglas utiles y ver un proximo pago claro.",
+        price_copy:
+          "Todo lo necesario para organizar tus deudas a mano, seguir un plan claro y ver tu linea de proximo pago.",
         price_freq: "al mes",
         price_i1: "Seguimiento manual de deudas con saldos y progreso claros",
         price_i2: "Plan de pago y comparacion avalancha vs bola de nieve",
         price_i3: "Linea de proximo pago alineada a tu estrategia",
-        price_i4: "Reglas automaticas como redondeo o monto fijo",
+        price_i4: "Seguimiento del progreso mientras bajas saldos",
         price_i5: "Historial de pagos que puedes revisar cuando quieras",
         price_i6: "Confirmar lo pagado y seguir el progreso",
         price_i7: "Facturacion de suscripcion segura con Stripe",
@@ -825,7 +824,7 @@
         faq_sub: "Respuestas cortas sobre como encaja DebtYa en tu rutina.",
         faq_q1: "Que es DebtYa?",
         faq_a1:
-          "DebtYa es un espacio para listar tus deudas, elegir una estrategia de pago, usar reglas ligeras y marcar lo que pagaste. DebtYa no mueve dinero por ti. La suscripcion se cobra con Stripe.",
+          "DebtYa es un espacio para listar tus deudas, elegir una estrategia de pago, ver un proximo pago recomendado y marcar lo que pagaste. DebtYa no mueve dinero por ti. La suscripcion se cobra con Stripe.",
         faq_q2: "Necesito dar mis claves de acceso?",
         faq_a2:
           "No. Tu ingresas saldos y datos desde tus estados de cuenta. Asi mantienes el control sin compartir inicios de sesion con DebtYa.",
@@ -851,7 +850,7 @@
         help_g1_p: "Registra cada deuda con saldo, APR y pago minimo segun tus estados de cuenta.",
         help_g2_t: "2. Plan",
         help_g2_p:
-          "Elige Avalancha o Bola de nieve, define presupuesto y extra si quieres, y guarda. Las reglas son extras opcionales.",
+          "Elige Avalancha o Bola de nieve, define presupuesto y extra si quieres, y guarda para que DebtYa recomiende tu proximo pago.",
         help_g3_t: "3. Proximo pago",
         help_g3_p: "El panel principal muestra que conviene pagar hoy. Paga al acreedor por tu cuenta y pulsa Ya lo pagu\u00E9 para actualizar saldos.",
         help_g4_t: "4. Progreso",
@@ -908,7 +907,7 @@
         btn_activate_plan: "Activar plan",
         btn_manage_plan: "Administrar plan",
         btn_logout: "Salir",
-        advanced_operate_toggle: "Mas ? reglas y pagos",
+        advanced_operate_toggle: "Mas ? herramientas heredadas de pagos",
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_intents_toggle: "Mas opciones de la lista de pagos",
         hero_title: "Ve tu plan. Da el siguiente paso.",
@@ -938,8 +937,6 @@
         next_step_debts_btn: "Ir a Deudas y plan",
         next_step_plan: "Siguiente: crea tu plan (estrategia y montos mensuales).",
         next_step_plan_btn: "Abrir plan",
-        next_step_rules: "Siguiente: crea una regla de abono cuando quieras.",
-        next_step_rules_btn: "Ir a reglas",
         next_step_dashboard_next:
           "Siguiente: tu proximo pago recomendado esta en el panel principal. Paga al acreedor fuera de DebtYa y luego pulsa Ya lo pagu\u00E9.",
         next_step_dashboard_next_btn: "Ir al panel principal",
@@ -988,7 +985,6 @@
         operate_rail_main: "Empieza aqui",
         operate_rail_advanced: "Avanzado",
         method_panel_eyebrow: "Datos de pasivos (Method)",
-        btn_apply_rules: "Aplicar reglas",
         btn_approve_visible: "Aprobar pagos",
         btn_execute_visible: "Ejecutar pagos",
         operate_note: "La mayoria solo necesita deudas manuales y la linea de proximo pago del panel.",
@@ -2259,7 +2255,6 @@
     function computeNextStepAction() {
       const debts = state.debts || [];
       const plan = state.plan;
-      const rules = state.rules || [];
       const intents = state.intents || [];
 
       if (debts.length === 0) {
@@ -2295,15 +2290,6 @@
           btnKey: "next_step_dashboard_next_btn",
           nav: "setup",
           scrollId: "dashboardNextStepCard",
-          openOperateMore: false
-        };
-      }
-      if (rules.length === 0) {
-        return {
-          textKey: "next_step_rules",
-          btnKey: "next_step_rules_btn",
-          nav: "setup",
-          scrollId: "rulesPanel",
           openOperateMore: false
         };
       }
@@ -3311,16 +3297,7 @@
 
     function syncHeroRulesSwitch() {
       const wrap = $("heroRuleSwitchWrap");
-      const sw = $("heroRulesEnabledSwitch");
-      if (!wrap || !sw) return;
-      const rules = state.rules || [];
-      if (rules.length !== 1) {
-        wrap.classList.add("hidden");
-        return;
-      }
-      wrap.classList.remove("hidden");
-      const r = rules[0];
-      sw.checked = !!r.enabled;
+      if (wrap) wrap.classList.add("hidden");
     }
 
     function updateRuleFormLock() {
@@ -5724,7 +5701,8 @@
     const swConnectVerifyBtn = $("swConnectVerifyBtn");
     if (swConnectVerifyBtn) swConnectVerifyBtn.addEventListener("click", () => void onSwConnectVerifyClick());
     window.addEventListener("hashchange", () => void refreshSpinwheelPayableDiag());
-    $("refreshRulesBtn").addEventListener("click", refreshRules);
+    const refreshRulesBtn = $("refreshRulesBtn");
+    if (refreshRulesBtn) refreshRulesBtn.addEventListener("click", refreshRules);
     $("refreshPlanBtn").addEventListener("click", refreshPlan);
     $("planStrategy").addEventListener("change", updatePlanFieldHints);
     $("planMode").addEventListener("change", updatePlanFieldHints);
@@ -5808,50 +5786,53 @@
       }
     });
 
-    $("ruleForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      try {
-        const editingId = state.editingRuleId;
-        if (!editingId && Array.isArray(state.rules) && state.rules.length > 0) {
-          showMessage(globalMessage, t("err_rule_one_only"), "error");
-          return;
+    const ruleFormEl = $("ruleForm");
+    if (ruleFormEl) {
+      ruleFormEl.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        try {
+          const editingId = state.editingRuleId;
+          if (!editingId && Array.isArray(state.rules) && state.rules.length > 0) {
+            showMessage(globalMessage, t("err_rule_one_only"), "error");
+            return;
+          }
+          const mode = $("ruleMode").value;
+          let roundupTo = Number($("ruleRoundupTo").value || 0);
+          if (mode === "roundup_change" && (!roundupTo || roundupTo <= 0)) roundupTo = 1;
+          const existing = editingId ? (state.rules || []).find((r) => String(r.id) === String(editingId)) : null;
+          const payload = {
+            mode,
+            percent: mode === "roundup_percent" ? Number($("rulePercent").value || 0) : 0,
+            fixed_amount: mode === "fixed_amount" ? Number($("ruleFixedAmount").value || 0) : 0,
+            roundup_to:
+              mode === "roundup_change"
+                ? roundupTo
+                : mode === "roundup_percent"
+                  ? 0
+                  : 1,
+            min_purchase_amount: getRuleMinPurchaseForSubmit(),
+            target_debt_id: $("ruleTargetDebt").value || null,
+            enabled: existing ? !!existing.enabled : true
+          };
+          if (editingId) {
+            await api(`/rules/${editingId}`, { method: "PATCH", body: JSON.stringify(payload) });
+            showMessage(globalMessage, t("rule_updated"), "success");
+            state.editingRuleId = null;
+          } else {
+            await api("/rules", { method: "POST", body: JSON.stringify({ ...payload, enabled: true }) });
+            showMessage(globalMessage, t("rule_saved"), "success");
+          }
+          await refreshRules();
+        } catch (err) {
+          const raw = err?.message || "";
+          if (raw === "ERR_ONE_RULE_MAX") {
+            showMessage(globalMessage, t("err_rule_one_only"), "error");
+          } else {
+            showMessage(globalMessage, normalizeErrorMessage(raw), "error");
+          }
         }
-        const mode = $("ruleMode").value;
-        let roundupTo = Number($("ruleRoundupTo").value || 0);
-        if (mode === "roundup_change" && (!roundupTo || roundupTo <= 0)) roundupTo = 1;
-        const existing = editingId ? (state.rules || []).find((r) => String(r.id) === String(editingId)) : null;
-        const payload = {
-          mode,
-          percent: mode === "roundup_percent" ? Number($("rulePercent").value || 0) : 0,
-          fixed_amount: mode === "fixed_amount" ? Number($("ruleFixedAmount").value || 0) : 0,
-          roundup_to:
-            mode === "roundup_change"
-              ? roundupTo
-              : mode === "roundup_percent"
-                ? 0
-                : 1,
-          min_purchase_amount: getRuleMinPurchaseForSubmit(),
-          target_debt_id: $("ruleTargetDebt").value || null,
-          enabled: existing ? !!existing.enabled : true
-        };
-        if (editingId) {
-          await api(`/rules/${editingId}`, { method: "PATCH", body: JSON.stringify(payload) });
-          showMessage(globalMessage, t("rule_updated"), "success");
-          state.editingRuleId = null;
-        } else {
-          await api("/rules", { method: "POST", body: JSON.stringify({ ...payload, enabled: true }) });
-          showMessage(globalMessage, t("rule_saved"), "success");
-        }
-        await refreshRules();
-      } catch (err) {
-        const raw = err?.message || "";
-        if (raw === "ERR_ONE_RULE_MAX") {
-          showMessage(globalMessage, t("err_rule_one_only"), "error");
-        } else {
-          showMessage(globalMessage, normalizeErrorMessage(raw), "error");
-        }
-      }
-    });
+      });
+    }
 
     $("planForm").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -5923,25 +5904,28 @@
       }
     });
 
-    $("btnApplyRules").addEventListener("click", async () => {
-      const btn = $("btnApplyRules");
-      setLoading(btn, true, t("applying"));
-      try {
-        const res = await api("/rules/apply", { method: "POST", body: "{}" });
-        showMessage(globalMessage, `${t("rules_applied")}: ${res.created ?? 0}.`, "success");
+    const btnApplyRulesEl = $("btnApplyRules");
+    if (btnApplyRulesEl) {
+      btnApplyRulesEl.addEventListener("click", async () => {
+        const btn = $("btnApplyRules");
+        setLoading(btn, true, t("applying"));
         try {
-          await api("/payment-intents/build", { method: "POST", body: "{}" });
-          await refreshIntents();
-          updateNextActionGuide();
-        } catch (e) {
-          void e;
+          const res = await api("/rules/apply", { method: "POST", body: "{}" });
+          showMessage(globalMessage, `${t("rules_applied")}: ${res.created ?? 0}.`, "success");
+          try {
+            await api("/payment-intents/build", { method: "POST", body: "{}" });
+            await refreshIntents();
+            updateNextActionGuide();
+          } catch (e) {
+            void e;
+          }
+        } catch (err) {
+          showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        } finally {
+          setLoading(btn, false);
         }
-      } catch (err) {
-        showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
-      } finally {
-        setLoading(btn, false);
-      }
-    });
+      });
+    }
 
     async function runPaymentIntentsBuild(triggerBtn) {
       const btn = triggerBtn;

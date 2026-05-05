@@ -39,13 +39,13 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-04-v82-manual-first-payment-plan" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-04-v82-manual-first-plan-no-rules" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-04-v82-manual-first-payment-plan">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-04-v82-manual-first-plan-no-rules">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -132,7 +132,7 @@
           <div class="faq-list">
             <details class="faq-item">
               <summary data-i18n="faq_q1">What is DebtYa?</summary>
-              <p class="faq-a" data-i18n="faq_a1">DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and mark what you paid. DebtYa does not move money for you.</p>
+              <p class="faq-a" data-i18n="faq_a1">DebtYa is a workspace to list your debts, choose a payoff strategy, see a recommended next payment, and mark what you paid. DebtYa does not move money for you.</p>
             </details>
             <details class="faq-item">
               <summary data-i18n="faq_q2">Does DebtYa need my login credentials?</summary>
@@ -164,7 +164,7 @@
             <div>
               <p class="pricing-name" data-i18n="price_name">DebtYa Beta</p>
               <p class="pricing-copy" data-i18n="price_copy">
-                Everything you need to organize debts manually, automate useful rules, and see a clear next payment.
+                Everything you need to organize debts manually, follow a clear plan, and see your next payment line.
               </p>
             </div>
             <div class="price-box">
@@ -177,7 +177,7 @@
             <div class="pricing-item" data-i18n="price_i1">Manual debt tracking with clear balances and progress</div>
             <div class="pricing-item" data-i18n="price_i2">Payment plan and avalanche vs snowball comparison</div>
             <div class="pricing-item" data-i18n="price_i3">Next payment line aligned to your strategy</div>
-            <div class="pricing-item" data-i18n="price_i4">Automatic rules such as roundup or fixed amount</div>
+            <div class="pricing-item" data-i18n="price_i4">Progress tracking as you pay down balances</div>
             <div class="pricing-item" data-i18n="price_i5">Payment history you can review anytime</div>
             <div class="pricing-item" data-i18n="price_i6">Confirm what you paid and track progress</div>
             <div class="pricing-item" data-i18n="price_i7">Stripe-secured subscription billing</div>
@@ -539,10 +539,9 @@
 
             <div class="operate-advanced-stack">
               <details class="ux-advanced-details ux-operate-advanced">
-                <summary data-i18n="advanced_operate_toggle">More — rules &amp; payments</summary>
+                <summary data-i18n="advanced_operate_toggle">More — legacy payment tools</summary>
                 <div class="ux-advanced-inner">
                   <div class="grid-4 operate-adv-grid">
-                    <button id="btnApplyRules" class="btn btn-secondary" type="button" data-i18n="btn_apply_rules">Apply rules</button>
                     <button id="btnBuildIntents" class="btn btn-secondary hidden" type="button" data-i18n="btn_intents_build" aria-hidden="true" tabindex="-1">Build payments</button>
                     <button id="btnApproveVisible" class="btn btn-success hidden" type="button" data-i18n="btn_approve_visible" aria-hidden="true" tabindex="-1">Approve payments</button>
                     <button id="btnExecuteVisible" class="btn btn-outline hidden" type="button" data-i18n="btn_execute_visible" aria-hidden="true" tabindex="-1">Run payments</button>
@@ -653,7 +652,7 @@
             <div id="debtsList" class="list"></div>
           </section>
 
-          <section class="card" id="rulesPanel">
+          <section class="card hidden" id="rulesPanel" aria-hidden="true">
             <div class="section-head">
               <div>
                 <h2 data-i18n="rules_title">Rules</h2>
@@ -1025,7 +1024,7 @@
         </div>
         <div class="help-guide-step">
           <h3 data-i18n="help_g2_t">2. Plan</h3>
-          <p data-i18n="help_g2_p">Set your payment plan and strategy. Rules are optional if you want extra automation.</p>
+          <p data-i18n="help_g2_p">Choose Avalanche or Snowball and your monthly amounts, then save so DebtYa can recommend your next payment.</p>
         </div>
         <div class="help-guide-step">
           <h3 data-i18n="help_g3_t">3. Next payment</h3>
@@ -1054,7 +1053,7 @@
         <div class="faq-list">
           <details class="faq-item">
             <summary data-i18n="faq_q1">What is DebtYa?</summary>
-            <p class="faq-a" data-i18n="faq_a1">DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and mark what you paid. DebtYa does not move money for you.</p>
+            <p class="faq-a" data-i18n="faq_a1">DebtYa is a workspace to list your debts, choose a payoff strategy, see a recommended next payment, and mark what you paid. DebtYa does not move money for you.</p>
           </details>
           <details class="faq-item">
             <summary data-i18n="faq_q2">Does DebtYa need my login credentials?</summary>
@@ -1081,6 +1080,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-04-v82-manual-first-payment-plan"></script>
+  <script src="/app.js?v=debtya-2026-05-04-v82-manual-first-plan-no-rules"></script>
 </body>
 </html>
