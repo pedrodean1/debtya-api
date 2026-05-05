@@ -317,6 +317,10 @@
         dashboard_next_pay_outside_app:
           "Pay your lender using your usual app or website, then tap I paid it so DebtYa updates your balance and progress.",
         dashboard_next_paid_btn: "I paid it",
+        dashboard_next_all_clear_primary: "All caught up for now",
+        dashboard_next_all_clear_sub:
+          "You have no pending payments. Add another debt or update your plan whenever you want to calculate your next payment.",
+        dashboard_next_all_clear_update_plan_btn: "Update plan",
         manual_pay_ok: "Payment marked as done. Your progress was updated.",
         manual_pay_err: "Could not confirm the payment. Try again.",
         ai_coach_title: "Why this payment",
@@ -925,6 +929,10 @@
         dashboard_next_pay_outside_app:
           "Paga al acreedor con tu app o sitio habitual y luego pulsa Ya lo pagu\u00E9 para que DebtYa actualice saldo y progreso.",
         dashboard_next_paid_btn: "Ya lo pagu\u00E9",
+        dashboard_next_all_clear_primary: "Listo por ahora",
+        dashboard_next_all_clear_sub:
+          "No tienes pagos pendientes. Agrega otra deuda o actualiza tu plan cuando quieras calcular el siguiente pago.",
+        dashboard_next_all_clear_update_plan_btn: "Actualizar plan",
         manual_pay_ok: "Pago marcado como realizado. Tu progreso fue actualizado.",
         manual_pay_err: "No se pudo confirmar el pago. Int\u00E9ntalo de nuevo.",
         ai_coach_title: "Por qu\u00E9 este pago",
@@ -2392,40 +2400,37 @@
     }
 
     /**
-     * Intent destacado para el bloque "Tu pr?ximo paso": prioriza abiertos y mayor monto.
+     * Solo pending_review y approved cuentan como proximo pago en el panel (manual-first).
+     * Nunca executed / cancelled / failed / etc.
+     * @param {object} intent
+     * @returns {boolean}
+     */
+    function intentStatusDashboardActionable(intent) {
+      const st = String(intent?.status || "").toLowerCase().trim();
+      return st === "pending_review" || st === "approved";
+    }
+
+    /**
+     * Intent destacado para el bloque "Tu proximo paso": solo accionables, luego mayor monto.
      * @param {object[]} intents
      */
     function pickFeaturedIntentForDashboard(intents) {
       const list = Array.isArray(intents) ? intents.filter((x) => x) : [];
       if (!list.length) return null;
-      const actionableStatuses = new Set(["pending_review", "approved"]);
-      const openStatuses = new Set([
-        "draft",
-        "pending",
-        "built",
-        "proposed",
-        "ready",
-        "pending_review",
-        "approved",
-        "queued"
-      ]);
-      const rows = list.map((intent) => {
-        const st = String(intent.status || "").toLowerCase().trim();
-        const isActionable = actionableStatuses.has(st);
-        const isOpen = openStatuses.has(st);
-        const amt = intentPaymentAmount(intent);
-        const sched = intent.scheduled_for != null ? String(intent.scheduled_for) : "";
-        return { intent, st, isActionable, isOpen, amt, sched };
-      });
-      let pool = rows.filter((r) => r.isActionable);
-      if (!pool.length) {
-        pool = rows.some((r) => r.isOpen) ? rows.filter((r) => r.isOpen) : rows;
-      }
-      pool.sort((a, b) => {
+      const rows = list
+        .filter((intent) => intentStatusDashboardActionable(intent))
+        .map((intent) => {
+          const st = String(intent.status || "").toLowerCase().trim();
+          const amt = intentPaymentAmount(intent);
+          const sched = intent.scheduled_for != null ? String(intent.scheduled_for) : "";
+          return { intent, st, amt, sched };
+        });
+      if (!rows.length) return null;
+      rows.sort((a, b) => {
         if (a.sched && b.sched && a.sched !== b.sched) return a.sched.localeCompare(b.sched);
         return b.amt - a.amt;
       });
-      return pool[0]?.intent || null;
+      return rows[0].intent;
     }
 
     function hasFeaturedPayableIntent() {
@@ -2451,6 +2456,8 @@
         if (paidBtn) {
           paidBtn.classList.add("hidden");
           paidBtn.onclick = null;
+          paidBtn.classList.remove("btn-light");
+          paidBtn.classList.add("btn-primary");
         }
         const coach = $("dashboardAiCoach");
         const coachBtn = $("dashboardAiCoachBtn");
@@ -2478,7 +2485,7 @@
       const intent = pickFeaturedIntentForDashboard(intents);
       const payAmt = intent ? intentPaymentAmount(intent) : 0;
 
-      if (intent && payAmt > 0) {
+      if (intent && payAmt > 0 && intentStatusDashboardActionable(intent)) {
         const amount = fmtMoney(payAmt);
         let debtLabel = describeIntentPayToward(intent);
         if (!debtLabel || debtLabel === "?" || !String(debtLabel).trim()) {
@@ -2500,7 +2507,8 @@
         const paidBtn = $("dashboardNextStepPaidBtn");
         if (paidBtn) {
           paidBtn.textContent = t("dashboard_next_paid_btn");
-          paidBtn.classList.remove("hidden");
+          paidBtn.classList.remove("hidden", "btn-light");
+          paidBtn.classList.add("btn-primary");
           const intentId = intent && intent.id != null ? String(intent.id) : "";
           paidBtn.onclick = async () => {
             if (!intentId) return;
@@ -2590,11 +2598,19 @@
         primaryEl.textContent = t("dashboard_next_no_intents");
         return;
       }
-      if (!intent) {
-        primaryEl.textContent = t("dashboard_next_no_intents");
-        return;
+      primaryEl.textContent = t("dashboard_next_all_clear_primary");
+      secondaryEl.textContent = t("dashboard_next_all_clear_sub");
+      secondaryEl.classList.remove("hidden");
+      const planBtn = $("dashboardNextStepPaidBtn");
+      if (planBtn) {
+        planBtn.textContent = t("dashboard_next_all_clear_update_plan_btn");
+        planBtn.classList.remove("hidden", "btn-primary");
+        planBtn.classList.add("btn-light");
+        planBtn.onclick = () => {
+          setNav("setup");
+          window.requestAnimationFrame(() => scrollToAppSection("paymentPlanSection"));
+        };
       }
-      primaryEl.textContent = t("dashboard_next_no_intents");
     }
 
     function renderStats() {
@@ -4421,10 +4437,8 @@
       }
       state.intents = list;
       state.paymentIntents = list;
-      const featuredIntent = pickFeaturedIntentForDashboard(list);
-      console.log("[DebtYa payment intents loaded]", list);
-      console.log("[DebtYa featured intent]", featuredIntent);
       renderIntents();
+      renderDashboardNextStep();
       updateNextActionGuide();
     }
 
