@@ -1611,6 +1611,10 @@
       manualPriorityDebtId: null,
       /** Intent_id devuelto por manual_first_reconcile (prioridad absoluta en dashboard). */
       manualPriorityIntentId: null,
+      /** Monto de manual_first_reconcile para fallback de dashboard. */
+      manualPriorityAmount: null,
+      /** Nombre de deuda de manual_first_reconcile para fallback de dashboard. */
+      manualPriorityDebtName: null,
       /** Ultima respuesta de POST /payment-intents/build (solo metadata para ?debugPlan=1). */
       lastPlanBuildResponse: null
     };
@@ -2459,8 +2463,16 @@
         manual_first_reconcile: manualStr,
         state_manual_priority: {
           manualPriorityIntentId: state.manualPriorityIntentId,
-          manualPriorityDebtId: state.manualPriorityDebtId
+          manualPriorityDebtId: state.manualPriorityDebtId,
+          manualPriorityAmount: state.manualPriorityAmount,
+          manualPriorityDebtName: state.manualPriorityDebtName
         },
+        manual_priority_intent_in_list:
+          state.manualPriorityIntentId != null &&
+          String(state.manualPriorityIntentId).trim() !== "" &&
+          intents.some((i) => String(i?.id || "").trim() === String(state.manualPriorityIntentId).trim()),
+        manual_priority_snapshot_used:
+          !!featured && String(featured.source || "").toLowerCase() === "manual_priority_snapshot",
         actionable_intent_counts: {
           pending_review: nPending,
           approved: nApproved,
@@ -2637,6 +2649,21 @@
       );
     }
 
+    function buildManualPrioritySnapshotIntent() {
+      const amountNum = Number(state.manualPriorityAmount);
+      const amount = Number.isFinite(amountNum) && amountNum > 0 ? amountNum : 0;
+      return {
+        id: state.manualPriorityIntentId || null,
+        debt_id: state.manualPriorityDebtId || null,
+        status: "pending_review",
+        amount,
+        total_amount: amount,
+        metadata: { manual_first_priority: true },
+        source: "manual_priority_snapshot",
+        creditor_name: state.manualPriorityDebtName || null
+      };
+    }
+
     /**
      * 1) manualPriorityIntentId (servidor)
      * 2) metadata.manual_first_priority
@@ -2647,16 +2674,40 @@
      */
     function pickFeaturedIntentForDashboard(intents) {
       const list = Array.isArray(intents) ? intents.filter((x) => x) : [];
-      if (!list.length) return null;
       const actionable = list.filter((intent) => intentStatusDashboardActionable(intent));
-      if (!actionable.length) return null;
 
       const forcedIdRaw =
         state.manualPriorityIntentId != null ? String(state.manualPriorityIntentId).trim() : "";
+      const forcedDebtRaw =
+        state.manualPriorityDebtId != null ? String(state.manualPriorityDebtId).trim() : "";
+      const hasManualAnchor = !!(forcedIdRaw || forcedDebtRaw);
+      if (!actionable.length) {
+        if (hasManualAnchor) return buildManualPrioritySnapshotIntent();
+        return null;
+      }
       if (forcedIdRaw) {
         const hit = actionable.find((i) => String(i?.id || "").trim() === forcedIdRaw);
         if (hit) return hit;
       }
+      if (forcedDebtRaw) {
+        const debtMatches = actionable.filter((i) => {
+          const did = i?.debt_id != null ? String(i.debt_id).trim() : "";
+          return did === forcedDebtRaw && !intentExternalIntegrationSource(i);
+        });
+        if (debtMatches.length) {
+          debtMatches.sort((a, b) => {
+            const aMf = intentManualFirstPriorityFlag(a) ? 1 : 0;
+            const bMf = intentManualFirstPriorityFlag(b) ? 1 : 0;
+            if (aMf !== bMf) return bMf - aMf;
+            const aCreated = a?.created_at != null ? String(a.created_at) : "";
+            const bCreated = b?.created_at != null ? String(b.created_at) : "";
+            return bCreated.localeCompare(aCreated);
+          });
+          return debtMatches[0];
+        }
+        return buildManualPrioritySnapshotIntent();
+      }
+      if (forcedIdRaw) return buildManualPrioritySnapshotIntent();
 
       const anchorDebtRaw =
         state.manualPriorityDebtId != null ? String(state.manualPriorityDebtId).trim() : "";
@@ -4699,11 +4750,21 @@
         if (m.skipped && m.reason === "no_positive_balance_debt") {
           state.manualPriorityDebtId = null;
           state.manualPriorityIntentId = null;
+          state.manualPriorityAmount = null;
+          state.manualPriorityDebtName = null;
           return;
         }
         const pid = m.priorityDebtId != null ? m.priorityDebtId : m.priority_debt_id;
         const iidRaw = m.intent_id ?? m.intentId ?? m.id ?? null;
         const iid = iidRaw != null ? String(iidRaw).trim() : "";
+        const amountNum = Number(m.amount);
+        if (Number.isFinite(amountNum) && amountNum >= 0) {
+          state.manualPriorityAmount = amountNum;
+        }
+        const debtNameRaw = m.priorityDebtName ?? m.priority_debt_name ?? null;
+        if (debtNameRaw != null && String(debtNameRaw).trim() !== "") {
+          state.manualPriorityDebtName = String(debtNameRaw).trim();
+        }
         if (m.ok === true && iid && !m.skipped) {
           state.manualPriorityIntentId = iid;
           if (pid != null) state.manualPriorityDebtId = String(pid);
