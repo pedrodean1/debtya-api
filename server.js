@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v80-manual-payment-confirmation";
+const SERVER_VERSION = "debtya-2026-05-04-v81-1-remove-visible-plaid";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;

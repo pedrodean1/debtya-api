@@ -179,12 +179,12 @@
         land_pill: "Built for real monthly use",
         land_hero_title: "Get out of debt with a clear plan\u2014no guessing",
         land_hero_copy:
-          "DebtYa analyzes your debts and tells you exactly what to pay, when, and why.",
+          "DebtYa does not move money for you. Add your debts manually from your statements, build a plan, see what to pay today, and confirm when you have paid your lender.",
         land_btn_start_free: "Start free",
         land_conv_steps_title: "Three simple steps",
-        land_conv_step1_t: "Connect your bank",
-        land_conv_step2_t: "See your personalized plan",
-        land_conv_step3_t: "Follow your suggested payments",
+        land_conv_step1_t: "Add your debts manually",
+        land_conv_step2_t: "Create your payoff plan",
+        land_conv_step3_t: "Pay what DebtYa suggests and confirm when done",
         land_benefits_title: "Why DebtYa",
         land_benefit1: "Save on interest",
         land_benefit2: "Reduce financial stress",
@@ -192,15 +192,15 @@
         land_footer_copy:
           "DebtYa helps you organize and pay down debt. For help: support@debtya.com",
         price_name: "DebtYa Beta",
-        price_copy: "Everything you need to connect accounts, organize debts, automate useful rules, and turn your strategy into real payments.",
+        price_copy: "Everything you need to organize debts manually, automate useful rules, and turn your strategy into clear suggested payments.",
         price_freq: "per month",
-        price_i1: "Secure bank connection",
-        price_i2: "Account and transaction import",
-        price_i3: "Debt creation and tracking",
+        price_i1: "Manual debt tracking with clear balances and progress",
+        price_i2: "Payment plan and avalanche vs snowball comparison",
+        price_i3: "Suggested payments aligned to your strategy",
         price_i4: "Automatic rules such as roundup or fixed amount",
-        price_i5: "Avalanche vs snowball comparison",
-        price_i6: "Prepare, approve, and run suggested payments",
-        price_i7: "Payment history you can review anytime",
+        price_i5: "Payment history you can review anytime",
+        price_i6: "Build, approve, and track suggested payments",
+        price_i7: "Stripe-secured subscription billing",
         price_i8: "Steady foundation for month-to-month use",
         price_have_account: "I already have an account",
         price_helper: 'If you are already signed in, "Get started" continues to secure checkout. Otherwise you will sign in or create an account first.',
@@ -215,13 +215,13 @@
         faq_sub: "Short answers about how DebtYa fits into your routine.",
         faq_q1: "What is DebtYa?",
         faq_a1:
-          "DebtYa is a simple workspace to connect your bank through Plaid, optionally bring in debt or liability data through Method where that integration is enabled, list your debts, choose a payoff strategy, use light automation with rules, and move from suggested payments to what you actually ran. Subscription billing runs through Stripe.",
-        faq_q2: "Do I need to connect my bank?",
+          "DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and move from suggested payments to what you mark as paid. DebtYa does not move money for you. Subscription billing runs through Stripe.",
+        faq_q2: "Does DebtYa need my login credentials?",
         faq_a2:
-          "Connecting your bank keeps balances and imports up to date and makes linking debts easier. The product is designed around connected accounts for accurate numbers.",
+          "No. You enter balances and details yourself from your statements. That keeps you in control and avoids sharing logins with DebtYa.",
         faq_q3: "Why review APR and minimum payment?",
         faq_a3:
-          "Imports can suggest APR and minimum payment, but your statement is the source of truth. Double-check before saving a debt so your plan matches reality.",
+          "Your statement is the source of truth. Double-check APR and minimum payment before saving a debt so your plan matches reality.",
         faq_q4: "How does billing work?",
         faq_a4:
           'DebtYa Beta is billed monthly through Stripe. When you use "Get started" while signed in, you complete checkout securely and return to the app with your subscription status updated.',
@@ -238,13 +238,13 @@
         help_tab_faq: "FAQ",
         help_guide_intro: "A calm path through the basics. Open this panel any time.",
         help_g1_t: "1. Sign in",
-        help_g1_p: "Create an account or log in so your bank, debts, and plan are saved.",
-        help_g2_t: "2. Connect and import",
-        help_g2_p: "Use Connect bank, then import the accounts you want DebtYa to use.",
-        help_g3_t: "3. Debts and plan",
-        help_g3_p: "Add each debt (review APR and minimums), then set your payment plan and strategy.",
-        help_g4_t: "4. Rules and suggested payments",
-        help_g4_p: "Apply rules when you are ready, review suggested payments, then approve and run them from Actions.",
+        help_g1_p: "Create an account or log in so your debts, plan, and progress are saved.",
+        help_g2_t: "2. Add debts",
+        help_g2_p: "Enter each debt with balance, APR, and minimum payment from your statements.",
+        help_g3_t: "3. Plan and rules",
+        help_g3_p: "Set your payment plan and strategy, then add a rule when you want extra automation.",
+        help_g4_t: "4. Suggested payments",
+        help_g4_p: "Build suggested payments, approve what looks right, then pay your lender outside the app and confirm when you are done.",
         help_g5_t: "5. Need more?",
         help_g5_p: "Use the FAQ tab, this assistant for general guidance, or email support?we never replace your statement or professional advice.",
         help_jump_faq: "Scroll to FAQ on this page",
@@ -291,7 +291,7 @@
         pw_recovery_cancel: "Cancel and sign out",
         pw_recovery_code_sent: "Check your email for the 6-digit code.",
         pw_recovery_done: "Password updated. Loading your account?",
-        auth_footer_hint: "Sign in to connect your bank, activate your plan, and use your own numbers.",
+        auth_footer_hint: "Sign in to add your debts, activate your plan, and track your payoff path.",
         app_welcome_default: "Home",
         badge_session: "Signed in",
         badge_sub_active: "Subscription active",
@@ -303,7 +303,7 @@
         advanced_plan_toggle: "More plan options",
         advanced_intents_toggle: "More list options",
         hero_title: "See your plan. Take the next step.",
-        hero_copy: "Debt balances, bank data, and your next payoff move?in one place.",
+        hero_copy: "Total debt, progress, your next suggested payment, and history?in one place. DebtYa does not move money; you enter what you know from your statements.",
         dashboard_next_step_title: "Your next step",
         dashboard_next_no_debts: "Add your debts to get started.",
         dashboard_next_no_plan: "Create your payment plan.",
@@ -314,33 +314,33 @@
         dashboard_next_interest_na: "Add APR on this debt for a sharper interest estimate.",
         dashboard_next_accel: "This speeds up your path out of debt.",
         dashboard_next_pay_outside_app:
-          "Make this payment outside DebtYa, then record it as done in your own records when you are ready.",
+          "Pay your lender using your usual app or website, then tap I paid it so DebtYa updates your balance and progress.",
         dashboard_next_paid_btn: "I paid it",
         manual_pay_ok: "Payment marked as done. Your progress was updated.",
         manual_pay_err: "Could not confirm the payment. Try again.",
-        next_step_bank: "Next: connect your bank and import accounts so DebtYa can use real balances.",
-        next_step_bank_btn: "Go to Actions",
+        next_step_bank: "Next: add optional snapshots only if your workspace uses them.",
+        next_step_bank_btn: "Open suggested payments",
         next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
         next_step_debts_btn: "Go to Debts & plan",
         next_step_plan: "Next: save your payment plan (strategy, mode, and monthly budget).",
         next_step_plan_btn: "Open payment plan",
         next_step_rules: "Next: create one paydown rule when you are ready.",
         next_step_rules_btn: "Go to rules",
-        next_step_prepare: "Next: prepare suggested payments from your plan (Actions ? More).",
-        next_step_prepare_btn: "Open Actions",
-        next_step_review: "Next: you have suggested payments waiting for approval or execution.",
+        next_step_prepare: "Next: build suggested payments from your plan (use Build payments below).",
+        next_step_prepare_btn: "Open suggested payments",
+        next_step_review: "Next: you have suggested payments waiting for your review or confirmation.",
         next_step_review_btn: "Review payments",
-        next_step_done: "You are set up for now. After new imports, use Actions to apply rules or refresh payments.",
-        next_step_done_btn: "Scroll to Actions",
-        btn_connect_bank: "Connect bank",
-        btn_disconnect_bank: "Disconnect bank",
-        sync_bank_pick_title: "Which bank do you want to remove?",
-        sync_bank_pick_sub: "Pick the bank connection. On the next step we will ask you to confirm.",
-        sync_bank_pick_label: "Bank connection",
+        next_step_done: "You are set up for now. When your situation changes, update debts or rebuild suggested payments.",
+        next_step_done_btn: "Open suggested payments",
+        btn_connect_bank: "Start external link",
+        btn_disconnect_bank: "Remove external link",
+        sync_bank_pick_title: "Which link should we remove?",
+        sync_bank_pick_sub: "Pick the external link. On the next step we will ask you to confirm.",
+        sync_bank_pick_label: "Link",
         sync_bank_pick_continue: "Continue",
-        sync_bank_pick_none: "There are no connected banks to disconnect.",
-        btn_import_accounts: "Import accounts",
-        btn_import_tx: "Import transactions",
+        sync_bank_pick_none: "There are no external links to remove.",
+        btn_import_accounts: "Update snapshots",
+        btn_import_tx: "Update activity",
         btn_intents_build: "Build payments",
         intents_build_response_label: "Last build response (JSON)",
         stat_total_debt: "Total debt",
@@ -364,19 +364,19 @@
         lbl_next_period: "Next period",
         lbl_actions: "Actions",
         sub_portal_hint: "If your plan is active, you can open your account page to manage it.",
-        operate_title: "Connect bank (Plaid)",
+        operate_title: "Legacy: optional external link",
         operate_sub:
-          "Step 1: connect your bank and import accounts/transactions.",
+          "Hidden in manual-first mode. Optional tools for workspaces that still use external snapshots.",
         operate_rail_main: "Start here",
         operate_rail_advanced: "Advanced",
         method_panel_eyebrow: "Liability data (Method)",
         btn_apply_rules: "Apply rules",
         btn_approve_visible: "Approve payments",
         btn_execute_visible: "Run payments",
-        operate_note: "Most days: Connect ? Import. Rules and preparing payments live under More.",
-        operate_legal_html: 'By connecting accounts, you authorize DebtYa to receive financial information needed for the service through trusted third-party providers (for example Plaid for bank data and Stripe for subscription billing). Please also review our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
+        operate_note: "Most people only need manual debts and suggested payments.",
+        operate_legal_html: 'Optional features may use trusted service providers as described in our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>. Subscription billing runs through Stripe.',
         method_panel_title: "Legacy liabilities",
-        method_panel_hint: "Method discovers liabilities. Plaid stays for the bank you pay from. Create a Method profile, run Connect, sync, then import each debt into DebtYa.",
+        method_panel_hint: "When liability integrations are enabled on the server, you can sync optional liability rows and add them as debts in DebtYa.",
         method_panel_disabled:
           "Method is not enabled on this API host. Add METHOD_API_KEY to the Node service on Render and redeploy; open /health and confirm method_configured is true.",
         method_lbl_first: "First name",
@@ -399,8 +399,8 @@
         method_import_balance: "Balance",
         method_import_apr: "APR",
         method_import_min: "Minimum",
-        method_btn_import: "Import to DebtYa",
-        method_import_ok: "Debt imported.",
+        method_btn_import: "Add to DebtYa",
+        method_import_ok: "Debt saved to DebtYa.",
         method_action_ok: "Done.",
         method_err_entity: "Create a Method profile first.",
         method_err_pick_entity: "Select a Method entity.",
@@ -411,7 +411,7 @@
         method_entity_load_err_generic: "Could not load Method profiles from the server.",
         method_entity_pick_empty: "(no profile yet)",
         method_empty_sync: "No Method liabilities synced yet.",
-        method_imported_badge: "Imported",
+        method_imported_badge: "Synced",
         debt_source_method: "Method",
         debt_source_spinwheel: "Spinwheel",
         debt_spinwheel_payable: "Payable with Spinwheel",
@@ -450,11 +450,11 @@
         sw_connect_unavailable: "Debt lookup is not available right now. Please try again later.",
         sim_counts_active_label: "Active debts",
         sim_counts_line_placeholder: "Active debts: 0",
-        debt_source_plaid: "Plaid",
+        debt_source_plaid: "External snapshot",
         debt_method_payable: "Payable (Method)",
         debt_method_info_only: "Informational",
         debts_title: "Debts",
-        debts_sub: "Step 2: review/add your debts and adjust key amounts.",
+        debts_sub: "Step 1: add each debt manually (balance, APR, minimum) from your statements.",
         lbl_name: "Name",
         ph_debt_name: "e.g. Chase Freedom",
         lbl_balance: "Balance",
@@ -469,7 +469,7 @@
         rules_title: "Rules",
         rules_sub: "Three ways to steer extra money toward your debts when you apply rules.",
         rules_intro_three_ways:
-          "Pick one style per rule: a fixed add-on, a percent of each purchase, or rounding up spare change. Then use Apply rules under Actions after importing transactions.",
+          "Pick one style per rule: a fixed add-on, a percent of each purchase, or rounding up spare change. Rules are optional; use them when you want extra automation on top of your plan.",
         rules_one_only_hint:
           "You can only keep one rule. Use Edit to change it, the switch above to pause it, or Delete to replace it.",
         lbl_rules_master_switch: "Rules on/off",
@@ -489,7 +489,7 @@
         rule_mode_hint_roundup: "Sends the ?spare change? needed to reach the next step (for example the next dollar).",
         rule_mode_hint_default: "Choose how this rule builds paydown amounts from your spending.",
         rule_hint_monthly_fixed:
-          "Same extra amount applied when you run Apply rules (for example after each import), toward the debt you choose below.",
+          "Same extra amount applied when you run Apply rules, toward the debt you choose below.",
         rule_hint_purchase_percent:
           "Example: 10% on a $10 purchase adds $1 toward your target debt. Your Supabase apply_rules_v2 logic must use this percent on eligible spending.",
         rule_hint_spare_change:
@@ -505,7 +505,7 @@
         lbl_target_debt: "Target debt",
         btn_save_rule: "Save rule",
         payplan_title: "Payment plan",
-        payplan_sub: "Step 3: define strategy, mode, and monthly budget.",
+        payplan_sub: "Step 2: define strategy, mode, and monthly budget.",
         plan_manual: "Manual",
         plan_safe_auto: "Safe auto",
         plan_full_auto: "Full auto",
@@ -518,11 +518,11 @@
         hint_mode_safe_auto:
           "DebtYa can prepare payments with extra guardrails. You still confirm important steps in the app.",
         hint_mode_full_auto:
-          "DebtYa prepares payments with the most automation this product supports. You should still monitor your accounts.",
+          "DebtYa prepares payments with the most automation this product supports. You should still monitor your plan.",
         lbl_plan_pay_from: "Pay from (account)",
         lbl_plan_pay_toward: "Pay toward (debt)",
         plan_pay_from_hint:
-          "Choose the checking or savings account you pay from. It is stored on new suggested payments when you prepare them.",
+          "Optional label for where you pay from in real life. Suggested payments are guidance only; you always pay your lender yourself.",
         plan_pay_toward_hint:
           "Optional: highlight which debt you consider the main target. Suggested payments can still follow your strategy across multiple debts.",
         plan_pay_from_none: "Not set",
@@ -539,35 +539,35 @@
         btn_compare: "Compare strategies",
         btn_refresh_plan: "Refresh plan",
         intents_title: "Suggested payments",
-        intents_sub: "Step 4: build, review, approve, and run payments.",
+        intents_sub: "Step 3: build and review suggested payments, then confirm in the dashboard when you have paid your lender.",
         btn_reconcile: "Update recent payments",
-        tag_approved: "Approved ? ready to run",
+        tag_approved: "Approved ? pay your lender, then confirm when done",
         tag_pending: "Draft or waiting ? needs your OK",
         tag_executed: "Done ? applied to your balances",
         history_title: "History",
         history_sub: "See payments and how your balances changed.",
-        accounts_title: "Connected accounts",
-        accounts_sub: "Synced from your bank: cash accounts and debts in separate groups.",
-        sync_banks_title: "Synced banks",
-        sync_banks_funding_title: "Banks you pay from",
-        sync_banks_liabilities_title: "Banks with debts you pay down",
-        bank_role_modal_title: "What is this bank for?",
+        accounts_title: "Optional snapshots",
+        accounts_sub: "When present, cash and liability snapshots appear in separate groups.",
+        sync_banks_title: "Linked snapshots",
+        sync_banks_funding_title: "Funding side",
+        sync_banks_liabilities_title: "Debt side",
+        bank_role_modal_title: "How should we label this link?",
         bank_role_modal_sub:
-          "Choose where to list this connection. All accounts still import; this only groups the bank in your workspace.",
-        bank_role_funding_btn: "Pay from here ? checking, savings",
-        bank_role_liabilities_btn: "Debts here ? cards, loans",
-        bank_role_both_btn: "Both ? funding and debts at this bank",
+          "Choose how to group this link in your workspace. This only affects labels; it does not change manual payoff planning.",
+        bank_role_funding_btn: "Funding side ? checking, savings",
+        bank_role_liabilities_btn: "Debt side ? cards, loans",
+        bank_role_both_btn: "Both ? funding and debts together",
         bank_role_cancel: "Cancel",
-        sync_bank_default: "Bank",
-        sync_bank_disconnect_aria: "Remove bank",
+        sync_bank_default: "Link",
+        sync_bank_disconnect_aria: "Remove link",
         sync_bank_disconnect_confirm:
-          "Remove this bank connection? Accounts, debt links, plan funding, and imported transactions from this bank will be cleared in DebtYa.",
+          "Remove this external link? Snapshot data, labels, plan funding picks, and related activity cached in DebtYa for this link will be cleared.",
         sync_bank_modal_title: "Are you sure?",
         sync_bank_modal_body:
-          "You are about to remove {bank} from DebtYa. Imported accounts, debt links, pay-from settings, and transaction history for this bank will be cleared. You can connect the bank again later if you want.",
+          "You are about to remove {bank} from DebtYa. Snapshot rows, labels, pay-from picks, and cached activity for this link will be cleared. You can add a link again later if your workspace allows it.",
         sync_bank_modal_cancel: "Not now",
-        sync_bank_modal_confirm: "Yes, remove bank",
-        sync_bank_disconnected_ok: "Bank connection removed.",
+        sync_bank_modal_confirm: "Yes, remove link",
+        sync_bank_disconnected_ok: "External link removed.",
         accounts_sec_cash: "Cash and checking",
         accounts_sec_debt: "Credit cards and loans",
         accounts_sec_other: "Other (investments and similar)",
@@ -590,14 +590,14 @@
         acct_credit_limit: "Credit limit",
         footer_disclaimer_html: "<strong>DebtYa</strong> is a personal finance organization tool. It is not a bank, financial advisor, credit repair agency, or debt relief service.",
         integrations_notice_html:
-          '<div><p class="integrations-kicker">Transparency</p><h2 class="integrations-title">Connections, data, and partners</h2><p class="integrations-lead">DebtYa works with established providers so you can link bank accounts for balances, funding, and related workflows, and bring in debt or liability details where those integrations exist.</p><ul class="integrations-list"><li><strong>Bank connections.</strong> Authorized account linking and financial data typically use Plaid. What you can connect depends on your institution, product, and Plaid coverage.</li><li><strong>Debts and liabilities.</strong> Some liability information may come through specialized providers such as Method. Not every creditor or account type is supported.</li><li><strong>Planning vs. execution.</strong> DebtYa can surface, organize, and help you plan payments. Certain executions, account consent flows, or funding steps may depend on provider or bank enablement, permissions, and availability.</li><li><strong>Billing.</strong> Subscription charges for DebtYa are processed through Stripe as shown at checkout.</li><li><strong>Realistic limits.</strong> Features vary by geography, institution, product, and third-party quotas. We do not promise universal compatibility with every bank or creditor.</li></ul><p class="integrations-foot">Data is shared with service providers only as needed to deliver the product. Read our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Privacy Policy</a> and <a href="/legal.html#terminos" style="color:var(--primary);font-weight:700;">Terms</a> for the full picture.</p></div>',
+          '<div><p class="integrations-kicker">Transparency</p><h2 class="integrations-title">How DebtYa treats your data</h2><p class="integrations-lead">DebtYa is built for manual payoff planning: you enter your own numbers and confirm what you paid. Subscription billing is processed through Stripe.</p><ul class="integrations-list"><li><strong>Your numbers.</strong> You are responsible for accuracy from your statements; DebtYa stores what you save.</li><li><strong>No money movement.</strong> DebtYa does not send payments to creditors for you.</li><li><strong>Billing.</strong> Subscription charges for DebtYa are processed through Stripe as shown at checkout.</li></ul><p class="integrations-foot">Read our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Privacy Policy</a> and <a href="/legal.html#terminos" style="color:var(--primary);font-weight:700;">Terms</a> for the full picture.</p></div>',
         loading: "Loading...",
         toast_click_to_close: "Click to close",
         yes: "Yes",
         no: "No",
         err_generic: "Something went wrong. Please try again.",
         err_stale_method_api:
-          "The DebtYa API is not on the latest release (obsolete Method message). Redeploy debtya-api, hard refresh this page, then try again. If the badge bottom-right does not match your deploy, the static HTML is also stale.",
+          "The DebtYa API is not on the latest release. Redeploy debtya-api, hard refresh this page, then try again. If the badge bottom-right does not match your deploy, the static HTML is also stale.",
         err_fetch: "Could not reach the server.",
         err_network: "There is a connection problem.",
         err_timeout: "The operation took too long. Try again.",
@@ -606,49 +606,49 @@
         err_login_creds: "Incorrect email or password.",
         err_email_confirm: "Confirm your email before signing in.",
         err_session: "Your session expired. Please sign in again.",
-        err_no_bank: "Connect your bank first.",
+        err_no_bank: "Add your debts and plan first.",
         err_no_auth: "You need to sign in first.",
         err_stripe_cfg: "Payments are not available right now.",
-        err_plaid_cfg: "Bank connection is not available right now.",
+        err_plaid_cfg: "That option is not available right now.",
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
         empty_rules: "You have no saved rules yet.",
-        empty_intents: "No suggested payments yet. Use Build payments above (or Actions ? More) after applying rules and importing transactions.",
+        empty_intents: "No suggested payments yet. Use Build payments above after you have a plan (and optional rules).",
         empty_trace: "No history available yet.",
-        empty_accounts: "No imported accounts yet.",
+        empty_accounts: "No optional snapshots yet.",
         empty_compare: "No comparison available yet.",
-        lbl_debt_from_account: "Create debt from imported account",
+        lbl_debt_from_account: "Pre-fill from optional snapshot (if any)",
         debt_from_account_none: "Manual entry (no pre-fill)",
-        debt_from_account_hint: "Choose a credit or loan account you already imported to pre-fill this form. APR and minimum payment are starter values?adjust them to match your statement.",
-        debt_name_suggested_hint: "We simplified the bank label?you can rename it anytime.",
-        debt_min_from_import_hint: "This minimum payment came from your imported account data. Please confirm it on your statement.",
-        debt_apr_from_import_hint: "This APR came from your imported account data. Please confirm it on your statement.",
-        debt_form_review_note: "Before you save, review APR and minimum payment. They may be suggested starting values?compare with your statement and edit if needed. Highlighted fields came from your import and are easy to change.",
+        debt_from_account_hint: "If your workspace has optional snapshots, pick one to pre-fill. APR and minimum payment are starting values?match your statement.",
+        debt_name_suggested_hint: "We simplified the suggested name?you can rename it anytime.",
+        debt_min_from_import_hint: "This minimum payment came from a suggested value. Please confirm it on your statement.",
+        debt_apr_from_import_hint: "This APR came from a suggested value. Please confirm it on your statement.",
+        debt_form_review_note: "Before you save, review APR and minimum payment against your statement so your plan matches reality.",
         debt_suggest_personal_loan: "Personal loan",
         debt_suggest_loan: "Loan",
         debt_suggest_credit: "Credit card",
-        lbl_link_plaid: "Linked bank account (optional)",
-        debt_link_help: "After you connect your bank and import accounts, you can match one here.",
+        lbl_link_plaid: "Optional funding label",
+        debt_link_help: "Leave blank unless your workspace stores an optional funding label on this debt.",
         debt_link_none: "None",
-        lbl_linked_plaid_block: "Linked bank account",
-        debt_link_badge_short: "Linked",
-        debt_link_badge: "Linked to imported bank account",
+        lbl_linked_plaid_block: "Optional funding label",
+        debt_link_badge_short: "Snapshot",
+        debt_link_badge: "Tied to optional snapshot data",
         debt_link_account_label: "Account",
         debt_link_mask_label: "Mask",
         debt_balance_manual_label: "Balance in DebtYa (manual)",
-        debt_balance_imported_label: "Current from bank import",
-        debt_balance_mismatch_hint: "These two amounts are different. Plans and payments still use your manual DebtYa balance until you change it yourself.",
-        debt_balance_match_hint: "Imported balance matches your manual balance (within one cent).",
-        btn_sync_imported_balance: "Update to imported balance",
-        debt_balance_synced_ok: "Debt balance updated to match the imported amount.",
-        debt_link_orphan: "Saved link not found among imported accounts. Pick again or unlink.",
+        debt_balance_imported_label: "Snapshot balance",
+        debt_balance_mismatch_hint: "These two amounts differ. Plans and payments still use your manual DebtYa balance until you change it yourself.",
+        debt_balance_match_hint: "Snapshot balance matches your manual balance (within one cent).",
+        btn_sync_imported_balance: "Update to snapshot balance",
+        debt_balance_synced_ok: "Debt balance updated to match the snapshot amount.",
+        debt_link_orphan: "Saved label not found among snapshots. Pick again or clear.",
         debt_link_saved: "Link updated.",
-        err_debt_link_invalid: "That account cannot be linked. Import it first or pick another.",
-        err_plan_funding_missing: "Pay-from account not found among your imported accounts.",
+        err_debt_link_invalid: "That row cannot be used. Pick another snapshot or enter the debt manually.",
+        err_plan_funding_missing: "Pay-from pick not found among your optional snapshots.",
         err_plan_funding_type: "Pay-from account must be a deposit account (for example checking or savings).",
         err_plan_debt_invalid: "Target debt is not valid.",
         err_plan_debt_missing: "Target debt was not found.",
-        err_bank_not_found: "That bank connection was not found.",
+        err_bank_not_found: "That external link was not found.",
         debt_label: "Debt",
         apr_label: "APR",
         min_label: "Minimum",
@@ -730,8 +730,8 @@
         acct_created_in: "Account created and signed in.",
         stripe_opening: "Opening secure checkout...",
         portal_opening: "Opening your account page...",
-        plaid_opening: "Opening bank connection...",
-        importing: "Importing...",
+        plaid_opening: "Opening link...",
+        importing: "Updating...",
         applying: "Applying...",
         building: "Preparing...",
         approving: "Approving...",
@@ -748,22 +748,22 @@
         rule_deleted: "Rule deleted successfully.",
         plan_saved: "Plan saved successfully.",
         compare_ok: "Comparison ready.",
-        accounts_imp: "Accounts imported",
-        tx_imp: "Transactions imported",
+        accounts_imp: "Snapshots updated",
+        tx_imp: "Activity updated",
         rules_applied: "Rules applied. Created",
         intents_built: "Suggested payments updated.",
         approved_n: "Approved",
         executed_n: "Executed",
         reconcile_ok: "Recent payments updated",
-        connecting_bank: "Connecting bank...",
-        bank_ok: "Bank connected successfully.",
+        connecting_bank: "Opening link...",
+        bank_ok: "External link saved.",
         sign_in_first: "Please sign in first.",
-        plaid_script: "Bank link could not load on this page.",
-        no_link_token: "Connection token was not returned by the server.",
+        plaid_script: "Link module could not load on this page.",
+        no_link_token: "Link token was not returned by the server.",
         proc_loading: "Loading...",
         err_checkout_url: "Checkout link was not available. Try again.",
         err_portal_url: "Account page link was not available. Try again.",
-        err_plaid_exit: "Bank connection closed with an error.",
+        err_plaid_exit: "Link flow closed with an error.",
         rule_delete_confirm: "Delete this rule? This action cannot be undone.",
         err_rule_one_only: "You can only save one rule. Delete your current rule first."
       },
@@ -775,12 +775,12 @@
         land_pill: "Pensado para el dia a dia",
         land_hero_title: "Sal de deudas con un plan claro \u2014 sin adivinar",
         land_hero_copy:
-          "DebtYa analiza tus deudas y te dice exactamente qu\u00e9 pagar, cu\u00e1ndo y por qu\u00e9.",
+          "DebtYa no mueve dinero por ti. Agrega tus deudas a mano desde tus estados de cuenta, arma tu plan, ve qu\u00e9 conviene pagar hoy y confirma cuando ya pagaste al acreedor.",
         land_btn_start_free: "Empezar gratis",
         land_conv_steps_title: "Tres pasos sencillos",
-        land_conv_step1_t: "Conecta tu banco",
-        land_conv_step2_t: "Ve tu plan personalizado",
-        land_conv_step3_t: "Sigue tus pagos sugeridos",
+        land_conv_step1_t: "Agrega tus deudas a mano",
+        land_conv_step2_t: "Crea tu plan de salida",
+        land_conv_step3_t: "Paga lo que DebtYa sugiere y confirma al terminar",
         land_benefits_title: "Por qu\u00e9 DebtYa",
         land_benefit1: "Ahorra intereses",
         land_benefit2: "Reduce estr\u00e9s financiero",
@@ -788,15 +788,15 @@
         land_footer_copy:
           "DebtYa te ayuda a organizar y pagar tus deudas. Ayuda: support@debtya.com",
         price_name: "DebtYa Beta",
-        price_copy: "Todo lo necesario para conectar tus cuentas, organizar tus deudas, automatizar reglas utiles y convertir tu estrategia en pagos reales.",
+        price_copy: "Todo lo necesario para organizar tus deudas a mano, automatizar reglas utiles y convertir tu estrategia en pagos sugeridos claros.",
         price_freq: "al mes",
-        price_i1: "Conexion bancaria segura",
-        price_i2: "Importacion de cuentas y transacciones",
-        price_i3: "Creacion y seguimiento de deudas",
+        price_i1: "Seguimiento manual de deudas con saldos y progreso claros",
+        price_i2: "Plan de pago y comparacion avalancha vs bola de nieve",
+        price_i3: "Pagos sugeridos alineados a tu estrategia",
         price_i4: "Reglas automaticas como redondeo o monto fijo",
-        price_i5: "Comparacion avalancha vs bola de nieve",
-        price_i6: "Preparar, aprobar y ejecutar pagos sugeridos",
-        price_i7: "Historial de pagos que puedes revisar cuando quieras",
+        price_i5: "Historial de pagos que puedes revisar cuando quieras",
+        price_i6: "Construir, aprobar y seguir pagos sugeridos",
+        price_i7: "Facturacion de suscripcion segura con Stripe",
         price_i8: "Base estable para usar mes a mes",
         price_have_account: "Ya tengo cuenta",
         price_helper: 'Si ya tienes sesion iniciada, "Empieza ahora" sigue a un pago seguro. Si no, primero entraras o crearas tu cuenta.',
@@ -811,13 +811,13 @@
         faq_sub: "Respuestas cortas sobre como encaja DebtYa en tu rutina.",
         faq_q1: "Que es DebtYa?",
         faq_a1:
-          "DebtYa es un espacio sencillo para conectar tu banco con Plaid, incorporar deudas o pasivos con Method cuando esa integracion este disponible, listar deudas, elegir una estrategia de pago, usar reglas ligeras y pasar de pagos sugeridos a lo que realmente ejecutaste. La suscripcion se cobra con Stripe.",
-        faq_q2: "Necesito conectar mi banco?",
+          "DebtYa es un espacio para listar tus deudas, elegir una estrategia de pago, usar reglas ligeras y pasar de pagos sugeridos a lo que marcas como pagado. DebtYa no mueve dinero por ti. La suscripcion se cobra con Stripe.",
+        faq_q2: "Necesito dar mis claves de acceso?",
         faq_a2:
-          "Conectar el banco mantiene saldos e importaciones al dia y facilita vincular deudas. El producto esta pensado para trabajar con cuentas conectadas y numeros mas fieles.",
+          "No. Tu ingresas saldos y datos desde tus estados de cuenta. Asi mantienes el control sin compartir inicios de sesion con DebtYa.",
         faq_q3: "Por que revisar APR y pago minimo?",
         faq_a3:
-          "La importacion puede sugerir APR y pago minimo, pero tu estado de cuenta manda. Revisa antes de guardar para que el plan refleje la realidad.",
+          "Tu estado de cuenta manda. Revisa APR y pago minimo antes de guardar para que el plan refleje la realidad.",
         faq_q4: "Como funciona la facturacion?",
         faq_a4:
           'DebtYa Beta se cobra mes a mes con Stripe. Si usas "Empieza ahora" con sesion iniciada, completas el pago seguro y vuelves a la app con tu suscripcion actualizada.',
@@ -826,7 +826,7 @@
           "Si. Con plan activo puedes administrar la facturacion desde el portal de cliente o escribir a soporte.",
         faq_q6: "A quien contacto si necesito ayuda?",
         faq_a6:
-          "Escribe a support@debtya.com. El asistente puede orientarte en el uso general, pero no sustituye a tu banco, asesor o documentos oficiales.",
+          "Escribe a support@debtya.com. El asistente puede orientarte en el uso general, pero no sustituye a tu prestamista, asesor o documentos oficiales.",
         help_modal_title: "Ayuda y guia",
         help_close: "Cerrar",
         help_tab_guide: "Guia",
@@ -834,13 +834,13 @@
         help_tab_faq: "FAQ",
         help_guide_intro: "Un recorrido tranquilo por lo basico. Vuelve a abrir este panel cuando quieras.",
         help_g1_t: "1. Inicia sesion",
-        help_g1_p: "Crea cuenta o entra para guardar banco, deudas y plan.",
-        help_g2_t: "2. Conecta e importa",
-        help_g2_p: "Usa Conectar banco y luego importa las cuentas que quieras usar en DebtYa.",
-        help_g3_t: "3. Deudas y plan",
-        help_g3_p: "Agrega cada deuda (revisa APR y minimos) y define tu plan y estrategia.",
-        help_g4_t: "4. Reglas y pagos sugeridos",
-        help_g4_p: "Aplica reglas cuando toque, revisa pagos sugeridos y luego aprueba y ejecuta desde Acciones.",
+        help_g1_p: "Crea cuenta o entra para guardar deudas, plan y progreso.",
+        help_g2_t: "2. Agrega deudas",
+        help_g2_p: "Registra cada deuda con saldo, APR y pago minimo segun tus estados de cuenta.",
+        help_g3_t: "3. Plan y reglas",
+        help_g3_p: "Define tu plan y estrategia; agrega una regla si quieres mas automatizacion.",
+        help_g4_t: "4. Pagos sugeridos",
+        help_g4_p: "Construye pagos sugeridos, aprueba lo que tenga sentido, paga al acreedor con tu app o sitio habitual y confirma cuando termines.",
         help_g5_t: "5. Necesitas mas?",
         help_g5_p: "Usa la pestana FAQ, este asistente para dudas generales o correo a soporte: no reemplazamos tu estado de cuenta ni asesoria profesional.",
         help_jump_faq: "Ir a las FAQ en esta pagina",
@@ -887,7 +887,7 @@
         pw_recovery_cancel: "Cancelar y cerrar sesion",
         pw_recovery_code_sent: "Revisa tu correo para el codigo de 6 digitos.",
         pw_recovery_done: "Contrasena actualizada. Cargando tu cuenta?",
-        auth_footer_hint: "Inicia sesion para conectar tu banco, activar tu plan y usar tus datos reales.",
+        auth_footer_hint: "Inicia sesion para agregar tus deudas, activar tu plan y seguir tu camino de pago.",
         app_welcome_default: "Panel principal",
         badge_session: "Sesion activa",
         badge_sub_active: "Suscripcion activa",
@@ -899,7 +899,7 @@
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_intents_toggle: "Mas opciones de la lista",
         hero_title: "Ve tu plan. Da el siguiente paso.",
-        hero_copy: "Deudas, banco y tu siguiente paso para bajarlas?en un solo lugar.",
+        hero_copy: "Deuda total, progreso, tu proximo pago sugerido e historial en un solo lugar. DebtYa no mueve dinero: tu ingresas lo que ves en tus estados de cuenta.",
         dashboard_next_step_title: "Tu pr\u00F3ximo paso",
         dashboard_next_no_debts: "Agrega tus deudas para empezar",
         dashboard_next_no_plan: "Crea tu plan de pago",
@@ -910,33 +910,33 @@
         dashboard_next_interest_na: "A\u00F1ade el APR en esta deuda para estimar mejor los intereses.",
         dashboard_next_accel: "Esto acelera tu salida de deuda.",
         dashboard_next_pay_outside_app:
-          "Haz este pago fuera de DebtYa y luego m\u00E1rcalo como realizado.",
+          "Paga al acreedor con tu app o sitio habitual y luego pulsa Ya lo pagu\u00E9 para que DebtYa actualice saldo y progreso.",
         dashboard_next_paid_btn: "Ya lo pagu\u00E9",
         manual_pay_ok: "Pago marcado como realizado. Tu progreso fue actualizado.",
         manual_pay_err: "No se pudo confirmar el pago. Int\u00E9ntalo de nuevo.",
-        next_step_bank: "Siguiente: conecta tu banco e importa cuentas para usar saldos reales.",
-        next_step_bank_btn: "Ir a Acciones",
+        next_step_bank: "Siguiente: solo si tu espacio de trabajo usa capturas opcionales.",
+        next_step_bank_btn: "Abrir pagos sugeridos",
         next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
         next_step_debts_btn: "Ir a Deudas y plan",
         next_step_plan: "Siguiente: guarda tu plan de pago (estrategia, modo y presupuesto).",
         next_step_plan_btn: "Abrir plan de pago",
         next_step_rules: "Siguiente: crea una regla de abono cuando quieras.",
         next_step_rules_btn: "Ir a reglas",
-        next_step_prepare: "Siguiente: prepara pagos sugeridos desde tu plan (Acciones ? Mas).",
-        next_step_prepare_btn: "Abrir Acciones",
-        next_step_review: "Siguiente: tienes pagos sugeridos pendientes de aprobacion o ejecucion.",
+        next_step_prepare: "Siguiente: construye pagos sugeridos desde tu plan (usa Construir pagos abajo).",
+        next_step_prepare_btn: "Abrir pagos sugeridos",
+        next_step_review: "Siguiente: tienes pagos sugeridos pendientes de revision o confirmacion.",
         next_step_review_btn: "Ver pagos sugeridos",
-        next_step_done: "Por ahora vas al dia. Tras nuevas importaciones, usa Acciones para reglas o pagos.",
-        next_step_done_btn: "Ir a Acciones",
-        btn_connect_bank: "Conectar banco",
-        btn_disconnect_bank: "Desconectar banco",
-        sync_bank_pick_title: "?Que banco quieres quitar?",
-        sync_bank_pick_sub: "Elige la conexion. En el siguiente paso te pediremos confirmacion.",
-        sync_bank_pick_label: "Conexion bancaria",
+        next_step_done: "Por ahora vas al dia. Si cambia tu situacion, actualiza deudas o vuelve a construir pagos sugeridos.",
+        next_step_done_btn: "Abrir pagos sugeridos",
+        btn_connect_bank: "Iniciar enlace externo",
+        btn_disconnect_bank: "Quitar enlace externo",
+        sync_bank_pick_title: "Que enlace quieres quitar?",
+        sync_bank_pick_sub: "Elige el enlace externo. En el siguiente paso te pediremos confirmacion.",
+        sync_bank_pick_label: "Enlace",
         sync_bank_pick_continue: "Continuar",
-        sync_bank_pick_none: "No hay bancos conectados para desconectar.",
-        btn_import_accounts: "Importar cuentas",
-        btn_import_tx: "Importar transacciones",
+        sync_bank_pick_none: "No hay enlaces externos para quitar.",
+        btn_import_accounts: "Actualizar capturas",
+        btn_import_tx: "Actualizar actividad",
         btn_intents_build: "Construir pagos",
         intents_build_response_label: "Ultima respuesta del servidor (JSON)",
         stat_total_debt: "Deuda total",
@@ -960,19 +960,19 @@
         lbl_next_period: "Proximo periodo",
         lbl_actions: "Acciones",
         sub_portal_hint: "Si tu plan esta activo, puedes abrir la pagina de tu cuenta para administrarlo.",
-        operate_title: "Conectar banco (Plaid)",
+        operate_title: "Heredado: enlace externo opcional",
         operate_sub:
-          "Primer paso: conecta tu banco e importa cuentas/movimientos.",
+          "Oculto en modo manual. Herramientas opcionales si tu espacio de trabajo aun usa capturas externas.",
         operate_rail_main: "Empieza aqui",
         operate_rail_advanced: "Avanzado",
         method_panel_eyebrow: "Datos de pasivos (Method)",
         btn_apply_rules: "Aplicar reglas",
         btn_approve_visible: "Aprobar pagos",
         btn_execute_visible: "Ejecutar pagos",
-        operate_note: "Lo usual: Conectar ? Importar. Reglas y preparar pagos estan en Mas.",
-        operate_legal_html: 'Al conectar cuentas, autorizas a DebtYa a recibir la informacion financiera necesaria a traves de proveedores de confianza (por ejemplo Plaid para el banco conectado y Stripe para la suscripcion). Revisa tambien nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
+        operate_note: "La mayoria solo necesita deudas manuales y pagos sugeridos.",
+        operate_legal_html: 'Las funciones opcionales pueden usar proveedores de confianza segun se describe en nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>. La suscripcion se cobra con Stripe.',
         method_panel_title: "Pasivos heredados",
-        method_panel_hint: "Method descubre liabilities (deudas). Plaid sigue siendo el banco del que pagas. Crea perfil Method, ejecuta Conectar, sincroniza e importa cada deuda a DebtYa.",
+        method_panel_hint: "Si el servidor tiene integraciones de pasivos, puedes sincronizar filas opcionales y agregarlas como deudas en DebtYa.",
         method_panel_disabled:
           "Method no esta activo en esta API: falta METHOD_API_KEY en el servicio Node (Render) o la API desplegada no es la ultima version. Abre /health y comprueba method_configured: true.",
         method_lbl_first: "Nombre",
@@ -982,7 +982,7 @@
         method_lbl_dob: "Fecha de nacimiento (opcional, ISO)",
         method_entity_label: "Entidad Method",
         method_btn_create_entity: "Crear perfil Method",
-        method_btn_connect: "Conectar liabilities",
+        method_btn_connect: "Enlazar liabilities",
         method_btn_sync: "Sincronizar liabilities",
         method_btn_reset: "Limpiar perfil Method",
         method_reset_blurb:
@@ -995,19 +995,19 @@
         method_import_balance: "Saldo",
         method_import_apr: "APR",
         method_import_min: "Pago minimo",
-        method_btn_import: "Importar a DebtYa",
-        method_import_ok: "Deuda importada.",
+        method_btn_import: "Agregar a DebtYa",
+        method_import_ok: "Deuda guardada en DebtYa.",
         method_action_ok: "Listo.",
         method_err_entity: "Primero crea un perfil Method.",
         method_err_pick_entity: "Elige una entidad Method.",
         method_entity_hint_none:
           "Aun no hay perfil Method guardado en DebtYa. Rellena el formulario y pulsa Crear perfil Method, o corrige el error de carga abajo.",
-        method_entity_hint_count: "{{n}} perfil Method guardado. Eligelo para Conectar / Sincronizar.",
+        method_entity_hint_count: "{{n}} perfil Method guardado. Elige uno para enlazar o sincronizar.",
         method_entity_hint_creating: "Creando perfil Method?",
         method_entity_load_err_generic: "No se pudieron cargar los perfiles Method desde el servidor.",
         method_entity_pick_empty: "(sin perfil aun)",
         method_empty_sync: "Aun no hay liabilities Method sincronizadas.",
-        method_imported_badge: "Ya importada",
+        method_imported_badge: "Ya sincronizada",
         debt_source_method: "Method",
         debt_source_spinwheel: "Spinwheel",
         debt_spinwheel_payable: "Pagable con Spinwheel",
@@ -1047,11 +1047,11 @@
         sw_connect_unavailable: "La busqueda de deudas no esta disponible ahora. Intentalo mas tarde.",
         sim_counts_active_label: "Deudas activas",
         sim_counts_line_placeholder: "Deudas activas: 0",
-        debt_source_plaid: "Plaid",
+        debt_source_plaid: "Captura externa",
         debt_method_payable: "Pagable (Method)",
         debt_method_info_only: "Informativa",
         debts_title: "Deudas",
-        debts_sub: "Segundo paso: revisa/agrega deudas y ajusta montos clave.",
+        debts_sub: "Paso 1: agrega cada deuda a mano (saldo, APR y minimo) desde tus estados de cuenta.",
         lbl_name: "Nombre",
         ph_debt_name: "Ej: Chase Freedom",
         lbl_balance: "Balance",
@@ -1066,7 +1066,7 @@
         rules_title: "Reglas",
         rules_sub: "Tres formas de enviar dinero extra a tus deudas al aplicar reglas.",
         rules_intro_three_ways:
-          "Elige un estilo por regla: monto fijo, porcentaje de cada compra o redondear vueltos. Luego usa Aplicar reglas en Acciones despues de importar movimientos.",
+          "Elige un estilo por regla: monto fijo, porcentaje de cada compra o redondear vueltos. Las reglas son opcionales; usalas cuando quieras mas automatizacion sobre tu plan.",
         rules_one_only_hint:
           "Solo puedes tener una regla. Usa Editar para cambiarla, el interruptor arriba para pausarla, o Borrar para reemplazarla.",
         lbl_rules_master_switch: "Reglas activas",
@@ -1086,7 +1086,7 @@
         rule_mode_hint_roundup: "Envia el cambio que falta para llegar al siguiente paso (por ejemplo el siguiente dolar).",
         rule_mode_hint_default: "Elige como esta regla arma montos desde tus gastos.",
         rule_hint_monthly_fixed:
-          "El mismo monto extra cuando ejecutas Aplicar reglas (por ejemplo tras cada importacion), hacia la deuda que elijas abajo.",
+          "El mismo monto extra cuando ejecutas Aplicar reglas, hacia la deuda que elijas abajo.",
         rule_hint_purchase_percent:
           "Ejemplo: 10% sobre $10 de compra suma $1 hacia tu deuda. Tu apply_rules_v2 en Supabase debe usar este porcentaje sobre gastos elegibles.",
         rule_hint_spare_change:
@@ -1102,7 +1102,7 @@
         lbl_target_debt: "Deuda objetivo",
         btn_save_rule: "Guardar regla",
         payplan_title: "Plan de pagos",
-        payplan_sub: "Tercer paso: define estrategia, modo y presupuesto mensual.",
+        payplan_sub: "Paso 2: define estrategia, modo y presupuesto mensual.",
         plan_manual: "Manual",
         plan_safe_auto: "Automatico seguro",
         plan_full_auto: "Automatico total",
@@ -1115,11 +1115,11 @@
         hint_mode_safe_auto:
           "DebtYa puede preparar pagos con mas limites de seguridad. Sigues confirmando pasos importantes en la app.",
         hint_mode_full_auto:
-          "DebtYa prepara pagos con la automatizacion mas alta que ofrece el producto. De todos modos conviene revisar tus cuentas.",
+          "DebtYa prepara pagos con la automatizacion mas alta que ofrece el producto. De todos modos conviene revisar tu plan.",
         lbl_plan_pay_from: "Pagar desde (cuenta)",
         lbl_plan_pay_toward: "Pagar hacia (deuda)",
         plan_pay_from_hint:
-          "Elige la cuenta corriente o de ahorros desde la que pagas. Se guarda en los pagos sugeridos nuevos cuando los preparas.",
+          "Etiqueta opcional de donde pagas en la vida real. Los pagos sugeridos son orientacion; siempre pagas al acreedor por tu cuenta.",
         plan_pay_toward_hint:
           "Opcional: indica que deuda consideras el foco principal. Los montos sugeridos pueden seguir repartiendose segun tu estrategia.",
         plan_pay_from_none: "Sin definir",
@@ -1136,35 +1136,35 @@
         btn_compare: "Comparar estrategias",
         btn_refresh_plan: "Refrescar plan",
         intents_title: "Pagos sugeridos",
-        intents_sub: "Cuarto paso: construir, revisar, aprobar y ejecutar pagos.",
+        intents_sub: "Paso 3: construye y revisa pagos sugeridos; luego confirma en el panel cuando ya pagaste al acreedor.",
         btn_reconcile: "Actualizar pagos recientes",
-        tag_approved: "Aprobados ? listos para ejecutar",
+        tag_approved: "Aprobados ? paga al acreedor y confirma al terminar",
         tag_pending: "Borrador o en espera ? falta tu visto bueno",
         tag_executed: "Listos ? ya aplicados a tus balances",
         history_title: "Historial",
         history_sub: "Pagos y como cambiaron tus balances.",
-        accounts_title: "Cuentas conectadas",
-        accounts_sub: "Sincronizadas con tu banco: efectivo y deudas en grupos separados.",
-        sync_banks_title: "Bancos sincronizados",
-        sync_banks_funding_title: "Bancos desde los que pagas",
-        sync_banks_liabilities_title: "Bancos con deudas a las que va el dinero",
-        bank_role_modal_title: "?Para que usas este banco?",
+        accounts_title: "Capturas opcionales",
+        accounts_sub: "Si existen, veras efectivo y pasivos en grupos separados.",
+        sync_banks_title: "Enlaces con capturas",
+        sync_banks_funding_title: "Lado de origen",
+        sync_banks_liabilities_title: "Lado de deudas",
+        bank_role_modal_title: "Como etiquetamos este enlace?",
         bank_role_modal_sub:
-          "Elige en que grupo mostrar esta conexion. Igual se importan todas las cuentas; solo organiza el banco en la app.",
-        bank_role_funding_btn: "Sacar dinero de aqui ? cuenta corriente, ahorros",
-        bank_role_liabilities_btn: "Deudas aqui ? tarjetas, prestamos",
-        bank_role_both_btn: "Ambos ? origen y deudas en este banco",
+          "Elige como agrupar este enlace en tu espacio de trabajo. Solo afecta etiquetas; no cambia el plan manual.",
+        bank_role_funding_btn: "Lado de origen ? corriente, ahorros",
+        bank_role_liabilities_btn: "Lado de deudas ? tarjetas, prestamos",
+        bank_role_both_btn: "Ambos ? origen y deudas juntos",
         bank_role_cancel: "Cancelar",
-        sync_bank_default: "Banco",
-        sync_bank_disconnect_aria: "Quitar banco",
+        sync_bank_default: "Enlace",
+        sync_bank_disconnect_aria: "Quitar enlace",
         sync_bank_disconnect_confirm:
-          "?Quitar esta conexion bancaria? Se borraran en DebtYa las cuentas, enlaces con deudas, cuenta de origen del plan y movimientos importados de este banco.",
+          "?Quitar este enlace externo? Se borraran en DebtYa las capturas, etiquetas, seleccion de origen del plan y actividad en cache para este enlace.",
         sync_bank_modal_title: "?Seguro?",
         sync_bank_modal_body:
-          "Vas a quitar {bank} de DebtYa. Se borraran las cuentas importadas, enlaces con deudas, la cuenta de origen del plan si aplica y el historial de movimientos de este banco. Luego puedes volver a conectar si quieres.",
+          "Vas a quitar {bank} de DebtYa. Se borraran capturas, etiquetas, seleccion de origen del plan si aplica y actividad en cache para este enlace. Luego puedes volver a enlazar si tu entorno lo permite.",
         sync_bank_modal_cancel: "Mejor no",
-        sync_bank_modal_confirm: "Si, quitar banco",
-        sync_bank_disconnected_ok: "Conexion bancaria quitada.",
+        sync_bank_modal_confirm: "Si, quitar enlace",
+        sync_bank_disconnected_ok: "Enlace externo quitado.",
         accounts_sec_cash: "Efectivo y cuentas corrientes",
         accounts_sec_debt: "Tarjetas y prestamos",
         accounts_sec_other: "Otras (inversiones y similares)",
@@ -1187,13 +1187,13 @@
         acct_credit_limit: "Limite de credito",
         footer_disclaimer_html: "<strong>DebtYa</strong> es una herramienta de organizacion financiera personal. No es un banco, asesor financiero, agencia de reparacion de credito ni servicio de alivio de deudas.",
         integrations_notice_html:
-          '<div><p class="integrations-kicker">Transparencia</p><h2 class="integrations-title">Conexiones, datos y proveedores</h2><p class="integrations-lead">DebtYa colabora con proveedores reconocidos para que puedas vincular cuentas bancarias con fines de saldos, funding y flujos relacionados, y traer datos de deudas o pasivos cuando exista esa integracion.</p><ul class="integrations-list"><li><strong>Conexion bancaria.</strong> La vinculacion autorizada y los datos financieros suelen pasar por Plaid. Lo que puedas conectar depende de tu institucion, producto y cobertura de Plaid.</li><li><strong>Deudas y pasivos.</strong> Parte de la informacion puede llegar por proveedores especializados como Method. No todos los acreedores ni tipos de cuenta son compatibles.</li><li><strong>Planificacion frente a ejecucion.</strong> DebtYa puede mostrar, ordenar y ayudarte a planificar pagos. Ejecuciones concretas, consentimientos de cuenta o pasos de funding pueden depender de habilitaciones, permisos y disponibilidad del proveedor o del banco.</li><li><strong>Facturacion.</strong> Los cargos de suscripcion de DebtYa se procesan con Stripe segun lo que veas al pagar.</li><li><strong>Limites reales.</strong> Las funciones varian por region, institucion, producto y cupos de terceros. No prometemos compatibilidad universal con todo banco o acreedor.</li></ul><p class="integrations-foot">Compartimos datos con proveedores solo en la medida necesaria para prestar el servicio. Consulta la <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Politica de privacidad</a> y los <a href="/legal.html#terminos" style="color:var(--primary);font-weight:700;">Terminos</a> para el detalle.</p></div>',
+          '<div><p class="integrations-kicker">Transparencia</p><h2 class="integrations-title">Como DebtYa trata tus datos</h2><p class="integrations-lead">DebtYa esta pensado para planificar pagos a mano: tu ingresas tus cifras y confirmas lo que pagaste. La suscripcion se cobra con Stripe.</p><ul class="integrations-list"><li><strong>Tus numeros.</strong> Tu eres responsable de la precision segun tus estados de cuenta; DebtYa guarda lo que guardas.</li><li><strong>Sin movimiento de dinero.</strong> DebtYa no envia pagos a acreedores por ti.</li><li><strong>Facturacion.</strong> Los cargos de suscripcion de DebtYa se procesan con Stripe segun lo que veas al pagar.</li></ul><p class="integrations-foot">Consulta la <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Politica de privacidad</a> y los <a href="/legal.html#terminos" style="color:var(--primary);font-weight:700;">Terminos</a> para el detalle.</p></div>',
         loading: "Cargando...",
         yes: "Si",
         no: "No",
         err_generic: "Ocurrio un error. Intentalo de nuevo.",
         err_stale_method_api:
-          "La API de DebtYa no esta en la ultima version (mensaje antiguo de Method). Vuelve a desplegar debtya-api, recarga esta pagina a fondo, e intentalo otra vez. Si la etiqueta abajo a la derecha no coincide con tu despliegue, el HTML estatico tambien esta desactualizado.",
+          "La API de DebtYa no esta en la ultima version. Vuelve a desplegar debtya-api, recarga esta pagina a fondo, e intentalo otra vez. Si la etiqueta abajo a la derecha no coincide con tu despliegue, el HTML estatico tambien esta desactualizado.",
         err_fetch: "No se pudo conectar con el servidor.",
         err_network: "Hay un problema de conexion.",
         err_timeout: "La operacion tardo demasiado. Intentalo otra vez.",
@@ -1202,49 +1202,49 @@
         err_login_creds: "Email o contrasena incorrectos.",
         err_email_confirm: "Confirma tu email antes de entrar.",
         err_session: "Tu sesion expiro. Entra de nuevo.",
-        err_no_bank: "Primero conecta tu banco.",
+        err_no_bank: "Primero agrega tus deudas y tu plan.",
         err_no_auth: "Necesitas iniciar sesion primero.",
         err_stripe_cfg: "El sistema de pagos no esta listo ahora mismo.",
-        err_plaid_cfg: "La conexion bancaria no esta disponible ahora mismo.",
+        err_plaid_cfg: "Esa opcion no esta disponible ahora mismo.",
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
         empty_rules: "Todavia no tienes reglas guardadas.",
-        empty_intents: "Aun no hay pagos sugeridos. Pulsa Construir pagos arriba (o Acciones ? Mas) despues de aplicar reglas e importar movimientos.",
+        empty_intents: "Aun no hay pagos sugeridos. Pulsa Construir pagos arriba cuando ya tengas plan (y reglas opcionales).",
         empty_trace: "Todavia no hay historial disponible.",
-        empty_accounts: "Todavia no hay cuentas importadas.",
+        empty_accounts: "Todavia no hay capturas opcionales.",
         empty_compare: "Todavia no hay comparacion disponible.",
-        lbl_debt_from_account: "Crear deuda desde cuenta importada",
+        lbl_debt_from_account: "Autollenar desde captura opcional (si hay)",
         debt_from_account_none: "Entrada manual (sin autollenado)",
-        debt_from_account_hint: "Elige una cuenta de credito o prestamo que ya importaste para autollenar el formulario. El APR y el pago minimo son valores iniciales: ajustalos a tu estado de cuenta.",
-        debt_name_suggested_hint: "Simplificamos el nombre del banco; puedes cambiarlo cuando quieras.",
-        debt_min_from_import_hint: "Este pago minimo viene de los datos importados de la cuenta. Confirmalo en tu estado de cuenta.",
-        debt_apr_from_import_hint: "Este APR viene de los datos importados de la cuenta. Confirmalo en tu estado de cuenta.",
-        debt_form_review_note: "Antes de guardar, revisa el APR y el pago minimo. Pueden ser valores sugeridos al inicio?comparalos con tu estado de cuenta y editalos si hace falta. Los campos resaltados vinieron del importe y puedes cambiarlos.",
+        debt_from_account_hint: "Si tu espacio de trabajo tiene capturas opcionales, elige una para autollenar. El APR y el pago minimo son valores iniciales: ajustalos a tu estado de cuenta.",
+        debt_name_suggested_hint: "Simplificamos el nombre sugerido; puedes cambiarlo cuando quieras.",
+        debt_min_from_import_hint: "Este pago minimo viene de un valor sugerido. Confirmalo en tu estado de cuenta.",
+        debt_apr_from_import_hint: "Este APR viene de un valor sugerido. Confirmalo en tu estado de cuenta.",
+        debt_form_review_note: "Antes de guardar, revisa el APR y el pago minimo contra tu estado de cuenta para que el plan refleje la realidad.",
         debt_suggest_personal_loan: "Prestamo personal",
         debt_suggest_loan: "Prestamo",
         debt_suggest_credit: "Tarjeta de credito",
-        lbl_link_plaid: "Cuenta bancaria vinculada (opcional)",
-        debt_link_help: "Despues de conectar tu banco e importar cuentas, puedes elegir la que corresponda.",
+        lbl_link_plaid: "Etiqueta de origen (opcional)",
+        debt_link_help: "Dejalo en blanco salvo que tu espacio de trabajo guarde una etiqueta de origen en esta deuda.",
         debt_link_none: "Ninguna",
-        lbl_linked_plaid_block: "Cuenta bancaria vinculada",
-        debt_link_badge_short: "Vinculada",
-        debt_link_badge: "Vinculada a cuenta importada del banco",
+        lbl_linked_plaid_block: "Etiqueta de origen (opcional)",
+        debt_link_badge_short: "Captura",
+        debt_link_badge: "Ligada a datos de captura opcional",
         debt_link_account_label: "Cuenta",
         debt_link_mask_label: "Ultimos digitos",
         debt_balance_manual_label: "Balance en DebtYa (manual)",
-        debt_balance_imported_label: "Actual desde importacion",
+        debt_balance_imported_label: "Saldo de captura",
         debt_balance_mismatch_hint: "Los dos montos no coinciden. El plan y los pagos siguen usando el balance manual en DebtYa hasta que tu lo cambies.",
-        debt_balance_match_hint: "El saldo importado coincide con tu balance manual (margen de un centavo).",
-        btn_sync_imported_balance: "Actualizar al saldo importado",
-        debt_balance_synced_ok: "Balance de la deuda actualizado al monto importado.",
-        debt_link_orphan: "El vinculo guardado no aparece entre las cuentas importadas. Elige de nuevo o desvincula.",
-        debt_link_saved: "Vinculo actualizado.",
-        err_debt_link_invalid: "No se puede vincular esa cuenta. Importala primero u otra.",
-        err_plan_funding_missing: "La cuenta de origen no aparece entre tus cuentas importadas.",
+        debt_balance_match_hint: "El saldo de captura coincide con tu balance manual (margen de un centavo).",
+        btn_sync_imported_balance: "Actualizar al saldo de captura",
+        debt_balance_synced_ok: "Balance de la deuda actualizado al monto de la captura.",
+        debt_link_orphan: "La etiqueta guardada no aparece entre las capturas. Elige otra o limpia.",
+        debt_link_saved: "Enlace actualizado.",
+        err_debt_link_invalid: "No se puede usar esa fila. Elige otra captura o crea la deuda a mano.",
+        err_plan_funding_missing: "La seleccion de origen no aparece entre tus capturas opcionales.",
         err_plan_funding_type: "La cuenta de origen debe ser de deposito (por ejemplo cheques o ahorros).",
         err_plan_debt_invalid: "La deuda destino no es valida.",
         err_plan_debt_missing: "No se encontro la deuda destino.",
-        err_bank_not_found: "No encontramos esa conexion bancaria.",
+        err_bank_not_found: "No encontramos ese enlace externo.",
         debt_label: "Deuda",
         apr_label: "APR",
         min_label: "Minimo",
@@ -1327,8 +1327,8 @@
         acct_created_in: "Cuenta creada e iniciada.",
         stripe_opening: "Abriendo pago seguro...",
         portal_opening: "Abriendo tu cuenta...",
-        plaid_opening: "Abriendo conexion bancaria...",
-        importing: "Importando...",
+        plaid_opening: "Abriendo enlace...",
+        importing: "Actualizando...",
         applying: "Aplicando...",
         building: "Preparando...",
         approving: "Aprobando...",
@@ -1345,22 +1345,22 @@
         rule_deleted: "Regla borrada correctamente.",
         plan_saved: "Plan guardado correctamente.",
         compare_ok: "Comparacion lista.",
-        accounts_imp: "Cuentas importadas",
-        tx_imp: "Transacciones importadas",
+        accounts_imp: "Capturas actualizadas",
+        tx_imp: "Actividad actualizada",
         rules_applied: "Reglas aplicadas. Creados",
         intents_built: "Pagos sugeridos actualizados.",
         approved_n: "Aprobados",
         executed_n: "Ejecutados",
         reconcile_ok: "Pagos recientes actualizados",
-        connecting_bank: "Conectando banco...",
-        bank_ok: "Banco conectado correctamente.",
+        connecting_bank: "Abriendo enlace...",
+        bank_ok: "Enlace externo guardado.",
         sign_in_first: "Primero inicia sesion.",
-        plaid_script: "No se pudo cargar el enlace bancario en esta pagina.",
-        no_link_token: "No llego el token de conexion del servidor.",
+        plaid_script: "No se pudo cargar el modulo de enlace en esta pagina.",
+        no_link_token: "No llego el token de enlace del servidor.",
         proc_loading: "Cargando...",
         err_checkout_url: "El enlace de pago no estuvo disponible. Intentalo de nuevo.",
         err_portal_url: "El enlace de tu cuenta no estuvo disponible. Intentalo de nuevo.",
-        err_plaid_exit: "La conexion bancaria se cerro con error.",
+        err_plaid_exit: "El flujo de enlace se cerro con error.",
         rule_delete_confirm: "Quieres borrar esta regla? Esta accion no se puede deshacer.",
         err_rule_one_only: "Solo puedes guardar una regla. Primero borra la regla actual."
       }
@@ -2207,10 +2207,9 @@
 
     function completedGuideSteps() {
       const done = new Set();
-      if ((state.accounts || []).length > 0) done.add("1");
-      if ((state.debts || []).length > 0) done.add("2");
-      if (state.plan && state.plan.id) done.add("3");
-      if ((state.intents || []).length > 0 && !hasPendingIntents()) done.add("4");
+      if ((state.debts || []).length > 0) done.add("1");
+      if (state.plan && state.plan.id) done.add("2");
+      if ((state.intents || []).length > 0 && !hasPendingIntents()) done.add("3");
       return done;
     }
 
@@ -2229,21 +2228,11 @@
     }
 
     function computeNextStepAction() {
-      const accounts = state.accounts || [];
       const debts = state.debts || [];
       const plan = state.plan;
       const rules = state.rules || [];
       const intents = state.intents || [];
 
-      if (accounts.length === 0) {
-        return {
-          textKey: "next_step_bank",
-          btnKey: "next_step_bank_btn",
-          nav: "operate",
-          scrollId: "operatePanel",
-          openOperateMore: false
-        };
-      }
       if (debts.length === 0) {
         return {
           textKey: "next_step_debts",
@@ -2293,16 +2282,16 @@
         return {
           textKey: "next_step_prepare",
           btnKey: "next_step_prepare_btn",
-          nav: "operate",
-          scrollId: "operatePanel",
-          openOperateMore: true
+          nav: "setup",
+          scrollId: "suggestedPaymentsPanel",
+          openOperateMore: false
         };
       }
       return {
         textKey: "next_step_done",
         btnKey: "next_step_done_btn",
-        nav: "operate",
-        scrollId: "operatePanel",
+        nav: "setup",
+        scrollId: "suggestedPaymentsPanel",
         openOperateMore: false
       };
     }
@@ -3051,34 +3040,11 @@
       state.debts.forEach((debt) => {
         const progress = Math.max(5, Math.min(100, (Number(debt.balance || 0) / highestBalance) * 100));
         const el = document.createElement("div");
-        const linkedAcc = findAccountForDebt(debt);
-        const hasGoodLink = !!(debt.linked_plaid_account_id && linkedAcc);
-        el.className = hasGoodLink ? "item debt-item-linked" : "item";
-        const linkInfo = linkedPlaidInfoHtml(debt);
-        const selPlaid = debt.linked_plaid_account_id || "";
-        const linkPill = hasGoodLink
-          ? `<span class="pill blue debt-linked-title-pill">${escapeHtml(t("debt_link_badge_short"))}</span>`
-          : "";
-        const src = String(debt.source || "manual");
-        const sourcePills = [];
-        if (src === "spinwheel") {
-          sourcePills.push(`<span class="pill teal debt-source-pill">${escapeHtml(t("debt_source_spinwheel"))}</span>`);
-          if (debt.payment_capable) {
-            sourcePills.push(`<span class="pill green">${escapeHtml(t("debt_spinwheel_payable"))}</span>`);
-          } else {
-            sourcePills.push(`<span class="pill gray">${escapeHtml(t("debt_spinwheel_plan_only"))}</span>`);
-          }
-        } else if (src === "plaid") {
-          sourcePills.push(`<span class="pill purple">${escapeHtml(t("debt_source_plaid"))}</span>`);
-        }
-        const sourcePillsHtml = sourcePills.join("");
+        el.className = "item";
         el.innerHTML = `
           <div class="item-top">
             <div>
-              <div class="item-title-wrap">
-                <div class="item-title">${escapeHtml(debt.name || t("debt_label"))}</div>
-                ${linkPill}${sourcePillsHtml}
-              </div>
+              <div class="item-title">${escapeHtml(debt.name || t("debt_label"))}</div>
               <div class="item-meta">
                 ${escapeHtml(t("apr_label"))}: <strong>${Number(debt.apr || 0).toFixed(2)}%</strong> ?
                 ${escapeHtml(t("min_label"))}: <strong>${fmtMoney(debt.minimum_payment)}</strong> ?
@@ -3097,14 +3063,7 @@
               <div class="muted" style="font-size:12px;margin-top:4px;">${escapeHtml(t("updated_label"))}: ${fmtDate(debt.updated_at)}</div>
             </div>
           </div>
-          ${linkInfo}
           <div class="progress"><span style="width:${progress}%"></span></div>
-          <div class="debt-plaid-row">
-            <span class="label" data-i18n="lbl_link_plaid">Linked bank account (optional)</span>
-            <select class="select debt-plaid-select" data-debt-id="${escapeHtml(debt.id)}">
-              ${buildDebtPlaidSelectOptionsHtml(selPlaid)}
-            </select>
-          </div>
         `;
         box.appendChild(el);
       });
@@ -3359,25 +3318,16 @@
 
       state.intents.forEach((intent) => {
         const meta = normalizeIntentMetadata(intent.metadata);
-        const isSpinIntent = String(intent.source || "").toLowerCase() === "spinwheel";
-        const spinPill = isSpinIntent
-          ? ` <span class="pill teal">${escapeHtml(t("intent_pill_spinwheel"))}</span>`
-          : "";
         const item = document.createElement("div");
         item.className = "item";
-        const actionsHtml = isSpinIntent
-          ? `<div class="item-actions">
-            <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
-            <span class="muted" style="align-self:center;font-size:13px;">${escapeHtml(t("intent_spinwheel_coming_soon"))}</span>
-          </div>`
-          : `<div class="item-actions">
+        const actionsHtml = `<div class="item-actions">
             <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
             <button class="btn btn-primary btn-small" type="button" onclick="executeIntent('${intent.id}')">${escapeHtml(t("btn_execute"))}</button>
           </div>`;
         item.innerHTML = `
           <div class="item-top">
             <div>
-              <div class="item-title">${escapeHtml(t("intent_title"))} ${escapeHtml((intent.id || "").slice(0, 8))}${spinPill}</div>
+              <div class="item-title">${escapeHtml(t("intent_title"))} ${escapeHtml((intent.id || "").slice(0, 8))}</div>
               <div class="item-meta">
                 ${escapeHtml(t("meta_pay_from"))}: <strong>${escapeHtml(describeIntentPayFrom(intent))}</strong><br />
                 ${escapeHtml(t("meta_pay_toward"))}: <strong>${escapeHtml(describeIntentPayToward(intent))}</strong><br />
@@ -4266,6 +4216,8 @@
 
     function spinwheelPayableDiagEnabled() {
       try {
+        const sec = document.getElementById("spinwheelPayableDiagSection");
+        if (sec && sec.getAttribute("data-ui-suppress-spinwheel-diag") === "1") return false;
         if (typeof window === "undefined") return false;
         const h = String(window.location.hash || "").toLowerCase();
         if (h === "#spinwheel-payable-diag") return true;
