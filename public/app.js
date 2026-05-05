@@ -2414,7 +2414,8 @@
     }
 
     /**
-     * Intent destacado para el bloque "Tu proximo paso": solo accionables, luego mayor monto.
+     * Intent destacado: accionables no-Spinwheel si hay; prioriza manual-first (metadata/source),
+     * luego created_at mas reciente (no mayor monto).
      * @param {object[]} intents
      */
     function pickFeaturedIntentForDashboard(intents) {
@@ -2425,17 +2426,19 @@
         (intent) => String(intent?.source || "").toLowerCase() !== "spinwheel"
       );
       const pool = manualPool.length ? manualPool : actionable;
-      const rows = pool
-        .map((intent) => {
-          const st = String(intent.status || "").toLowerCase().trim();
-          const amt = intentPaymentAmount(intent);
-          const sched = intent.scheduled_for != null ? String(intent.scheduled_for) : "";
-          return { intent, st, amt, sched };
-        });
+      const rows = pool.map((intent) => {
+        const meta = normalizeIntentMetadata(intent.metadata);
+        const manualFirst =
+          meta.manual_first_priority === true ||
+          String(meta.manual_first_priority || "").toLowerCase() === "true" ||
+          String(intent?.source || "").toLowerCase() === "manual_first";
+        const createdAt = intent.created_at != null ? String(intent.created_at) : "";
+        return { intent, manualFirst, createdAt };
+      });
       if (!rows.length) return null;
       rows.sort((a, b) => {
-        if (a.sched && b.sched && a.sched !== b.sched) return a.sched.localeCompare(b.sched);
-        return b.amt - a.amt;
+        if (a.manualFirst !== b.manualFirst) return a.manualFirst ? -1 : 1;
+        return b.createdAt.localeCompare(a.createdAt);
       });
       return rows[0].intent;
     }
@@ -5717,7 +5720,20 @@
     window.addEventListener("hashchange", () => void refreshSpinwheelPayableDiag());
     const refreshRulesBtn = $("refreshRulesBtn");
     if (refreshRulesBtn) refreshRulesBtn.addEventListener("click", refreshRules);
-    $("refreshPlanBtn").addEventListener("click", refreshPlan);
+    $("refreshPlanBtn").addEventListener("click", async () => {
+      const btn = $("refreshPlanBtn");
+      setLoading(btn, true, t("proc"));
+      try {
+        await refreshPlan();
+        await api("/payment-intents/build", { method: "POST", body: "{}" });
+        await refreshIntents();
+        updateNextActionGuide();
+      } catch (err) {
+        showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+      } finally {
+        setLoading(btn, false);
+      }
+    });
     $("planStrategy").addEventListener("change", updatePlanFieldHints);
     $("planMode").addEventListener("change", updatePlanFieldHints);
     $("refreshIntentsBtn").addEventListener("click", refreshIntents);
@@ -5869,7 +5885,11 @@
           await refreshIntents();
           updateNextActionGuide();
         } catch (e) {
-          void e;
+          showMessage(
+            globalMessage,
+            normalizeErrorMessage(e?.message || String(e || "")),
+            "error"
+          );
         }
       } catch (err) {
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");

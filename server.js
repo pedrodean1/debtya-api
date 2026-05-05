@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v84-real-avalanche-snowball-plan";
+const SERVER_VERSION = "debtya-2026-05-04-v84-1-force-single-priority-intent";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2239,14 +2239,15 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
   };
 }
 
-const MANUAL_FIRST_RECON_STATUSES = [
+/** Intents no-Spinwheel en estos estados se cancelan antes del intent único manual-first. */
+const MANUAL_FIRST_CANCEL_STATUSES = [
   "pending_review",
   "approved",
   "built",
-  "proposed",
   "ready",
   "draft",
-  "pending"
+  "pending",
+  "queued"
 ];
 
 function isSpinwheelIntentRow(row) {
@@ -2290,7 +2291,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
     .from("payment_intents")
     .select("id,status,source,debt_id")
     .eq("user_id", userId)
-    .in("status", MANUAL_FIRST_RECON_STATUSES);
+    .in("status", MANUAL_FIRST_CANCEL_STATUSES);
 
   if (intentErr) throw intentErr;
 
@@ -2309,6 +2310,14 @@ async function reconcileManualFirstPriorityIntent(userId) {
         .in("id", ids)
         .eq("user_id", userId);
     }
+    console.log("[DebtYa v84 priority intent]", {
+      strategy,
+      priorityDebtId: null,
+      priorityDebtName: null,
+      amount: null,
+      canceledOldIntents: nonSw.length,
+      createdIntentId: null
+    });
     return {
       ok: true,
       skipped: true,
@@ -2331,6 +2340,14 @@ async function reconcileManualFirstPriorityIntent(userId) {
         .in("id", ids)
         .eq("user_id", userId);
     }
+    console.log("[DebtYa v84 priority intent]", {
+      strategy,
+      priorityDebtId: priorityDebt.id,
+      priorityDebtName: priorityDebt.name ?? null,
+      amount: null,
+      canceledOldIntents: nonSw.length,
+      createdIntentId: null
+    });
     return {
       ok: true,
       skipped: true,
@@ -2363,6 +2380,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
     execution_mode: "safe",
     execution_frequency: "daily",
     scheduled_for: today,
+    source: "manual_first",
     notes: "DebtYa — proximo pago recomendado (plan manual-first)",
     metadata: {
       manual_first_priority: true,
@@ -2380,6 +2398,15 @@ async function reconcileManualFirstPriorityIntent(userId) {
     .single();
 
   if (insErr) throw insErr;
+
+  console.log("[DebtYa v84 priority intent]", {
+    strategy,
+    priorityDebtId: priorityDebt.id,
+    priorityDebtName: priorityDebt.name ?? null,
+    amount,
+    canceledOldIntents: nonSw.length,
+    createdIntentId: ins?.id ?? null
+  });
 
   return {
     ok: true,
