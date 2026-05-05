@@ -19,7 +19,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v82-2-clean-manual-first-beta";
+const SERVER_VERSION = "debtya-2026-05-04-v83-ai-coach-explain-payment";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
