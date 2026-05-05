@@ -39,13 +39,13 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-04-v81-1-remove-visible-plaid" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-04-v81-2-hide-suggested-payments" />
   <title>DebtYa</title>
   <link rel="icon" href="/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="/logo.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-04-v81-2-hide-suggested-payments">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -132,7 +132,7 @@
           <div class="faq-list">
             <details class="faq-item">
               <summary data-i18n="faq_q1">What is DebtYa?</summary>
-              <p class="faq-a" data-i18n="faq_a1">DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and move from suggested payments to what you mark as paid. DebtYa does not move money for you.</p>
+              <p class="faq-a" data-i18n="faq_a1">DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and mark what you paid. DebtYa does not move money for you.</p>
             </details>
             <details class="faq-item">
               <summary data-i18n="faq_q2">Does DebtYa need my login credentials?</summary>
@@ -164,7 +164,7 @@
             <div>
               <p class="pricing-name" data-i18n="price_name">DebtYa Beta</p>
               <p class="pricing-copy" data-i18n="price_copy">
-                Everything you need to organize debts manually, automate useful rules, and turn your strategy into clear suggested payments.
+                Everything you need to organize debts manually, automate useful rules, and see a clear next payment.
               </p>
             </div>
             <div class="price-box">
@@ -176,10 +176,10 @@
           <div class="pricing-grid">
             <div class="pricing-item" data-i18n="price_i1">Manual debt tracking with clear balances and progress</div>
             <div class="pricing-item" data-i18n="price_i2">Payment plan and avalanche vs snowball comparison</div>
-            <div class="pricing-item" data-i18n="price_i3">Suggested payments aligned to your strategy</div>
+            <div class="pricing-item" data-i18n="price_i3">Next payment line aligned to your strategy</div>
             <div class="pricing-item" data-i18n="price_i4">Automatic rules such as roundup or fixed amount</div>
             <div class="pricing-item" data-i18n="price_i5">Payment history you can review anytime</div>
-            <div class="pricing-item" data-i18n="price_i6">Build, approve, and track suggested payments</div>
+            <div class="pricing-item" data-i18n="price_i6">Confirm what you paid and track progress</div>
             <div class="pricing-item" data-i18n="price_i7">Stripe-secured subscription billing</div>
             <div class="pricing-item" data-i18n="price_i8">Steady foundation for month-to-month use</div>
           </div>
@@ -391,8 +391,9 @@
             class="dashboard-next-step-card"
             aria-labelledby="dashboardNextStepHeading"
           >
-            <h3 id="dashboardNextStepHeading" class="dashboard-next-step-heading" data-i18n="dashboard_next_step_title">
-              Tu próximo paso
+            <h3 id="dashboardNextStepHeading" class="dashboard-next-step-heading">
+              <span class="section-step-badge" data-step="3">3</span>
+              <span data-i18n="dashboard_next_step_title">Tu próximo paso</span>
             </h3>
             <p id="dashboardNextStepPrimary" class="dashboard-next-step-primary"></p>
             <p id="dashboardNextStepSecondary" class="dashboard-next-step-secondary hidden"></p>
@@ -403,7 +404,7 @@
           <div class="hero-title-row">
             <div class="hero-title-block">
               <p class="hero-copy" data-i18n="hero_copy">
-                Total debt, progress, your next suggested payment, and history in one place. DebtYa does not move money or read your accounts for you.
+                Total debt, progress, your next payment line, and history in one place. DebtYa does not move money; you enter what you know from your statements.
               </p>
             </div>
             <div id="heroRuleSwitchWrap" class="hero-rule-switch-wrap hidden">
@@ -432,7 +433,7 @@
               <div id="statDebtCount" class="v">0</div>
             </div>
             <div class="stat">
-              <div class="k" data-i18n="stat_pending_intents">Suggested payments waiting</div>
+              <div class="k" data-i18n="stat_pending_intents">Payments waiting for confirmation</div>
               <div id="statPendingIntents" class="v">0</div>
             </div>
             <div class="stat">
@@ -537,14 +538,14 @@
                 <div class="ux-advanced-inner">
                   <div class="grid-4 operate-adv-grid">
                     <button id="btnApplyRules" class="btn btn-secondary" type="button" data-i18n="btn_apply_rules">Apply rules</button>
-                    <button id="btnBuildIntents" class="btn btn-secondary" type="button" data-i18n="btn_intents_build">Build payments</button>
-                    <button id="btnApproveVisible" class="btn btn-success" type="button" data-i18n="btn_approve_visible">Approve payments</button>
-                    <button id="btnExecuteVisible" class="btn btn-outline" type="button" data-i18n="btn_execute_visible">Run payments</button>
+                    <button id="btnBuildIntents" class="btn btn-secondary hidden" type="button" data-i18n="btn_intents_build" aria-hidden="true" tabindex="-1">Build payments</button>
+                    <button id="btnApproveVisible" class="btn btn-success hidden" type="button" data-i18n="btn_approve_visible" aria-hidden="true" tabindex="-1">Approve payments</button>
+                    <button id="btnExecuteVisible" class="btn btn-outline hidden" type="button" data-i18n="btn_execute_visible" aria-hidden="true" tabindex="-1">Run payments</button>
                   </div>
                 </div>
               </details>
 
-              <div class="section-note section-note-operate" data-i18n="operate_note">Legacy optional tools. Most people only need manual debts and suggested payments.</div>
+              <div class="section-note section-note-operate" data-i18n="operate_note">Legacy optional tools. Most people only need manual debts and the dashboard next payment line.</div>
 
               <div class="legal-note legal-note-operate" data-i18n-html="operate_legal_html">Optional features may use trusted service providers as described in our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>. Subscription billing runs through Stripe.</div>
             </div>
@@ -759,7 +760,7 @@
                   <option value="">—</option>
                 </select>
                 <p id="planFundingHint" class="plan-field-hint" data-i18n="plan_pay_from_hint">
-                  Choose the checking or savings account you pay from. It is stored on new suggested payments when you prepare them.
+                  Optional label for where you pay from in real life. Your next payment line uses it when available.
                 </p>
               </div>
               <div class="field">
@@ -768,7 +769,7 @@
                   <option value="">—</option>
                 </select>
                 <p id="planPaydownHint" class="plan-field-hint" data-i18n="plan_pay_toward_hint">
-                  Optional: highlight which debt you consider the main target. Suggested payments can still follow your strategy across multiple debts.
+                  Optional: highlight which debt you consider the main target. Your strategy can still spread extra across multiple debts.
                 </p>
               </div>
               <div class="field">
@@ -805,11 +806,11 @@
             <div id="compareResult" class="list" style="margin-top:14px;"></div>
           </section>
 
-          <section class="card" id="suggestedPaymentsPanel">
+          <section class="card hidden" id="suggestedPaymentsPanel" aria-hidden="true">
             <div class="section-head">
               <div>
-                <h2 class="section-title-step"><span class="section-step-badge" data-step="3">3</span><span data-i18n="intents_title">Suggested payments</span></h2>
-                <p class="sub" data-i18n="intents_sub">Step 3: build and review suggested payments, then confirm in the dashboard when you have paid your lender.</p>
+                <h2 class="section-title-step"><span data-i18n="intents_title">Next payment (advanced list)</span></h2>
+                <p class="sub" data-i18n="intents_sub">Technical list for support. Most people only use the dashboard card and I paid it.</p>
               </div>
               <div class="section-actions">
                 <details class="ux-advanced-details">
@@ -846,7 +847,7 @@
           <section class="card" id="historyPanel">
             <div class="section-head">
               <div>
-                <h2 data-i18n="history_title">History</h2>
+                <h2 class="section-title-step"><span class="section-step-badge" data-step="4">4</span><span data-i18n="history_title">History</span></h2>
                 <p class="sub" data-i18n="history_sub">See payments and how your balances changed.</p>
               </div>
               <div class="section-actions">
@@ -1007,24 +1008,20 @@
       <div id="helpPanelGuide" class="help-panel" data-help-panel="guide">
           <p class="help-mini" data-i18n="help_guide_intro">A calm path through the basics. Open this panel any time.</p>
         <div class="help-guide-step">
-          <h3 data-i18n="help_g1_t">1. Sign in</h3>
-          <p data-i18n="help_g1_p">Create an account or log in so your debts, plan, and progress are saved.</p>
+          <h3 data-i18n="help_g1_t">1. Debts</h3>
+          <p data-i18n="help_g1_p">Enter each debt with balance, APR, and minimum payment from your statements.</p>
         </div>
         <div class="help-guide-step">
-          <h3 data-i18n="help_g2_t">2. Add debts</h3>
-          <p data-i18n="help_g2_p">Enter each debt with balance, APR, and minimum payment from your statements.</p>
+          <h3 data-i18n="help_g2_t">2. Plan</h3>
+          <p data-i18n="help_g2_p">Set your payment plan and strategy. Rules are optional if you want extra automation.</p>
         </div>
         <div class="help-guide-step">
-          <h3 data-i18n="help_g3_t">3. Plan and rules</h3>
-          <p data-i18n="help_g3_p">Set your payment plan and strategy, then add a rule when you want extra automation.</p>
+          <h3 data-i18n="help_g3_t">3. Next payment</h3>
+          <p data-i18n="help_g3_p">The dashboard shows what to pay today. Pay your lender yourself, then tap I paid it.</p>
         </div>
         <div class="help-guide-step">
-          <h3 data-i18n="help_g4_t">4. Suggested payments</h3>
-          <p data-i18n="help_g4_p">Build suggested payments, approve what looks right, then pay your lender outside the app and confirm when you are done.</p>
-        </div>
-        <div class="help-guide-step">
-          <h3 data-i18n="help_g5_t">5. Need more?</h3>
-          <p data-i18n="help_g5_p">Use the FAQ tab, this assistant for general guidance, or email support—we never replace your statement or professional advice.</p>
+          <h3 data-i18n="help_g4_t">4. Progress</h3>
+          <p data-i18n="help_g4_p">Use History to see payments and balance changes. For more help, open FAQ or email support.</p>
         </div>
         <button type="button" id="helpJumpFaqBtn" class="btn btn-light help-jump-faq hidden" data-i18n="help_jump_faq">
           Open FAQ on this page
@@ -1045,7 +1042,7 @@
         <div class="faq-list">
           <details class="faq-item">
             <summary data-i18n="faq_q1">What is DebtYa?</summary>
-            <p class="faq-a" data-i18n="faq_a1">DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and move from suggested payments to what you mark as paid. DebtYa does not move money for you.</p>
+            <p class="faq-a" data-i18n="faq_a1">DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and mark what you paid. DebtYa does not move money for you.</p>
           </details>
           <details class="faq-item">
             <summary data-i18n="faq_q2">Does DebtYa need my login credentials?</summary>
@@ -1072,6 +1069,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-04-v81-1-remove-visible-plaid"></script>
+  <script src="/app.js?v=debtya-2026-05-04-v81-2-hide-suggested-payments"></script>
 </body>
 </html>

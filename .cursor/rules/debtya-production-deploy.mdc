@@ -1,0 +1,23 @@
+---
+description: After any DebtYa code change, validate, version, commit, push to main, verify deploy.
+alwaysApply: true
+---
+
+# DebtYa: producción (commit + push + Render)
+
+Después de **cualquier** cambio en el repo que toque código o assets servidos:
+
+1. **Revisar** `git status` y el diff esperado.
+2. **Validaciones mínimas** (no desplegar si fallan):
+   - Si se tocó `public/app.js`: `node --check public/app.js`
+   - Si se tocó `server.js` (u otro JS de servidor relevante): `node --check server.js`
+   - Siempre que haya cambios de producto: `npm test`
+3. **Versión** alinear en:
+   - `server.js` → `SERVER_VERSION`
+   - `public/index.html` → `debtya-ui-rev` y `app.js?v=...` (y `styles.css?v=...` si se versiona ahí)
+4. **Commit** con mensaje claro (convención: tipo + resumen breve).
+5. **Push** a `main` para deploy automático en Render.
+6. **Confirmar** en GitHub que `main` tiene el commit.
+7. **Opcional**: `GET https://www.debtya.com/health` y comprobar `server_version` coincide con `SERVER_VERSION` tras el deploy.
+
+**No hacer** push si los tests fallan. No romper a propósito Stripe, auth, cron, cálculo avalanche/snowball, `confirm-manual` ni contratos estables de API.

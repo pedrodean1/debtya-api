@@ -192,14 +192,14 @@
         land_footer_copy:
           "DebtYa helps you organize and pay down debt. For help: support@debtya.com",
         price_name: "DebtYa Beta",
-        price_copy: "Everything you need to organize debts manually, automate useful rules, and turn your strategy into clear suggested payments.",
+        price_copy: "Everything you need to organize debts manually, automate useful rules, and turn your strategy into a clear next payment.",
         price_freq: "per month",
         price_i1: "Manual debt tracking with clear balances and progress",
         price_i2: "Payment plan and avalanche vs snowball comparison",
-        price_i3: "Suggested payments aligned to your strategy",
+        price_i3: "Next payment line aligned to your strategy",
         price_i4: "Automatic rules such as roundup or fixed amount",
         price_i5: "Payment history you can review anytime",
-        price_i6: "Build, approve, and track suggested payments",
+        price_i6: "Confirm what you paid and track progress",
         price_i7: "Stripe-secured subscription billing",
         price_i8: "Steady foundation for month-to-month use",
         price_have_account: "I already have an account",
@@ -215,7 +215,7 @@
         faq_sub: "Short answers about how DebtYa fits into your routine.",
         faq_q1: "What is DebtYa?",
         faq_a1:
-          "DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and move from suggested payments to what you mark as paid. DebtYa does not move money for you. Subscription billing runs through Stripe.",
+          "DebtYa is a personal workspace to list your debts, choose a payoff strategy, use light automation with rules, and mark what you paid. DebtYa does not move money for you. Subscription billing runs through Stripe.",
         faq_q2: "Does DebtYa need my login credentials?",
         faq_a2:
           "No. You enter balances and details yourself from your statements. That keeps you in control and avoids sharing logins with DebtYa.",
@@ -237,16 +237,14 @@
         help_tab_ask: "Ask assistant",
         help_tab_faq: "FAQ",
         help_guide_intro: "A calm path through the basics. Open this panel any time.",
-        help_g1_t: "1. Sign in",
-        help_g1_p: "Create an account or log in so your debts, plan, and progress are saved.",
-        help_g2_t: "2. Add debts",
-        help_g2_p: "Enter each debt with balance, APR, and minimum payment from your statements.",
-        help_g3_t: "3. Plan and rules",
-        help_g3_p: "Set your payment plan and strategy, then add a rule when you want extra automation.",
-        help_g4_t: "4. Suggested payments",
-        help_g4_p: "Build suggested payments, approve what looks right, then pay your lender outside the app and confirm when you are done.",
-        help_g5_t: "5. Need more?",
-        help_g5_p: "Use the FAQ tab, this assistant for general guidance, or email support?we never replace your statement or professional advice.",
+        help_g1_t: "1. Debts",
+        help_g1_p: "Enter each debt with balance, APR, and minimum payment from your statements.",
+        help_g2_t: "2. Plan",
+        help_g2_p: "Pick strategy and mode, set your monthly budget, then save. Add a rule later if you want extra automation.",
+        help_g3_t: "3. Next payment",
+        help_g3_p: "The dashboard shows what to pay today. Pay your lender yourself, then tap I paid it to update balances.",
+        help_g4_t: "4. Progress",
+        help_g4_p: "Use History to see payments and how balances changed. For more detail, open FAQ or email support.",
         help_jump_faq: "Scroll to FAQ on this page",
         guide_assistant_off:
           "The assistant is not available here yet. Use the FAQ tab or email support@debtya.com.",
@@ -301,13 +299,13 @@
         btn_logout: "Log out",
         advanced_operate_toggle: "More ? rules & payments",
         advanced_plan_toggle: "More plan options",
-        advanced_intents_toggle: "More list options",
+        advanced_intents_toggle: "More payment list options",
         hero_title: "See your plan. Take the next step.",
-        hero_copy: "Total debt, progress, your next suggested payment, and history?in one place. DebtYa does not move money; you enter what you know from your statements.",
+        hero_copy: "Total debt, progress, your next payment line, and history?in one place. DebtYa does not move money; you enter what you know from your statements.",
         dashboard_next_step_title: "Your next step",
         dashboard_next_no_debts: "Add your debts to get started.",
         dashboard_next_no_plan: "Create your payment plan.",
-        dashboard_next_no_intents: "Generate your suggested payments.",
+        dashboard_next_no_intents: "Save your payment plan to refresh your next payment line.",
         dashboard_next_pay_line: "Pay {amount} to {debt} today",
         dashboard_debt_fallback: "this debt",
         dashboard_next_interest_saved: "You save ~{amount} in interest this month",
@@ -319,19 +317,19 @@
         manual_pay_ok: "Payment marked as done. Your progress was updated.",
         manual_pay_err: "Could not confirm the payment. Try again.",
         next_step_bank: "Next: add optional snapshots only if your workspace uses them.",
-        next_step_bank_btn: "Open suggested payments",
+        next_step_bank_btn: "Open dashboard",
         next_step_debts: "Next: add your debts (balance, APR, and minimum payment).",
         next_step_debts_btn: "Go to Debts & plan",
         next_step_plan: "Next: save your payment plan (strategy, mode, and monthly budget).",
         next_step_plan_btn: "Open payment plan",
         next_step_rules: "Next: create one paydown rule when you are ready.",
         next_step_rules_btn: "Go to rules",
-        next_step_prepare: "Next: build suggested payments from your plan (use Build payments below).",
-        next_step_prepare_btn: "Open suggested payments",
-        next_step_review: "Next: you have suggested payments waiting for your review or confirmation.",
-        next_step_review_btn: "Review payments",
-        next_step_done: "You are set up for now. When your situation changes, update debts or rebuild suggested payments.",
-        next_step_done_btn: "Open suggested payments",
+        next_step_prepare: "Next: your next payment line updates after you save your plan.",
+        next_step_prepare_btn: "Open dashboard",
+        next_step_review: "Next: confirm your payment on the dashboard when you are ready.",
+        next_step_review_btn: "See next payment",
+        next_step_done: "You are set up for now. When your situation changes, update debts or save your plan again.",
+        next_step_done_btn: "Open dashboard",
         btn_connect_bank: "Start external link",
         btn_disconnect_bank: "Remove external link",
         sync_bank_pick_title: "Which link should we remove?",
@@ -345,7 +343,7 @@
         intents_build_response_label: "Last build response (JSON)",
         stat_total_debt: "Total debt",
         stat_active_debts: "Active debts",
-        stat_pending_intents: "Suggested payments waiting",
+        stat_pending_intents: "Payments waiting for confirmation",
         stat_executed_intents: "Payments completed",
         plan_summary_title: "Plan summary",
         plan_summary_sub: "Strategy, mode, and monthly extra at a glance.",
@@ -373,7 +371,7 @@
         btn_apply_rules: "Apply rules",
         btn_approve_visible: "Approve payments",
         btn_execute_visible: "Run payments",
-        operate_note: "Most people only need manual debts and suggested payments.",
+        operate_note: "Most people only need manual debts and the dashboard next payment line.",
         operate_legal_html: 'Optional features may use trusted service providers as described in our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>. Subscription billing runs through Stripe.',
         method_panel_title: "Legacy liabilities",
         method_panel_hint: "When liability integrations are enabled on the server, you can sync optional liability rows and add them as debts in DebtYa.",
@@ -514,7 +512,7 @@
         hint_strategy_snowball:
           "Puts extra payments toward the smallest balance first. Can feel faster because accounts drop off sooner.",
         hint_mode_manual:
-          "You review and run suggested payments yourself. DebtYa prepares amounts; you stay in control.",
+          "You review the next payment line and confirm what you paid. DebtYa prepares amounts; you stay in control.",
         hint_mode_safe_auto:
           "DebtYa can prepare payments with extra guardrails. You still confirm important steps in the app.",
         hint_mode_full_auto:
@@ -522,9 +520,9 @@
         lbl_plan_pay_from: "Pay from (account)",
         lbl_plan_pay_toward: "Pay toward (debt)",
         plan_pay_from_hint:
-          "Optional label for where you pay from in real life. Suggested payments are guidance only; you always pay your lender yourself.",
+          "Optional label for where you pay from in real life. Amounts are guidance only; you always pay your lender yourself.",
         plan_pay_toward_hint:
-          "Optional: highlight which debt you consider the main target. Suggested payments can still follow your strategy across multiple debts.",
+          "Optional: highlight which debt you consider the main target. Extra can still follow your strategy across multiple debts.",
         plan_pay_from_none: "Not set",
         plan_pay_toward_none: "All debts (strategy)",
         meta_pay_from: "Pay from",
@@ -538,8 +536,8 @@
         btn_save_plan: "Save plan",
         btn_compare: "Compare strategies",
         btn_refresh_plan: "Refresh plan",
-        intents_title: "Suggested payments",
-        intents_sub: "Step 3: build and review suggested payments, then confirm in the dashboard when you have paid your lender.",
+        intents_title: "Next payment (advanced list)",
+        intents_sub: "Technical list for support. Most people only use the dashboard card and I paid it.",
         btn_reconcile: "Update recent payments",
         tag_approved: "Approved ? pay your lender, then confirm when done",
         tag_pending: "Draft or waiting ? needs your OK",
@@ -613,7 +611,7 @@
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
         empty_rules: "You have no saved rules yet.",
-        empty_intents: "No suggested payments yet. Use Build payments above after you have a plan (and optional rules).",
+        empty_intents: "No payment rows yet. Save your plan to refresh the next payment line.",
         empty_trace: "No history available yet.",
         empty_accounts: "No optional snapshots yet.",
         empty_compare: "No comparison available yet.",
@@ -669,7 +667,7 @@
         pill_inactive: "inactive",
         pill_draft: "draft",
         pill_pending: "pending",
-        pill_built: "suggested",
+        pill_built: "built",
         pill_proposed: "proposed",
         pill_ready: "ready",
         pill_pending_review: "pending review",
@@ -751,7 +749,7 @@
         accounts_imp: "Snapshots updated",
         tx_imp: "Activity updated",
         rules_applied: "Rules applied. Created",
-        intents_built: "Suggested payments updated.",
+        intents_built: "Next payment line updated.",
         approved_n: "Approved",
         executed_n: "Executed",
         reconcile_ok: "Recent payments updated",
@@ -788,14 +786,14 @@
         land_footer_copy:
           "DebtYa te ayuda a organizar y pagar tus deudas. Ayuda: support@debtya.com",
         price_name: "DebtYa Beta",
-        price_copy: "Todo lo necesario para organizar tus deudas a mano, automatizar reglas utiles y convertir tu estrategia en pagos sugeridos claros.",
+        price_copy: "Todo lo necesario para organizar tus deudas a mano, automatizar reglas utiles y ver un proximo pago claro.",
         price_freq: "al mes",
         price_i1: "Seguimiento manual de deudas con saldos y progreso claros",
         price_i2: "Plan de pago y comparacion avalancha vs bola de nieve",
-        price_i3: "Pagos sugeridos alineados a tu estrategia",
+        price_i3: "Linea de proximo pago alineada a tu estrategia",
         price_i4: "Reglas automaticas como redondeo o monto fijo",
         price_i5: "Historial de pagos que puedes revisar cuando quieras",
-        price_i6: "Construir, aprobar y seguir pagos sugeridos",
+        price_i6: "Confirmar lo pagado y seguir el progreso",
         price_i7: "Facturacion de suscripcion segura con Stripe",
         price_i8: "Base estable para usar mes a mes",
         price_have_account: "Ya tengo cuenta",
@@ -811,7 +809,7 @@
         faq_sub: "Respuestas cortas sobre como encaja DebtYa en tu rutina.",
         faq_q1: "Que es DebtYa?",
         faq_a1:
-          "DebtYa es un espacio para listar tus deudas, elegir una estrategia de pago, usar reglas ligeras y pasar de pagos sugeridos a lo que marcas como pagado. DebtYa no mueve dinero por ti. La suscripcion se cobra con Stripe.",
+          "DebtYa es un espacio para listar tus deudas, elegir una estrategia de pago, usar reglas ligeras y marcar lo que pagaste. DebtYa no mueve dinero por ti. La suscripcion se cobra con Stripe.",
         faq_q2: "Necesito dar mis claves de acceso?",
         faq_a2:
           "No. Tu ingresas saldos y datos desde tus estados de cuenta. Asi mantienes el control sin compartir inicios de sesion con DebtYa.",
@@ -833,16 +831,14 @@
         help_tab_ask: "Preguntar al asistente",
         help_tab_faq: "FAQ",
         help_guide_intro: "Un recorrido tranquilo por lo basico. Vuelve a abrir este panel cuando quieras.",
-        help_g1_t: "1. Inicia sesion",
-        help_g1_p: "Crea cuenta o entra para guardar deudas, plan y progreso.",
-        help_g2_t: "2. Agrega deudas",
-        help_g2_p: "Registra cada deuda con saldo, APR y pago minimo segun tus estados de cuenta.",
-        help_g3_t: "3. Plan y reglas",
-        help_g3_p: "Define tu plan y estrategia; agrega una regla si quieres mas automatizacion.",
-        help_g4_t: "4. Pagos sugeridos",
-        help_g4_p: "Construye pagos sugeridos, aprueba lo que tenga sentido, paga al acreedor con tu app o sitio habitual y confirma cuando termines.",
-        help_g5_t: "5. Necesitas mas?",
-        help_g5_p: "Usa la pestana FAQ, este asistente para dudas generales o correo a soporte: no reemplazamos tu estado de cuenta ni asesoria profesional.",
+        help_g1_t: "1. Deudas",
+        help_g1_p: "Registra cada deuda con saldo, APR y pago minimo segun tus estados de cuenta.",
+        help_g2_t: "2. Plan",
+        help_g2_p: "Elige estrategia y modo, define presupuesto mensual y guarda. Las reglas son opcionales si quieres mas automatizacion.",
+        help_g3_t: "3. Proximo pago",
+        help_g3_p: "El panel principal muestra que conviene pagar hoy. Paga al acreedor por tu cuenta y pulsa Ya lo pagu\u00E9 para actualizar saldos.",
+        help_g4_t: "4. Progreso",
+        help_g4_p: "Usa Historial para ver pagos y cambios de saldo. Para mas ayuda, abre FAQ o escribe a soporte.",
         help_jump_faq: "Ir a las FAQ en esta pagina",
         guide_assistant_off:
           "El asistente no esta disponible en este servidor todavia. Usa la pestana FAQ o escribe a support@debtya.com.",
@@ -897,13 +893,13 @@
         btn_logout: "Salir",
         advanced_operate_toggle: "Mas ? reglas y pagos",
         advanced_plan_toggle: "Mas opciones del plan",
-        advanced_intents_toggle: "Mas opciones de la lista",
+        advanced_intents_toggle: "Mas opciones de la lista de pagos",
         hero_title: "Ve tu plan. Da el siguiente paso.",
-        hero_copy: "Deuda total, progreso, tu proximo pago sugerido e historial en un solo lugar. DebtYa no mueve dinero: tu ingresas lo que ves en tus estados de cuenta.",
+        hero_copy: "Deuda total, progreso, tu linea de proximo pago e historial en un solo lugar. DebtYa no mueve dinero: tu ingresas lo que ves en tus estados de cuenta.",
         dashboard_next_step_title: "Tu pr\u00F3ximo paso",
         dashboard_next_no_debts: "Agrega tus deudas para empezar",
         dashboard_next_no_plan: "Crea tu plan de pago",
-        dashboard_next_no_intents: "Genera tus pagos sugeridos",
+        dashboard_next_no_intents: "Guarda tu plan de pago para refrescar la linea de proximo pago.",
         dashboard_next_pay_line: "Paga {amount} a {debt} hoy",
         dashboard_debt_fallback: "esta deuda",
         dashboard_next_interest_saved: "Ahorras ~{amount} en intereses este mes",
@@ -915,19 +911,19 @@
         manual_pay_ok: "Pago marcado como realizado. Tu progreso fue actualizado.",
         manual_pay_err: "No se pudo confirmar el pago. Int\u00E9ntalo de nuevo.",
         next_step_bank: "Siguiente: solo si tu espacio de trabajo usa capturas opcionales.",
-        next_step_bank_btn: "Abrir pagos sugeridos",
+        next_step_bank_btn: "Ir al panel principal",
         next_step_debts: "Siguiente: agrega tus deudas (balance, APR y pago minimo).",
         next_step_debts_btn: "Ir a Deudas y plan",
         next_step_plan: "Siguiente: guarda tu plan de pago (estrategia, modo y presupuesto).",
         next_step_plan_btn: "Abrir plan de pago",
         next_step_rules: "Siguiente: crea una regla de abono cuando quieras.",
         next_step_rules_btn: "Ir a reglas",
-        next_step_prepare: "Siguiente: construye pagos sugeridos desde tu plan (usa Construir pagos abajo).",
-        next_step_prepare_btn: "Abrir pagos sugeridos",
-        next_step_review: "Siguiente: tienes pagos sugeridos pendientes de revision o confirmacion.",
-        next_step_review_btn: "Ver pagos sugeridos",
-        next_step_done: "Por ahora vas al dia. Si cambia tu situacion, actualiza deudas o vuelve a construir pagos sugeridos.",
-        next_step_done_btn: "Abrir pagos sugeridos",
+        next_step_prepare: "Siguiente: la linea de proximo pago se actualiza al guardar tu plan.",
+        next_step_prepare_btn: "Ir al panel principal",
+        next_step_review: "Siguiente: confirma tu pago en el panel principal cuando estes listo.",
+        next_step_review_btn: "Ver proximo pago",
+        next_step_done: "Por ahora vas al dia. Si cambia tu situacion, actualiza deudas o vuelve a guardar el plan.",
+        next_step_done_btn: "Ir al panel principal",
         btn_connect_bank: "Iniciar enlace externo",
         btn_disconnect_bank: "Quitar enlace externo",
         sync_bank_pick_title: "Que enlace quieres quitar?",
@@ -941,7 +937,7 @@
         intents_build_response_label: "Ultima respuesta del servidor (JSON)",
         stat_total_debt: "Deuda total",
         stat_active_debts: "Deudas activas",
-        stat_pending_intents: "Pagos sugeridos en espera",
+        stat_pending_intents: "Pagos pendientes de confirmar",
         stat_executed_intents: "Pagos realizados",
         plan_summary_title: "Resumen del plan",
         plan_summary_sub: "Estrategia, modo y extra mensual de un vistazo.",
@@ -969,7 +965,7 @@
         btn_apply_rules: "Aplicar reglas",
         btn_approve_visible: "Aprobar pagos",
         btn_execute_visible: "Ejecutar pagos",
-        operate_note: "La mayoria solo necesita deudas manuales y pagos sugeridos.",
+        operate_note: "La mayoria solo necesita deudas manuales y la linea de proximo pago del panel.",
         operate_legal_html: 'Las funciones opcionales pueden usar proveedores de confianza segun se describe en nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>. La suscripcion se cobra con Stripe.',
         method_panel_title: "Pasivos heredados",
         method_panel_hint: "Si el servidor tiene integraciones de pasivos, puedes sincronizar filas opcionales y agregarlas como deudas en DebtYa.",
@@ -1111,7 +1107,7 @@
         hint_strategy_snowball:
           "Destina los pagos extra al saldo mas pequeno primero. A veces se siente mas rapido porque cierras cuentas antes.",
         hint_mode_manual:
-          "Tu revisas y ejecutas los pagos sugeridos. DebtYa prepara montos; tu mantienes el control.",
+          "Tu revisas la linea de proximo pago y confirmas lo pagado. DebtYa prepara montos; tu mantienes el control.",
         hint_mode_safe_auto:
           "DebtYa puede preparar pagos con mas limites de seguridad. Sigues confirmando pasos importantes en la app.",
         hint_mode_full_auto:
@@ -1119,9 +1115,9 @@
         lbl_plan_pay_from: "Pagar desde (cuenta)",
         lbl_plan_pay_toward: "Pagar hacia (deuda)",
         plan_pay_from_hint:
-          "Etiqueta opcional de donde pagas en la vida real. Los pagos sugeridos son orientacion; siempre pagas al acreedor por tu cuenta.",
+          "Etiqueta opcional de donde pagas en la vida real. Los montos son orientacion; siempre pagas al acreedor por tu cuenta.",
         plan_pay_toward_hint:
-          "Opcional: indica que deuda consideras el foco principal. Los montos sugeridos pueden seguir repartiendose segun tu estrategia.",
+          "Opcional: indica que deuda consideras el foco principal. El extra puede seguir repartiendose segun tu estrategia.",
         plan_pay_from_none: "Sin definir",
         plan_pay_toward_none: "Todas las deudas (estrategia)",
         meta_pay_from: "Pagar desde",
@@ -1135,8 +1131,8 @@
         btn_save_plan: "Guardar plan",
         btn_compare: "Comparar estrategias",
         btn_refresh_plan: "Refrescar plan",
-        intents_title: "Pagos sugeridos",
-        intents_sub: "Paso 3: construye y revisa pagos sugeridos; luego confirma en el panel cuando ya pagaste al acreedor.",
+        intents_title: "Proximo pago (lista avanzada)",
+        intents_sub: "Lista tecnica para soporte. La mayoria usa solo la tarjeta del panel y Ya lo pagu\u00E9.",
         btn_reconcile: "Actualizar pagos recientes",
         tag_approved: "Aprobados ? paga al acreedor y confirma al terminar",
         tag_pending: "Borrador o en espera ? falta tu visto bueno",
@@ -1209,7 +1205,7 @@
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
         empty_rules: "Todavia no tienes reglas guardadas.",
-        empty_intents: "Aun no hay pagos sugeridos. Pulsa Construir pagos arriba cuando ya tengas plan (y reglas opcionales).",
+        empty_intents: "Aun no hay filas de pago. Guarda tu plan para refrescar la linea de proximo pago.",
         empty_trace: "Todavia no hay historial disponible.",
         empty_accounts: "Todavia no hay capturas opcionales.",
         empty_compare: "Todavia no hay comparacion disponible.",
@@ -1348,7 +1344,7 @@
         accounts_imp: "Capturas actualizadas",
         tx_imp: "Actividad actualizada",
         rules_applied: "Reglas aplicadas. Creados",
-        intents_built: "Pagos sugeridos actualizados.",
+        intents_built: "Linea de proximo pago actualizada.",
         approved_n: "Aprobados",
         executed_n: "Ejecutados",
         reconcile_ok: "Pagos recientes actualizados",
@@ -2210,6 +2206,7 @@
       if ((state.debts || []).length > 0) done.add("1");
       if (state.plan && state.plan.id) done.add("2");
       if ((state.intents || []).length > 0 && !hasPendingIntents()) done.add("3");
+      if ((state.trace || []).length > 0) done.add("4");
       return done;
     }
 
@@ -2247,7 +2244,7 @@
           textKey: "next_step_review",
           btnKey: "next_step_review_btn",
           nav: "setup",
-          scrollId: "suggestedPaymentsPanel",
+          scrollId: "dashboardNextStepCard",
           openOperateMore: false
         };
       }
@@ -2274,7 +2271,7 @@
           textKey: "next_step_review",
           btnKey: "next_step_review_btn",
           nav: "setup",
-          scrollId: "suggestedPaymentsPanel",
+          scrollId: "dashboardNextStepCard",
           openOperateMore: false
         };
       }
@@ -2283,7 +2280,7 @@
           textKey: "next_step_prepare",
           btnKey: "next_step_prepare_btn",
           nav: "setup",
-          scrollId: "suggestedPaymentsPanel",
+          scrollId: "dashboardNextStepCard",
           openOperateMore: false
         };
       }
@@ -2291,7 +2288,7 @@
         textKey: "next_step_done",
         btnKey: "next_step_done_btn",
         nav: "setup",
-        scrollId: "suggestedPaymentsPanel",
+        scrollId: "dashboardNextStepCard",
         openOperateMore: false
       };
     }
@@ -3301,6 +3298,12 @@
     }
 
     function renderIntents() {
+      const panel = $("suggestedPaymentsPanel");
+      if (panel && panel.classList.contains("hidden")) {
+        renderStats();
+        updateNextActionGuide();
+        return;
+      }
       const box = $("intentsList");
       if (!box) {
         renderStats();
@@ -5751,6 +5754,13 @@
         await api("/payment-plan", { method: "POST", body: JSON.stringify(payload) });
         showMessage(globalMessage, t("plan_saved"), "success");
         await refreshPlan();
+        try {
+          await api("/payment-intents/build", { method: "POST", body: "{}" });
+          await refreshIntents();
+          updateNextActionGuide();
+        } catch (e) {
+          void e;
+        }
       } catch (err) {
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
       }
@@ -5804,6 +5814,13 @@
       try {
         const res = await api("/rules/apply", { method: "POST", body: "{}" });
         showMessage(globalMessage, `${t("rules_applied")}: ${res.created ?? 0}.`, "success");
+        try {
+          await api("/payment-intents/build", { method: "POST", body: "{}" });
+          await refreshIntents();
+          updateNextActionGuide();
+        } catch (e) {
+          void e;
+        }
       } catch (err) {
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
       } finally {
@@ -5818,34 +5835,37 @@
       const pre = $("intentsBuildResultJson");
       try {
         const res = await api("/payment-intents/build", { method: "POST", body: "{}" });
+        const spPanel = $("suggestedPaymentsPanel");
+        const panelHidden = !!(spPanel && spPanel.classList.contains("hidden"));
         if (fb && pre) {
           pre.textContent = JSON.stringify(res, null, 2);
-          fb.classList.remove("hidden", "error", "success", "warn");
-          fb.classList.add("success");
+          if (panelHidden) {
+            fb.classList.add("hidden");
+            fb.classList.remove("error", "success", "warn");
+          } else {
+            fb.classList.remove("hidden", "error", "success", "warn");
+            fb.classList.add("success");
+          }
         }
         showMessage(globalMessage, t("intents_built"), "success");
         await refreshIntents();
-        const swApp = toNum(res?.spinwheel_intents?.appended);
-        let legacyCreated = 0;
-        const pdata = res?.data;
-        if (Array.isArray(pdata) && pdata[0] && typeof pdata[0] === "object") {
-          legacyCreated = toNum(pdata[0].intents_created ?? pdata[0].intentsCreated);
-        } else if (pdata && typeof pdata === "object" && !Array.isArray(pdata)) {
-          legacyCreated = toNum(pdata.intents_created ?? pdata.intentsCreated);
-        }
-        if (swApp > 0 || legacyCreated > 0) {
-          await refreshIntents();
-          updateNextActionGuide();
-        }
+        updateNextActionGuide();
       } catch (err) {
+        const spPanel = $("suggestedPaymentsPanel");
+        const panelHidden = !!(spPanel && spPanel.classList.contains("hidden"));
         if (fb && pre) {
           pre.textContent = JSON.stringify(
             { ok: false, error: normalizeErrorMessage(err.message) },
             null,
             2
           );
-          fb.classList.remove("hidden", "success", "warn");
-          fb.classList.add("error");
+          if (panelHidden) {
+            fb.classList.add("hidden");
+            fb.classList.remove("success", "warn");
+          } else {
+            fb.classList.remove("hidden", "success", "warn");
+            fb.classList.add("error");
+          }
         }
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
       } finally {
