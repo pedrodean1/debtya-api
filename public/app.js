@@ -1606,7 +1606,9 @@
       methodEntities: [],
       methodAccounts: [],
       methodEntitiesLoadError: null,
-      methodEntityCreating: false
+      methodEntityCreating: false,
+      /** Prioridad servidor/cliente para elegir intent en dashboard (manual-first). */
+      manualPriorityDebtId: null
     };
 
     const $ = (id) => document.getElementById(id);
@@ -2413,31 +2415,115 @@
       return st === "pending_review" || st === "approved";
     }
 
+    /** Alineado con lib/manual-plan-next-payment.js (servidor). */
+    function effectiveAprClient(debt) {
+      if (!debt) return null;
+      const raw = debt.apr ?? debt.interest_rate;
+      if (raw == null || raw === "") return null;
+      const n = toNum(raw);
+      if (!Number.isFinite(n) || n <= 0) return null;
+      return n;
+    }
+
+    /** Copia local de pickPriorityDebtForManualPlan usando state.debts / state.plan. */
+    function pickManualPriorityDebtIdForDashboard() {
+      const debts = Array.isArray(state.debts) ? state.debts : [];
+      const plan = state.plan || {};
+      const strategy = String(plan.strategy || "avalanche").toLowerCase();
+      const active = debts.filter((d) => d && d.is_active !== false && toNum(d.balance) > 0);
+      if (!active.length) return null;
+
+      let priority = null;
+      if (strategy === "snowball") {
+        active.sort((a, b) => {
+          const db = toNum(a.balance) - toNum(b.balance);
+          if (db !== 0) return db;
+          const aprDiff =
+            toNum(b.apr ?? b.interest_rate ?? 0) - toNum(a.apr ?? a.interest_rate ?? 0);
+          if (aprDiff !== 0) return aprDiff;
+          return String(a.id).localeCompare(String(b.id));
+        });
+        priority = active[0];
+      } else {
+        const anyPositiveApr = active.some((d) => {
+          const ap = effectiveAprClient(d);
+          return ap != null && ap > 0;
+        });
+        if (anyPositiveApr) {
+          active.sort((a, b) => {
+            const aa = effectiveAprClient(a);
+            const bb = effectiveAprClient(b);
+            const va = aa != null && aa > 0 ? aa : -Infinity;
+            const vb = bb != null && bb > 0 ? bb : -Infinity;
+            if (vb !== va) return vb - va;
+            return toNum(b.balance) - toNum(a.balance);
+          });
+        } else {
+          active.sort((a, b) => {
+            const bal = toNum(b.balance) - toNum(a.balance);
+            if (bal !== 0) return bal;
+            const da = a.due_day != null ? Number(a.due_day) : 999;
+            const dbd = b.due_day != null ? Number(b.due_day) : 999;
+            if (da !== dbd) return da - dbd;
+            return String(a.id).localeCompare(String(b.id));
+          });
+        }
+        priority = active[0];
+      }
+
+      const tid = plan.payment_target_debt_id;
+      if (tid && String(tid).trim()) {
+        const locked = debts.find(
+          (d) =>
+            String(d.id) === String(tid).trim() &&
+            toNum(d.balance) > 0 &&
+            d.is_active !== false
+        );
+        if (locked) priority = locked;
+      }
+
+      return priority && priority.id != null ? String(priority.id) : null;
+    }
+
+    function intentManualFirstPriorityFlag(intent) {
+      const meta = normalizeIntentMetadata(intent.metadata);
+      return (
+        meta.manual_first_priority === true ||
+        String(meta.manual_first_priority || "").toLowerCase() === "true"
+      );
+    }
+
+    function intentDashboardSelectionTier(intent, computedDebtId) {
+      if (intentManualFirstPriorityFlag(intent)) return 4;
+      const src = String(intent?.source || "").toLowerCase();
+      const did = intent.debt_id != null ? String(intent.debt_id).trim() : "";
+      const cd = computedDebtId != null ? String(computedDebtId).trim() : "";
+      if (cd && did === cd && src !== "spinwheel") return 3;
+      if (cd && (src === "spinwheel" || src === "method" || src === "plaid")) return 0;
+      return 2;
+    }
+
     /**
-     * Intent destacado: accionables no-Spinwheel si hay; prioriza manual-first (metadata/source),
-     * luego created_at mas reciente (no mayor monto).
+     * Prioriza metadata.manual_first_priority; si hay deuda focal calculada, degrada Spinwheel/legacy.
+     * Empate: created_at mas reciente (no mayor monto).
      * @param {object[]} intents
      */
     function pickFeaturedIntentForDashboard(intents) {
       const list = Array.isArray(intents) ? intents.filter((x) => x) : [];
       if (!list.length) return null;
       const actionable = list.filter((intent) => intentStatusDashboardActionable(intent));
-      const manualPool = actionable.filter(
-        (intent) => String(intent?.source || "").toLowerCase() !== "spinwheel"
-      );
-      const pool = manualPool.length ? manualPool : actionable;
-      const rows = pool.map((intent) => {
-        const meta = normalizeIntentMetadata(intent.metadata);
-        const manualFirst =
-          meta.manual_first_priority === true ||
-          String(meta.manual_first_priority || "").toLowerCase() === "true" ||
-          String(intent?.source || "").toLowerCase() === "manual_first";
-        const createdAt = intent.created_at != null ? String(intent.created_at) : "";
-        return { intent, manualFirst, createdAt };
-      });
-      if (!rows.length) return null;
+      if (!actionable.length) return null;
+
+      const computedDebtId =
+        state.manualPriorityDebtId || pickManualPriorityDebtIdForDashboard();
+
+      const rows = actionable.map((intent) => ({
+        intent,
+        tier: intentDashboardSelectionTier(intent, computedDebtId),
+        createdAt: intent.created_at != null ? String(intent.created_at) : ""
+      }));
       rows.sort((a, b) => {
-        if (a.manualFirst !== b.manualFirst) return a.manualFirst ? -1 : 1;
+        if (a.tier !== b.tier) return b.tier - a.tier;
         return b.createdAt.localeCompare(a.createdAt);
       });
       return rows[0].intent;
@@ -2493,6 +2579,16 @@
       card.classList.remove("hidden");
 
       const intent = pickFeaturedIntentForDashboard(intents);
+      try {
+        console.log("[DebtYa dashboard selected intent]", {
+          id: intent?.id ?? null,
+          status: intent?.status ?? null,
+          source: intent?.source ?? null,
+          metadata: intent?.metadata ?? null,
+          debt_id: intent?.debt_id ?? null,
+          amount: intent ? intentPaymentAmount(intent) : null
+        });
+      } catch (_) {}
       const payAmt = intent ? intentPaymentAmount(intent) : 0;
 
       if (intent && payAmt > 0 && intentStatusDashboardActionable(intent)) {
@@ -4436,6 +4532,20 @@
       renderPlan();
     }
 
+    function ingestManualFirstReconcile(apiPayload) {
+      try {
+        const m = apiPayload && apiPayload.manual_first_reconcile;
+        if (!m || typeof m !== "object") return;
+        if (m.ok === false) return;
+        if (m.skipped && m.reason === "no_positive_balance_debt") {
+          state.manualPriorityDebtId = null;
+          return;
+        }
+        const pid = m.priorityDebtId != null ? m.priorityDebtId : m.priority_debt_id;
+        if (pid != null) state.manualPriorityDebtId = String(pid);
+      } catch (_) {}
+    }
+
     async function refreshIntents() {
       const res = await api("/payment-intents");
       let list = res && res.data;
@@ -5725,7 +5835,8 @@
       setLoading(btn, true, t("proc"));
       try {
         await refreshPlan();
-        await api("/payment-intents/build", { method: "POST", body: "{}" });
+        const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
+        ingestManualFirstReconcile(buildRes);
         await refreshIntents();
         updateNextActionGuide();
       } catch (err) {
@@ -5881,7 +5992,8 @@
         showMessage(globalMessage, t("plan_saved"), "success");
         await refreshPlan();
         try {
-          await api("/payment-intents/build", { method: "POST", body: "{}" });
+          const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
+          ingestManualFirstReconcile(buildRes);
           await refreshIntents();
           updateNextActionGuide();
         } catch (e) {
@@ -5947,11 +6059,12 @@
           const res = await api("/rules/apply", { method: "POST", body: "{}" });
           showMessage(globalMessage, `${t("rules_applied")}: ${res.created ?? 0}.`, "success");
           try {
-            await api("/payment-intents/build", { method: "POST", body: "{}" });
+            const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
+            ingestManualFirstReconcile(buildRes);
             await refreshIntents();
             updateNextActionGuide();
           } catch (e) {
-            void e;
+            showMessage(globalMessage, normalizeErrorMessage(e?.message || String(e)), "error");
           }
         } catch (err) {
           showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
@@ -5968,6 +6081,7 @@
       const pre = $("intentsBuildResultJson");
       try {
         const res = await api("/payment-intents/build", { method: "POST", body: "{}" });
+        ingestManualFirstReconcile(res);
         const spPanel = $("suggestedPaymentsPanel");
         const panelHidden = !!(spPanel && spPanel.classList.contains("hidden"));
         if (fb && pre) {

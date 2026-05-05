@@ -76,7 +76,17 @@ function registerPlanningRoutes(app, deps) {
 
       const manualFirst = await reconcileManualFirstPriorityIntent(req.user.id).catch((e) => {
         appDebug("reconcileManualFirstPriorityIntent:", e.message);
-        return { ok: false, error: e.message };
+        return {
+          ok: false,
+          skipped: false,
+          error: e.message,
+          canceled: 0,
+          intent_id: null,
+          priorityDebtId: null,
+          priorityDebtName: null,
+          amount: null,
+          strategy: null
+        };
       });
 
       return res.json({
@@ -112,7 +122,17 @@ function registerPlanningRoutes(app, deps) {
 
       const manualFirst = await reconcileManualFirstPriorityIntent(req.user.id).catch((e) => {
         appDebug("reconcileManualFirstPriorityIntent:", e.message);
-        return { ok: false, error: e.message };
+        return {
+          ok: false,
+          skipped: false,
+          error: e.message,
+          canceled: 0,
+          intent_id: null,
+          priorityDebtId: null,
+          priorityDebtName: null,
+          amount: null,
+          strategy: null
+        };
       });
 
       return res.json({

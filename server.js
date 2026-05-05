@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v84-1-force-single-priority-intent";
+const SERVER_VERSION = "debtya-2026-05-04-v84-2-debug-force-manual-first-plan";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2239,7 +2239,7 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
   };
 }
 
-/** Intents no-Spinwheel en estos estados se cancelan antes del intent único manual-first. */
+/** Intents en estos estados se cancelan (todas las fuentes) antes del intent único manual-first. */
 const MANUAL_FIRST_CANCEL_STATUSES = [
   "pending_review",
   "approved",
@@ -2247,16 +2247,13 @@ const MANUAL_FIRST_CANCEL_STATUSES = [
   "ready",
   "draft",
   "pending",
-  "queued"
+  "queued",
+  "proposed"
 ];
 
-function isSpinwheelIntentRow(row) {
-  return String(row?.source || "").toLowerCase() === "spinwheel";
-}
-
 /**
- * Tras build_intents_v2 (+ opcional Spinwheel): cancela intents abiertos no-Spinwheel y crea
- * un único pending_review hacia la deuda prioritaria (avalanche/snowball) para el MVP manual-first.
+ * Tras build_intents_v2 (+ opcional Spinwheel): cancela intents abiertos competidores y crea
+ * un único pending_review hacia la deuda prioritaria (solo metadata.manual_first_priority; sin source especial).
  */
 async function reconcileManualFirstPriorityIntent(userId) {
   const plan = await getCurrentPaymentPlan(userId);
@@ -2295,11 +2292,11 @@ async function reconcileManualFirstPriorityIntent(userId) {
 
   if (intentErr) throw intentErr;
 
-  const nonSw = (intentRows || []).filter((r) => !isSpinwheelIntentRow(r));
+  const toCancel = intentRows || [];
 
   if (!priorityDebt) {
-    if (nonSw.length) {
-      const ids = nonSw.map((r) => r.id);
+    if (toCancel.length) {
+      const ids = toCancel.map((r) => r.id);
       await supabaseAdmin
         .from("payment_intents")
         .update({
@@ -2315,21 +2312,26 @@ async function reconcileManualFirstPriorityIntent(userId) {
       priorityDebtId: null,
       priorityDebtName: null,
       amount: null,
-      canceledOldIntents: nonSw.length,
+      canceledOldIntents: toCancel.length,
       createdIntentId: null
     });
     return {
       ok: true,
       skipped: true,
       reason: "no_positive_balance_debt",
-      canceled: nonSw.length
+      canceled: toCancel.length,
+      intent_id: null,
+      priorityDebtId: null,
+      priorityDebtName: null,
+      amount: null,
+      strategy
     };
   }
 
   const amount = computeManualPriorityPaymentAmount(priorityDebt, plan, safeNumber);
   if (!(amount > 0)) {
-    if (nonSw.length) {
-      const ids = nonSw.map((r) => r.id);
+    if (toCancel.length) {
+      const ids = toCancel.map((r) => r.id);
       await supabaseAdmin
         .from("payment_intents")
         .update({
@@ -2345,20 +2347,25 @@ async function reconcileManualFirstPriorityIntent(userId) {
       priorityDebtId: priorityDebt.id,
       priorityDebtName: priorityDebt.name ?? null,
       amount: null,
-      canceledOldIntents: nonSw.length,
+      canceledOldIntents: toCancel.length,
       createdIntentId: null
     });
     return {
       ok: true,
       skipped: true,
       reason: "zero_recommended_amount",
-      priority_debt_id: priorityDebt.id,
-      canceled: nonSw.length
+      canceled: toCancel.length,
+      intent_id: null,
+      priorityDebtId: priorityDebt.id,
+      priorityDebtName: priorityDebt.name ?? null,
+      amount: null,
+      strategy,
+      debt_id: priorityDebt.id
     };
   }
 
-  if (nonSw.length) {
-    const ids = nonSw.map((r) => r.id);
+  if (toCancel.length) {
+    const ids = toCancel.map((r) => r.id);
     await supabaseAdmin
       .from("payment_intents")
       .update({
@@ -2380,7 +2387,6 @@ async function reconcileManualFirstPriorityIntent(userId) {
     execution_mode: "safe",
     execution_frequency: "daily",
     scheduled_for: today,
-    source: "manual_first",
     notes: "DebtYa — proximo pago recomendado (plan manual-first)",
     metadata: {
       manual_first_priority: true,
@@ -2404,17 +2410,20 @@ async function reconcileManualFirstPriorityIntent(userId) {
     priorityDebtId: priorityDebt.id,
     priorityDebtName: priorityDebt.name ?? null,
     amount,
-    canceledOldIntents: nonSw.length,
+    canceledOldIntents: toCancel.length,
     createdIntentId: ins?.id ?? null
   });
 
   return {
     ok: true,
+    skipped: false,
     intent_id: ins?.id,
     debt_id: priorityDebt.id,
+    priorityDebtId: priorityDebt.id,
+    priorityDebtName: priorityDebt.name ?? null,
     amount,
     strategy,
-    canceled: nonSw.length
+    canceled: toCancel.length
   };
 }
 
