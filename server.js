@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v86-5-confirm-manual-balance-strict";
+const SERVER_VERSION = "debtya-2026-05-07-v86-4-confirm-manual-rebuild-updates-total";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2328,6 +2328,7 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
       intent_id: updatedIntent.id,
       debt_id: String(debtId),
       amount_confirmed: amount,
+      old_balance: debtApply.previous_balance ?? null,
       new_balance: debtApply.next_balance ?? null,
       data: updatedIntent,
       debt_apply: debtApply

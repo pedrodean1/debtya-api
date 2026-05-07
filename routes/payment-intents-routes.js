@@ -125,6 +125,7 @@ function registerPaymentIntentRoutes(app, deps) {
         intent_id: result.intent_id,
         debt_id: result.debt_id,
         amount_confirmed: result.amount_confirmed,
+        old_balance: result.old_balance,
         new_balance: result.new_balance,
         debt_apply: result.debt_apply,
         data: result.data

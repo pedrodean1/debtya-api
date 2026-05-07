@@ -3225,36 +3225,47 @@
           paidBtn.onclick = async () => {
             paidBtn.disabled = true;
             let confirmedIntentId = "";
+            const featuredAtRender = intent;
             try {
-              let cur = pickFeaturedIntentForDashboard();
-              let intentId = cur && cur.id != null ? String(cur.id).trim() : "";
+              let intentForConfirm = featuredAtRender;
+              let intentId =
+                intentForConfirm && intentForConfirm.id != null
+                  ? String(intentForConfirm.id).trim()
+                  : "";
+              if (!intentId) {
+                const picked = pickFeaturedIntentForDashboard();
+                intentForConfirm = picked;
+                intentId = picked && picked.id != null ? String(picked.id).trim() : "";
+              }
               const list0 = paymentIntentListCoalesced();
               if (
                 intentId &&
                 !list0.some((i) => String(i?.id || "").trim() === intentId)
               ) {
                 await refreshIntents();
-                cur = pickFeaturedIntentForDashboard();
-                intentId = cur && cur.id != null ? String(cur.id).trim() : "";
+                const after = paymentIntentListCoalesced();
+                if (!after.some((i) => String(i?.id || "").trim() === intentId)) {
+                  const picked = pickFeaturedIntentForDashboard();
+                  intentForConfirm = picked;
+                  intentId = picked && picked.id != null ? String(picked.id).trim() : "";
+                }
               }
               if (!intentId) return;
               confirmedIntentId = intentId;
-              const meta = cur ? normalizeIntentMetadata(cur.metadata) : {};
-              const mfRebuild =
-                meta.manual_first_rebuild === true ||
-                String(meta.manual_first_rebuild || "").toLowerCase() === "true";
-              const mfPri =
-                meta.manual_first_priority === true ||
-                String(meta.manual_first_priority || "").toLowerCase() === "true";
+              const mdRaw = intentForConfirm && intentForConfirm.metadata;
+              const mdMeta =
+                mdRaw && typeof mdRaw === "object" && !Array.isArray(mdRaw)
+                  ? mdRaw
+                  : normalizeIntentMetadata(mdRaw);
               if (isPlanDebugUrl()) {
                 try {
                   console.log("[DebtYa manual confirm]", {
-                    intent_id: intentId,
-                    debt_id: cur?.debt_id ?? null,
-                    amount: cur ? intentPaymentAmount(cur) : null,
-                    source: cur?.source ?? null,
-                    manual_first_rebuild: mfRebuild,
-                    manual_first_priority: mfPri
+                    intent_id: intentForConfirm?.id,
+                    debt_id: intentForConfirm?.debt_id,
+                    amount: intentForConfirm ? intentPaymentAmount(intentForConfirm) : null,
+                    source: intentForConfirm?.source,
+                    manual_first_rebuild: mdMeta?.manual_first_rebuild,
+                    manual_first_priority: mdMeta?.manual_first_priority
                   });
                 } catch (_) {}
               }
@@ -3265,6 +3276,7 @@
               if (isPlanDebugUrl()) {
                 try {
                   console.log("[DebtYa manual confirm response]", {
+                    old_balance: confirmRes?.old_balance,
                     new_balance: confirmRes?.new_balance,
                     debt_apply: confirmRes?.debt_apply
                   });
@@ -3281,8 +3293,8 @@
                 );
               }
               applyManualConfirmDebtToLocalState(confirmRes);
-              state.pendingManualConfirmedIntentId = confirmedIntentId;
               showMessage(globalMessage, t("manual_pay_ok"), "success");
+              clearManualPriorityStateFull();
               await refreshDebts();
               await refreshIntents();
               await refreshTrace();
@@ -3291,7 +3303,7 @@
               updateNextActionGuide();
             } catch (e) {
               if (isAlreadyExecutedConfirmError(e) && confirmedIntentId) {
-                state.pendingManualConfirmedIntentId = confirmedIntentId;
+                clearManualPriorityStateFull();
                 await refreshDebts();
                 await refreshIntents();
                 await refreshTrace();
