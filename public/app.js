@@ -3222,12 +3222,42 @@
           paidBtn.textContent = t("dashboard_next_paid_btn");
           paidBtn.classList.remove("hidden", "btn-light");
           paidBtn.classList.add("btn-primary");
-          const intentId = intent && intent.id != null ? String(intent.id) : "";
           paidBtn.onclick = async () => {
-            if (!intentId) return;
             paidBtn.disabled = true;
-            const confirmedIntentId = intentId;
+            let confirmedIntentId = "";
             try {
+              let cur = pickFeaturedIntentForDashboard();
+              let intentId = cur && cur.id != null ? String(cur.id).trim() : "";
+              const list0 = paymentIntentListCoalesced();
+              if (
+                intentId &&
+                !list0.some((i) => String(i?.id || "").trim() === intentId)
+              ) {
+                await refreshIntents();
+                cur = pickFeaturedIntentForDashboard();
+                intentId = cur && cur.id != null ? String(cur.id).trim() : "";
+              }
+              if (!intentId) return;
+              confirmedIntentId = intentId;
+              const meta = cur ? normalizeIntentMetadata(cur.metadata) : {};
+              const mfRebuild =
+                meta.manual_first_rebuild === true ||
+                String(meta.manual_first_rebuild || "").toLowerCase() === "true";
+              const mfPri =
+                meta.manual_first_priority === true ||
+                String(meta.manual_first_priority || "").toLowerCase() === "true";
+              if (isPlanDebugUrl()) {
+                try {
+                  console.log("[DebtYa manual confirm]", {
+                    intent_id: intentId,
+                    debt_id: cur?.debt_id ?? null,
+                    amount: cur ? intentPaymentAmount(cur) : null,
+                    source: cur?.source ?? null,
+                    manual_first_rebuild: mfRebuild,
+                    manual_first_priority: mfPri
+                  });
+                } catch (_) {}
+              }
               await api(`/payment-intents/${encodeURIComponent(intentId)}/confirm-manual`, {
                 method: "POST",
                 body: "{}"
@@ -3236,13 +3266,17 @@
               showMessage(globalMessage, t("manual_pay_ok"), "success");
               await refreshDebts();
               await refreshIntents();
+              await refreshTrace();
+              renderStats();
               renderDashboardNextStep();
               updateNextActionGuide();
             } catch (e) {
-              if (isAlreadyExecutedConfirmError(e)) {
+              if (isAlreadyExecutedConfirmError(e) && confirmedIntentId) {
                 state.pendingManualConfirmedIntentId = confirmedIntentId;
                 await refreshDebts();
                 await refreshIntents();
+                await refreshTrace();
+                renderStats();
                 renderDashboardNextStep();
                 updateNextActionGuide();
                 showMessage(globalMessage, t("manual_pay_already_done"), "success");

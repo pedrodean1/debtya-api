@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v86-4-rebuild-state-ensure-hydrate";
+const SERVER_VERSION = "debtya-2026-05-04-v86-4-confirm-manual-rebuild-updates-total";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -404,9 +404,43 @@ function getIntentAmount(intent) {
   return safeNumber(meta.amount ?? meta.total_amount ?? meta.suggested_amount ?? meta.payment_amount ?? 0);
 }
 
+/** metadata jsonb a veces llega como string JSON desde el cliente o drivers. */
+function parseIntentMetadataField(raw) {
+  if (raw == null) return {};
+  if (typeof raw === "object" && !Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return {};
+    try {
+      const p = JSON.parse(s);
+      return typeof p === "object" && p && !Array.isArray(p) ? p : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 function getIntentMetadata(intent) {
-  if (!intent?.metadata || typeof intent.metadata !== "object") return {};
-  return intent.metadata;
+  return parseIntentMetadataField(intent?.metadata);
+}
+
+/**
+ * Tras UPDATE, la fila devuelta puede omitir montos; usar el monto resuelto antes del update.
+ */
+function intentRowForDebtBalanceApply(preRow, postRow, resolvedAmount) {
+  const post = postRow && typeof postRow === "object" ? postRow : {};
+  const pre = preRow && typeof preRow === "object" ? preRow : {};
+  const rowT = safeNumber(post.total_amount, 0);
+  const rowA = safeNumber(post.amount, 0);
+  const merged = rowT > 0 ? rowT : rowA > 0 ? rowA : safeNumber(resolvedAmount, 0);
+  const debtId = post.debt_id != null ? post.debt_id : pre.debt_id != null ? pre.debt_id : null;
+  return {
+    ...post,
+    debt_id: debtId,
+    total_amount: merged,
+    amount: merged
+  };
 }
 
 function isoDaysAgo(days) {
@@ -1844,7 +1878,7 @@ async function markIntentMetadata(intentId, userId, patch = {}) {
   if (currentError) throw currentError;
 
   const metadata = {
-    ...(current?.metadata || {}),
+    ...parseIntentMetadataField(current?.metadata),
     ...patch
   };
 
@@ -2118,7 +2152,8 @@ async function executeIntentDirect(userId, intentId) {
     appDebug("No se pudo registrar payment_execution:", executionError.message);
   }
 
-  const debtApply = await applyExecutedIntentToDebt(userId, updatedIntent).catch((e) => ({
+  const intentForDebt = intentRowForDebtBalanceApply(freshIntent, updatedIntent, amount);
+  const debtApply = await applyExecutedIntentToDebt(userId, intentForDebt).catch((e) => ({
     ok: false,
     error: e.message
   }));
@@ -2223,7 +2258,8 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
     appDebug("No se pudo registrar payment_execution (manual):", executionError.message);
   }
 
-  const debtApply = await applyExecutedIntentToDebt(userId, updatedIntent).catch((e) => ({
+  const intentForDebt = intentRowForDebtBalanceApply(intent, updatedIntent, amount);
+  const debtApply = await applyExecutedIntentToDebt(userId, intentForDebt).catch((e) => ({
     ok: false,
     error: e.message
   }));
