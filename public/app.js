@@ -3252,11 +3252,7 @@
               }
               if (!intentId) return;
               confirmedIntentId = intentId;
-              const mdRaw = intentForConfirm && intentForConfirm.metadata;
-              const mdMeta =
-                mdRaw && typeof mdRaw === "object" && !Array.isArray(mdRaw)
-                  ? mdRaw
-                  : normalizeIntentMetadata(mdRaw);
+              const mdMeta = normalizeIntentMetadata(intentForConfirm?.metadata);
               if (isPlanDebugUrl()) {
                 try {
                   console.log("[DebtYa manual confirm]", {
