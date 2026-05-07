@@ -2391,9 +2391,15 @@
     }
 
     function recordPlanBuildFailure(err) {
+      const msg = normalizeErrorMessage(err?.message || String(err || ""));
       state.lastPlanBuildResponse = {
         _requestError: true,
-        message: normalizeErrorMessage(err?.message || String(err || ""))
+        message: msg,
+        manual_first_reconcile: {
+          ok: false,
+          skipped: true,
+          error: msg
+        }
       };
       renderPlanDebugPanel();
     }
@@ -2424,8 +2430,31 @@
         String(fmeta.manual_first_priority || "").toLowerCase() === "true";
 
       let manualStr;
+      const rawReconcile =
+        raw &&
+        typeof raw === "object" &&
+        raw.manual_first_reconcile != null &&
+        typeof raw.manual_first_reconcile === "object"
+          ? raw.manual_first_reconcile
+          : null;
+
       if (!raw || typeof raw !== "object") {
         manualStr = "missing";
+      } else if (rawReconcile) {
+        const m = rawReconcile;
+        manualStr = {
+          ok: m.ok,
+          canceled: m.canceled,
+          intent_id: m.intent_id ?? null,
+          priorityDebtName: m.priorityDebtName ?? null,
+          amount: m.amount ?? null,
+          strategy: m.strategy ?? null
+        };
+        const pe = m.priorityDebtId != null ? m.priorityDebtId : m.priority_debt_id;
+        if (pe != null) manualStr.priorityDebtId = pe;
+        if (m.error != null && String(m.error).trim() !== "") manualStr.error = m.error;
+        if (m.skipped != null) manualStr.skipped = m.skipped;
+        if (m.reason != null) manualStr.reason = m.reason;
       } else if (raw._requestError) {
         manualStr = "missing";
       } else if (!Object.prototype.hasOwnProperty.call(raw, "manual_first_reconcile")) {
@@ -2457,7 +2486,6 @@
       if (
         raw &&
         typeof raw === "object" &&
-        !raw._requestError &&
         raw.manual_first_reconcile &&
         typeof raw.manual_first_reconcile === "object"
       ) {
@@ -2513,7 +2541,7 @@
       if (raw && typeof raw === "object" && raw._requestError) {
         out.build_http_error = raw.message;
       }
-      if (!raw || typeof raw !== "object") {
+      if (manualStr === "missing") {
         out.hint = "Guarda el plan, Refresh plan o Build intents para capturar POST /payment-intents/build.";
       }
 
@@ -4855,6 +4883,25 @@
       await refreshIntents();
     }
 
+    /**
+     * Unico flujo: POST /payment-intents/build + ingest + refresh intents + dashboard.
+     * @param {{ withRefreshPlan?: boolean }} options
+     * @returns {Promise<object|null>}
+     */
+    async function buildManualFirstPlanAndRefresh(options = {}) {
+      if (options.withRefreshPlan) {
+        await refreshPlan();
+      }
+      const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
+      recordPlanBuildResponse(buildRes);
+      await refreshIntentsWithManualPriorityRetry({
+        manualPriorityIntentId: state.manualPriorityIntentId
+      });
+      renderDashboardNextStep();
+      updateNextActionGuide();
+      return buildRes;
+    }
+
     async function refreshIntents() {
       const res = await api("/payment-intents");
       let list = res && res.data;
@@ -6144,14 +6191,7 @@
       const btn = $("refreshPlanBtn");
       setLoading(btn, true, t("proc"));
       try {
-        await refreshPlan();
-        const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
-        recordPlanBuildResponse(buildRes);
-        await refreshIntentsWithManualPriorityRetry({
-          manualPriorityIntentId: state.manualPriorityIntentId
-        });
-        renderDashboardNextStep();
-        updateNextActionGuide();
+        await buildManualFirstPlanAndRefresh({ withRefreshPlan: true });
       } catch (err) {
         recordPlanBuildFailure(err);
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
@@ -6306,13 +6346,7 @@
         showMessage(globalMessage, t("plan_saved"), "success");
         await refreshPlan();
         try {
-          const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
-          recordPlanBuildResponse(buildRes);
-          await refreshIntentsWithManualPriorityRetry({
-            manualPriorityIntentId: state.manualPriorityIntentId
-          });
-          renderDashboardNextStep();
-          updateNextActionGuide();
+          await buildManualFirstPlanAndRefresh();
         } catch (e) {
           recordPlanBuildFailure(e);
           showMessage(
@@ -6377,13 +6411,7 @@
           const res = await api("/rules/apply", { method: "POST", body: "{}" });
           showMessage(globalMessage, `${t("rules_applied")}: ${res.created ?? 0}.`, "success");
           try {
-            const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
-            recordPlanBuildResponse(buildRes);
-            await refreshIntentsWithManualPriorityRetry({
-              manualPriorityIntentId: state.manualPriorityIntentId
-            });
-            renderDashboardNextStep();
-            updateNextActionGuide();
+            await buildManualFirstPlanAndRefresh();
           } catch (e) {
             recordPlanBuildFailure(e);
             showMessage(globalMessage, normalizeErrorMessage(e?.message || String(e)), "error");
@@ -6402,8 +6430,7 @@
       const fb = $("intentsBuildFeedback");
       const pre = $("intentsBuildResultJson");
       try {
-        const res = await api("/payment-intents/build", { method: "POST", body: "{}" });
-        recordPlanBuildResponse(res);
+        const res = await buildManualFirstPlanAndRefresh();
         const spPanel = $("suggestedPaymentsPanel");
         const panelHidden = !!(spPanel && spPanel.classList.contains("hidden"));
         if (fb && pre) {
@@ -6417,11 +6444,6 @@
           }
         }
         showMessage(globalMessage, t("intents_built"), "success");
-        await refreshIntentsWithManualPriorityRetry({
-          manualPriorityIntentId: state.manualPriorityIntentId
-        });
-        renderDashboardNextStep();
-        updateNextActionGuide();
       } catch (err) {
         recordPlanBuildFailure(err);
         const spPanel = $("suggestedPaymentsPanel");

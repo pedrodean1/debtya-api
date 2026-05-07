@@ -92,40 +92,33 @@ function registerPlanningRoutes(app, deps) {
   });
 
   app.post("/payment-intents/build", requireUser, async (req, res) => {
+    /**
+     * Manual-first: sin build_intents_v2 ni Spinwheel append.
+     * Solo reconcileManualFirstPriorityIntent (cancela abiertos + un intent).
+     */
+    let manualFirst;
     try {
-      const result = await callRpc("build_intents_v2", {
-        p_user_id: req.user.id
-      });
-
-      await stampRecentIntentsFundingFromPlan(req.user.id).catch((e) => {
-        appDebug("stampRecentIntentsFundingFromPlan:", e.message);
-      });
-
-      const manualFirst = await reconcileManualFirstPriorityIntent(req.user.id).catch((e) => {
-        appDebug("reconcileManualFirstPriorityIntent:", e.message);
-        return {
-          ok: false,
-          skipped: false,
-          error: e.message,
-          canceled: 0,
-          intent_id: null,
-          priorityDebtId: null,
-          priorityDebtName: null,
-          amount: null,
-          strategy: null
-        };
-      });
-
-      return res.json({
-        ok: true,
-        data: result,
-        manual_first_reconcile: manualFirst
-      });
-    } catch (error) {
-      return jsonError(res, 500, "Error construyendo intents", {
-        details: error.message
-      });
+      manualFirst = await reconcileManualFirstPriorityIntent(req.user.id);
+    } catch (e) {
+      appDebug("reconcileManualFirstPriorityIntent:", e.message);
+      manualFirst = {
+        ok: false,
+        skipped: true,
+        error: e.message || String(e),
+        canceled: 0,
+        intent_id: null,
+        priorityDebtId: null,
+        priorityDebtName: null,
+        amount: null,
+        strategy: null
+      };
     }
+
+    return res.json({
+      ok: true,
+      data: null,
+      manual_first_reconcile: manualFirst
+    });
   });
 
   app.post("/approve_intent_v2", requireUser, async (req, res) => {

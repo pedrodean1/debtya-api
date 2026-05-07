@@ -2252,8 +2252,8 @@ const MANUAL_FIRST_CANCEL_STATUSES = [
 ];
 
 /**
- * Tras build_intents_v2 (+ opcional Spinwheel): cancela intents abiertos competidores y crea
- * un único pending_review hacia la deuda prioritaria (solo metadata.manual_first_priority; sin source especial).
+ * Cancela intents abiertos competidores y crea un único pending_review hacia la deuda prioritaria
+ * (metadata.manual_first_priority). Usado por POST /payment-intents/build sin RPC ni Spinwheel.
  */
 async function reconcileManualFirstPriorityIntent(userId) {
   const plan = await getCurrentPaymentPlan(userId);
@@ -2406,12 +2406,38 @@ async function reconcileManualFirstPriorityIntent(userId) {
 
   if (insErr) throw insErr;
 
+  const keepId = ins?.id;
+  let extraCanceled = 0;
+  if (keepId) {
+    const { data: stray, error: strayErr } = await supabaseAdmin
+      .from("payment_intents")
+      .select("id")
+      .eq("user_id", userId)
+      .in("status", MANUAL_FIRST_CANCEL_STATUSES)
+      .neq("id", keepId);
+    if (strayErr) throw strayErr;
+    const strayIds = (stray || []).map((r) => r.id).filter(Boolean);
+    if (strayIds.length) {
+      await supabaseAdmin
+        .from("payment_intents")
+        .update({
+          status: "canceled",
+          updated_at: now,
+          notes: "Mantenido solo intent manual-first (post-insert cleanup)"
+        })
+        .in("id", strayIds)
+        .eq("user_id", userId);
+      extraCanceled = strayIds.length;
+    }
+  }
+
   console.log("[DebtYa v84 priority intent]", {
     strategy,
     priorityDebtId: priorityDebt.id,
     priorityDebtName: priorityDebt.name ?? null,
     amount,
     canceledOldIntents: toCancel.length,
+    postInsertCleanupCanceled: extraCanceled,
     createdIntentId: ins?.id ?? null
   });
 
@@ -2424,7 +2450,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
     priorityDebtName: priorityDebt.name ?? null,
     amount,
     strategy,
-    canceled: toCancel.length
+    canceled: toCancel.length + extraCanceled
   };
 }
 
