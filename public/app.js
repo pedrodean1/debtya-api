@@ -2013,6 +2013,56 @@
       }
     }
 
+    /**
+     * Como api(), pero no lanza si el JSON trae ok: false (p. ej. POST /manual-plan/rebuild).
+     * Solo falla si HTTP !res.ok o red.
+     */
+    async function apiJsonLoose(path, options = {}) {
+      const token = await getAccessToken();
+      const headers = { ...(options.headers || {}) };
+      if (!(options.body instanceof FormData)) {
+        headers["Content-Type"] = headers["Content-Type"] || "application/json";
+      }
+      if (token && path !== "/health") headers.Authorization = `Bearer ${token}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        const res = await fetch(`${API_BASE}${path}`, {
+          method: options.method || "GET",
+          headers,
+          body: options.body,
+          signal: controller.signal
+        });
+        const text = await res.text();
+        let json;
+        try {
+          json = text ? JSON.parse(text) : {};
+        } catch {
+          json = { ok: false, raw: text };
+        }
+        if (!res.ok) {
+          const parts = collectJsonErrorParts(json);
+          let msg = [...new Set(parts)].join(" ? ").trim();
+          if (!msg) {
+            const raw = String(text || "").trim();
+            const looksHtml = raw.startsWith("<") || /<html[\s>]/i.test(raw) || /<body[\s>]/i.test(raw);
+            if (looksHtml) msg = `HTTP ${res.status} ${res.statusText || ""}`.trim();
+            else if (raw) msg = raw.length > 400 ? `${raw.slice(0, 397)}...` : raw;
+            else msg = `HTTP ${res.status}`;
+          }
+          throw new Error(rewriteThrownApiMessage(msg));
+        }
+        return json;
+      } catch (err) {
+        if (err.name === "AbortError") {
+          throw new Error(`Timeout en ${path}`);
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
     async function fetchGuideAssistantStatus() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -2390,6 +2440,41 @@
       renderPlanDebugPanel();
     }
 
+    /**
+     * Respuesta de POST /manual-plan/rebuild: estado manual-first + debug.
+     */
+    function applyManualPlanRebuildResponse(res) {
+      state.lastPlanBuildResponse = res && typeof res === "object" ? res : null;
+      ingestManualFirstReconcile(res);
+      const m = res?.manual_first_reconcile;
+      const intent = res?.intent;
+      if (res?.ok && m && m.ok && !m.skipped && intent && intent.id != null) {
+        state.manualPriorityIntentId = String(intent.id);
+        state.manualPriorityDebtId = intent.debt_id != null ? String(intent.debt_id) : null;
+        const amountNum = Number(m.amount);
+        state.manualPriorityAmount = Number.isFinite(amountNum) && amountNum >= 0 ? amountNum : 0;
+        const nameRaw = m.priorityDebtName ?? "esta deuda";
+        state.manualPriorityDebtName = String(nameRaw || "esta deuda").trim() || "esta deuda";
+        state.pendingManualConfirmedIntentId = null;
+        state.manualPriorityIntentSnapshot = {
+          id: String(intent.id),
+          debt_id: state.manualPriorityDebtId,
+          status: "pending_review",
+          amount: state.manualPriorityAmount,
+          total_amount: state.manualPriorityAmount,
+          metadata: {
+            manual_first_priority: true,
+            manual_first_rebuild: true
+          },
+          source: "manual_priority_snapshot",
+          creditor_name: state.manualPriorityDebtName,
+          debt_name: state.manualPriorityDebtName,
+          name: state.manualPriorityDebtName
+        };
+      }
+      renderPlanDebugPanel();
+    }
+
     function recordPlanBuildFailure(err) {
       const msg = normalizeErrorMessage(err?.message || String(err || ""));
       state.lastPlanBuildResponse = {
@@ -2428,6 +2513,9 @@
       const fMfPri =
         fmeta.manual_first_priority === true ||
         String(fmeta.manual_first_priority || "").toLowerCase() === "true";
+      const fMfRebuild =
+        fmeta.manual_first_rebuild === true ||
+        String(fmeta.manual_first_rebuild || "").toLowerCase() === "true";
 
       let manualStr;
       const rawReconcile =
@@ -2497,6 +2585,8 @@
       }
 
       const out = {
+        manual_plan_rebuild: !!(raw && raw.intent && raw.manual_first_reconcile),
+        rebuild_intent_id: raw && raw.intent && raw.intent.id != null ? raw.intent.id : null,
         manual_first_reconcile: manualStr,
         state_manual_priority: {
           manualPriorityIntentId: state.manualPriorityIntentId,
@@ -2528,6 +2618,7 @@
               debt_id: featured.debt_id ?? null,
               amount: intentPaymentAmount(featured),
               manual_first_priority: fMfPri,
+              manual_first_rebuild: fMfRebuild,
               source: featured.source != null && featured.source !== "" ? featured.source : null
             }
           : null,
@@ -2685,6 +2776,14 @@
       );
     }
 
+    function intentManualFirstRebuildFlag(intent) {
+      const meta = normalizeIntentMetadata(intent.metadata);
+      return (
+        meta.manual_first_rebuild === true ||
+        String(meta.manual_first_rebuild || "").toLowerCase() === "true"
+      );
+    }
+
     function intentExternalIntegrationSource(intent) {
       const src = String(intent?.source || "").toLowerCase();
       return (
@@ -2797,9 +2896,27 @@
         if (hit) return hit;
         return buildManualPrioritySnapshotIntent();
       }
+      const byRebuild = actionable.filter((i) => intentManualFirstRebuildFlag(i));
+      if (byRebuild.length) {
+        byRebuild.sort((a, b) => {
+          const ca = a.created_at != null ? String(a.created_at) : "";
+          const cb = b.created_at != null ? String(b.created_at) : "";
+          return cb.localeCompare(ca);
+        });
+        return byRebuild[0];
+      }
+      const byMf = actionable.filter((i) => intentManualFirstPriorityFlag(i));
+      if (byMf.length) {
+        byMf.sort((a, b) => {
+          const ca = a.created_at != null ? String(a.created_at) : "";
+          const cb = b.created_at != null ? String(b.created_at) : "";
+          return cb.localeCompare(ca);
+        });
+        return byMf[0];
+      }
       const rows = actionable.map((intent) => ({
         intent,
-        tier: intentManualFirstPriorityFlag(intent) ? 2 : 1,
+        tier: !intentExternalIntegrationSource(intent) ? 2 : 1,
         createdAt: intent.created_at != null ? String(intent.created_at) : ""
       }));
       rows.sort((a, b) => {
@@ -4884,16 +5001,21 @@
     }
 
     /**
-     * Unico flujo: POST /payment-intents/build + ingest + refresh intents + dashboard.
-     * @param {{ withRefreshPlan?: boolean }} options
+     * Flujo manual-first: POST /manual-plan/rebuild + estado + debts + intents + dashboard.
+     * @param {{ withRefreshPlan?: boolean, body?: object }} options
      * @returns {Promise<object|null>}
      */
     async function buildManualFirstPlanAndRefresh(options = {}) {
       if (options.withRefreshPlan) {
         await refreshPlan();
       }
-      const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
-      recordPlanBuildResponse(buildRes);
+      const bodyPayload = options.body != null && typeof options.body === "object" ? options.body : {};
+      const buildRes = await apiJsonLoose("/manual-plan/rebuild", {
+        method: "POST",
+        body: JSON.stringify(bodyPayload)
+      });
+      applyManualPlanRebuildResponse(buildRes);
+      await refreshDebts();
       await refreshIntentsWithManualPriorityRetry({
         manualPriorityIntentId: state.manualPriorityIntentId
       });
