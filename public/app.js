@@ -1617,6 +1617,8 @@
       manualPriorityIntentId: null,
       /** Snapshot cliente para fallback manual-first (se invalida al ejecutar intent real). */
       manualPriorityIntentSnapshot: null,
+      /** Intent confirmado manualmente pendiente de validacion executed en refresh. */
+      pendingManualConfirmedIntentId: null,
       /** Monto de manual_first_reconcile para fallback de dashboard. */
       manualPriorityAmount: null,
       /** Nombre de deuda de manual_first_reconcile para fallback de dashboard. */
@@ -2384,6 +2386,7 @@
 
     function recordPlanBuildResponse(res) {
       state.lastPlanBuildResponse = res && typeof res === "object" ? res : null;
+      ingestManualFirstReconcile(res);
       renderPlanDebugPanel();
     }
 
@@ -2665,7 +2668,13 @@
       const snap = state.manualPriorityIntentSnapshot;
       if (snap && typeof snap === "object") {
         const snapStatus = String(snap.status || "").toLowerCase().trim();
-        if (snapStatus === "pending_review" || snapStatus === "approved") return snap;
+        const smeta = normalizeIntentMetadata(snap.metadata);
+        const snapManualFirst =
+          smeta.manual_first_priority === true ||
+          String(smeta.manual_first_priority || "").toLowerCase() === "true";
+        if ((snapStatus === "pending_review" || snapStatus === "approved") && snapManualFirst) {
+          return snap;
+        }
       }
       const amountNum = Number(state.manualPriorityAmount);
       const amount = Number.isFinite(amountNum) && amountNum > 0 ? amountNum : 0;
@@ -2677,7 +2686,9 @@
         total_amount: amount,
         metadata: { manual_first_priority: true },
         source: "manual_priority_snapshot",
-        creditor_name: state.manualPriorityDebtName || null
+        creditor_name: state.manualPriorityDebtName || null,
+        debt_name: state.manualPriorityDebtName || null,
+        name: state.manualPriorityDebtName || null
       };
     }
 
@@ -2716,11 +2727,17 @@
       const list = Array.isArray(intents) ? intents : [];
       const byId = list.find((i) => String(i?.id || "").trim() === forcedIdRaw) || null;
       const status = String(byId?.status || "").toLowerCase().trim();
-      if (!byId || !intentStatusDashboardActionable(byId) || isTerminalIntentStatus(status)) {
+      const pendingConfirmedRaw =
+        state.pendingManualConfirmedIntentId != null
+          ? String(state.pendingManualConfirmedIntentId).trim()
+          : "";
+      const canClearAfterConfirm = pendingConfirmedRaw && pendingConfirmedRaw === forcedIdRaw;
+      if (canClearAfterConfirm && byId && status === "executed") {
         clearManualPrioritySelection({
           confirmedIntentId: forcedIdRaw,
           clearDebtAnchorIfMatches: true
         });
+        state.pendingManualConfirmedIntentId = null;
       }
     }
 
@@ -2729,6 +2746,17 @@
       return (
         msg.includes("already executed") ||
         (msg.includes("ya est") && msg.includes("ejecutado"))
+      );
+    }
+
+    function isManualPrioritySnapshotActionable(intent) {
+      if (!intent || String(intent?.source || "").toLowerCase() !== "manual_priority_snapshot") return false;
+      const st = String(intent.status || "").toLowerCase().trim();
+      if (st !== "pending_review") return false;
+      const meta = normalizeIntentMetadata(intent.metadata);
+      return (
+        meta.manual_first_priority === true ||
+        String(meta.manual_first_priority || "").toLowerCase() === "true"
       );
     }
 
@@ -2749,22 +2777,14 @@
       const forcedDebtRaw =
         state.manualPriorityDebtId != null ? String(state.manualPriorityDebtId).trim() : "";
       const hasManualAnchor = !!(forcedIdRaw || forcedDebtRaw);
-      if (forcedIdRaw) {
-        const forcedInList = list.find((i) => String(i?.id || "").trim() === forcedIdRaw) || null;
-        if (forcedInList && isTerminalIntentStatus(forcedInList.status)) {
-          clearManualPrioritySelection({
-            confirmedIntentId: forcedIdRaw,
-            clearDebtAnchorIfMatches: true
-          });
-        }
-      }
       if (!actionable.length) {
-        if (hasManualAnchor && !forcedIdRaw) return buildManualPrioritySnapshotIntent();
+        if (hasManualAnchor) return buildManualPrioritySnapshotIntent();
         return null;
       }
       if (forcedIdRaw) {
         const hit = actionable.find((i) => String(i?.id || "").trim() === forcedIdRaw);
         if (hit) return hit;
+        return buildManualPrioritySnapshotIntent();
       }
       if (forcedDebtRaw) {
         const debtMatches = actionable.filter((i) => {
@@ -2782,10 +2802,8 @@
           });
           return debtMatches[0];
         }
-        if (!forcedIdRaw) return buildManualPrioritySnapshotIntent();
-        return null;
+        return buildManualPrioritySnapshotIntent();
       }
-      if (forcedIdRaw) return null;
 
       const anchorDebtRaw =
         state.manualPriorityDebtId != null ? String(state.manualPriorityDebtId).trim() : "";
@@ -2879,7 +2897,9 @@
       } catch (_) {}
       const payAmt = intent ? intentPaymentAmount(intent) : 0;
 
-      if (intent && payAmt > 0 && intentStatusDashboardActionable(intent)) {
+      const dashboardIntentActionable =
+        !!intent && (intentStatusDashboardActionable(intent) || isManualPrioritySnapshotActionable(intent));
+      if (dashboardIntentActionable && payAmt > 0) {
         const amount = fmtMoney(payAmt);
         let debtLabel = describeIntentPayToward(intent);
         if (!debtLabel || debtLabel === "?" || !String(debtLabel).trim()) {
@@ -2913,10 +2933,7 @@
                 method: "POST",
                 body: "{}"
               });
-              clearManualPrioritySelection({
-                confirmedIntentId,
-                clearDebtAnchorIfMatches: true
-              });
+              state.pendingManualConfirmedIntentId = confirmedIntentId;
               showMessage(globalMessage, t("manual_pay_ok"), "success");
               await refreshDebts();
               await refreshIntents();
@@ -2924,10 +2941,7 @@
               updateNextActionGuide();
             } catch (e) {
               if (isAlreadyExecutedConfirmError(e)) {
-                clearManualPrioritySelection({
-                  confirmedIntentId,
-                  clearDebtAnchorIfMatches: true
-                });
+                state.pendingManualConfirmedIntentId = confirmedIntentId;
                 await refreshDebts();
                 await refreshIntents();
                 renderDashboardNextStep();
@@ -4849,40 +4863,36 @@
           state.manualPriorityDebtId = null;
           state.manualPriorityIntentId = null;
           state.manualPriorityIntentSnapshot = null;
+          state.pendingManualConfirmedIntentId = null;
           state.manualPriorityAmount = null;
           state.manualPriorityDebtName = null;
           return;
         }
-        const pid = m.priorityDebtId != null ? m.priorityDebtId : m.priority_debt_id;
+        const pid = m.priorityDebtId ?? m.priority_debt_id ?? m.debt_id ?? null;
         const iidRaw = m.intent_id ?? m.intentId ?? m.id ?? null;
         const iid = iidRaw != null ? String(iidRaw).trim() : "";
         const amountNum = Number(m.amount);
-        if (Number.isFinite(amountNum) && amountNum >= 0) {
-          state.manualPriorityAmount = amountNum;
-        }
-        const debtNameRaw = m.priorityDebtName ?? m.priority_debt_name ?? null;
-        if (debtNameRaw != null && String(debtNameRaw).trim() !== "") {
-          state.manualPriorityDebtName = String(debtNameRaw).trim();
-        }
         if (m.ok === true && iid && !m.skipped) {
           state.manualPriorityIntentId = iid;
+          state.pendingManualConfirmedIntentId = null;
           if (pid != null) state.manualPriorityDebtId = String(pid);
+          state.manualPriorityAmount = Number.isFinite(amountNum) && amountNum >= 0 ? amountNum : 0;
+          const debtNameRaw = m.priorityDebtName ?? m.priority_debt_name ?? "esta deuda";
+          state.manualPriorityDebtName = String(debtNameRaw || "esta deuda").trim() || "esta deuda";
           state.manualPriorityIntentSnapshot = {
             id: iid,
             debt_id: pid != null ? String(pid) : null,
             status: "pending_review",
-            amount: Number.isFinite(amountNum) && amountNum > 0 ? amountNum : 0,
-            total_amount: Number.isFinite(amountNum) && amountNum > 0 ? amountNum : 0,
+            amount: state.manualPriorityAmount,
+            total_amount: state.manualPriorityAmount,
             metadata: { manual_first_priority: true },
             source: "manual_priority_snapshot",
-            creditor_name:
-              debtNameRaw != null && String(debtNameRaw).trim() !== ""
-                ? String(debtNameRaw).trim()
-                : null
+            creditor_name: state.manualPriorityDebtName,
+            debt_name: state.manualPriorityDebtName,
+            name: state.manualPriorityDebtName
           };
           return;
         }
-        if (pid != null) state.manualPriorityDebtId = String(pid);
       } catch (_) {}
     }
 
@@ -6193,7 +6203,6 @@
         await refreshPlan();
         const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
         recordPlanBuildResponse(buildRes);
-        ingestManualFirstReconcile(buildRes);
         await refreshIntentsWithManualPriorityRetry({
           manualPriorityIntentId: state.manualPriorityIntentId
         });
@@ -6355,7 +6364,6 @@
         try {
           const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
           recordPlanBuildResponse(buildRes);
-          ingestManualFirstReconcile(buildRes);
           await refreshIntentsWithManualPriorityRetry({
             manualPriorityIntentId: state.manualPriorityIntentId
           });
@@ -6427,7 +6435,6 @@
           try {
             const buildRes = await api("/payment-intents/build", { method: "POST", body: "{}" });
             recordPlanBuildResponse(buildRes);
-            ingestManualFirstReconcile(buildRes);
             await refreshIntentsWithManualPriorityRetry({
               manualPriorityIntentId: state.manualPriorityIntentId
             });
@@ -6453,7 +6460,6 @@
       try {
         const res = await api("/payment-intents/build", { method: "POST", body: "{}" });
         recordPlanBuildResponse(res);
-        ingestManualFirstReconcile(res);
         const spPanel = $("suggestedPaymentsPanel");
         const panelHidden = !!(spPanel && spPanel.classList.contains("hidden"));
         if (fb && pre) {
