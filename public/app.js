@@ -1623,7 +1623,7 @@
       manualPriorityAmount: null,
       /** Nombre de deuda de manual_first_reconcile para fallback de dashboard. */
       manualPriorityDebtName: null,
-      /** Ultima respuesta de POST /payment-intents/build (solo metadata para ?debugPlan=1). */
+      /** Ultima respuesta de POST /manual-plan/rebuild (metadata ?debugPlan=1). */
       lastPlanBuildResponse: null
     };
 
@@ -2478,7 +2478,9 @@
     function recordPlanBuildFailure(err) {
       const msg = normalizeErrorMessage(err?.message || String(err || ""));
       state.lastPlanBuildResponse = {
+        ok: false,
         _requestError: true,
+        manual_plan_rebuild: false,
         message: msg,
         manual_first_reconcile: {
           ok: false,
@@ -2584,8 +2586,15 @@
           null;
       }
 
+      const manualRebuildFlag =
+        raw &&
+        typeof raw === "object" &&
+        (raw.manual_plan_rebuild === true ||
+          (raw.ok === true &&
+            raw.manual_first_reconcile != null &&
+            typeof raw.manual_first_reconcile === "object"));
       const out = {
-        manual_plan_rebuild: !!(raw && raw.intent && raw.manual_first_reconcile),
+        manual_plan_rebuild: manualRebuildFlag,
         rebuild_intent_id: raw && raw.intent && raw.intent.id != null ? raw.intent.id : null,
         manual_first_reconcile: manualStr,
         state_manual_priority: {
@@ -2633,7 +2642,8 @@
         out.build_http_error = raw.message;
       }
       if (manualStr === "missing") {
-        out.hint = "Guarda el plan, Refresh plan o Build intents para capturar POST /payment-intents/build.";
+        out.hint =
+          "Usa Guardar plan, Actualizar linea de proximo pago o Calcular proximo pago para llamar POST /manual-plan/rebuild.";
       }
 
       body.textContent = JSON.stringify(out, null, 2);
@@ -2884,45 +2894,49 @@
     function pickFeaturedIntentForDashboard(intents) {
       const list = Array.isArray(intents) ? intents.filter((x) => x) : [];
       const actionable = list.filter((intent) => intentStatusDashboardActionable(intent));
-
       const forcedIdRaw =
         state.manualPriorityIntentId != null ? String(state.manualPriorityIntentId).trim() : "";
+
       if (!actionable.length) {
         if (forcedIdRaw) return buildManualPrioritySnapshotIntent();
         return null;
       }
+
+      const manualFirstPool = actionable.filter(
+        (i) =>
+          intentManualFirstRebuildFlag(i) ||
+          intentManualFirstPriorityFlag(i) ||
+          (forcedIdRaw && String(i?.id || "").trim() === forcedIdRaw)
+      );
+      if (manualFirstPool.length) {
+        manualFirstPool.sort((a, b) => {
+          const rank = (x) => {
+            if (intentManualFirstRebuildFlag(x)) return 0;
+            if (intentManualFirstPriorityFlag(x)) return 1;
+            return 2;
+          };
+          const d = rank(a) - rank(b);
+          if (d !== 0) return d;
+          const ca = a.created_at != null ? String(a.created_at) : "";
+          const cb = b.created_at != null ? String(b.created_at) : "";
+          return cb.localeCompare(ca);
+        });
+        return manualFirstPool[0];
+      }
+
       if (forcedIdRaw) {
         const hit = actionable.find((i) => String(i?.id || "").trim() === forcedIdRaw);
         if (hit) return hit;
         return buildManualPrioritySnapshotIntent();
       }
-      const byRebuild = actionable.filter((i) => intentManualFirstRebuildFlag(i));
-      if (byRebuild.length) {
-        byRebuild.sort((a, b) => {
-          const ca = a.created_at != null ? String(a.created_at) : "";
-          const cb = b.created_at != null ? String(b.created_at) : "";
-          return cb.localeCompare(ca);
-        });
-        return byRebuild[0];
-      }
-      const byMf = actionable.filter((i) => intentManualFirstPriorityFlag(i));
-      if (byMf.length) {
-        byMf.sort((a, b) => {
-          const ca = a.created_at != null ? String(a.created_at) : "";
-          const cb = b.created_at != null ? String(b.created_at) : "";
-          return cb.localeCompare(ca);
-        });
-        return byMf[0];
-      }
-      const rows = actionable.map((intent) => ({
+
+      const nonIntegration = actionable.filter((i) => !intentExternalIntegrationSource(i));
+      const pool = nonIntegration.length ? nonIntegration : actionable;
+      const rows = pool.map((intent) => ({
         intent,
-        tier: !intentExternalIntegrationSource(intent) ? 2 : 1,
         createdAt: intent.created_at != null ? String(intent.created_at) : ""
       }));
-      rows.sort((a, b) => {
-        if (a.tier !== b.tier) return b.tier - a.tier;
-        return b.createdAt.localeCompare(a.createdAt);
-      });
+      rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       return rows[0].intent;
     }
 
@@ -3103,7 +3117,17 @@
         planBtn.textContent = t("dashboard_next_all_clear_update_plan_btn");
         planBtn.classList.remove("hidden", "btn-primary");
         planBtn.classList.add("btn-light");
-        planBtn.onclick = () => {
+        planBtn.onclick = async () => {
+          planBtn.disabled = true;
+          try {
+            await rebuildManualPlanAndRefresh({ withRefreshPlan: true });
+            showMessage(globalMessage, t("intents_built"), "success");
+          } catch (e) {
+            recordPlanBuildFailure(e);
+            showMessage(globalMessage, normalizeErrorMessage(e?.message || String(e)), "error");
+          } finally {
+            planBtn.disabled = false;
+          }
           setNav("setup");
           window.requestAnimationFrame(() => scrollToAppSection("paymentPlanSection"));
         };
@@ -5000,25 +5024,64 @@
       await refreshIntents();
     }
 
+    function collectPlanRebuildBodyFromForm() {
+      return {
+        strategy: String($("planStrategy")?.value || ""),
+        automation_mode: String($("planMode")?.value || ""),
+        auto_mode: String($("planMode")?.value || ""),
+        monthly_budget_default: Number($("planMonthlyBudget")?.value || 0),
+        monthly_budget: Number($("planMonthlyBudget")?.value || 0),
+        extra_payment_default: Number($("planExtraPayment")?.value || 0),
+        funding_plaid_account_id: $("planFundingAccount")?.value?.trim() || null,
+        payment_target_debt_id: $("planPaydownDebt")?.value?.trim() || null
+      };
+    }
+
+    function reorderPaymentIntentsForManualFirst(list) {
+      const arr = Array.isArray(list) ? list.slice() : [];
+      const pid =
+        state.manualPriorityIntentId != null ? String(state.manualPriorityIntentId).trim() : "";
+      arr.sort((a, b) => {
+        const score = (row) => {
+          const id = String(row?.id || "").trim();
+          const m = normalizeIntentMetadata(row?.metadata);
+          const mr =
+            m.manual_first_rebuild === true ||
+            String(m.manual_first_rebuild || "").toLowerCase() === "true";
+          const mp =
+            m.manual_first_priority === true ||
+            String(m.manual_first_priority || "").toLowerCase() === "true";
+          if (pid && id === pid) return 0;
+          if (mr) return 1;
+          if (mp) return 2;
+          return 50;
+        };
+        return score(a) - score(b);
+      });
+      return arr;
+    }
+
     /**
-     * Flujo manual-first: POST /manual-plan/rebuild + estado + debts + intents + dashboard.
+     * Fuente de verdad manual-first: POST /manual-plan/rebuild + intents + debts + dashboard.
      * @param {{ withRefreshPlan?: boolean, body?: object }} options
-     * @returns {Promise<object|null>}
      */
-    async function buildManualFirstPlanAndRefresh(options = {}) {
+    async function rebuildManualPlanAndRefresh(options = {}) {
       if (options.withRefreshPlan) {
         await refreshPlan();
       }
-      const bodyPayload = options.body != null && typeof options.body === "object" ? options.body : {};
+      const bodyPayload =
+        options.body != null && typeof options.body === "object"
+          ? options.body
+          : collectPlanRebuildBodyFromForm();
       const buildRes = await apiJsonLoose("/manual-plan/rebuild", {
         method: "POST",
         body: JSON.stringify(bodyPayload)
       });
       applyManualPlanRebuildResponse(buildRes);
-      await refreshDebts();
       await refreshIntentsWithManualPriorityRetry({
         manualPriorityIntentId: state.manualPriorityIntentId
       });
+      await refreshDebts();
       renderDashboardNextStep();
       updateNextActionGuide();
       return buildRes;
@@ -5032,6 +5095,7 @@
         else if (res?.data != null && typeof res.data === "object" && Array.isArray(res.data.intents)) list = res.data.intents;
         else list = [];
       }
+      list = reorderPaymentIntentsForManualFirst(list);
       state.intents = list;
       state.paymentIntents = list;
       syncManualPriorityWithIntents(list);
@@ -6313,7 +6377,7 @@
       const btn = $("refreshPlanBtn");
       setLoading(btn, true, t("proc"));
       try {
-        await buildManualFirstPlanAndRefresh({ withRefreshPlan: true });
+        await rebuildManualPlanAndRefresh();
       } catch (err) {
         recordPlanBuildFailure(err);
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
@@ -6466,9 +6530,8 @@
         };
         await api("/payment-plan", { method: "POST", body: JSON.stringify(payload) });
         showMessage(globalMessage, t("plan_saved"), "success");
-        await refreshPlan();
         try {
-          await buildManualFirstPlanAndRefresh();
+          await rebuildManualPlanAndRefresh({ body: payload });
         } catch (e) {
           recordPlanBuildFailure(e);
           showMessage(
@@ -6477,6 +6540,7 @@
             "error"
           );
         }
+        await refreshPlan();
       } catch (err) {
         showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
       }
@@ -6533,7 +6597,7 @@
           const res = await api("/rules/apply", { method: "POST", body: "{}" });
           showMessage(globalMessage, `${t("rules_applied")}: ${res.created ?? 0}.`, "success");
           try {
-            await buildManualFirstPlanAndRefresh();
+            await rebuildManualPlanAndRefresh();
           } catch (e) {
             recordPlanBuildFailure(e);
             showMessage(globalMessage, normalizeErrorMessage(e?.message || String(e)), "error");
@@ -6552,7 +6616,7 @@
       const fb = $("intentsBuildFeedback");
       const pre = $("intentsBuildResultJson");
       try {
-        const res = await buildManualFirstPlanAndRefresh();
+        const res = await rebuildManualPlanAndRefresh();
         const spPanel = $("suggestedPaymentsPanel");
         const panelHidden = !!(spPanel && spPanel.classList.contains("hidden"));
         if (fb && pre) {

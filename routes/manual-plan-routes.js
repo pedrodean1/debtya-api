@@ -27,6 +27,7 @@ function registerManualPlanRoutes(app, deps) {
       appDebug("executeManualPlanRebuild:", e.message);
       return res.json({
         ok: false,
+        manual_plan_rebuild: false,
         manual_first_reconcile: {
           ok: false,
           skipped: true,

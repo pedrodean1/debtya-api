@@ -162,6 +162,7 @@ describe("lib/manual-plan-rebuild", () => {
     });
 
     assert.equal(out.ok, true);
+    assert.equal(out.manual_plan_rebuild, true);
     assert.equal(out.manual_first_reconcile.priorityDebtId, debtB);
     assert.equal(out.intent.debt_id, debtB);
   });
@@ -217,6 +218,7 @@ describe("lib/manual-plan-rebuild", () => {
       isUuid
     });
 
+    assert.equal(out.manual_plan_rebuild, true);
     assert.equal(out.manual_first_reconcile.priorityDebtId, debtA);
     assert.equal(out.intent.debt_id, debtA);
   });
