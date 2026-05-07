@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v86-4-confirm-manual-rebuild-updates-total";
+const SERVER_VERSION = "debtya-2026-05-04-v86-5-confirm-manual-balance-strict";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -1897,11 +1897,25 @@ async function markIntentMetadata(intentId, userId, patch = {}) {
   return data;
 }
 
-async function applyExecutedIntentToDebt(userId, intentInput) {
+async function applyExecutedIntentToDebt(userId, intentInput, options = {}) {
   const intent = intentInput;
-  const intentId = intent?.id || null;
-  const debtId = intent?.debt_id || intent?.target_debt_id || null;
-  const amount = getIntentAmount(intent);
+  const intentId = intent?.id != null ? String(intent.id).trim() : null;
+  const debtIdRaw = intent?.debt_id || intent?.target_debt_id || null;
+  const debtId = debtIdRaw != null ? String(debtIdRaw).trim() : null;
+
+  let amount = 0;
+  const ov =
+    options &&
+    typeof options === "object" &&
+    options.amountOverride != null &&
+    options.amountOverride !== ""
+      ? Number(options.amountOverride)
+      : NaN;
+  if (Number.isFinite(ov) && ov > 0) {
+    amount = ov;
+  } else {
+    amount = getIntentAmount(intent);
+  }
   const metadata = getIntentMetadata(intent);
 
   if (!intentId || !isUuid(intentId)) {
@@ -2153,7 +2167,9 @@ async function executeIntentDirect(userId, intentId) {
   }
 
   const intentForDebt = intentRowForDebtBalanceApply(freshIntent, updatedIntent, amount);
-  const debtApply = await applyExecutedIntentToDebt(userId, intentForDebt).catch((e) => ({
+  const debtApply = await applyExecutedIntentToDebt(userId, intentForDebt, {
+    amountOverride: amount
+  }).catch((e) => ({
     ok: false,
     error: e.message
   }));
@@ -2210,8 +2226,9 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
     throw err;
   }
 
-  const debtId = intent.debt_id || intent.target_debt_id || null;
-  if (!debtId || !isUuid(String(debtId))) {
+  const debtIdRaw = intent.debt_id || intent.target_debt_id || null;
+  const debtId = debtIdRaw != null ? String(debtIdRaw).trim() : null;
+  if (!debtId || !isUuid(debtId)) {
     const err = new Error("El intent no tiene una deuda asociada válida.");
     err.status = 400;
     throw err;
@@ -2240,39 +2257,85 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
 
   if (updateIntentError) throw updateIntentError;
 
-  const executionPayload = {
-    user_id: userId,
-    payment_intent_id: updatedIntent.id,
-    amount,
-    status: "executed",
-    executed_at: now,
-    created_at: now,
-    updated_at: now
+  const previousSnapshot = {
+    status: intent.status,
+    executed_at: intent.executed_at ?? null,
+    metadata: intent.metadata
   };
 
-  const { error: executionError } = await supabaseAdmin
-    .from("payment_executions")
-    .upsert(executionPayload, { onConflict: "payment_intent_id" });
-
-  if (executionError) {
-    appDebug("No se pudo registrar payment_execution (manual):", executionError.message);
+  let rolledBack = false;
+  async function rollbackManualExecute() {
+    if (rolledBack) return;
+    rolledBack = true;
+    const rbNow = new Date().toISOString();
+    await supabaseAdmin
+      .from("payment_intents")
+      .update({
+        status: previousSnapshot.status,
+        executed_at: previousSnapshot.executed_at,
+        metadata: previousSnapshot.metadata,
+        updated_at: rbNow
+      })
+      .eq("id", intentId)
+      .eq("user_id", userId);
+    await supabaseAdmin.from("payment_executions").delete().eq("payment_intent_id", intentId);
   }
 
-  const intentForDebt = intentRowForDebtBalanceApply(intent, updatedIntent, amount);
-  const debtApply = await applyExecutedIntentToDebt(userId, intentForDebt).catch((e) => ({
-    ok: false,
-    error: e.message
-  }));
+  try {
+    const executionPayload = {
+      user_id: userId,
+      payment_intent_id: updatedIntent.id,
+      amount,
+      status: "executed",
+      executed_at: now,
+      created_at: now,
+      updated_at: now
+    };
 
-  return {
-    ok: true,
-    intent_id: updatedIntent.id,
-    debt_id: String(debtId),
-    amount_confirmed: amount,
-    new_balance: debtApply.next_balance ?? null,
-    data: updatedIntent,
-    debt_apply: debtApply
-  };
+    const { error: executionError } = await supabaseAdmin
+      .from("payment_executions")
+      .upsert(executionPayload, { onConflict: "payment_intent_id" });
+
+    if (executionError) {
+      appDebug("No se pudo registrar payment_execution (manual):", executionError.message);
+    }
+
+    const intentForDebt = intentRowForDebtBalanceApply(intent, updatedIntent, amount);
+    const debtApply = await applyExecutedIntentToDebt(userId, intentForDebt, {
+      amountOverride: amount
+    });
+
+    const appliedOk = debtApply && debtApply.ok === true && debtApply.skipped !== true;
+    const idempotentOk =
+      debtApply &&
+      debtApply.ok === true &&
+      debtApply.skipped === true &&
+      debtApply.reason === "ya_aplicado";
+    if (!appliedOk && !idempotentOk) {
+      const detail =
+        (debtApply && (debtApply.reason || debtApply.error)) || "rebaja_no_aplicada";
+      await rollbackManualExecute();
+      const err = new Error(
+        `No se pudo rebajar el balance de la deuda tras confirmar el pago (${detail}).`
+      );
+      err.status = 409;
+      err.debt_apply = debtApply;
+      throw err;
+    }
+
+    return {
+      ok: true,
+      intent_id: updatedIntent.id,
+      debt_id: String(debtId),
+      amount_confirmed: amount,
+      new_balance: debtApply.next_balance ?? null,
+      data: updatedIntent,
+      debt_apply: debtApply
+    };
+  } catch (e) {
+    await rollbackManualExecute().catch(() => null);
+    throw e;
+  }
 }
 
 /** Intents en estos estados se cancelan (todas las fuentes) antes del intent único manual-first. */

@@ -25,6 +25,9 @@ describe("isUuid", () => {
   it("rechaza texto arbitrario", () => {
     assert.equal(isUuid("not-a-uuid"), false);
   });
+  it("acepta UUID v7 (version 7 en el tercer bloque)", () => {
+    assert.equal(isUuid("018f1234-5678-7abc-def0-123456789abc"), true);
+  });
 });
 
 describe("validateDebtCreatePayload", () => {

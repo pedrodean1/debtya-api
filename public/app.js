@@ -3258,10 +3258,29 @@
                   });
                 } catch (_) {}
               }
-              await api(`/payment-intents/${encodeURIComponent(intentId)}/confirm-manual`, {
+              const confirmRes = await api(`/payment-intents/${encodeURIComponent(intentId)}/confirm-manual`, {
                 method: "POST",
                 body: "{}"
               });
+              if (isPlanDebugUrl()) {
+                try {
+                  console.log("[DebtYa manual confirm response]", {
+                    new_balance: confirmRes?.new_balance,
+                    debt_apply: confirmRes?.debt_apply
+                  });
+                } catch (_) {}
+              }
+              const da = confirmRes && confirmRes.debt_apply;
+              if (
+                da &&
+                da.ok !== true &&
+                !(da.skipped === true && da.reason === "ya_aplicado")
+              ) {
+                throw new Error(
+                  da.reason || da.error || "El servidor no rebajó el balance de la deuda."
+                );
+              }
+              applyManualConfirmDebtToLocalState(confirmRes);
               state.pendingManualConfirmedIntentId = confirmedIntentId;
               showMessage(globalMessage, t("manual_pay_ok"), "success");
               await refreshDebts();
@@ -4824,6 +4843,22 @@
           </div>
         </div>
       `;
+    }
+
+    function applyManualConfirmDebtToLocalState(confirmJson) {
+      const j = confirmJson && typeof confirmJson === "object" ? confirmJson : null;
+      if (!j) return;
+      const nb = j.new_balance;
+      const did = j.debt_id;
+      if (nb == null || did == null) return;
+      const idStr = String(did).trim();
+      const n = Number(nb);
+      if (!Number.isFinite(n)) return;
+      const arr = Array.isArray(state.debts) ? state.debts : [];
+      const idx = arr.findIndex((d) => d && String(d.id).trim() === idStr);
+      if (idx >= 0) {
+        state.debts[idx] = { ...state.debts[idx], balance: n };
+      }
     }
 
     async function refreshDebts() {
