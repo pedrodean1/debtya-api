@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v86-1-connect-manual-rebuild-buttons";
+const SERVER_VERSION = "debtya-2026-05-04-v86-3-use-rebuild-intent-response-immediately";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
