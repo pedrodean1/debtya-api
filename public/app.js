@@ -323,6 +323,8 @@
           "You have no pending payments. Add another debt or update your plan whenever you want to calculate your next payment.",
         dashboard_next_all_clear_update_plan_btn: "Update plan",
         manual_pay_ok: "Marked as paid. Balances and progress updated in DebtYa. Your payment still went directly to your lender, not through DebtYa.",
+        manual_pay_already_done:
+          "This payment was already marked as done. We refreshed your progress.",
         manual_pay_err: "Could not confirm the payment. Try again.",
         ai_coach_title: "Why this payment",
         ai_coach_btn: "Explain with AI",
@@ -937,6 +939,8 @@
         dashboard_next_all_clear_update_plan_btn: "Actualizar plan",
         manual_pay_ok:
           "Marcado como pagado. Saldo y progreso actualizados en DebtYa. El dinero va siempre a tu acreedor; DebtYa no lo mueve.",
+        manual_pay_already_done:
+          "Este pago ya estaba marcado como realizado. Actualizamos tu progreso.",
         manual_pay_err: "No se pudo confirmar el pago. Int\u00E9ntalo de nuevo.",
         ai_coach_title: "Por qu\u00E9 este pago",
         ai_coach_btn: "Explicar con IA",
@@ -1611,6 +1615,8 @@
       manualPriorityDebtId: null,
       /** Intent_id devuelto por manual_first_reconcile (prioridad absoluta en dashboard). */
       manualPriorityIntentId: null,
+      /** Snapshot cliente para fallback manual-first (se invalida al ejecutar intent real). */
+      manualPriorityIntentSnapshot: null,
       /** Monto de manual_first_reconcile para fallback de dashboard. */
       manualPriorityAmount: null,
       /** Nombre de deuda de manual_first_reconcile para fallback de dashboard. */
@@ -2463,10 +2469,16 @@
         manual_first_reconcile: manualStr,
         state_manual_priority: {
           manualPriorityIntentId: state.manualPriorityIntentId,
+          manualPriorityIntentSnapshot: state.manualPriorityIntentSnapshot,
           manualPriorityDebtId: state.manualPriorityDebtId,
           manualPriorityAmount: state.manualPriorityAmount,
           manualPriorityDebtName: state.manualPriorityDebtName
         },
+        manualPriorityIntentStatusInList:
+          state.manualPriorityIntentId != null && String(state.manualPriorityIntentId).trim() !== ""
+            ? intents.find((i) => String(i?.id || "").trim() === String(state.manualPriorityIntentId).trim())
+                ?.status ?? null
+            : null,
         manual_priority_intent_in_list:
           state.manualPriorityIntentId != null &&
           String(state.manualPriorityIntentId).trim() !== "" &&
@@ -2650,6 +2662,11 @@
     }
 
     function buildManualPrioritySnapshotIntent() {
+      const snap = state.manualPriorityIntentSnapshot;
+      if (snap && typeof snap === "object") {
+        const snapStatus = String(snap.status || "").toLowerCase().trim();
+        if (snapStatus === "pending_review" || snapStatus === "approved") return snap;
+      }
       const amountNum = Number(state.manualPriorityAmount);
       const amount = Number.isFinite(amountNum) && amountNum > 0 ? amountNum : 0;
       return {
@@ -2662,6 +2679,57 @@
         source: "manual_priority_snapshot",
         creditor_name: state.manualPriorityDebtName || null
       };
+    }
+
+    function isTerminalIntentStatus(status) {
+      const st = String(status || "").toLowerCase().trim();
+      return (
+        st === "executed" ||
+        st === "cancelled" ||
+        st === "failed" ||
+        st === "skipped" ||
+        st === "completed" ||
+        st === "paid"
+      );
+    }
+
+    function clearManualPrioritySelection(options = {}) {
+      const confirmedRaw =
+        options.confirmedIntentId != null ? String(options.confirmedIntentId).trim() : "";
+      const currentRaw =
+        state.manualPriorityIntentId != null ? String(state.manualPriorityIntentId).trim() : "";
+      if (confirmedRaw && currentRaw && confirmedRaw !== currentRaw) return false;
+      const shouldClearDebtAnchor =
+        options.clearDebtAnchorIfMatches === true || options.clearDebtAnchor === true;
+      state.manualPriorityIntentId = null;
+      state.manualPriorityIntentSnapshot = null;
+      state.manualPriorityAmount = null;
+      state.manualPriorityDebtName = null;
+      if (shouldClearDebtAnchor) state.manualPriorityDebtId = null;
+      return true;
+    }
+
+    function syncManualPriorityWithIntents(intents) {
+      const forcedIdRaw =
+        state.manualPriorityIntentId != null ? String(state.manualPriorityIntentId).trim() : "";
+      if (!forcedIdRaw) return;
+      const list = Array.isArray(intents) ? intents : [];
+      const byId = list.find((i) => String(i?.id || "").trim() === forcedIdRaw) || null;
+      const status = String(byId?.status || "").toLowerCase().trim();
+      if (!byId || !intentStatusDashboardActionable(byId) || isTerminalIntentStatus(status)) {
+        clearManualPrioritySelection({
+          confirmedIntentId: forcedIdRaw,
+          clearDebtAnchorIfMatches: true
+        });
+      }
+    }
+
+    function isAlreadyExecutedConfirmError(err) {
+      const msg = String(err?.message || "").toLowerCase();
+      return (
+        msg.includes("already executed") ||
+        (msg.includes("ya est") && msg.includes("ejecutado"))
+      );
     }
 
     /**
@@ -2681,8 +2749,17 @@
       const forcedDebtRaw =
         state.manualPriorityDebtId != null ? String(state.manualPriorityDebtId).trim() : "";
       const hasManualAnchor = !!(forcedIdRaw || forcedDebtRaw);
+      if (forcedIdRaw) {
+        const forcedInList = list.find((i) => String(i?.id || "").trim() === forcedIdRaw) || null;
+        if (forcedInList && isTerminalIntentStatus(forcedInList.status)) {
+          clearManualPrioritySelection({
+            confirmedIntentId: forcedIdRaw,
+            clearDebtAnchorIfMatches: true
+          });
+        }
+      }
       if (!actionable.length) {
-        if (hasManualAnchor) return buildManualPrioritySnapshotIntent();
+        if (hasManualAnchor && !forcedIdRaw) return buildManualPrioritySnapshotIntent();
         return null;
       }
       if (forcedIdRaw) {
@@ -2705,9 +2782,10 @@
           });
           return debtMatches[0];
         }
-        return buildManualPrioritySnapshotIntent();
+        if (!forcedIdRaw) return buildManualPrioritySnapshotIntent();
+        return null;
       }
-      if (forcedIdRaw) return buildManualPrioritySnapshotIntent();
+      if (forcedIdRaw) return null;
 
       const anchorDebtRaw =
         state.manualPriorityDebtId != null ? String(state.manualPriorityDebtId).trim() : "";
@@ -2829,15 +2907,35 @@
           paidBtn.onclick = async () => {
             if (!intentId) return;
             paidBtn.disabled = true;
+            const confirmedIntentId = intentId;
             try {
               await api(`/payment-intents/${encodeURIComponent(intentId)}/confirm-manual`, {
                 method: "POST",
                 body: "{}"
               });
+              clearManualPrioritySelection({
+                confirmedIntentId,
+                clearDebtAnchorIfMatches: true
+              });
               showMessage(globalMessage, t("manual_pay_ok"), "success");
-              await Promise.all([refreshDebts(), refreshIntents()]);
+              await refreshDebts();
+              await refreshIntents();
+              renderDashboardNextStep();
+              updateNextActionGuide();
             } catch (e) {
-              showMessage(globalMessage, normalizeErrorMessage(e.message || t("manual_pay_err")), "error");
+              if (isAlreadyExecutedConfirmError(e)) {
+                clearManualPrioritySelection({
+                  confirmedIntentId,
+                  clearDebtAnchorIfMatches: true
+                });
+                await refreshDebts();
+                await refreshIntents();
+                renderDashboardNextStep();
+                updateNextActionGuide();
+                showMessage(globalMessage, t("manual_pay_already_done"), "success");
+              } else {
+                showMessage(globalMessage, normalizeErrorMessage(e.message || t("manual_pay_err")), "error");
+              }
             } finally {
               paidBtn.disabled = false;
             }
@@ -4750,6 +4848,7 @@
         if (m.skipped && m.reason === "no_positive_balance_debt") {
           state.manualPriorityDebtId = null;
           state.manualPriorityIntentId = null;
+          state.manualPriorityIntentSnapshot = null;
           state.manualPriorityAmount = null;
           state.manualPriorityDebtName = null;
           return;
@@ -4768,6 +4867,19 @@
         if (m.ok === true && iid && !m.skipped) {
           state.manualPriorityIntentId = iid;
           if (pid != null) state.manualPriorityDebtId = String(pid);
+          state.manualPriorityIntentSnapshot = {
+            id: iid,
+            debt_id: pid != null ? String(pid) : null,
+            status: "pending_review",
+            amount: Number.isFinite(amountNum) && amountNum > 0 ? amountNum : 0,
+            total_amount: Number.isFinite(amountNum) && amountNum > 0 ? amountNum : 0,
+            metadata: { manual_first_priority: true },
+            source: "manual_priority_snapshot",
+            creditor_name:
+              debtNameRaw != null && String(debtNameRaw).trim() !== ""
+                ? String(debtNameRaw).trim()
+                : null
+          };
           return;
         }
         if (pid != null) state.manualPriorityDebtId = String(pid);
@@ -4799,6 +4911,7 @@
       }
       state.intents = list;
       state.paymentIntents = list;
+      syncManualPriorityWithIntents(list);
       renderIntents();
       renderDashboardNextStep();
       updateNextActionGuide();
