@@ -2435,10 +2435,13 @@
     }
 
     function reconcileSkippedTrue(m) {
-      if (!m || typeof m !== "object") return false;
-      if (m.skipped === true) return true;
-      const s = String(m.skipped ?? "").trim().toLowerCase();
-      return s === "true" || s === "1" || s === "yes";
+      if (!m || typeof m !== "object" || Array.isArray(m)) return false;
+      const v = m.skipped;
+      if (v === false || v === 0 || v === null || v === undefined) return false;
+      if (v === true) return true;
+      const s = String(v).trim().toLowerCase();
+      if (s === "" || s === "false" || s === "0" || s === "null" || s === "undefined") return false;
+      return s === "true" || s === "yes" || s === "1";
     }
 
     function clearManualPriorityStateFull() {
@@ -2450,9 +2453,40 @@
       state.manualPriorityDebtName = null;
     }
 
+    function buildMinimalManualPrioritySnapshotFromReconcile(res) {
+      const m = res?.manual_first_reconcile;
+      if (!m || typeof m !== "object" || Array.isArray(m)) return null;
+      const iid = m.intent_id ?? m.intentId ?? res?.intent?.id;
+      if (iid == null || String(iid).trim() === "") return null;
+      const debtId = m.priorityDebtId ?? m.priority_debt_id ?? res?.intent?.debt_id ?? null;
+      const nameRaw = m.priorityDebtName ?? m.priority_debt_name ?? "";
+      const displayName = String(nameRaw || "esta deuda").trim() || "esta deuda";
+      const strat =
+        String(m.strategy || "avalanche").toLowerCase() === "snowball" ? "snowball" : "avalanche";
+      const amt = Number(m.amount);
+      const amount = Number.isFinite(amt) && amt >= 0 ? amt : 0;
+      return {
+        id: String(iid).trim(),
+        debt_id: debtId != null ? String(debtId) : null,
+        status: "pending_review",
+        amount,
+        total_amount: amount,
+        metadata: {
+          manual_first_priority: true,
+          manual_first_rebuild: true,
+          strategy: strat,
+          priority_reason: strat
+        },
+        source: "manual_rebuild",
+        creditor_name: displayName,
+        debt_name: displayName,
+        name: displayName
+      };
+    }
+
     function buildManualPrioritySnapshotFromRebuild(res) {
       const m = res?.manual_first_reconcile;
-      if (!m || typeof m !== "object") return null;
+      if (!m || typeof m !== "object" || Array.isArray(m)) return null;
       const intent = res?.intent && typeof res.intent === "object" ? res.intent : null;
       const iidRaw = intent?.id != null ? intent.id : m.intent_id ?? m.intentId;
       if (iidRaw == null || String(iidRaw).trim() === "") return null;
@@ -2525,7 +2559,7 @@
 
     function hydrateManualPriorityFromRebuildPayload(res) {
       const m = res?.manual_first_reconcile;
-      if (!res || typeof res !== "object" || !m || typeof m !== "object") return;
+      if (!res || typeof res !== "object" || !m || typeof m !== "object" || Array.isArray(m)) return;
 
       if (reconcileSkippedTrue(m) && m.reason === "no_positive_balance_debt") {
         clearManualPriorityStateFull();
@@ -2539,9 +2573,15 @@
         return;
       }
 
-      if (reconcileSkippedTrue(m)) return;
-
-      const snap = buildManualPrioritySnapshotFromRebuild(res);
+      let snap = null;
+      try {
+        snap = buildManualPrioritySnapshotFromRebuild(res);
+      } catch (_) {
+        snap = null;
+      }
+      if (!snap || snap.id == null) {
+        snap = buildMinimalManualPrioritySnapshotFromReconcile(res);
+      }
       if (!snap || snap.id == null) return;
 
       state.manualPriorityIntentId = String(snap.id);
@@ -2564,6 +2604,26 @@
       const merged = [snap, ...without(state.paymentIntents)];
       state.paymentIntents = merged;
       state.intents = merged;
+    }
+
+    /**
+     * Si hay ultimo JSON de rebuild con intent_id pero el estado manual quedo vacio (cache viejo,
+     * excepcion silenciosa, etc.), rehidratar desde lastPlanBuildResponse.
+     */
+    function ensureManualPriorityStateFromLastRebuildResponse() {
+      try {
+        const raw = state.lastPlanBuildResponse;
+        if (!raw || typeof raw !== "object") return;
+        const m = raw.manual_first_reconcile;
+        if (!m || typeof m !== "object") return;
+        const rid = m.intent_id ?? m.intentId ?? raw.intent?.id;
+        if (rid == null || String(rid).trim() === "") return;
+        const ridStr = String(rid).trim();
+        const cur = state.manualPriorityIntentId != null ? String(state.manualPriorityIntentId).trim() : "";
+        if (cur === ridStr) return;
+        hydrateManualPriorityFromRebuildPayload(raw);
+        mergeManualPrioritySnapshotIntoIntentState();
+      } catch (_) {}
     }
 
     function recordPlanBuildResponse(res) {
@@ -2611,12 +2671,13 @@
       wrap.setAttribute("aria-hidden", "false");
 
       const raw = state.lastPlanBuildResponse;
+      ensureManualPriorityStateFromLastRebuildResponse();
       const intents = paymentIntentListCoalesced();
       const normSt = (i) => String(i?.status || "").toLowerCase().trim();
       const nPending = intents.filter((i) => normSt(i) === "pending_review").length;
       const nApproved = intents.filter((i) => normSt(i) === "approved").length;
 
-      const featured = pickFeaturedIntentForDashboard(intents);
+      const featured = pickFeaturedIntentForDashboard();
       const fmeta = featured ? normalizeIntentMetadata(featured.metadata) : {};
       const fMfPri =
         fmeta.manual_first_priority === true ||
@@ -3007,10 +3068,10 @@
     /**
      * Dashboard manual-first: elegir entre intents accionables y priorizar manual_first_priority.
      * Si no hay intent real para manualPriorityIntentId, usar snapshot local como fallback temporal.
-     * @param {object[]} intents
      */
-    function pickFeaturedIntentForDashboard(intents) {
-      const listAll = Array.isArray(intents) ? intents.filter((x) => x) : [];
+    function pickFeaturedIntentForDashboard() {
+      ensureManualPriorityStateFromLastRebuildResponse();
+      const listAll = paymentIntentListCoalesced().filter((x) => x);
       const forcedIdRaw =
         state.manualPriorityIntentId != null ? String(state.manualPriorityIntentId).trim() : "";
 
@@ -3075,7 +3136,7 @@
     }
 
     function hasFeaturedPayableIntent() {
-      const f = pickFeaturedIntentForDashboard(paymentIntentListCoalesced());
+      const f = pickFeaturedIntentForDashboard();
       return !!(f && intentPaymentAmount(f) > 0);
     }
 
@@ -3118,12 +3179,13 @@
       }
 
       const debts = Array.isArray(state.debts) ? state.debts : [];
+      ensureManualPriorityStateFromLastRebuildResponse();
       const intents = paymentIntentListCoalesced();
 
       resetExtraLines();
       card.classList.remove("hidden");
 
-      const intent = pickFeaturedIntentForDashboard(intents);
+      const intent = pickFeaturedIntentForDashboard();
       try {
         console.log("[DebtYa dashboard selected intent]", {
           id: intent?.id ?? null,
@@ -3205,7 +3267,7 @@
             coachBtn.disabled = true;
             coachOut.textContent = t("ai_coach_loading");
             try {
-              const cur = pickFeaturedIntentForDashboard(paymentIntentListCoalesced());
+              const cur = pickFeaturedIntentForDashboard();
               const amt = cur ? intentPaymentAmount(cur) : 0;
               if (!cur || amt <= 0) {
                 coachOut.textContent = t("ai_coach_err");
