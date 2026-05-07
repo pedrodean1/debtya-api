@@ -2749,23 +2749,9 @@
       );
     }
 
-    function isManualPrioritySnapshotActionable(intent) {
-      if (!intent || String(intent?.source || "").toLowerCase() !== "manual_priority_snapshot") return false;
-      const st = String(intent.status || "").toLowerCase().trim();
-      if (st !== "pending_review") return false;
-      const meta = normalizeIntentMetadata(intent.metadata);
-      return (
-        meta.manual_first_priority === true ||
-        String(meta.manual_first_priority || "").toLowerCase() === "true"
-      );
-    }
-
     /**
-     * 1) manualPriorityIntentId (servidor)
-     * 2) metadata.manual_first_priority
-     * 3) debt_id === manualPriorityDebtId (no integraciones antes que manual)
-     * Degradar spinwheel/method/plaid si hay ancla y no coinciden con debt focal.
-     * Sin orden por monto.
+     * Dashboard manual-first: elegir entre intents accionables y priorizar manual_first_priority.
+     * Si no hay intent real para manualPriorityIntentId, usar snapshot local como fallback temporal.
      * @param {object[]} intents
      */
     function pickFeaturedIntentForDashboard(intents) {
@@ -2774,11 +2760,8 @@
 
       const forcedIdRaw =
         state.manualPriorityIntentId != null ? String(state.manualPriorityIntentId).trim() : "";
-      const forcedDebtRaw =
-        state.manualPriorityDebtId != null ? String(state.manualPriorityDebtId).trim() : "";
-      const hasManualAnchor = !!(forcedIdRaw || forcedDebtRaw);
       if (!actionable.length) {
-        if (hasManualAnchor) return buildManualPrioritySnapshotIntent();
+        if (forcedIdRaw) return buildManualPrioritySnapshotIntent();
         return null;
       }
       if (forcedIdRaw) {
@@ -2786,46 +2769,9 @@
         if (hit) return hit;
         return buildManualPrioritySnapshotIntent();
       }
-      if (forcedDebtRaw) {
-        const debtMatches = actionable.filter((i) => {
-          const did = i?.debt_id != null ? String(i.debt_id).trim() : "";
-          return did === forcedDebtRaw && !intentExternalIntegrationSource(i);
-        });
-        if (debtMatches.length) {
-          debtMatches.sort((a, b) => {
-            const aMf = intentManualFirstPriorityFlag(a) ? 1 : 0;
-            const bMf = intentManualFirstPriorityFlag(b) ? 1 : 0;
-            if (aMf !== bMf) return bMf - aMf;
-            const aCreated = a?.created_at != null ? String(a.created_at) : "";
-            const bCreated = b?.created_at != null ? String(b.created_at) : "";
-            return bCreated.localeCompare(aCreated);
-          });
-          return debtMatches[0];
-        }
-        return buildManualPrioritySnapshotIntent();
-      }
-
-      const anchorDebtRaw =
-        state.manualPriorityDebtId != null ? String(state.manualPriorityDebtId).trim() : "";
-      const computedDebtId = anchorDebtRaw || pickManualPriorityDebtIdForDashboard();
-      const debtRef = computedDebtId != null ? String(computedDebtId).trim() : "";
-      const hasAnchor = !!(anchorDebtRaw || forcedIdRaw || debtRef);
-
-      function tier(intent) {
-        if (intentManualFirstPriorityFlag(intent)) return 5;
-        const did = intent.debt_id != null ? String(intent.debt_id).trim() : "";
-        const ext = intentExternalIntegrationSource(intent);
-
-        if (debtRef && did === debtRef && !ext) return 4;
-        if (debtRef && did === debtRef && ext) return 3;
-
-        if (hasAnchor && ext && did !== debtRef) return 0;
-        return 2;
-      }
-
       const rows = actionable.map((intent) => ({
         intent,
-        tier: tier(intent),
+        tier: intentManualFirstPriorityFlag(intent) ? 2 : 1,
         createdAt: intent.created_at != null ? String(intent.created_at) : ""
       }));
       rows.sort((a, b) => {
@@ -2897,9 +2843,7 @@
       } catch (_) {}
       const payAmt = intent ? intentPaymentAmount(intent) : 0;
 
-      const dashboardIntentActionable =
-        !!intent && (intentStatusDashboardActionable(intent) || isManualPrioritySnapshotActionable(intent));
-      if (dashboardIntentActionable && payAmt > 0) {
+      if (intent && payAmt > 0 && intentStatusDashboardActionable(intent)) {
         const amount = fmtMoney(payAmt);
         let debtLabel = describeIntentPayToward(intent);
         if (!debtLabel || debtLabel === "?" || !String(debtLabel).trim()) {

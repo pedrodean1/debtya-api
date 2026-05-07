@@ -1,5 +1,3 @@
-const { appendSpinwheelPaymentIntents } = require("../lib/spinwheel-payment-intents");
-
 function registerPlanningRoutes(app, deps) {
   const {
     requireUser,
@@ -62,14 +60,6 @@ function registerPlanningRoutes(app, deps) {
         p_user_id: req.user.id
       });
 
-      const spinAppend = await appendSpinwheelPaymentIntents(supabaseAdmin, req.user.id, {
-        safeNumber,
-        getCurrentPaymentPlan
-      }).catch((e) => {
-        appDebug("appendSpinwheelPaymentIntents:", e.message);
-        return { appended: 0, skipped: 0, skipped_details: [], intents: [], strategy: null, error: e.message };
-      });
-
       await stampRecentIntentsFundingFromPlan(req.user.id).catch((e) => {
         appDebug("stampRecentIntentsFundingFromPlan:", e.message);
       });
@@ -92,7 +82,6 @@ function registerPlanningRoutes(app, deps) {
       return res.json({
         ok: true,
         data: result,
-        spinwheel_intents: spinAppend,
         manual_first_reconcile: manualFirst
       });
     } catch (error) {
@@ -108,14 +97,6 @@ function registerPlanningRoutes(app, deps) {
         p_user_id: req.user.id
       });
 
-      const spinAppend = await appendSpinwheelPaymentIntents(supabaseAdmin, req.user.id, {
-        safeNumber,
-        getCurrentPaymentPlan
-      }).catch((e) => {
-        appDebug("appendSpinwheelPaymentIntents:", e.message);
-        return { appended: 0, skipped: 0, skipped_details: [], intents: [], strategy: null, error: e.message };
-      });
-
       await stampRecentIntentsFundingFromPlan(req.user.id).catch((e) => {
         appDebug("stampRecentIntentsFundingFromPlan:", e.message);
       });
@@ -138,7 +119,6 @@ function registerPlanningRoutes(app, deps) {
       return res.json({
         ok: true,
         data: result,
-        spinwheel_intents: spinAppend,
         manual_first_reconcile: manualFirst
       });
     } catch (error) {

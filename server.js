@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-04-v84-8-persist-reconcile-snapshot";
+const SERVER_VERSION = "debtya-2026-05-04-v85-manual-first-one-intent-only";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2390,6 +2390,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
     notes: "DebtYa — proximo pago recomendado (plan manual-first)",
     metadata: {
       manual_first_priority: true,
+      strategy: strategy === "snowball" ? "snowball" : "avalanche",
       plan_strategy: strategy,
       computed_at: now
     },
