@@ -2516,6 +2516,14 @@
 
     /* Mobile polish for beta launch */
     @media (max-width: 640px){
+      .app{
+        padding-left:max(14px, env(safe-area-inset-left, 0px));
+        padding-right:max(14px, env(safe-area-inset-right, 0px));
+        padding-bottom:max(18px, env(safe-area-inset-bottom, 0px));
+      }
+      .btn{
+        min-height:44px;
+      }
       .dashboard-next-step-card{
         padding:14px;
       }
@@ -2538,6 +2546,7 @@
       #debtForm .field .input,
       #debtForm .field .select{
         min-height:44px;
+        font-size:16px;
       }
       .item-actions .btn{
         min-height:42px;
