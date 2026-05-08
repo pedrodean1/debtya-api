@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DebtYa</string>
+    <string name="title_activity_main">DebtYa</string>
+    <string name="package_name">com.debtya.app</string>
+    <string name="custom_url_scheme">com.debtya.app</string>
+</resources>
