@@ -2514,6 +2514,39 @@
       background:var(--surface-2, rgba(0,0,0,.03));
     }
 
+    /* Mobile polish for beta launch */
+    @media (max-width: 640px){
+      .dashboard-next-step-card{
+        padding:14px;
+      }
+      .dashboard-next-step-primary{
+        font-size:18px;
+        line-height:1.4;
+      }
+      #dashboardNextStepPaidBtn{
+        width:100%;
+        min-height:44px;
+        font-size:15px;
+      }
+      .step{
+        padding:12px;
+      }
+      .step h3{
+        font-size:14px;
+        line-height:1.35;
+      }
+      #debtForm .field .input,
+      #debtForm .field .select{
+        min-height:44px;
+      }
+      .item-actions .btn{
+        min-height:42px;
+      }
+      .top-actions .btn{
+        width:100%;
+      }
+    }
+
     /* Ultimo bloque: ancho resumen (prioridad sobre caché/CSS viejo) */
     #appView .dashboard-header-region{
       width:100%;
