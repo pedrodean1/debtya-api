@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-08-v90-capacitor-mobile-shell";
+const SERVER_VERSION = "debtya-2026-05-08-v91-capacitor-use-production-url";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
