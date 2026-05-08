@@ -177,9 +177,9 @@
         btn_start_now: "Get started",
         brand_tagline: "Pay down debt with more structure and less stress.",
         land_pill: "Built for real monthly use",
-        land_hero_title: "Get out of debt with a clear plan\u2014no guessing",
+        land_hero_title: "Debt payoff copilot for your next step",
         land_hero_copy:
-          "DebtYa does not move money for you. Add your debts manually from your statements, build a plan, see what to pay today, and confirm when you have paid your lender.",
+          "DebtYa is your debt copilot: it tells you what to pay first based on your strategy. You stay in control, make the payment directly to your lender, and mark it as done here.",
         land_btn_start_free: "Start free",
         land_conv_steps_title: "Three simple steps",
         land_conv_step1_t: "Add your debts manually",
@@ -216,7 +216,7 @@
         faq_sub: "Short answers about how DebtYa fits into your routine.",
         faq_q1: "What is DebtYa?",
         faq_a1:
-          "DebtYa is a workspace to list your debts, choose a payoff strategy, see a recommended next payment, and mark what you paid. DebtYa does not move money for you. Subscription billing runs through Stripe.",
+          "DebtYa is a debt copilot. It recommends what to pay first using your strategy, while you stay in control of every payment. DebtYa does not move money for you.",
         faq_q2: "Does DebtYa need my login credentials?",
         faq_a2:
           "No. You enter balances and details yourself from your statements. That keeps you in control and avoids sharing logins with DebtYa.",
@@ -304,7 +304,7 @@
         advanced_intents_toggle: "More payment list options",
         hero_title: "See your plan. Take the next step.",
         hero_copy:
-          "Total debt, progress, your next payment line, and history in one place. DebtYa never moves money; you keep balances from your statements and mark I paid it when you finish paying your lender.",
+          "Track total debt, progress, your next recommended payment, and history in one place. DebtYa never moves money; you stay in control and mark payments after you pay your lender.",
         dashboard_next_step_title: "Your next step",
         dashboard_next_no_debts: "Add your debts to get started.",
         dashboard_next_no_plan: "Create your payment plan.",
@@ -316,15 +316,15 @@
         dashboard_next_interest_na: "Add APR on this debt for a sharper interest estimate.",
         dashboard_next_accel: "This speeds up your path out of debt.",
         dashboard_next_pay_outside_app:
-          "DebtYa never moves money. Pay your lender as you usually do, then tap I paid it so DebtYa updates your balance and progress.",
+          "Make this payment outside DebtYa and then mark it as completed.",
         dashboard_next_paid_btn: "I paid it",
-        dashboard_next_all_clear_primary: "All caught up for now",
+        dashboard_next_all_clear_primary: "All set for now",
         dashboard_next_all_clear_sub:
-          "You have no pending payments. Add another debt or update your plan whenever you want to calculate your next payment.",
+          "Update your plan whenever you want to calculate your next payment.",
         dashboard_next_all_clear_update_plan_btn: "Update plan",
-        manual_pay_ok: "Marked as paid. Balances and progress updated in DebtYa. Your payment still went directly to your lender, not through DebtYa.",
+        manual_pay_ok: "Payment marked as completed. Your progress has been updated.",
         manual_pay_already_done:
-          "This payment was already marked as done. We refreshed your progress.",
+          "This payment was already marked as completed. We refreshed your progress.",
         manual_pay_err: "Could not confirm the payment. Try again.",
         ai_coach_title: "Why this payment",
         ai_coach_btn: "Explain with AI",
@@ -520,9 +520,9 @@
         btn_save_rule: "Save rule",
         payplan_title: "Your payment plan",
         payplan_sub:
-          "Step 2: choose Avalanche or Snowball. DebtYa never moves money; it ranks your debts and suggests what to pay next.",
+          "Step 2: choose Avalanche or Snowball. DebtYa calculates your next payment from your strategy. You pay outside DebtYa and mark it as done here to update progress.",
         plan_manual_first_card:
-          "DebtYa never moves money. It reads your strategy and balances, suggests the next payment, and updates balances and progress when you tap I paid it after you pay your lender outside DebtYa.",
+          "DebtYa calculates your next payment using your strategy. You make the payment outside DebtYa and mark it as completed here so your progress stays up to date. DebtYa never moves money.",
         plan_mode_advanced_summary: "Optional legacy automation mode",
         plan_manual: "Manual (recommended)",
         plan_safe_auto: "Legacy: extra guardrails",
@@ -792,9 +792,9 @@
         btn_start_now: "Empieza ahora",
         brand_tagline: "Paga tus deudas con mas orden y menos estres.",
         land_pill: "Pensado para el dia a dia",
-        land_hero_title: "Sal de deudas con un plan claro \u2014 sin adivinar",
+        land_hero_title: "Tu copiloto de deuda para el siguiente pago",
         land_hero_copy:
-          "DebtYa no mueve dinero por ti. Agrega tus deudas a mano desde tus estados de cuenta, arma tu plan, ve qu\u00e9 conviene pagar hoy y confirma cuando ya pagaste al acreedor.",
+          "DebtYa es tu copiloto de deuda: te dice qu\u00e9 pagar primero seg\u00fan tu estrategia. T\u00fa mantienes el control, pagas directo al acreedor y luego marcas el pago como realizado aqu\u00ed.",
         land_btn_start_free: "Empezar gratis",
         land_conv_steps_title: "Tres pasos sencillos",
         land_conv_step1_t: "Agrega tus deudas a mano",
@@ -831,7 +831,7 @@
         faq_sub: "Respuestas cortas sobre como encaja DebtYa en tu rutina.",
         faq_q1: "Que es DebtYa?",
         faq_a1:
-          "DebtYa es un espacio para listar tus deudas, elegir una estrategia de pago, ver un proximo pago recomendado y marcar lo que pagaste. DebtYa no mueve dinero por ti. La suscripcion se cobra con Stripe.",
+          "DebtYa es un copiloto de deuda. Te recomienda qu\u00e9 pagar primero con tu estrategia, pero t\u00fa mantienes el control de cada pago. DebtYa no mueve dinero por ti.",
         faq_q2: "Necesito dar mis claves de acceso?",
         faq_a2:
           "No. Tu ingresas saldos y datos desde tus estados de cuenta. Asi mantienes el control sin compartir inicios de sesion con DebtYa.",
@@ -919,7 +919,7 @@
         advanced_intents_toggle: "Mas opciones de la lista de pagos",
         hero_title: "Ve tu plan. Da el siguiente paso.",
         hero_copy:
-          "Deuda total, progreso, tu linea de proximo pago e historial en un solo lugar. DebtYa nunca mueve dinero: tu mantienes los saldos segun tus estados y marcas Ya lo pagu\u00E9 cuando pagaste al acreedor.",
+          "Deuda total, progreso, pr\u00f3ximo pago recomendado e historial en un solo lugar. DebtYa nunca mueve dinero: t\u00fa mantienes el control y marcas los pagos despu\u00e9s de pagar al acreedor.",
         dashboard_next_step_title: "Tu pr\u00F3ximo paso",
         dashboard_next_no_debts: "Agrega tus deudas para empezar",
         dashboard_next_no_plan: "Crea tu plan de pago",
@@ -931,14 +931,14 @@
         dashboard_next_interest_na: "A\u00F1ade el APR en esta deuda para estimar mejor los intereses.",
         dashboard_next_accel: "Esto acelera tu salida de deuda.",
         dashboard_next_pay_outside_app:
-          "DebtYa nunca mueve dinero. Paga al acreedor como siempre y luego pulsa Ya lo pagu\u00E9 para que DebtYa actualice saldo y progreso.",
+          "Haz este pago fuera de DebtYa y luego m\u00e1rcalo como realizado.",
         dashboard_next_paid_btn: "Ya lo pagu\u00E9",
         dashboard_next_all_clear_primary: "Listo por ahora",
         dashboard_next_all_clear_sub:
-          "No tienes pagos pendientes. Agrega otra deuda o actualiza tu plan cuando quieras calcular el siguiente pago.",
+          "Actualiza tu plan cuando quieras calcular el siguiente pago.",
         dashboard_next_all_clear_update_plan_btn: "Actualizar plan",
         manual_pay_ok:
-          "Marcado como pagado. Saldo y progreso actualizados en DebtYa. El dinero va siempre a tu acreedor; DebtYa no lo mueve.",
+          "Pago marcado como realizado. Tu progreso fue actualizado.",
         manual_pay_already_done:
           "Este pago ya estaba marcado como realizado. Actualizamos tu progreso.",
         manual_pay_err: "No se pudo confirmar el pago. Int\u00E9ntalo de nuevo.",
@@ -1137,9 +1137,9 @@
         btn_save_rule: "Guardar regla",
         payplan_title: "Tu plan de pago",
         payplan_sub:
-          "Paso 2: elige Avalancha o Bola de nieve. DebtYa nunca mueve dinero; ordena tus deudas y sugiere el siguiente pago.",
+          "Paso 2: elige Avalancha o Bola de nieve. DebtYa calcula tu pr\u00f3ximo pago usando tu estrategia. T\u00fa haces el pago fuera de DebtYa y lo marcas como realizado para actualizar tu progreso.",
         plan_manual_first_card:
-          "DebtYa nunca mueve dinero. Lee tu estrategia y tus saldos, sugiere el proximo pago y actualiza saldo y progreso cuando pulsas Ya lo pagu\u00E9 despues de pagar al acreedor fuera de DebtYa.",
+          "DebtYa calcula tu pr\u00f3ximo pago usando tu estrategia. T\u00fa haces el pago fuera de DebtYa y marcas el pago como realizado para actualizar tu progreso. DebtYa no mueve dinero.",
         plan_mode_advanced_summary: "Modo de automatizacion heredado (opcional)",
         plan_manual: "Manual (recomendado)",
         plan_safe_auto: "Heredado: mas limites",
