@@ -2494,6 +2494,7 @@
       right:10px;
       bottom:8px;
       z-index:9999;
+      display:none;
       font:11px/1.25 ui-monospace,Consolas,monospace;
       color:var(--muted);
       background:rgba(255,255,255,.94);

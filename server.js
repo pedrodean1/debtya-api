@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-07-v89-pwa-mobile-installable";
+const SERVER_VERSION = "debtya-2026-05-07-v89-1-hide-version-badge";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;

@@ -112,9 +112,24 @@
       return debtyaApiBaseProbePromise;
     }
 
+    function shouldShowVersionBadge() {
+      try {
+        const q = new URLSearchParams(window.location.search || "");
+        return q.get("debugPlan") === "1" || q.get("debugVersion") === "1";
+      } catch (_) {
+        return false;
+      }
+    }
+
     function renderDebtyaRevBadge(apiServerVersion) {
       const el = document.getElementById("debtyaUiRevBadge");
       if (!el) return;
+      if (!shouldShowVersionBadge()) {
+        el.style.display = "none";
+        el.textContent = "";
+        return;
+      }
+      el.style.display = "block";
       const m = document.querySelector('meta[name="debtya-ui-rev"]');
       const ui = m && m.content ? String(m.content).trim() : "?";
       const api =
@@ -124,6 +139,10 @@
 
     async function probeDebtyaDeployBadge() {
       try {
+        if (!shouldShowVersionBadge()) {
+          renderDebtyaRevBadge(null);
+          return;
+        }
         await ensureDebtyaApiBaseProbed();
         const ac = new AbortController();
         const tid = setTimeout(() => ac.abort(), 8000);
