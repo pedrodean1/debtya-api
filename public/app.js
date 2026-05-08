@@ -1630,7 +1630,11 @@
       /** Nombre de deuda de manual_first_reconcile para fallback de dashboard. */
       manualPriorityDebtName: null,
       /** Ultima respuesta de POST /manual-plan/rebuild (metadata ?debugPlan=1). */
-      lastPlanBuildResponse: null
+      lastPlanBuildResponse: null,
+      /** Cache de explicaciones AI Coach por intent_id para evitar llamadas repetidas. */
+      aiCoachByIntentId: {},
+      /** intent_id actualmente cargando en AI Coach (evita requests duplicados simultaneos). */
+      aiCoachLoadingIntentId: null
     };
 
     const $ = (id) => document.getElementById(id);
@@ -3178,6 +3182,79 @@
         if (coachOut) coachOut.textContent = "";
       };
 
+      function buildLocalAiCoachFallback(intentRow) {
+        const did = String(intentRow?.debt_id || "").trim();
+        const debt = (Array.isArray(state.debts) ? state.debts : []).find((d) => String(d?.id || "") === did) || null;
+        const debtName = cleanVisibleDebtName(
+          debt?.name || intentRow?.creditor_name || intentRow?.debt_name || t("dashboard_debt_fallback")
+        );
+        const amount = fmtMoney(intentPaymentAmount(intentRow));
+        const strategy = String(state.plan?.strategy || "").toLowerCase() === "snowball" ? "snowball" : "avalanche";
+        if (uiLang === "es") {
+          return strategy === "snowball"
+            ? `Este pago de ${amount} a ${debtName} mantiene el impulso de tu plan Bola de nieve y te acerca al siguiente cierre de deuda.`
+            : `Este pago de ${amount} a ${debtName} prioriza intereses altos segun tu plan Avalancha y ayuda a reducir el costo total.`;
+        }
+        return strategy === "snowball"
+          ? `This ${amount} payment to ${debtName} keeps your Snowball momentum and moves you closer to your next debt payoff.`
+          : `This ${amount} payment to ${debtName} follows your Avalanche plan by prioritizing higher interest and reducing total cost.`;
+      }
+
+      async function renderDashboardAiCoachAuto(intentRow) {
+        const coach = $("dashboardAiCoach");
+        const coachTitle = $("dashboardAiCoachTitle");
+        const coachBtn = $("dashboardAiCoachBtn");
+        const coachOut = $("dashboardAiCoachOut");
+        if (!coach || !coachTitle || !coachOut) return;
+
+        coachTitle.textContent = t("ai_coach_title");
+        if (coachBtn) coachBtn.classList.add("hidden");
+        coach.classList.remove("hidden");
+
+        const intentId = intentRow?.id != null ? String(intentRow.id).trim() : "";
+        const amt = intentPaymentAmount(intentRow);
+        if (!intentId || amt <= 0) {
+          coach.classList.add("hidden");
+          return;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(state.aiCoachByIntentId, intentId)) {
+          coachOut.textContent = String(state.aiCoachByIntentId[intentId] || "");
+          return;
+        }
+
+        if (state.aiCoachLoadingIntentId === intentId) {
+          coachOut.textContent = t("ai_coach_loading");
+          return;
+        }
+
+        state.aiCoachLoadingIntentId = intentId;
+        coachOut.textContent = t("ai_coach_loading");
+        try {
+          const res = await api("/ai/explain-next-payment", {
+            method: "POST",
+            body: JSON.stringify({
+              intent_id: intentId,
+              locale: uiLang === "es" ? "es" : "en"
+            })
+          });
+          let exp = res && res.explanation != null ? String(res.explanation).trim() : "";
+          if (!exp) exp = buildLocalAiCoachFallback(intentRow);
+          state.aiCoachByIntentId[intentId] = exp;
+          const cur = pickFeaturedIntentForDashboard();
+          const curId = cur?.id != null ? String(cur.id).trim() : "";
+          if (curId === intentId) coachOut.textContent = exp;
+        } catch (_) {
+          const fallback = buildLocalAiCoachFallback(intentRow);
+          state.aiCoachByIntentId[intentId] = fallback;
+          const cur = pickFeaturedIntentForDashboard();
+          const curId = cur?.id != null ? String(cur.id).trim() : "";
+          if (curId === intentId) coachOut.textContent = fallback;
+        } finally {
+          if (state.aiCoachLoadingIntentId === intentId) state.aiCoachLoadingIntentId = null;
+        }
+      }
+
       if (!appView || appView.classList.contains("hidden")) {
         card.classList.add("hidden");
         resetExtraLines();
@@ -3321,46 +3398,7 @@
             }
           };
         }
-        const coach = $("dashboardAiCoach");
-        const coachTitle = $("dashboardAiCoachTitle");
-        const coachBtn = $("dashboardAiCoachBtn");
-        const coachOut = $("dashboardAiCoachOut");
-        if (coach && coachTitle && coachBtn && coachOut) {
-          coachTitle.textContent = t("ai_coach_title");
-          coachBtn.textContent = t("ai_coach_btn");
-          coachOut.textContent = "";
-          coach.classList.remove("hidden");
-          coachBtn.onclick = async () => {
-            coachBtn.disabled = true;
-            coachOut.textContent = t("ai_coach_loading");
-            try {
-              const cur = pickFeaturedIntentForDashboard();
-              const amt = cur ? intentPaymentAmount(cur) : 0;
-              if (!cur || amt <= 0) {
-                coachOut.textContent = t("ai_coach_err");
-                return;
-              }
-              const curId = cur && cur.id != null ? String(cur.id) : "";
-              if (!curId) {
-                coachOut.textContent = t("ai_coach_err");
-                return;
-              }
-              const res = await api("/ai/explain-next-payment", {
-                method: "POST",
-                body: JSON.stringify({
-                  intent_id: curId,
-                  locale: uiLang === "es" ? "es" : "en"
-                })
-              });
-              const exp = res && res.explanation != null ? String(res.explanation) : "";
-              coachOut.textContent = exp || t("ai_coach_err");
-            } catch (e) {
-              coachOut.textContent = normalizeErrorMessage(e.message || t("ai_coach_err"));
-            } finally {
-              coachBtn.disabled = false;
-            }
-          };
-        }
+        void renderDashboardAiCoachAuto(intent);
         return;
       }
 
