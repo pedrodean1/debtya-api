@@ -234,6 +234,32 @@
           "Coming soon: you will be able to turn on optional reminders by email and/or SMS. Nothing is sent until you opt in and the feature is available.",
         price_notifications_compliance:
           "When available, opting in means you agree to receive DebtYa reminder messages. Message and data rates may apply for SMS. You can reply STOP to SMS to opt out. Email and SMS preferences will be available in your account when we ship them. Any marketing email we send will include an unsubscribe option.",
+        notif_title: "Reminders",
+        notif_sub:
+          "DebtYa can remind you when to pay, how much to pay, and why we recommend that payment. You still pay your lender outside DebtYa, then mark I paid it.",
+        notif_consent_hint:
+          "Turning on reminders means you agree to receive payment reminder messages from DebtYa. SMS: carrier rates may apply; reply STOP to opt out when that flow is available.",
+        notif_email_enable: "Enable email reminders",
+        notif_sms_enable: "Enable SMS reminders",
+        notif_email_consent_lbl: "I agree to receive payment reminder emails from DebtYa.",
+        notif_sms_consent_lbl:
+          "I agree to receive SMS payment reminders. Message and data rates may apply. I can reply STOP to opt out when supported.",
+        notif_phone_lbl: "Mobile phone (E.164, for example +15551234567)",
+        notif_phone_ph: "+15551234567",
+        notif_time_lbl: "Preferred reminder time (24-hour HH:MM)",
+        notif_tz_lbl: "Timezone (IANA)",
+        notif_channel_lbl: "Preferred channel",
+        notif_ch_none: "None",
+        notif_ch_email: "Email",
+        notif_ch_sms: "SMS",
+        notif_ch_both: "Email and SMS",
+        notif_save: "Save preferences",
+        notif_preview: "Show test reminder",
+        notif_send_test: "Send test reminder",
+        notif_saved_ok: "Reminder preferences saved.",
+        notif_preview_only:
+          "Preview only: connect Resend/SendGrid (email) or Twilio (SMS) on the server to send real test messages.",
+        notif_test_sent: "Test reminder sent (check inbox or phone).",
         legal_link_terms: "Terms",
         legal_link_privacy: "Privacy",
         legal_link_cancel: "Account",
@@ -698,6 +724,9 @@
         err_plan_debt_invalid: "Target debt is not valid.",
         err_plan_debt_missing: "Target debt was not found.",
         err_bank_not_found: "That external link was not found.",
+        err_notif_no_intent:
+          "No open manual-first next payment was found. Save or refresh your plan so you have a pending or approved payment line.",
+        err_notif_bad_amount: "The next payment line has no valid amount yet. Refresh your plan or debts and try again.",
         debt_label: "Debt",
         apr_label: "APR",
         min_label: "Minimum",
@@ -814,7 +843,29 @@
         err_portal_url: "Account page link was not available. Try again.",
         err_plaid_exit: "Link flow closed with an error.",
         rule_delete_confirm: "Delete this rule? This action cannot be undone.",
-        err_rule_one_only: "You can only save one rule. Delete your current rule first."
+        err_rule_one_only: "You can only save one rule. Delete your current rule first.",
+        reminders_title: "Reminders",
+        reminders_sub:
+          "DebtYa can remind you when to pay, how much to pay, and why we recommend that payment.",
+        reminders_email_label: "Email reminders",
+        reminders_sms_label: "SMS reminders",
+        reminders_phone_label: "Phone for SMS",
+        reminders_time_label: "Reminder time",
+        reminders_time_hint: "Optional. Your device timezone is saved with your preference.",
+        reminders_sms_consent:
+          "By enabling SMS, you agree to receive DebtYa reminders. Message and data rates may apply. Reply STOP to opt out.",
+        reminders_save: "Save preferences",
+        reminders_preview: "View test reminder",
+        reminders_send_test: "Send test",
+        reminders_saved: "Reminder preferences saved.",
+        reminders_preview_ready: "Reminder preview ready.",
+        reminders_test_preview:
+          "Provider is not configured yet, so DebtYa returned a preview instead of sending.",
+        reminders_test_sent: "Test reminder sent.",
+        reminders_empty_preview: "No reminder preview yet.",
+        reminders_channel: "Channel",
+        reminders_subject: "Subject",
+        reminders_message: "Message"
       },
       es: {
         btn_login: "Entrar",
@@ -860,6 +911,32 @@
           "Proximamente: podras activar recordatorios opcionales por email y/o SMS. No enviamos nada hasta que tu lo actives y la funcion este disponible.",
         price_notifications_compliance:
           "Cuando este disponible, al activar recordatorios aceptas recibir mensajes de DebtYa. Pueden aplicar tarifas de mensajes/datos del operador. Para SMS puedes responder STOP para darte de baja. Las preferencias de email/SMS estaran en tu cuenta cuando las habilitemos. Cualquier email comercial incluira opcion de baja.",
+        notif_title: "Recordatorios",
+        notif_sub:
+          "DebtYa puede recordarte cuando pagar, cuanto pagar y por que recomendamos ese pago. Sigues pagando al acreedor fuera de DebtYa y luego marcas Ya lo pague.",
+        notif_consent_hint:
+          "Al activar recordatorios aceptas recibir mensajes de recordatorio de DebtYa. SMS: pueden aplicar tarifas del operador; podras responder STOP para darte de baja cuando exista el flujo.",
+        notif_email_enable: "Activar recordatorios por email",
+        notif_sms_enable: "Activar recordatorios por SMS",
+        notif_email_consent_lbl: "Acepto recibir emails de recordatorio de pago de DebtYa.",
+        notif_sms_consent_lbl:
+          "Acepto recibir SMS de recordatorio de pago. Pueden aplicar tarifas de mensaje/datos. Podre responder STOP para darte de baja cuando este soportado.",
+        notif_phone_lbl: "Telefono movil (E.164, por ejemplo +15551234567)",
+        notif_phone_ph: "+15551234567",
+        notif_time_lbl: "Hora preferida de recordatorio (24h HH:MM)",
+        notif_tz_lbl: "Zona horaria (IANA)",
+        notif_channel_lbl: "Canal preferido",
+        notif_ch_none: "Ninguno",
+        notif_ch_email: "Email",
+        notif_ch_sms: "SMS",
+        notif_ch_both: "Email y SMS",
+        notif_save: "Guardar preferencias",
+        notif_preview: "Ver recordatorio de prueba",
+        notif_send_test: "Enviar recordatorio de prueba",
+        notif_saved_ok: "Preferencias de recordatorios guardadas.",
+        notif_preview_only:
+          "Solo vista previa: configura Resend/SendGrid (email) o Twilio (SMS) en el servidor para enviar pruebas reales.",
+        notif_test_sent: "Recordatorio de prueba enviado (revisa email o telefono).",
         legal_link_terms: "Terminos",
         legal_link_privacy: "Privacidad",
         legal_link_cancel: "Cuenta",
@@ -1325,6 +1402,10 @@
         err_plan_debt_invalid: "La deuda destino no es valida.",
         err_plan_debt_missing: "No se encontro la deuda destino.",
         err_bank_not_found: "No encontramos ese enlace externo.",
+        err_notif_no_intent:
+          "No hay un pago manual-first pendiente. Guarda o actualiza tu plan para tener una linea pendiente o aprobada.",
+        err_notif_bad_amount:
+          "La linea de proximo pago no tiene un monto valido todavia. Actualiza plan o deudas e intentalo de nuevo.",
         debt_label: "Deuda",
         apr_label: "APR",
         min_label: "Minimo",
@@ -1442,7 +1523,29 @@
         err_portal_url: "El enlace de tu cuenta no estuvo disponible. Intentalo de nuevo.",
         err_plaid_exit: "El flujo de enlace se cerro con error.",
         rule_delete_confirm: "Quieres borrar esta regla? Esta accion no se puede deshacer.",
-        err_rule_one_only: "Solo puedes guardar una regla. Primero borra la regla actual."
+        err_rule_one_only: "Solo puedes guardar una regla. Primero borra la regla actual.",
+        reminders_title: "Recordatorios",
+        reminders_sub:
+          "DebtYa puede recordarte cuando pagar, cuanto pagar y por que recomendamos ese pago.",
+        reminders_email_label: "Recordatorios por email",
+        reminders_sms_label: "Recordatorios por SMS",
+        reminders_phone_label: "Telefono para SMS",
+        reminders_time_label: "Hora del recordatorio",
+        reminders_time_hint: "Opcional. Guardamos la zona horaria de tu dispositivo con la preferencia.",
+        reminders_sms_consent:
+          "Al activar SMS, aceptas recibir recordatorios de DebtYa. Pueden aplicar tarifas de mensajes y datos. Puedes responder STOP para darte de baja.",
+        reminders_save: "Guardar preferencias",
+        reminders_preview: "Ver recordatorio de prueba",
+        reminders_send_test: "Enviar prueba",
+        reminders_saved: "Preferencias de recordatorios guardadas.",
+        reminders_preview_ready: "Preview de recordatorio listo.",
+        reminders_test_preview:
+          "El proveedor no esta configurado todavia, asi que DebtYa devolvio un preview sin enviar.",
+        reminders_test_sent: "Recordatorio de prueba enviado.",
+        reminders_empty_preview: "Todavia no hay preview de recordatorio.",
+        reminders_channel: "Canal",
+        reminders_subject: "Asunto",
+        reminders_message: "Mensaje"
       }
     };
 
@@ -1537,6 +1640,7 @@
           dfab.setAttribute("aria-label", t("btn_disconnect_bank"));
         }
         void refreshSpinwheelPayableDiag();
+        syncNotifConsentVisibility();
       } else {
         $("sessionBadge").className = "pill blue";
         $("sessionBadge").textContent = t("badge_session");
@@ -1669,7 +1773,9 @@
       /** Cache de explicaciones AI Coach por intent_id para evitar llamadas repetidas. */
       aiCoachByIntentId: {},
       /** intent_id actualmente cargando en AI Coach (evita requests duplicados simultaneos). */
-      aiCoachLoadingIntentId: null
+      aiCoachLoadingIntentId: null,
+      /** Ultima respuesta GET /notifications/preferences (data). */
+      notificationPrefs: null
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1967,6 +2073,8 @@
       if (text.includes("Deuda destino no valida")) return t("err_plan_debt_invalid");
       if (text.includes("Deuda destino no encontrada")) return t("err_plan_debt_missing");
       if (text.includes("Conexion bancaria no encontrada")) return t("err_bank_not_found");
+      if (/No actionable manual-first payment reminder/i.test(text)) return t("err_notif_no_intent");
+      if (/Reminder intent has no valid amount/i.test(text)) return t("err_notif_bad_amount");
 
       return text;
     }
@@ -5876,6 +5984,55 @@
       renderBilling();
     }
 
+    function syncNotifConsentVisibility() {
+      const d = state.notificationPrefs || {};
+      const emailOn = $("notifEmailEnabled")?.checked;
+      const smsOn = $("notifSmsEnabled")?.checked;
+      const emailWrap = $("notifEmailConsentWrap");
+      const smsWrap = $("notifSmsConsentWrap");
+      if (emailWrap) emailWrap.classList.toggle("hidden", !emailOn || !!d.consent_email_at);
+      if (smsWrap) smsWrap.classList.toggle("hidden", !smsOn || !!d.consent_sms_at);
+    }
+
+    async function refreshNotificationPreferences() {
+      if (!$("notifEmailEnabled")) return;
+      const warn = $("notifTableWarn");
+      try {
+        const res = await api("/notifications/preferences");
+        const d = res.data || {};
+        state.notificationPrefs = d;
+        if (warn) {
+          warn.classList.remove("error", "warn", "success");
+          if (res.warning) {
+            warn.textContent = res.warning;
+            warn.classList.remove("hidden");
+            warn.classList.add("warn");
+          } else {
+            warn.textContent = "";
+            warn.classList.add("hidden");
+          }
+        }
+        $("notifEmailEnabled").checked = !!d.email_enabled;
+        $("notifSmsEnabled").checked = !!d.sms_enabled;
+        $("notifPhone").value = d.phone_number || "";
+        $("notifReminderTime").value = d.reminder_time ? String(d.reminder_time).slice(0, 5) : "";
+        $("notifTimezone").value = d.timezone || "";
+        $("notifPreferredChannel").value = d.preferred_channel || "none";
+        const ec = $("notifEmailConsent");
+        const sc = $("notifSmsConsent");
+        if (ec) ec.checked = false;
+        if (sc) sc.checked = false;
+        syncNotifConsentVisibility();
+      } catch (e) {
+        state.notificationPrefs = null;
+        if (warn) {
+          warn.textContent = normalizeErrorMessage(e.message);
+          warn.classList.remove("hidden", "warn", "success");
+          warn.classList.add("error");
+        }
+      }
+    }
+
     async function refreshAll() {
       hideMessage(globalMessage);
       try {
@@ -5885,7 +6042,8 @@
           refreshRules(),
           refreshIntents(),
           refreshTrace(),
-          refreshPlaidItems()
+          refreshPlaidItems(),
+          refreshNotificationPreferences()
         ]);
         await refreshAccounts();
         await refreshDebts();
@@ -6734,6 +6892,87 @@
     $("refreshAccountsBtn").addEventListener("click", refreshAccounts);
     const refreshBillingBtn = $("refreshBillingBtn");
     if (refreshBillingBtn) refreshBillingBtn.addEventListener("click", refreshBillingStatus);
+
+    const notifEmailEl = $("notifEmailEnabled");
+    const notifSmsEl = $("notifSmsEnabled");
+    if (notifEmailEl) notifEmailEl.addEventListener("change", syncNotifConsentVisibility);
+    if (notifSmsEl) notifSmsEl.addEventListener("change", syncNotifConsentVisibility);
+    const notifSaveBtn = $("notifSaveBtn");
+    if (notifSaveBtn) {
+      notifSaveBtn.addEventListener("click", async () => {
+        setLoading(notifSaveBtn, true);
+        try {
+          const body = {
+            email_enabled: !!$("notifEmailEnabled")?.checked,
+            sms_enabled: !!$("notifSmsEnabled")?.checked,
+            phone_number: ($("notifPhone")?.value || "").trim() || null,
+            preferred_channel: $("notifPreferredChannel")?.value || "none",
+            reminder_time: ($("notifReminderTime")?.value || "").trim() || null,
+            timezone: ($("notifTimezone")?.value || "").trim() || null,
+            email_consent: !!$("notifEmailConsent")?.checked,
+            sms_consent: !!$("notifSmsConsent")?.checked
+          };
+          await api("/notifications/preferences", { method: "POST", body: JSON.stringify(body) });
+          showMessage(globalMessage, t("notif_saved_ok"), "success");
+          await refreshNotificationPreferences();
+        } catch (err) {
+          showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        } finally {
+          setLoading(notifSaveBtn, false);
+        }
+      });
+    }
+    const notifPreviewBtn = $("notifPreviewBtn");
+    if (notifPreviewBtn) {
+      notifPreviewBtn.addEventListener("click", async () => {
+        const out = $("notifPreviewOut");
+        setLoading(notifPreviewBtn, true);
+        try {
+          const pref = $("notifPreferredChannel")?.value || "email";
+          const channel = pref === "sms" ? "sms" : "email";
+          const res = await api("/notifications/preview-next-reminder", {
+            method: "POST",
+            body: JSON.stringify({ channel, lang: uiLang })
+          });
+          if (out) {
+            out.textContent = JSON.stringify(res.preview, null, 2);
+            out.classList.remove("hidden");
+          }
+        } catch (err) {
+          if (out) {
+            out.textContent = normalizeErrorMessage(err.message);
+            out.classList.remove("hidden");
+          }
+        } finally {
+          setLoading(notifPreviewBtn, false);
+        }
+      });
+    }
+    const notifSendTestBtn = $("notifSendTestBtn");
+    if (notifSendTestBtn) {
+      notifSendTestBtn.addEventListener("click", async () => {
+        setLoading(notifSendTestBtn, true);
+        try {
+          const res = await api("/notifications/send-test", {
+            method: "POST",
+            body: JSON.stringify({ lang: uiLang })
+          });
+          const out = $("notifPreviewOut");
+          if (out && res.preview) {
+            out.textContent = JSON.stringify(res.preview, null, 2);
+            out.classList.remove("hidden");
+          }
+          if (res.sent) showMessage(globalMessage, t("notif_test_sent"), "success");
+          else if (res.warning) showMessage(globalMessage, String(res.warning || "").trim(), "warn");
+          else showMessage(globalMessage, t("notif_preview_only"), "warn");
+        } catch (err) {
+          showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        } finally {
+          setLoading(notifSendTestBtn, false);
+        }
+      });
+    }
+
     const billingStartBtn = $("billingStartBtn");
     if (billingStartBtn) billingStartBtn.addEventListener("click", () => startCheckout($("billingStartBtn")));
     $("topUpgradeBtn").addEventListener("click", () => startCheckout($("topUpgradeBtn")));
@@ -7151,6 +7390,7 @@
       if (session || getStoredAccessToken()) {
         showApp();
         await refreshBillingStatus();
+        await refreshNotificationPreferences();
       } else {
         state.billing = null;
         renderBilling();

@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-10-v95-free-beta-legal-copy-cleanup" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-10-v96-notification-preferences-preview" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -49,7 +49,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-10-v95-free-beta-legal-copy-cleanup">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-10-v96-notification-preferences-preview">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -832,6 +832,74 @@
             <div id="compareResult" class="list" style="margin-top:14px;"></div>
           </section>
 
+          <section class="card" id="notificationsPanel">
+            <div class="section-head">
+              <div>
+                <h2 data-i18n="notif_title">Reminders</h2>
+                <p class="sub" data-i18n="notif_sub">
+                  DebtYa can remind you when to pay, how much to pay, and why we recommend that payment.
+                </p>
+              </div>
+            </div>
+            <p id="notifTableWarn" class="notice warn hidden" role="status"></p>
+            <p class="helper-text" data-i18n="notif_consent_hint">
+              Enabling reminders means you agree to receive payment reminder messages from DebtYa. SMS: message and data rates may apply; reply STOP to opt out when supported.
+            </p>
+            <div class="grid-2" style="margin-top:12px;">
+              <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
+                <input type="checkbox" id="notifEmailEnabled" />
+                <span data-i18n="notif_email_enable">Enable email reminders</span>
+              </label>
+              <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
+                <input type="checkbox" id="notifSmsEnabled" />
+                <span data-i18n="notif_sms_enable">Enable SMS reminders</span>
+              </label>
+            </div>
+            <div id="notifEmailConsentWrap" class="field hidden">
+              <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
+                <input type="checkbox" id="notifEmailConsent" />
+                <span data-i18n="notif_email_consent_lbl">I agree to receive payment reminder emails from DebtYa.</span>
+              </label>
+            </div>
+            <div id="notifSmsConsentWrap" class="field hidden">
+              <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
+                <input type="checkbox" id="notifSmsConsent" />
+                <span data-i18n="notif_sms_consent_lbl">I agree to receive SMS payment reminders. Message and data rates may apply. I can reply STOP to opt out when supported.</span>
+              </label>
+            </div>
+            <div class="field">
+              <label class="label" for="notifPhone" data-i18n="notif_phone_lbl">Mobile phone (E.164)</label>
+              <input id="notifPhone" class="input" type="tel" autocomplete="tel" data-i18n-placeholder="notif_phone_ph" placeholder="+15551234567" />
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="notifReminderTime" data-i18n="notif_time_lbl">Preferred reminder time (24h)</label>
+                <input id="notifReminderTime" class="input" type="text" inputmode="numeric" placeholder="09:30" />
+              </div>
+              <div class="field">
+                <label class="label" for="notifTimezone" data-i18n="notif_tz_lbl">Timezone (IANA)</label>
+                <input id="notifTimezone" class="input" type="text" placeholder="America/New_York" />
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="notifPreferredChannel" data-i18n="notif_channel_lbl">Preferred channel</label>
+              <select id="notifPreferredChannel" class="select">
+                <option value="none" data-i18n-opt="notif_ch_none">None</option>
+                <option value="email" data-i18n-opt="notif_ch_email">Email</option>
+                <option value="sms" data-i18n-opt="notif_ch_sms">SMS</option>
+                <option value="both" data-i18n-opt="notif_ch_both">Email and SMS</option>
+              </select>
+            </div>
+            <div class="grid-2" style="margin-top:12px;">
+              <button type="button" id="notifSaveBtn" class="btn btn-primary" data-i18n="notif_save">Save preferences</button>
+              <button type="button" id="notifPreviewBtn" class="btn btn-light" data-i18n="notif_preview">Show test reminder</button>
+            </div>
+            <button type="button" id="notifSendTestBtn" class="btn btn-light" style="margin-top:10px;" data-i18n="notif_send_test">
+              Send test reminder
+            </button>
+            <pre id="notifPreviewOut" class="intents-build-json hidden" style="margin-top:12px;white-space:pre-wrap;" aria-live="polite"></pre>
+          </section>
+
           <section class="card hidden" id="suggestedPaymentsPanel" aria-hidden="true">
             <div class="section-head">
               <div>
@@ -1094,7 +1162,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-10-v95-free-beta-legal-copy-cleanup"></script>
+  <script src="/app.js?v=debtya-2026-05-10-v96-notification-preferences-preview"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
