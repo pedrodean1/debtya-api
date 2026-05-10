@@ -39,8 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-08-v93-android-release-signing-ready" />
-  <meta name="theme-color" content="#1f6fff" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-10-v95-free-beta-legal-copy-cleanup" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -50,7 +49,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-08-v93-android-release-signing-ready">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-10-v95-free-beta-legal-copy-cleanup">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -166,16 +165,16 @@
               <p class="faq-a" data-i18n="faq_a3">Your statement is the source of truth. Double-check APR and minimum payment before saving a debt so your plan matches reality.</p>
             </details>
             <details class="faq-item">
-              <summary data-i18n="faq_q4">How does billing work?</summary>
-              <p class="faq-a" data-i18n="faq_a4">DebtYa Beta is billed monthly through Stripe. When you use &quot;Get started&quot; while signed in, you complete checkout securely and return to the app with your subscription status updated.</p>
+              <summary data-i18n="faq_q4">How much does DebtYa cost?</summary>
+              <p class="faq-a" data-i18n="faq_a4">During the manual-first beta, DebtYa is free. Get started creates an account or signs you in. If we introduce paid plans later, we will show clear pricing before any charge.</p>
             </details>
             <details class="faq-item">
-              <summary data-i18n="faq_q5">Can I cancel anytime?</summary>
-              <p class="faq-a" data-i18n="faq_a5">Yes. You can manage billing through your customer portal when your plan is active, or reach out to support for help.</p>
+              <summary data-i18n="faq_q5">What is Avalanche vs Snowball?</summary>
+              <p class="faq-a" data-i18n="faq_a5">Avalanche prioritizes higher-interest debt first. Snowball prioritizes lower-balance debt first to build momentum.</p>
             </details>
             <details class="faq-item">
-              <summary data-i18n="faq_q6">Who can I contact for help?</summary>
-              <p class="faq-a" data-i18n="faq_a6">Email support@debtya.com. The in-app assistant can answer general how-to questions, but it does not replace your lender, advisor, or official documents.</p>
+              <summary data-i18n="faq_q6">Is DebtYa a financial advisor?</summary>
+              <p class="faq-a" data-i18n="faq_a6">No. DebtYa is a debt copilot and educational organization tool, not a bank and not regulated financial, legal, tax, or credit advice. For account help email support@debtya.com.</p>
             </details>
           </div>
         </div>
@@ -191,8 +190,8 @@
               </p>
             </div>
             <div class="price-box">
-              <div class="price">$9.99</div>
-              <div class="freq" data-i18n="price_freq">per month</div>
+              <div class="price" data-i18n="price_free_badge">Free during beta</div>
+              <div class="freq muted" data-i18n="price_freq">No charge while we refine the manual-first experience.</div>
             </div>
           </div>
 
@@ -203,8 +202,8 @@
             <div class="pricing-item" data-i18n="price_i4">Progress tracking as you pay down balances</div>
             <div class="pricing-item" data-i18n="price_i5">Payment history you can review anytime</div>
             <div class="pricing-item" data-i18n="price_i6">Confirm what you paid and track progress</div>
-            <div class="pricing-item" data-i18n="price_i7">Stripe-secured subscription billing</div>
-            <div class="pricing-item" data-i18n="price_i8">Steady foundation for month-to-month use</div>
+            <div class="pricing-item" data-i18n="price_i7">Soon: optional email and/or SMS reminders for when to pay, how much, and why we recommend that payment.</div>
+            <div class="pricing-item" data-i18n="price_i8">Recommendations are estimates; verify balances, APR, minimums, and payments with your creditors.</div>
           </div>
 
           <div class="pricing-cta">
@@ -213,22 +212,15 @@
           </div>
 
           <div class="helper-text" data-i18n="price_helper">
-            If you are already signed in, &quot;Get started&quot; continues to secure checkout. Otherwise you will sign in or create an account first.
+            If you are already signed in, Get started opens the app. Otherwise you will sign in or create an account first.
           </div>
 
-          <div class="legal-banner">
-            <p class="legal-banner-title" data-i18n="legal_banner_title">Terms and policies</p>
-            <p class="legal-banner-copy" data-i18n="legal_banner_copy">
-              DebtYa Beta is $9.99 per month. Your subscription renews automatically until you cancel. You can cancel anytime from your account settings or by contacting support.
-            </p>
-            <div class="legal-links">
-              <a class="legal-link" href="/legal.html#terminos" data-i18n="legal_link_terms">Terms</a>
-              <a class="legal-link" href="/legal.html#privacidad" data-i18n="legal_link_privacy">Privacy</a>
-              <a class="legal-link" href="/legal.html#cancelacion" data-i18n="legal_link_cancel">Cancellation</a>
-              <a class="legal-link" href="/legal.html#reembolsos" data-i18n="legal_link_refund">Refunds</a>
-              <a class="legal-link" href="mailto:support@debtya.com" data-i18n="legal_link_support">Support</a>
-            </div>
-          </div>
+          <p class="helper-text" style="margin-top:10px;" data-i18n="price_notifications_lead">
+            Coming soon: you will be able to turn on optional reminders by email and/or SMS. Nothing is sent until you opt in and the feature is available.
+          </p>
+          <p class="helper-text muted" style="margin-top:6px;" data-i18n="price_notifications_compliance">
+            When available, opting in means you agree to receive DebtYa reminder messages. Message and data rates may apply for SMS. You can reply STOP to SMS to opt out. Email and SMS preferences will be available in your account when we ship them. Marketing email will include an unsubscribe option when we send any.
+          </p>
         </div>
       </section>
 
@@ -239,9 +231,7 @@
         <div class="legal-links landing-footer-links">
           <a class="legal-link" href="/legal.html#terminos" data-i18n="legal_link_terms">Terms</a>
           <a class="legal-link" href="/legal.html#privacidad" data-i18n="legal_link_privacy">Privacy</a>
-          <a class="legal-link" href="/legal.html#cancelacion" data-i18n="legal_link_cancel">Cancellation</a>
-          <a class="legal-link" href="/legal.html#reembolsos" data-i18n="legal_link_refund">Refunds</a>
-          <a class="legal-link" href="mailto:support@debtya.com" data-i18n="legal_link_support">Support</a>
+          <a class="legal-link" href="/legal.html#cancelacion" data-i18n="legal_link_cancel">Account</a>
         </div>
       </footer>
     </div>
@@ -576,7 +566,7 @@
 
               <div class="section-note section-note-operate" data-i18n="operate_note">Legacy optional tools. Most people only need manual debts and the dashboard next payment line.</div>
 
-              <div class="legal-note legal-note-operate" data-i18n-html="operate_legal_html">Optional features may use trusted service providers as described in our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>. Subscription billing runs through Stripe.</div>
+              <div class="legal-note legal-note-operate" data-i18n-html="operate_legal_html">The default DebtYa experience is manual-first: you enter your debts and confirm payments yourself. Optional tools in this area may use additional providers as described in our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.</div>
             </div>
           </section>
 
@@ -947,8 +937,7 @@
               <div class="footer-legal-links">
                 <a href="/legal.html#terminos" data-i18n="legal_link_terms">Terms</a>
                 <a href="/legal.html#privacidad" data-i18n="legal_link_privacy">Privacy</a>
-                <a href="/legal.html#cancelacion" data-i18n="legal_link_cancel">Cancellation</a>
-                <a href="/legal.html#reembolsos" data-i18n="legal_link_refund">Refunds</a>
+                <a href="/legal.html#cancelacion" data-i18n="legal_link_cancel">Account</a>
                 <a href="mailto:support@debtya.com" data-i18n="legal_link_support">Support</a>
               </div>
             </div>
@@ -1089,23 +1078,23 @@
             <p class="faq-a" data-i18n="faq_a3">Your statement is the source of truth. Double-check APR and minimum payment before saving a debt so your plan matches reality.</p>
           </details>
           <details class="faq-item">
-            <summary data-i18n="faq_q4">How does billing work?</summary>
-            <p class="faq-a" data-i18n="faq_a4">DebtYa Beta is billed monthly through Stripe. When you use &quot;Get started&quot; while signed in, you complete checkout securely and return to the app with your subscription status updated.</p>
+            <summary data-i18n="faq_q4">How much does DebtYa cost?</summary>
+            <p class="faq-a" data-i18n="faq_a4">During the manual-first beta, DebtYa is free. Get started creates an account or signs you in. If we introduce paid plans later, we will show clear pricing before any charge.</p>
           </details>
           <details class="faq-item">
-            <summary data-i18n="faq_q5">Can I cancel anytime?</summary>
-            <p class="faq-a" data-i18n="faq_a5">Yes. You can manage billing through your customer portal when your plan is active, or reach out to support for help.</p>
+            <summary data-i18n="faq_q5">What is Avalanche vs Snowball?</summary>
+            <p class="faq-a" data-i18n="faq_a5">Avalanche prioritizes higher-interest debt first. Snowball prioritizes lower-balance debt first to build momentum.</p>
           </details>
           <details class="faq-item">
-            <summary data-i18n="faq_q6">Who can I contact for help?</summary>
-            <p class="faq-a" data-i18n="faq_a6">Email support@debtya.com. The in-app assistant can answer general how-to questions, but it does not replace your lender, advisor, or official documents.</p>
+            <summary data-i18n="faq_q6">Is DebtYa a financial advisor?</summary>
+            <p class="faq-a" data-i18n="faq_a6">No. DebtYa is a debt copilot and educational organization tool, not a bank and not regulated financial, legal, tax, or credit advice. For account help email support@debtya.com.</p>
           </details>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-08-v93-android-release-signing-ready"></script>
+  <script src="/app.js?v=debtya-2026-05-10-v95-free-beta-legal-copy-cleanup"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

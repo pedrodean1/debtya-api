@@ -213,25 +213,30 @@
         land_benefit3: "Have a clear plan",
         land_footer_copy:
           "DebtYa helps you organize and pay down debt. For help: support@debtya.com",
-        price_name: "DebtYa Beta",
+        price_name: "DebtYa",
         price_copy:
-          "Early access to DebtYa Beta: build your plan, see what to pay next, and track progress with a simple manual flow.",
-        price_freq: "per month",
+          "Manual-first beta: add your debts, pick Avalanche or Snowball, see your next payment line, pay your lender outside DebtYa, then mark I paid it.",
+        price_free_badge: "Free during beta",
+        price_freq: "No charge while we refine the manual-first experience.",
         price_i1: "Early-access beta features and product updates",
         price_i2: "Manual debt tracking with clear balances and progress",
         price_i3: "Avalanche and Snowball strategy guidance",
         price_i4: "One next-payment recommendation at a time",
         price_i5: "Payment history you can review anytime",
         price_i6: "Mark completed payments and refresh progress",
-        price_i7: "Stripe-secured subscription billing",
-        price_i8: "Steady foundation for month-to-month use",
+        price_i7:
+          "Soon: optional email and/or SMS reminders for when to pay, how much, and why we recommend that payment.",
+        price_i8: "Recommendations are estimates; verify balances, APR, minimums, and payments with your creditors.",
         price_have_account: "I already have an account",
-        price_helper: 'If you are already signed in, "Get started" continues to secure checkout. DebtYa Beta is early access and does not guarantee outcomes.',
-        legal_banner_title: "Terms and policies",
-        legal_banner_copy: "DebtYa Beta is $9.99 per month. Your subscription renews automatically until you cancel. You can cancel anytime from your account settings or by contacting support.",
+        price_helper:
+          'If you are already signed in, "Get started" opens the app. DebtYa is free during this beta and does not guarantee outcomes.',
+        price_notifications_lead:
+          "Coming soon: you will be able to turn on optional reminders by email and/or SMS. Nothing is sent until you opt in and the feature is available.",
+        price_notifications_compliance:
+          "When available, opting in means you agree to receive DebtYa reminder messages. Message and data rates may apply for SMS. You can reply STOP to SMS to opt out. Email and SMS preferences will be available in your account when we ship them. Any marketing email we send will include an unsubscribe option.",
         legal_link_terms: "Terms",
         legal_link_privacy: "Privacy",
-        legal_link_cancel: "Cancellation",
+        legal_link_cancel: "Account",
         legal_link_refund: "Refunds",
         legal_link_support: "Support",
         faq_title: "Frequently asked questions",
@@ -245,15 +250,15 @@
         faq_q3: "Does DebtYa pay my cards automatically?",
         faq_a3:
           "Not yet. DebtYa guides your next payment and you confirm after paying.",
-        faq_q4: "Do I need to connect my bank?",
+        faq_q4: "How much does DebtYa cost?",
         faq_a4:
-          "No. You can use DebtYa fully in manual mode by adding your debts yourself.",
+          "During the manual-first beta, DebtYa is free. Get started creates an account or signs you in. If we introduce paid plans later, we will show clear pricing before any charge.",
         faq_q5: "What is Avalanche vs Snowball?",
         faq_a5:
           "Avalanche prioritizes higher-interest debt first. Snowball prioritizes lower-balance debt first to build momentum.",
         faq_q6: "Is DebtYa a financial advisor?",
         faq_a6:
-          "No. DebtYa is an educational organization tool. It is not a bank and does not provide financial advice.",
+          "No. DebtYa is a debt copilot and educational organization tool, not a bank and not regulated financial, legal, tax, or credit advice. For account help email support@debtya.com.",
         help_modal_title: "Help & guide",
         help_close: "Close",
         help_tab_guide: "Guide",
@@ -409,7 +414,8 @@
         btn_approve_visible: "Approve payments",
         btn_execute_visible: "Run payments",
         operate_note: "Most people only need manual debts and the dashboard next payment line.",
-        operate_legal_html: 'Optional features may use trusted service providers as described in our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>. Subscription billing runs through Stripe.',
+        operate_legal_html:
+          'The default DebtYa experience is manual-first: you enter your debts and confirm payments yourself. Optional tools in this area may use additional providers as described in our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terms and Privacy Policy</a>.',
         method_panel_title: "Legacy liabilities",
         method_panel_hint: "When liability integrations are enabled on the server, you can sync optional liability rows and add them as debts in DebtYa.",
         method_panel_disabled:
@@ -467,7 +473,8 @@
         spinwheel_diag_hint:
           "This block is off by default. Your team can enable it with a URL fragment or saved browser flag (see release notes).",
         sw_debts_connect_title: "Connect your debts",
-        sw_debts_connect_sub: "DebtYa can look up your real debts to build your plan automatically.",
+        sw_debts_connect_sub:
+          "Optional future linking may help pre-fill debts for some accounts. The standard flow is manual entry from your statements.",
         sw_connect_phone_lbl: "Phone",
         sw_connect_phone_ph: "+1 555 123 4567",
         sw_connect_dob_lbl: "Date of birth",
@@ -628,9 +635,10 @@
         kind_brokerage: "Brokerage",
         kind_other: "Other",
         acct_credit_limit: "Credit limit",
-        footer_disclaimer_html: "<strong>DebtYa</strong> is a personal finance organization tool. It is not a bank, financial advisor, credit repair agency, or debt relief service.",
+        footer_disclaimer_html:
+          "<strong>DebtYa</strong> is a debt copilot: it helps organize payoff using information you enter. It is not a bank, does not lend or move money, does not execute payments for you, and is not financial, legal, tax, or credit advice. Results are estimates.",
         integrations_notice_html:
-          '<div><p class="integrations-kicker">Transparency</p><h2 class="integrations-title">How DebtYa treats your data</h2><p class="integrations-lead">DebtYa is built for manual payoff planning: you enter your own numbers and confirm what you paid. Subscription billing is processed through Stripe.</p><ul class="integrations-list"><li><strong>Your numbers.</strong> You are responsible for accuracy from your statements; DebtYa stores what you save.</li><li><strong>No money movement.</strong> DebtYa does not send payments to creditors for you.</li><li><strong>Billing.</strong> Subscription charges for DebtYa are processed through Stripe as shown at checkout.</li></ul><p class="integrations-foot">Read our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Privacy Policy</a> and <a href="/legal.html#terminos" style="color:var(--primary);font-weight:700;">Terms</a> for the full picture.</p></div>',
+          '<div><p class="integrations-kicker">Transparency</p><h2 class="integrations-title">How DebtYa treats your data</h2><p class="integrations-lead">DebtYa is built for manual payoff planning: you enter your own numbers, DebtYa recommends a next payment line, and you pay your lender outside the app and mark I paid it.</p><ul class="integrations-list"><li><strong>Your numbers.</strong> You are responsible for accuracy from your statements; DebtYa stores what you save.</li><li><strong>No money movement.</strong> DebtYa does not send payments to creditors for you.</li><li><strong>Beta pricing.</strong> DebtYa is free during this manual-first beta. If paid plans are offered later, we will disclose terms before any charge.</li></ul><p class="integrations-foot">Read our <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Privacy Policy</a> and <a href="/legal.html#terminos" style="color:var(--primary);font-weight:700;">Terms</a> for details.</p></div>',
         loading: "Loading...",
         toast_click_to_close: "Click to close",
         yes: "Yes",
@@ -831,25 +839,30 @@
         land_benefit3: "Ten un plan claro",
         land_footer_copy:
           "DebtYa te ayuda a organizar y pagar tus deudas. Ayuda: support@debtya.com",
-        price_name: "DebtYa Beta",
+        price_name: "DebtYa",
         price_copy:
-          "Acceso temprano a DebtYa Beta para planificar, ver que pagar despues y seguir tu progreso con un flujo manual simple.",
-        price_freq: "al mes",
+          "Beta manual-first: agrega deudas, elige Avalancha o Bola de nieve, ve tu linea de proximo pago, paga al acreedor fuera de DebtYa y marca Ya lo pague.",
+        price_free_badge: "Gratis durante beta",
+        price_freq: "Sin cargo mientras refinamos la experiencia manual-first.",
         price_i1: "Funciones beta de acceso temprano y mejoras continuas",
         price_i2: "Seguimiento manual de deudas con saldos y progreso claros",
         price_i3: "Guia de estrategia Avalancha y Bola de nieve",
         price_i4: "Una recomendacion de proximo pago a la vez",
         price_i5: "Historial de pagos que puedes revisar cuando quieras",
         price_i6: "Marcar pagos realizados y actualizar progreso",
-        price_i7: "Facturacion de suscripcion segura con Stripe",
-        price_i8: "Base estable para usar mes a mes",
+        price_i7:
+          "Proximamente: recordatorios opcionales por email y/o SMS sobre cuando pagar, cuanto y por que recomendamos ese pago.",
+        price_i8: "Las recomendaciones son estimaciones; verifica saldos, APR, minimos y pagos con tus acreedores.",
         price_have_account: "Ya tengo cuenta",
-        price_helper: 'Si ya tienes sesion iniciada, "Empieza ahora" sigue a un pago seguro. DebtYa Beta es acceso temprano y no garantiza resultados.',
-        legal_banner_title: "Terminos y politicas",
-        legal_banner_copy: "DebtYa Beta cuesta $9.99 al mes. La suscripcion se renueva automaticamente hasta que canceles. Puedes cancelar en cualquier momento desde la configuracion de tu cuenta o escribiendo a soporte.",
+        price_helper:
+          'Si ya tienes sesion iniciada, "Empieza ahora" abre la app. DebtYa es gratis en esta beta y no garantiza resultados.',
+        price_notifications_lead:
+          "Proximamente: podras activar recordatorios opcionales por email y/o SMS. No enviamos nada hasta que tu lo actives y la funcion este disponible.",
+        price_notifications_compliance:
+          "Cuando este disponible, al activar recordatorios aceptas recibir mensajes de DebtYa. Pueden aplicar tarifas de mensajes/datos del operador. Para SMS puedes responder STOP para darte de baja. Las preferencias de email/SMS estaran en tu cuenta cuando las habilitemos. Cualquier email comercial incluira opcion de baja.",
         legal_link_terms: "Terminos",
         legal_link_privacy: "Privacidad",
-        legal_link_cancel: "Cancelacion",
+        legal_link_cancel: "Cuenta",
         legal_link_refund: "Reembolsos",
         legal_link_support: "Soporte",
         faq_title: "Preguntas frecuentes",
@@ -863,15 +876,15 @@
         faq_q3: "DebtYa paga mis tarjetas automaticamente?",
         faq_a3:
           "Todavia no. DebtYa te guia con el proximo pago y tu confirmas despues de pagar.",
-        faq_q4: "Necesito conectar mi banco?",
+        faq_q4: "Cuanto cuesta DebtYa?",
         faq_a4:
-          "No. Puedes usar DebtYa en modo manual agregando tus deudas.",
+          "En la beta manual-first, DebtYa es gratis. Empieza ahora crea cuenta o inicia sesion. Si mas adelante hay planes de pago, mostraremos precios claros antes de cualquier cargo.",
         faq_q5: "Que es Avalanche y que es Snowball?",
         faq_a5:
           "Avalanche prioriza la deuda con mayor interes. Snowball prioriza la deuda con menor balance para ganar impulso.",
         faq_q6: "DebtYa es asesor financiero?",
         faq_a6:
-          "No. DebtYa es una herramienta educativa y de organizacion. No es banco y no da asesoria financiera.",
+          "No. DebtYa es un copiloto de deuda y herramienta educativa de organizacion; no es banco ni asesoria financiera, legal, fiscal ni crediticia regulada. Para ayuda de cuenta: support@debtya.com.",
         help_modal_title: "Ayuda y guia",
         help_close: "Cerrar",
         help_tab_guide: "Guia",
@@ -1028,7 +1041,8 @@
         btn_approve_visible: "Aprobar pagos",
         btn_execute_visible: "Ejecutar pagos",
         operate_note: "La mayoria solo necesita deudas manuales y la linea de proximo pago del panel.",
-        operate_legal_html: 'Las funciones opcionales pueden usar proveedores de confianza segun se describe en nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>. La suscripcion se cobra con Stripe.',
+        operate_legal_html:
+          'La experiencia por defecto de DebtYa es manual-first: tu ingresas deudas y confirmas pagos. Las herramientas opcionales de esta zona pueden usar proveedores adicionales segun nuestros <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Terminos y Politica de privacidad</a>.',
         method_panel_title: "Pasivos heredados",
         method_panel_hint: "Si el servidor tiene integraciones de pasivos, puedes sincronizar filas opcionales y agregarlas como deudas en DebtYa.",
         method_panel_disabled:
@@ -1087,7 +1101,8 @@
         spinwheel_diag_hint:
           "Este bloque va apagado por defecto. Tu equipo puede activarlo con un fragmento de URL o una marca en el navegador (ver notas de version).",
         sw_debts_connect_title: "Conecta tus deudas",
-        sw_debts_connect_sub: "DebtYa puede buscar tus deudas reales para crear tu plan autom\u00e1ticamente.",
+        sw_debts_connect_sub:
+          "Un enlace opcional en el futuro podria ayudar a autollenar deudas en algunas cuentas. El flujo estandar es entrada manual desde tus estados de cuenta.",
         sw_connect_phone_lbl: "Telefono",
         sw_connect_phone_ph: "+1 555 123 4567",
         sw_connect_dob_lbl: "Fecha de nacimiento",
@@ -1248,9 +1263,10 @@
         kind_brokerage: "Brokerage",
         kind_other: "Otra",
         acct_credit_limit: "Limite de credito",
-        footer_disclaimer_html: "<strong>DebtYa</strong> es una herramienta de organizacion financiera personal. No es un banco, asesor financiero, agencia de reparacion de credito ni servicio de alivio de deudas.",
+        footer_disclaimer_html:
+          "<strong>DebtYa</strong> es un copiloto de deuda: organiza el pago con la informacion que tu ingresas. No es banco, no presta ni mueve dinero, no ejecuta pagos por ti, y no es asesoria financiera, legal, fiscal ni crediticia. Los resultados son estimaciones.",
         integrations_notice_html:
-          '<div><p class="integrations-kicker">Transparencia</p><h2 class="integrations-title">Como DebtYa trata tus datos</h2><p class="integrations-lead">DebtYa esta pensado para planificar pagos a mano: tu ingresas tus cifras y confirmas lo que pagaste. La suscripcion se cobra con Stripe.</p><ul class="integrations-list"><li><strong>Tus numeros.</strong> Tu eres responsable de la precision segun tus estados de cuenta; DebtYa guarda lo que guardas.</li><li><strong>Sin movimiento de dinero.</strong> DebtYa no envia pagos a acreedores por ti.</li><li><strong>Facturacion.</strong> Los cargos de suscripcion de DebtYa se procesan con Stripe segun lo que veas al pagar.</li></ul><p class="integrations-foot">Consulta la <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Politica de privacidad</a> y los <a href="/legal.html#terminos" style="color:var(--primary);font-weight:700;">Terminos</a> para el detalle.</p></div>',
+          '<div><p class="integrations-kicker">Transparencia</p><h2 class="integrations-title">Como DebtYa trata tus datos</h2><p class="integrations-lead">DebtYa esta pensado para planificar a mano: tu ingresas cifras, DebtYa sugiere una linea de proximo pago, tu pagas al acreedor fuera de la app y marcas Ya lo pague.</p><ul class="integrations-list"><li><strong>Tus numeros.</strong> Tu eres responsable de la precision segun tus estados de cuenta; DebtYa guarda lo que guardas.</li><li><strong>Sin movimiento de dinero.</strong> DebtYa no envia pagos a acreedores por ti.</li><li><strong>Beta y precio.</strong> DebtYa es gratis en esta beta manual-first. Si hay planes de pago despues, mostraremos terminos antes de cualquier cargo.</li></ul><p class="integrations-foot">Consulta la <a href="/legal.html#privacidad" style="color:var(--primary);font-weight:700;">Politica de privacidad</a> y los <a href="/legal.html#terminos" style="color:var(--primary);font-weight:700;">Terminos</a>.</p></div>',
         loading: "Cargando...",
         yes: "Si",
         no: "No",
