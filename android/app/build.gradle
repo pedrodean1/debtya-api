@@ -1,5 +1,20 @@
 apply plugin: 'com.android.application'
 
+def releaseKeystorePropertiesFile = rootProject.file('key.properties')
+def releaseKeystoreProperties = new Properties()
+def releaseSigningConfigured = false
+
+if (releaseKeystorePropertiesFile.exists()) {
+    releaseKeystoreProperties.load(new FileInputStream(releaseKeystorePropertiesFile))
+    def requiredReleaseSigningKeys = ['storeFile', 'storePassword', 'keyAlias', 'keyPassword']
+    releaseSigningConfigured = requiredReleaseSigningKeys.every { key ->
+        releaseKeystoreProperties[key] != null && releaseKeystoreProperties[key].toString().trim()
+    }
+    if (!releaseSigningConfigured) {
+        logger.warn('android/key.properties exists but release signing values are incomplete. Release builds will not be signed.')
+    }
+}
+
 android {
     namespace = "com.debtya.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +31,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (releaseSigningConfigured) {
+                storeFile file(releaseKeystoreProperties['storeFile'])
+                storePassword releaseKeystoreProperties['storePassword']
+                keyAlias releaseKeystoreProperties['keyAlias']
+                keyPassword releaseKeystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

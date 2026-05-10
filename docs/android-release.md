@@ -1,6 +1,6 @@
 # DebtYa Android Release Prep
 
-DebtYa V92 prepares the Android Capacitor shell for publication work. It does not publish DebtYa to Google Play.
+DebtYa V93 prepares the Android Capacitor shell for signed release builds. It does not publish DebtYa to Google Play.
 
 ## Current Android Configuration
 
@@ -80,22 +80,77 @@ android/app/build/outputs/bundle/release/app-release.aab
 
 Do not upload an unsigned or debug artifact to Google Play.
 
+## V93 Release Signing
+
+Release signing uses a local file that must not be committed:
+
+```text
+android/key.properties
+```
+
+Use [android/key.properties.example](../android/key.properties.example) as the template. The expected local values are:
+
+```properties
+storeFile=C:\\Users\\Pedro Dean\\Documents\\DebtYa Keys\\debtya-release-key.jks
+storePassword=YOUR_PASSWORD_FROM_PASSWORD_MANAGER
+keyAlias=debtya
+keyPassword=YOUR_PASSWORD_FROM_PASSWORD_MANAGER
+```
+
+The Gradle release signing config only activates when `android/key.properties` exists and includes all required values. Debug builds continue to work without this file.
+
+Never commit:
+
+- `.jks` files
+- `.keystore` files
+- `key.properties`
+- passwords or signing secrets
+
 ## Create A Keystore
 
 Do not commit keystores, passwords, or signing secrets.
 
-Create a real upload keystore with owner-approved values:
+Recommended location outside the repo:
 
-```sh
-keytool -genkeypair -v -keystore debtya-upload-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias debtya-upload
+```text
+C:\Users\Pedro Dean\Documents\DebtYa Keys\debtya-release-key.jks
 ```
 
-Store the keystore outside the repo or in a secure secret store. Configure Gradle signing with environment variables or a local, ignored properties file. Required values usually include:
+Recommended alias:
+
+```text
+debtya
+```
+
+Create the upload keystore with Android Studio or with `keytool`. Store all passwords in a password manager.
+
+Example command:
+
+```sh
+keytool -genkeypair -v -keystore "C:\Users\Pedro Dean\Documents\DebtYa Keys\debtya-release-key.jks" -alias debtya -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Then create `android/key.properties` locally from the example template and fill it with the real values. Required values:
 
 - Keystore file path
 - Key alias
 - Keystore password
 - Key password
+
+After `android/key.properties` exists locally, generate the release AAB:
+
+```sh
+cd android
+gradlew.bat bundleRelease
+```
+
+The AAB is generated at:
+
+```text
+android/app/build/outputs/bundle/release/app-release.aab
+```
+
+Upload the AAB in Google Play Console under the chosen testing or production track. Complete the store listing, app access, content rating, data safety, privacy policy, and release notes before rollout.
 
 ## Android Assets
 
@@ -142,9 +197,10 @@ Before publishing, Google Play will require production-ready store and complianc
 - Confirm only one next payment is recommended.
 - Confirm "Ya lo pague" lowers balance once.
 - Replace placeholder/default Android icons and splash with final reviewed DebtYa artwork.
-- Configure release signing and keep signing secrets out of git.
+- Configure release signing with `android/key.properties` and keep signing secrets out of git.
 - Build and install a release-signed artifact on a real Android device.
+- Generate `android/app/build/outputs/bundle/release/app-release.aab` only after the local keystore is ready.
 - Complete Google Play Data Safety and privacy review.
 - Run `node --check server.js`, `node --check public/app.js`, `npm test`, `npx cap sync android`, and `gradlew.bat assembleDebug`.
 
-DebtYa is not published to Google Play in V92.
+DebtYa is not published to Google Play in V93.

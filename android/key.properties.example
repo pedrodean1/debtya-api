@@ -1,0 +1,7 @@
+# Copy this file to android/key.properties and fill it locally.
+# Never commit android/key.properties, keystores, or real passwords.
+
+storeFile=C:\\Users\\Pedro Dean\\Documents\\DebtYa Keys\\debtya-release-key.jks
+storePassword=REPLACE_WITH_PASSWORD_FROM_PASSWORD_MANAGER
+keyAlias=debtya
+keyPassword=REPLACE_WITH_PASSWORD_FROM_PASSWORD_MANAGER
