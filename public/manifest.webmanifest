@@ -1,7 +1,7 @@
 {
   "name": "DebtYa",
   "short_name": "DebtYa",
-  "description": "Debt payoff copilot",
+  "description": "Debt payoff copilot — you pay creditors yourself; DebtYa organizes, recommends, and tracks progress.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

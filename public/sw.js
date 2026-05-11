@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v105-official-dy-icon";
+const SW_CACHE = "debtya-static-v108-production-flow-polish";
 const STATIC_ASSETS = [
   "/",
   "/index.html",

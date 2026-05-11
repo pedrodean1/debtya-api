@@ -24,12 +24,12 @@
   <meta
     name="description"
     lang="en"
-    content="DebtYa helps you get out of debt with a clear plan. Know exactly what to pay, when to pay it, and how to reduce interest faster."
+    content="DebtYa is a debt copilot: organize balances, pick a strategy, and track progress. DebtYa does not move money or run payments—you pay your lender or bank, then confirm in the app."
   />
   <meta
     name="description"
     lang="es"
-    content="DebtYa te ayuda a salir de deudas con un plan claro. Sabrás exactamente qué pagar, cuándo hacerlo y cómo reducir intereses más rápido."
+    content="DebtYa es un copiloto de deudas: organiza saldos, elige estrategia y registra avances. DebtYa no mueve dinero ni ejecuta pagos: tú pagas al acreedor o banco y confirmas en la app."
   />
   <meta name="theme-color" content="#0b1220" />
   <!-- Si el HTML es estatico en www y la API en otro host, pon aqui la URL base de la API (https://...) -->
@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-11-v107.2-confirm-manual-email-language" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-11-v108-production-flow-polish" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -49,22 +49,29 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-11-v107.2-confirm-manual-email-language">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-11-v108-production-flow-polish">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
   <script>
     (function () {
-      var m = document.querySelector('meta[name="debtya-ui-rev"]');
       var el = document.getElementById("debtyaUiRevBadge");
-      if (el && m && m.content) el.textContent = "UI " + m.content + " · API …";
+      if (!el) return;
+      var q = new URLSearchParams(window.location.search || "");
+      if (q.get("debugPlan") !== "1" && q.get("debugNotifications") !== "1") {
+        el.style.display = "none";
+        el.textContent = "";
+        return;
+      }
+      var m = document.querySelector('meta[name="debtya-ui-rev"]');
+      if (m && m.content) el.textContent = "UI " + m.content + " · API …";
     })();
   </script>
   <div id="landingView">
     <div class="app">
       <div class="topbar">
         <div class="brand">
-          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v107.2-confirm-manual-email-language" width="46" height="46" alt="DebtYa" />
+          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v108-production-flow-polish" width="46" height="46" alt="DebtYa" />
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -161,6 +168,10 @@
               <p class="faq-a" data-i18n="faq_a2">No. You enter balances and details yourself from your statements. That keeps you in control and avoids sharing logins with DebtYa.</p>
             </details>
             <details class="faq-item">
+              <summary data-i18n="faq_q_pay_flow">Does DebtYa send payments for me?</summary>
+              <p class="faq-a" data-i18n="faq_a_pay_flow">No. You always pay your lender or bank yourself. DebtYa recommends what to pay next and you confirm in the app after you have paid.</p>
+            </details>
+            <details class="faq-item">
               <summary data-i18n="faq_q3">Why review APR and minimum payment?</summary>
               <p class="faq-a" data-i18n="faq_a3">Your statement is the source of truth. Double-check APR and minimum payment before saving a debt so your plan matches reality.</p>
             </details>
@@ -246,7 +257,7 @@
         </div>
       </div>
       <div class="brand" style="margin-bottom:16px;">
-        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v107.2-confirm-manual-email-language" width="46" height="46" alt="DebtYa" />
+        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v108-production-flow-polish" width="46" height="46" alt="DebtYa" />
         <div>
           <h1 style="font-size:30px;margin:0;">DebtYa</h1>
           <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -373,7 +384,7 @@
         <div class="topbar topbar-app">
           <div class="topbar-brand-cell">
             <div class="brand">
-              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v107.2-confirm-manual-email-language" width="44" height="44" alt="DebtYa" />
+              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v108-production-flow-polish" width="44" height="44" alt="DebtYa" />
               <div>
                 <h1 style="margin:0;">DebtYa</h1>
                 <p id="welcomeText">Home</p>
@@ -589,7 +600,7 @@
             <div id="spinwheelDebtsConnectCard" class="spinwheel-debts-connect hidden" aria-hidden="true">
               <h3 class="spinwheel-debts-connect-title" data-i18n="sw_debts_connect_title">Connect your debts</h3>
               <p class="sub spinwheel-debts-connect-sub" data-i18n="sw_debts_connect_sub">
-                DebtYa can look up your real debts to build your plan automatically.
+                Optional lookup may pre-fill debts for some accounts. The standard flow is manual entry from your statements.
               </p>
               <div class="grid-2 spinwheel-debts-connect-fields">
                 <div class="field">
@@ -692,7 +703,7 @@
             </div>
 
             <p class="helper-text" style="margin:0 0 14px;" data-i18n="rules_intro_three_ways">
-              Pick one style per rule: a fixed add-on, a percent of each purchase, or rounding up spare change. Then use Apply rules when you run your automation workflow.
+              Optional legacy rules: a fixed add-on, a percent of each purchase, or spare-change rounding. Most people only need manual debts and the dashboard next payment line.
             </p>
             <p id="ruleLimitHint" class="helper-text hidden" style="margin:0 0 14px;" data-i18n="rules_one_only_hint"></p>
 
@@ -725,7 +736,7 @@
                   <input id="ruleMinPurchasePercent" class="input" type="number" step="0.01" value="0" />
                 </div>
                 <div class="field" style="grid-column:1 / -1;">
-                  <p class="helper-text" data-i18n="rule_hint_purchase_percent">Example: 10% on a $10 purchase adds $1 toward your target debt. Your automation in Supabase must use this percent on eligible spending.</p>
+                  <p class="helper-text" data-i18n="rule_hint_purchase_percent">Example: 10% on a $10 purchase adds $1 toward your target debt. Only applies if your workspace still runs optional rule-apply logic.</p>
                 </div>
               </div>
 
@@ -888,7 +899,7 @@
           </section>
 
           <section class="card hidden" id="notificationsPanel">
-            <p class="plan-debug-kicker" data-i18n="notif_debug_kicker">Notification debug (?debugNotifications=1 or ?debugPlan=1)</p>
+            <p class="plan-debug-kicker" data-i18n="notif_debug_kicker">Notification debug (?debugNotifications=1)</p>
             <div class="section-head">
               <div>
                 <h2 data-i18n="notif_title">Reminders</h2>
@@ -938,7 +949,7 @@
               </div>
             </div>
             <div class="field">
-              <label class="label" for="notifReminderFrequency" data-i18n="notif_freq_lbl">Automatic reminder frequency</label>
+              <label class="label" for="notifReminderFrequency" data-i18n="notif_freq_lbl">Reminder cadence</label>
               <select id="notifReminderFrequency" class="select">
                 <option value="weekly" data-i18n-opt="notif_freq_weekly">Weekly</option>
                 <option value="smart" data-i18n-opt="notif_freq_smart">Smart (legacy)</option>
@@ -1215,7 +1226,7 @@
 
       <div id="helpPanelAsk" class="help-panel hidden" data-help-panel="ask">
         <p id="helpAssistantOff" class="help-mini hidden" data-i18n="guide_assistant_off">The assistant is not available here yet. Use the FAQ tab or email contact@debtya.com.</p>
-        <p class="help-mini" data-i18n="help_ask_disclaimer">The assistant explains how DebtYa works. It is not financial or legal advice. For exact numbers, use your statement or your lender.</p>
+        <p class="help-mini" data-i18n="help_ask_disclaimer">The assistant explains how DebtYa works. It does not ask you to pay here or open billing. It is not financial or legal advice. For exact numbers, use your statement or your lender.</p>
         <div id="helpChatLog" class="help-chat-log" aria-live="polite"></div>
         <div class="help-chat-row">
           <textarea id="helpChatInput" class="input" data-i18n-placeholder="help_ask_placeholder"></textarea>
@@ -1232,6 +1243,10 @@
           <details class="faq-item">
             <summary data-i18n="faq_q2">Does DebtYa need my login credentials?</summary>
             <p class="faq-a" data-i18n="faq_a2">No. You enter balances and details yourself from your statements. That keeps you in control and avoids sharing logins with DebtYa.</p>
+          </details>
+          <details class="faq-item">
+            <summary data-i18n="faq_q_pay_flow">Does DebtYa send payments for me?</summary>
+            <p class="faq-a" data-i18n="faq_a_pay_flow">No. You always pay your lender or bank yourself. DebtYa recommends what to pay next and you confirm in the app after you have paid.</p>
           </details>
           <details class="faq-item">
             <summary data-i18n="faq_q3">Why review APR and minimum payment?</summary>
@@ -1254,7 +1269,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-11-v107.2-confirm-manual-email-language"></script>
+  <script src="/app.js?v=debtya-2026-05-11-v108-production-flow-polish"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

@@ -115,7 +115,7 @@
     function shouldShowVersionBadge() {
       try {
         const q = new URLSearchParams(window.location.search || "");
-        return q.get("debugPlan") === "1" || q.get("debugVersion") === "1";
+        return q.get("debugPlan") === "1" || q.get("debugNotifications") === "1";
       } catch (_) {
         return false;
       }
@@ -248,13 +248,13 @@
         notif_phone_ph: "+15551234567",
         notif_time_lbl: "Preferred reminder time (24-hour HH:MM)",
         notif_tz_lbl: "Timezone (IANA)",
-        notif_freq_lbl: "Automatic reminder frequency",
+        notif_freq_lbl: "Reminder cadence",
         notif_freq_smart: "Smart (recommended)",
         notif_freq_daily: "Daily",
         notif_freq_weekly: "Weekly",
         notif_freq_off: "Off (manual test only)",
         notif_freq_twice_weekly: "Twice weekly (internal)",
-        notif_debug_kicker: "Notification debug (?debugNotifications=1 or ?debugPlan=1)",
+        notif_debug_kicker: "Notification debug (?debugNotifications=1)",
         notif_channel_lbl: "Preferred channel",
         notif_ch_none: "None",
         notif_ch_email: "Email",
@@ -293,9 +293,12 @@
         faq_q2: "Does DebtYa move my money?",
         faq_a2:
           "No. You make payments outside DebtYa, directly with your lender.",
-        faq_q3: "Does DebtYa pay my cards automatically?",
+        faq_q3: "Why review APR and minimum payment?",
         faq_a3:
-          "Not yet. DebtYa guides your next payment and you confirm after paying.",
+          "Your statement is the source of truth. Double-check APR and minimum payment before saving a debt so your plan matches reality.",
+        faq_q_pay_flow: "Does DebtYa send payments for me?",
+        faq_a_pay_flow:
+          "No. You always pay your lender or bank yourself. DebtYa recommends what to pay next and you confirm in the app after you have paid.",
         faq_q4: "How much does DebtYa cost?",
         faq_a4:
           "During the manual-first beta, DebtYa is free. Get started creates an account or signs you in. If we introduce paid plans later, we will show clear pricing before any charge.",
@@ -324,7 +327,7 @@
         guide_assistant_off:
           "The assistant is not available here yet. Use the FAQ tab or email contact@debtya.com.",
         help_ask_disclaimer:
-          "The assistant explains how DebtYa works. It is not financial or legal advice. For exact numbers, use your statement or your lender.",
+          "The assistant explains how DebtYa works. It does not ask you to pay here or open billing. It is not financial or legal advice. For exact numbers, use your statement or your lender.",
         help_ask_placeholder: "Ask how something works in DebtYa?",
         help_ask_send: "Send",
         help_fab_aria: "Open help and guide",
@@ -402,7 +405,7 @@
           "This payment was already marked as completed. We refreshed your progress.",
         manual_pay_err: "Could not confirm the payment. Try again.",
         ai_coach_title: "Why this payment",
-        ai_coach_btn: "Explain with AI",
+        ai_coach_btn: "Explain this payment",
         ai_coach_loading: "Generating explanation\u2026",
         ai_coach_err: "Could not load an explanation. Try again.",
         next_step_bank: "Next: add optional snapshots only if your workspace uses them.",
@@ -542,7 +545,7 @@
         sim_counts_active_label: "Active debts",
         sim_counts_line_placeholder: "Active debts: 0",
         debt_source_plaid: "External snapshot",
-        debt_method_payable: "Payable (Method)",
+        debt_method_payable: "Payable liability",
         debt_method_info_only: "Informational",
         debts_title: "Debts",
         debts_sub: "Step 1: add each debt manually (balance, APR, minimum) from your statements.",
@@ -560,7 +563,7 @@
         rules_title: "Rules",
         rules_sub: "Three ways to steer extra money toward your debts when you apply rules.",
         rules_intro_three_ways:
-          "Pick one style per rule: a fixed add-on, a percent of each purchase, or rounding up spare change. Rules are optional; use them when you want extra automation on top of your plan.",
+          "Optional legacy rules: pick a fixed add-on, a percent of each purchase, or spare-change rounding. Most people only need manual debts and the dashboard next payment line.",
         rules_one_only_hint:
           "You can only keep one rule. Use Edit to change it, the switch above to pause it, or Delete to replace it.",
         lbl_rules_master_switch: "Rules on/off",
@@ -582,7 +585,7 @@
         rule_hint_monthly_fixed:
           "Same extra amount applied when you run Apply rules, toward the debt you choose below.",
         rule_hint_purchase_percent:
-          "Example: 10% on a $10 purchase adds $1 toward your target debt. Your Supabase apply_rules_v2 logic must use this percent on eligible spending.",
+          "Example: 10% on a $10 purchase adds $1 toward your target debt. Only applies if your workspace still runs optional rule-apply logic.",
         rule_hint_spare_change:
           "Example: spend $10.30 with a $1 step ? the spare change is $0.70 toward your debt (next whole dollar is $11). Use step 1 for classic ?round to next dollar.?",
         lbl_roundup_step: "Round up step ($)",
@@ -600,7 +603,7 @@
           "Step 2: choose Avalanche or Snowball. DebtYa calculates your next payment from your strategy. You pay outside DebtYa and mark it as done here to update progress.",
         plan_manual_first_card:
           "DebtYa calculates your next payment using your strategy. You make the payment outside DebtYa and mark it as completed here so your progress stays up to date. DebtYa never moves money.",
-        plan_mode_advanced_summary: "Optional legacy automation mode",
+        plan_mode_advanced_summary: "Optional legacy mode (not recommended)",
         plan_manual: "Manual (recommended)",
         plan_safe_auto: "Legacy: extra guardrails",
         plan_full_auto: "Legacy: more automation",
@@ -711,7 +714,8 @@
         empty_rules: "You have no saved rules yet.",
         empty_intents:
           "No payment rows yet. Save or update your plan, then check the dashboard for your next payment line.",
-        empty_trace: "No history available yet.",
+        empty_trace:
+          "No payment history yet. After you tap “I paid it” or register an extra payment, entries show up here.",
         empty_accounts: "No optional snapshots yet.",
         empty_compare: "No comparison available yet.",
         lbl_debt_from_account: "Pre-fill from optional snapshot (if any)",
@@ -797,7 +801,7 @@
         interest_total_lbl: "Total interest",
         total_paid_lbl: "Total paid",
         plan_mode_manual: "Manual",
-        plan_mode_safe: "Safe auto",
+        plan_mode_safe: "Legacy (guarded)",
         plan_mode_full: "Full auto",
         bill_active: "Active",
         promo_comp_hint:
@@ -983,13 +987,13 @@
         notif_phone_ph: "+15551234567",
         notif_time_lbl: "Hora preferida de recordatorio (24h HH:MM)",
         notif_tz_lbl: "Zona horaria (IANA)",
-        notif_freq_lbl: "Frecuencia de recordatorios automaticos",
+        notif_freq_lbl: "Frecuencia de recordatorios",
         notif_freq_smart: "Inteligente (recomendado)",
         notif_freq_daily: "Diario",
         notif_freq_weekly: "Semanal",
         notif_freq_off: "Desactivado",
         notif_freq_twice_weekly: "Dos veces por semana (interno)",
-        notif_debug_kicker: "Depuracion de notificaciones (?debugNotifications=1 o ?debugPlan=1)",
+        notif_debug_kicker: "Depuracion de notificaciones (?debugNotifications=1)",
         notif_channel_lbl: "Canal preferido",
         notif_ch_none: "Ninguno",
         notif_ch_email: "Email",
@@ -1028,9 +1032,12 @@
         faq_q2: "DebtYa mueve mi dinero?",
         faq_a2:
           "No. Tu haces los pagos fuera de DebtYa, directo con tu acreedor.",
-        faq_q3: "DebtYa paga mis tarjetas automaticamente?",
+        faq_q3: "Por que revisar APR y pago minimo?",
         faq_a3:
-          "Todavia no. DebtYa te guia con el proximo pago y tu confirmas despues de pagar.",
+          "Tu estado de cuenta es la fuente de verdad. Confirma APR y pago minimo antes de guardar una deuda para que el plan refleje la realidad.",
+        faq_q_pay_flow: "DebtYa envia pagos por mi?",
+        faq_a_pay_flow:
+          "No. Siempre pagas tu mismo al acreedor o banco. DebtYa recomienda el proximo pago y tu confirmas en la app cuando ya pagaste.",
         faq_q4: "Cuanto cuesta DebtYa?",
         faq_a4:
           "En la beta manual-first, DebtYa es gratis. Empieza ahora crea cuenta o inicia sesion. Si mas adelante hay planes de pago, mostraremos precios claros antes de cualquier cargo.",
@@ -1059,7 +1066,7 @@
         guide_assistant_off:
           "El asistente no esta disponible en este servidor todavia. Usa la pestana FAQ o escribe a contact@debtya.com.",
         help_ask_disclaimer:
-          "El asistente explica como funciona DebtYa. No es asesoria financiera ni legal. Para cifras exactas, usa tu estado de cuenta o tu prestamista.",
+          "El asistente explica como funciona DebtYa. No te pide pagar aqui ni abrir cobros. No es asesoria financiera ni legal. Para cifras exactas, usa tu estado de cuenta o tu prestamista.",
         help_ask_placeholder: "Pregunta como funciona algo en DebtYa?",
         help_ask_send: "Enviar",
         help_fab_aria: "Abrir ayuda y guia",
@@ -1138,7 +1145,7 @@
           "Este pago ya estaba marcado como realizado. Actualizamos tu progreso.",
         manual_pay_err: "No se pudo confirmar el pago. Int\u00E9ntalo de nuevo.",
         ai_coach_title: "Por qu\u00E9 este pago",
-        ai_coach_btn: "Explicar con IA",
+        ai_coach_btn: "Explicar este pago",
         ai_coach_loading: "Generando explicaci\u00F3n\u2026",
         ai_coach_err: "No se pudo cargar la explicaci\u00F3n. Int\u00E9ntalo de nuevo.",
         next_step_bank: "Siguiente: solo si tu espacio de trabajo usa capturas opcionales.",
@@ -1279,7 +1286,7 @@
         sim_counts_active_label: "Deudas activas",
         sim_counts_line_placeholder: "Deudas activas: 0",
         debt_source_plaid: "Captura externa",
-        debt_method_payable: "Pagable (Method)",
+        debt_method_payable: "Pasivo pagable",
         debt_method_info_only: "Informativa",
         debts_title: "Deudas",
         debts_sub: "Paso 1: agrega cada deuda a mano (saldo, APR y minimo) desde tus estados de cuenta.",
@@ -1297,7 +1304,7 @@
         rules_title: "Reglas",
         rules_sub: "Tres formas de enviar dinero extra a tus deudas al aplicar reglas.",
         rules_intro_three_ways:
-          "Elige un estilo por regla: monto fijo, porcentaje de cada compra o redondear vueltos. Las reglas son opcionales; usalas cuando quieras mas automatizacion sobre tu plan.",
+          "Reglas heredadas opcionales: monto fijo, porcentaje de cada compra o redondeo de vueltos. La mayoria solo necesita deudas manuales y la linea de proximo pago del panel.",
         rules_one_only_hint:
           "Solo puedes tener una regla. Usa Editar para cambiarla, el interruptor arriba para pausarla, o Borrar para reemplazarla.",
         lbl_rules_master_switch: "Reglas activas",
@@ -1319,7 +1326,7 @@
         rule_hint_monthly_fixed:
           "El mismo monto extra cuando ejecutas Aplicar reglas, hacia la deuda que elijas abajo.",
         rule_hint_purchase_percent:
-          "Ejemplo: 10% sobre $10 de compra suma $1 hacia tu deuda. Tu apply_rules_v2 en Supabase debe usar este porcentaje sobre gastos elegibles.",
+          "Ejemplo: 10% sobre $10 de compra suma $1 hacia tu deuda. Solo aplica si tu espacio de trabajo aun ejecuta logica opcional de reglas.",
         rule_hint_spare_change:
           "Ejemplo: gastas $10.30 con paso $1 ? el vueltito es $0.70 hacia la deuda (el siguiente entero es $11). Paso 1 = redondear al siguiente dolar.",
         lbl_roundup_step: "Paso de redondeo ($)",
@@ -1337,10 +1344,10 @@
           "Paso 2: elige Avalancha o Bola de nieve. DebtYa calcula tu pr\u00f3ximo pago usando tu estrategia. T\u00fa haces el pago fuera de DebtYa y lo marcas como realizado para actualizar tu progreso.",
         plan_manual_first_card:
           "DebtYa calcula tu pr\u00f3ximo pago usando tu estrategia. T\u00fa haces el pago fuera de DebtYa y marcas el pago como realizado para actualizar tu progreso. DebtYa no mueve dinero.",
-        plan_mode_advanced_summary: "Modo de automatizacion heredado (opcional)",
+        plan_mode_advanced_summary: "Modo heredado opcional (no recomendado)",
         plan_manual: "Manual (recomendado)",
         plan_safe_auto: "Heredado: mas limites",
-        plan_full_auto: "Heredado: mas automatizacion en app",
+        plan_full_auto: "Heredado: mas pasos internos en la app",
         hint_strategy_avalanche:
           "Destina los pagos extra a la tasa mas alta primero. Suele ahorrar mas intereses en total.",
         hint_strategy_snowball:
@@ -1447,7 +1454,8 @@
         empty_rules: "Todavia no tienes reglas guardadas.",
         empty_intents:
           "Aun no hay filas de pago. Guarda o actualiza tu plan y revisa el panel principal para la linea de proximo pago.",
-        empty_trace: "Todavia no hay historial disponible.",
+        empty_trace:
+          "Todavia no hay historial. Despues de pulsar Ya lo pagu\u00e9 o registrar un pago extra, veras entradas aqui.",
         empty_accounts: "Todavia no hay capturas opcionales.",
         empty_compare: "Todavia no hay comparacion disponible.",
         lbl_debt_from_account: "Autollenar desde captura opcional (si hay)",
@@ -1534,8 +1542,8 @@
         interest_total_lbl: "Interes total",
         total_paid_lbl: "Total pagado",
         plan_mode_manual: "Manual",
-        plan_mode_safe: "Automatico seguro",
-        plan_mode_full: "Automatico total",
+        plan_mode_safe: "Heredado (con controles)",
+        plan_mode_full: "Heredado (mas pasos)",
         bill_active: "Activa",
         promo_comp_hint:
           "Si te compartieron un c?digo de invitaci?n (amigos o familia), escr?belo en el campo de abajo y pulsa ?Aplicar c?digo? para usar la app sin pasar por el pago.",
@@ -2716,7 +2724,7 @@
     function isNotificationsDebugUrl() {
       try {
         const q = new URLSearchParams(window.location.search || "");
-        return q.get("debugNotifications") === "1" || q.get("debugPlan") === "1";
+        return q.get("debugNotifications") === "1";
       } catch (_) {
         return false;
       }
@@ -3623,16 +3631,18 @@
       card.classList.remove("hidden");
 
       const intent = pickFeaturedIntentForDashboard();
-      try {
-        console.log("[DebtYa dashboard selected intent]", {
-          id: intent?.id ?? null,
-          status: intent?.status ?? null,
-          source: intent?.source ?? null,
-          metadata: intent?.metadata ?? null,
-          debt_id: intent?.debt_id ?? null,
-          amount: intent ? intentPaymentAmount(intent) : null
-        });
-      } catch (_) {}
+      if (isPlanDebugUrl()) {
+        try {
+          console.log("[DebtYa dashboard selected intent]", {
+            id: intent?.id ?? null,
+            status: intent?.status ?? null,
+            source: intent?.source ?? null,
+            metadata: intent?.metadata ?? null,
+            debt_id: intent?.debt_id ?? null,
+            amount: intent ? intentPaymentAmount(intent) : null
+          });
+        } catch (_) {}
+      }
       const payAmt = intent ? intentPaymentAmount(intent) : 0;
 
       if (intent && payAmt > 0 && intentStatusDashboardActionable(intent)) {

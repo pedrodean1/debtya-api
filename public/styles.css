@@ -2515,6 +2515,22 @@
       background:var(--surface-2, rgba(0,0,0,.03));
     }
 
+    .paid-debts-section .item-paid-debt .item-top{
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .paid-debts-section .item-paid-debt .money{
+      word-break:break-word;
+    }
+    #extraPaymentModalRoot .bank-dc-dialog{
+      max-height:min(92vh, 640px);
+      overflow-y:auto;
+    }
+    #extraPaymentModalRoot .bank-dc-dialog .btn{
+      flex:1 1 auto;
+      min-width:0;
+    }
+
     /* Mobile polish for beta launch */
     @media (max-width: 640px){
       .app{
