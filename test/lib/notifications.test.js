@@ -237,11 +237,12 @@ describe("lib/notifications", () => {
     assert.equal(preview.intent_id, intentId);
     assert.equal(preview.debt_name, "CBUSASEARS");
     assert.equal(preview.amount, 82);
-    assert.match(preview.message, /Pay \$82\.00 to CBUSASEARS/);
-    assert.match(preview.message, /outside DebtYa/);
+    assert.match(preview.message, /\$82\.00/);
+    assert.match(preview.message, /CBUSASEARS/);
+    assert.match(preview.message, /I paid it/i);
   });
 
-  it("preview email EN con APR incluye ballpark de interes", async () => {
+  it("preview email EN (V101) incluye Yo lo pagué EN, disclaimer y nombre de deuda", async () => {
     const supabaseAdmin = makeSupabaseMock({
       intents: [
         {
@@ -264,8 +265,41 @@ describe("lib/notifications", () => {
       channel: "email",
       lang: "en"
     });
-    assert.match(preview.email_body || preview.message, /Ballpark/i);
-    assert.match(preview.email_body || preview.message, /APR/i);
+    const body = preview.email_body || preview.message;
+    assert.match(body, /I paid it/i);
+    assert.match(body, /DebtYa does not move money/i);
+    assert.match(body, /Recommended debt:\s*Card A/i);
+  });
+
+  it("preview email usa fallback cuando no hay nombre de deuda (V101)", async () => {
+    const supabaseAdmin = makeSupabaseMock({
+      intents: [
+        {
+          id: intentId,
+          user_id: userId,
+          debt_id: debtId,
+          amount: 25,
+          status: "pending_review",
+          strategy: "avalanche",
+          metadata: { manual_first_priority: true },
+          debt_name: null,
+          creditor_name: null,
+          created_at: "2026-05-10T00:00:00Z"
+        }
+      ],
+      debt: null,
+      plan: { strategy: "avalanche" }
+    });
+    const preview = await buildNextPaymentReminderPreview({
+      supabaseAdmin,
+      userId,
+      channel: "email",
+      lang: "en"
+    });
+    const body = preview.email_body || preview.message;
+    assert.match(body, /I paid it/i);
+    assert.match(body, /DebtYa does not move money/i);
+    assert.match(body, /Recommended debt:\s*your priority debt/i);
   });
 
   it("preview en espanol menciona Ya lo pague", async () => {
@@ -291,8 +325,9 @@ describe("lib/notifications", () => {
       channel: "email",
       lang: "es"
     });
-    assert.match(preview.message, /Ya lo pague/i);
-    assert.match(preview.message, /fuera de DebtYa/i);
+    assert.match(preview.email_body || preview.message, /Ya lo pagué/i);
+    assert.match(preview.email_body || preview.message, /DebtYa no mueve dinero/i);
+    assert.match(preview.email_body || preview.message, /Deuda recomendada:\s*Tarjeta A/i);
   });
 });
 

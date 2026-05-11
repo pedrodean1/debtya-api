@@ -296,7 +296,7 @@ describe("routes/notifications-routes", () => {
     assert.equal(res.body.ok, true);
     assert.equal(res.body.preview.intent_id, intentId);
     assert.equal(res.body.preview.debt_name, "CBUSASEARS");
-    assert.match(res.body.preview.message, /Pay \$82\.00/);
+    assert.match(res.body.preview.message, /\$82\.00/);
   });
 
   it("send-test devuelve preview si no hay provider keys", async () => {
