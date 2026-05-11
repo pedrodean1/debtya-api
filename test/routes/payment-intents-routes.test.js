@@ -91,6 +91,28 @@ describe("routes/payment-intents-routes", () => {
     assert.equal(res.body.amount_confirmed, 25);
   });
 
+  it("POST confirm-manual propaga already_confirmed del handler", async () => {
+    const app = mount(
+      makeDeps({
+        confirmManualPaymentIntentDirect: async () => ({
+          ok: true,
+          already_confirmed: true,
+          intent_id: intentId,
+          debt_id: "770e8400-e29b-41d4-a716-446655440000",
+          amount_confirmed: 25,
+          old_balance: 10,
+          new_balance: 10,
+          data: { id: intentId, status: "executed" },
+          debt_apply: { ok: true, skipped: true, reason: "ya_confirmado" },
+          debt_marked_paid: false
+        })
+      })
+    );
+    const res = await request(app).post(`/payment-intents/${intentId}/confirm-manual`).send({});
+    assert.equal(res.status, 200);
+    assert.equal(res.body.already_confirmed, true);
+  });
+
   it("POST confirm-manual pasa preferred_language al handler", async () => {
     let captured;
     const app = mount(

@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v108-production-flow-polish";
+const SW_CACHE = "debtya-static-v109-google-play-blockers-fix";
 const STATIC_ASSETS = [
   "/",
   "/index.html",

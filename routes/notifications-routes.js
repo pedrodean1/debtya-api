@@ -247,7 +247,12 @@ function registerNotificationRoutes(app, deps) {
       const status = Number(error.status) || 500;
       const clientMsg = status >= 400 && status < 500 && error.message ? error.message : "Could not send test reminder";
       if (appError) appError("[notifications/send-test]", error.message);
-      return jsonError(res, status, clientMsg, status >= 500 ? { details: error.message } : {});
+      return jsonError(
+        res,
+        status,
+        clientMsg,
+        status >= 500 ? { error_code: "notifications_send_test_failed" } : {}
+      );
     }
   });
 }

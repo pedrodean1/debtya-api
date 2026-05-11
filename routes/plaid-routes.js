@@ -1,3 +1,5 @@
+const { isPublicPlaidWebDisabled } = require("../lib/debtya-beta-flags");
+
 function registerPlaidRoutes(app, deps) {
   const {
     requireUser,
@@ -44,6 +46,9 @@ function registerPlaidRoutes(app, deps) {
   }
 
   app.get("/plaid/web", (req, res) => {
+    if (isPublicPlaidWebDisabled()) {
+      return res.status(404).type("text/plain").send("Not found");
+    }
     const baseUrl = getBaseUrl(req);
     return res.send(`
 <!DOCTYPE html>

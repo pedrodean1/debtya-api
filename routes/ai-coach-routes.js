@@ -207,7 +207,7 @@ function registerAiCoachRoutes(app, deps) {
     } catch (err) {
       appError("[ai/explain-next-payment]", err.response?.data || err.message);
       return jsonError(res, 500, "Could not explain payment", {
-        details: err.message
+        error_code: "ai_explain_failed"
       });
     }
   });

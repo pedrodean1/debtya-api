@@ -708,6 +708,8 @@
         err_no_bank: "Add your debts and plan first.",
         err_no_auth: "You need to sign in first.",
         err_stripe_cfg: "Payments are not available right now.",
+        err_checkout_beta: "Checkout is not available during the free beta. Continue in the app to track your plan.",
+        manual_pay_already_recorded: "This payment was already recorded in DebtYa.",
         err_plaid_cfg: "That option is not available right now.",
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
@@ -1448,6 +1450,8 @@
         err_no_bank: "Primero agrega tus deudas y tu plan.",
         err_no_auth: "Necesitas iniciar sesion primero.",
         err_stripe_cfg: "El sistema de pagos no esta listo ahora mismo.",
+        err_checkout_beta: "El checkout no esta disponible durante la beta gratuita. Sigue en la app para registrar tu plan.",
+        manual_pay_already_recorded: "Este pago ya estaba registrado en DebtYa.",
         err_plaid_cfg: "Esa opcion no esta disponible ahora mismo.",
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
@@ -1764,7 +1768,7 @@
           dfab.textContent = t("btn_disconnect_bank");
           dfab.setAttribute("aria-label", t("btn_disconnect_bank"));
         }
-        void refreshSpinwheelPayableDiag();
+        if (debtyaLegacyBankDebugEnabled()) void refreshSpinwheelPayableDiag();
         syncNotifConsentVisibility();
       } else {
         $("sessionBadge").className = "pill blue";
@@ -1978,11 +1982,11 @@
       appView.classList.remove("hidden");
       patchOverviewPanelLayout();
       mountFallbackDisconnectFabIfMissing();
-      void refreshSpinwheelPayableDiag();
+      if (debtyaLegacyBankDebugEnabled()) void refreshSpinwheelPayableDiag();
     }
 
     function setNav(active) {
-      if (active === "operate") void refreshMethodSection();
+      if (active === "operate" && debtyaLegacyBankDebugEnabled()) void refreshMethodSection();
     }
 
     function fmtMoney(value) {
@@ -2193,6 +2197,7 @@
       if (text.includes("No hay cuenta bancaria conectada")) return t("err_no_bank");
       if (text.includes("Falta Authorization Bearer token")) return t("err_no_auth");
       if (text.includes("Stripe no configurado")) return t("err_stripe_cfg");
+      if (text.includes("checkout_disabled_during_beta")) return t("err_checkout_beta");
       if (text.includes("Plaid no configurado")) return t("err_plaid_cfg");
       if (text.includes("Invalid linked Plaid account")) return t("err_debt_link_invalid");
       if (text.includes("Cuenta de origen no encontrada")) return t("err_plan_funding_missing");
@@ -3738,8 +3743,15 @@
                 );
               }
               applyManualConfirmDebtToLocalState(confirmRes);
-              let payMsg = t("manual_pay_ok");
-              if (confirmRes && confirmRes.debt_marked_paid) {
+              let payMsg =
+                confirmRes && confirmRes.already_confirmed
+                  ? t("manual_pay_already_recorded")
+                  : t("manual_pay_ok");
+              if (
+                !(confirmRes && confirmRes.already_confirmed) &&
+                confirmRes &&
+                confirmRes.debt_marked_paid
+              ) {
                 const nm =
                   cleanVisibleDebtName(confirmRes.debt_name || "") || t("debt_label");
                 payMsg += " " + String(t("debt_fully_paid_toast")).replace("{{name}}", nm);
@@ -5270,8 +5282,8 @@
         : t("app_welcome_default");
     }
 
-    /** Stripe Customer Portal (manage plan) is hidden during the free manual-first beta — UI only; backend unchanged. */
-    const DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA = true;
+    /** During free manual-first beta: no Stripe checkout/portal from normal UI (backend may still block checkout). */
+    const DEBTYA_BETA_MANUAL_FIRST_NO_STRIPE_UI = true;
 
     function renderBilling() {
       const billing = state.billing || {
@@ -5306,15 +5318,17 @@
       const topManageBillingBtn = $("topManageBillingBtn");
       const billingStartBtn = $("billingStartBtn");
       const topUpgradeBtn = $("topUpgradeBtn");
-      if (DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA) {
+      if (DEBTYA_BETA_MANUAL_FIRST_NO_STRIPE_UI) {
         if (billingManageBtn) billingManageBtn.classList.add("hidden");
         if (topManageBillingBtn) topManageBillingBtn.classList.add("hidden");
+        if (billingStartBtn) billingStartBtn.classList.add("hidden");
+        if (topUpgradeBtn) topUpgradeBtn.classList.add("hidden");
       } else {
         if (billingManageBtn) billingManageBtn.classList.toggle("hidden", !canManage);
         if (topManageBillingBtn) topManageBillingBtn.classList.toggle("hidden", !canManage);
+        if (billingStartBtn) billingStartBtn.classList.toggle("hidden", isActive);
+        if (topUpgradeBtn) topUpgradeBtn.classList.toggle("hidden", isActive);
       }
-      if (billingStartBtn) billingStartBtn.classList.toggle("hidden", isActive);
-      if (topUpgradeBtn) topUpgradeBtn.classList.toggle("hidden", isActive);
 
       const promoWrap = $("promoCompWrap");
       if (promoWrap) promoWrap.classList.toggle("hidden", isActive);
@@ -5691,6 +5705,16 @@
       return false;
     }
 
+    /** Plaid / Method / Spinwheel legacy diagnostics — only when explicitly enabled (manual-first default off). */
+    function debtyaLegacyBankDebugEnabled() {
+      try {
+        if (typeof window !== "undefined" && window.DEBTYA_ENABLE_LEGACY_BANK_LINK === true) return true;
+        const qs = new URLSearchParams(window.location.search || "");
+        if (qs.get("debugBank") === "1") return true;
+      } catch (_) {}
+      return false;
+    }
+
     function renderSpinwheelPayableDiagBody(payload) {
       const j = payload && typeof payload === "object" ? payload : {};
       const parts = [];
@@ -5902,6 +5926,10 @@
     }
 
     async function refreshPlaidItems() {
+      if (!debtyaLegacyBankDebugEnabled()) {
+        state.plaidItems = [];
+        return;
+      }
       try {
         const res = await api("/plaid/items");
         let raw = res?.data;
@@ -6180,8 +6208,11 @@
     async function refreshAccounts() {
       const [accountsRes] = await Promise.all([
         api("/accounts"),
-        refreshPlaidItems()
+        debtyaLegacyBankDebugEnabled() ? refreshPlaidItems() : Promise.resolve()
       ]);
+      if (!debtyaLegacyBankDebugEnabled()) {
+        state.plaidItems = [];
+      }
       state.accounts = accountsRes.data || [];
       if (state.accounts.length > 0) setBankExchangeFlag();
       renderAccounts();
@@ -6280,7 +6311,10 @@
           body: JSON.stringify({ method_account_id: methodAccountId, balance, apr, minimum_payment })
         });
         showMessage(globalMessage, t("method_import_ok"), "success");
-        await Promise.all([refreshDebts(), refreshMethodSection()]);
+        await Promise.all([
+          refreshDebts(),
+          debtyaLegacyBankDebugEnabled() ? refreshMethodSection() : Promise.resolve()
+        ]);
       } catch (e) {
         showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
       }
@@ -6361,8 +6395,34 @@
       return false;
     }
 
+    async function refreshDebtyaHealthBadgeOnly() {
+      try {
+        const healthRes = await fetch(`${API_BASE}/health`, { method: "GET", cache: "no-store" });
+        const health = healthRes.ok ? await healthRes.json().catch(() => ({})) : {};
+        const hdr =
+          healthRes && healthRes.ok
+            ? healthRes.headers.get("X-Debtya-Server-Version") || healthRes.headers.get("x-debtya-server-version")
+            : null;
+        if (health && typeof health === "object") {
+          renderDebtyaRevBadge(health.server_version || hdr || null);
+        } else if (hdr) {
+          renderDebtyaRevBadge(hdr);
+        }
+      } catch (_) {}
+    }
+
     async function refreshMethodSection() {
       state.methodEntitiesLoadError = null;
+      if (!debtyaLegacyBankDebugEnabled()) {
+        state.methodConfigured = false;
+        state.methodEntities = [];
+        state.methodAccounts = [];
+        updateMethodPanelHint();
+        await refreshDebtyaHealthBadgeOnly();
+        populateMethodEntityPick();
+        renderMethodAccountsList();
+        return;
+      }
       let configured = false;
       try {
         const ac = new AbortController();
@@ -6524,9 +6584,11 @@
       } catch (e) {
         showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
       }
-      try {
-        await refreshSpinwheelPayableDiag();
-      } catch (_) {}
+      if (debtyaLegacyBankDebugEnabled()) {
+        try {
+          await refreshSpinwheelPayableDiag();
+        } catch (_) {}
+      }
       try {
         await refreshMethodSection();
       } catch (e2) {
@@ -6535,11 +6597,25 @@
       }
     }
 
+    async function ensurePlaidScriptLoaded() {
+      if (typeof window === "undefined") return;
+      if (window.Plaid && typeof window.Plaid.create === "function") return;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://cdn.plaid.com/link/v2/stable/link-initialize.js";
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error(t("plaid_script")));
+        document.head.appendChild(s);
+      });
+    }
+
     async function connectBankDirect(){
       const btn = $("btnConnectBank");
       try {
         const token = await getAccessToken();
         if (!token) throw new Error(t("sign_in_first"));
+        await ensurePlaidScriptLoaded();
         if (!window.Plaid) throw new Error(t("plaid_script"));
 
         const rolePick = await openBankConnectionRoleChoice();
@@ -6649,8 +6725,28 @@
       window.location.href = "https://www.debtya.com/";
     }
 
+    async function navigateStartFreeCta(buttonEl = null) {
+      trackEvent("start_free_click", { cta_id: buttonEl && buttonEl.id ? buttonEl.id : null });
+      if (buttonEl) setLoading(buttonEl, true, t("proc"));
+      try {
+        const token = await getAccessToken();
+        if (token) {
+          showApp();
+          await refreshAll().catch(() => null);
+        } else {
+          showAuth("signup");
+        }
+      } finally {
+        if (buttonEl) setLoading(buttonEl, false);
+      }
+    }
+
     async function startCheckout(buttonEl = null) {
       try {
+        if (DEBTYA_BETA_MANUAL_FIRST_NO_STRIPE_UI) {
+          await navigateStartFreeCta(buttonEl);
+          return;
+        }
         trackEvent("subscribe_click", { cta_id: buttonEl && buttonEl.id ? buttonEl.id : null });
         if (buttonEl) setLoading(buttonEl, true, t("stripe_opening"));
 
@@ -6717,7 +6813,7 @@
     }
 
     async function openBillingPortal(buttonEl = null) {
-      if (DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA) {
+      if (DEBTYA_BETA_MANUAL_FIRST_NO_STRIPE_UI) {
         if (buttonEl) setLoading(buttonEl, false);
         return;
       }
@@ -6952,8 +7048,8 @@
       showAuth("login");
     });
     $("landingSignupBtn").addEventListener("click", () => showAuth("signup"));
-    $("landingStartBtn").addEventListener("click", () => startCheckout($("landingStartBtn")));
-    $("pricingStartBtn").addEventListener("click", () => startCheckout($("pricingStartBtn")));
+    $("landingStartBtn").addEventListener("click", () => navigateStartFreeCta($("landingStartBtn")));
+    $("pricingStartBtn").addEventListener("click", () => navigateStartFreeCta($("pricingStartBtn")));
     $("pricingLoginBtn").addEventListener("click", () => {
       trackEvent("login_click", { cta_id: "pricingLoginBtn" });
       showAuth("login");
@@ -7528,21 +7624,22 @@
     }
 
     const billingStartBtn = $("billingStartBtn");
-    if (billingStartBtn) billingStartBtn.addEventListener("click", () => startCheckout($("billingStartBtn")));
-    $("topUpgradeBtn").addEventListener("click", () => startCheckout($("topUpgradeBtn")));
+    if (billingStartBtn) billingStartBtn.addEventListener("click", () => navigateStartFreeCta($("billingStartBtn")));
+    const topUpgradeBtn = $("topUpgradeBtn");
+    if (topUpgradeBtn) topUpgradeBtn.addEventListener("click", () => navigateStartFreeCta(topUpgradeBtn));
     const promoCompBtn = $("promoCompBtn");
     if (promoCompBtn) promoCompBtn.addEventListener("click", () => applyPromoCompCode($("promoCompBtn")));
     const billingManageBtn = $("billingManageBtn");
     if (billingManageBtn) {
       billingManageBtn.addEventListener("click", () => {
-        if (DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA) return;
+        if (DEBTYA_BETA_MANUAL_FIRST_NO_STRIPE_UI) return;
         openBillingPortal(billingManageBtn);
       });
     }
     const topManageBillingBtn = $("topManageBillingBtn");
     if (topManageBillingBtn) {
       topManageBillingBtn.addEventListener("click", () => {
-        if (DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA) return;
+        if (DEBTYA_BETA_MANUAL_FIRST_NO_STRIPE_UI) return;
         openBillingPortal(topManageBillingBtn);
       });
     }

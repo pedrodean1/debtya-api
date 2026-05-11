@@ -126,11 +126,13 @@ function registerPaymentIntentRoutes(app, deps) {
       return res.json({
         ok: true,
         bypass_sql_function: true,
+        ...(result.already_confirmed ? { already_confirmed: true } : {}),
         intent_id: result.intent_id,
         debt_id: result.debt_id,
         amount_confirmed: result.amount_confirmed,
         old_balance: result.old_balance,
         new_balance: result.new_balance,
+        debt_marked_paid: result.debt_marked_paid,
         debt_apply: result.debt_apply,
         data: result.data
       });

@@ -1,3 +1,5 @@
+const { isStripeCheckoutBlockedForBeta } = require("../lib/debtya-beta-flags");
+
 function registerBillingRoutes(app, deps) {
   const {
     SERVER_VERSION,
@@ -95,6 +97,9 @@ function registerBillingRoutes(app, deps) {
 
   app.post("/stripe/create-checkout-session", requireUser, async (req, res) => {
     try {
+      if (isStripeCheckoutBlockedForBeta()) {
+        return res.status(403).json({ ok: false, error: "checkout_disabled_during_beta" });
+      }
       if (!stripe) {
         return jsonError(res, 500, "Stripe no configurado");
       }

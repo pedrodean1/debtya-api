@@ -80,6 +80,8 @@ android/app/build/outputs/bundle/release/app-release.aab
 
 Do not upload an unsigned or debug artifact to Google Play.
 
+For each **new upload** to Google Play (internal testing or production), increment `versionCode` in `android/app/build.gradle` (and align `versionName` with your release notes). Play Console rejects an AAB whose `versionCode` was already used, even for internal tracks.
+
 ## V93 Release Signing
 
 Release signing uses a local file that must not be committed:
