@@ -68,6 +68,21 @@ describe("routes/debts-extra-payment-routes", () => {
     assert.match(String(res.body.error || ""), /no encontrada/i);
   });
 
+  it("400 cuando la deuda ya está pagada (handler)", async () => {
+    const err = new Error("Esta deuda ya está marcada como pagada en DebtYa.");
+    err.status = 400;
+    const app = mount(
+      makeDeps({
+        recordManualExtraDebtPayment: async () => {
+          throw err;
+        }
+      })
+    );
+    const res = await request(app).post(`/debts/${debtId}/extra-payment`).send({ amount: 10 });
+    assert.equal(res.status, 400);
+    assert.match(String(res.body.error || ""), /pagada/i);
+  });
+
   it("400 monto inválido (handler)", async () => {
     const err = new Error("El monto debe ser mayor que cero.");
     err.status = 400;

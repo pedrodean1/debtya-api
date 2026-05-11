@@ -33,7 +33,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-11-v106.2-hide-beta-billing-copy";
+const SERVER_VERSION = "debtya-2026-05-11-v107-paid-debts-celebration-emails";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2041,7 +2041,7 @@ async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNot
     throw err;
   }
 
-  const currentBalance = safeNumber(debt.balance);
+  const currentBalance = safeNumber(debt.balance ?? debt.current_balance);
   if (!(currentBalance > PAID_BALANCE_THRESHOLD)) {
     const err = new Error("Esta deuda no tiene saldo pendiente en DebtYa.");
     err.status = 400;

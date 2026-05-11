@@ -881,7 +881,9 @@
         paid_debts_title: "Paid debts",
         paid_debts_sub:
           "These balances are at or near zero in DebtYa. They stay in your history — nothing is deleted.",
-        debt_fully_paid_toast: "Congrats! You paid off {{name}} completely.",
+        debt_status_paid: "Paid",
+        paid_on_label: "Paid on",
+        debt_fully_paid_toast: "Congrats! You paid off {{name}}.",
         accounts_imp: "Snapshots updated",
         tx_imp: "Activity updated",
         rules_applied: "Rules applied. Created",
@@ -1617,6 +1619,8 @@
         paid_debts_title: "Deudas pagadas",
         paid_debts_sub:
           "Estos saldos están en cero (o casi) en DebtYa. Siguen en tu historial: no se borran.",
+        debt_status_paid: "Pagada",
+        paid_on_label: "Pagada el",
         debt_fully_paid_toast: "¡Felicidades! Pagaste completamente {{name}}.",
         accounts_imp: "Capturas actualizadas",
         tx_imp: "Actividad actualizada",
@@ -4329,14 +4333,17 @@
       rows.forEach((debt) => {
         const el = document.createElement("div");
         el.className = "item item-paid-debt";
+        const bal = toNum(debt.balance ?? debt.current_balance);
+        const paidWhen = debt.paid_at ? fmtDate(debt.paid_at) : "—";
         el.innerHTML = `
           <div class="item-top">
             <div>
               <div class="item-title">${escapeHtml(cleanVisibleDebtName(debt.name) || t("debt_label"))}</div>
-              <div class="item-meta muted">${escapeHtml(t("paid_debts_title"))}</div>
+              <div class="item-meta"><strong>${escapeHtml(t("debt_status_paid"))}</strong></div>
+              <div class="item-meta muted" style="margin-top:4px;">${escapeHtml(t("paid_on_label"))}: ${escapeHtml(paidWhen)}</div>
             </div>
             <div class="right">
-              <div class="money">${fmtMoney(debt.balance)}</div>
+              <div class="money">${fmtMoney(bal)}</div>
               <div class="muted" style="font-size:12px;margin-top:4px;">${escapeHtml(t("updated_label"))}: ${fmtDate(debt.updated_at)}</div>
             </div>
           </div>

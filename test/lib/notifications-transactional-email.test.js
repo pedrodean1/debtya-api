@@ -52,12 +52,14 @@ describe("lib/notifications transactional copy", () => {
     const c = buildDebtPaidOffTransactionalCopy("es", "Loan A");
     assert.match(c.subject, /¡Felicidades!/);
     assert.match(c.body, /Loan A/);
+    assert.match(c.body, /La movimos a Deudas pagadas/);
   });
 
   it("EN celebración usa Congrats", () => {
     const c = buildDebtPaidOffTransactionalCopy("en", "Loan B");
     assert.match(c.subject, /Congrats/);
     assert.match(c.body, /Loan B/);
+    assert.match(c.body, /We moved it to Paid debts/);
   });
 
   it("no duplica pago si metadata ya tiene payment_recorded_email_sent_at", async () => {
