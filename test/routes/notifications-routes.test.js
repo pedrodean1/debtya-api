@@ -10,12 +10,24 @@ const userId = "550e8400-e29b-41d4-a716-446655440000";
 const intentId = "660e8400-e29b-41d4-a716-446655440000";
 const debtId = "770e8400-e29b-41d4-a716-446655440000";
 
+function requireCronSecretLikeServer(req, res, next) {
+  const provided = req.headers["x-cron-secret"];
+  if (!process.env.CRON_SECRET) {
+    return jsonError(res, 500, "CRON_SECRET no configurado");
+  }
+  if (!provided || provided !== process.env.CRON_SECRET) {
+    return jsonError(res, 401, "Unauthorized");
+  }
+  next();
+}
+
 function makeDeps(overrides = {}) {
   return {
     requireUser: (req, _res, next) => {
       req.user = { id: userId, email: "user@example.com" };
       next();
     },
+    requireCronSecret: overrides.requireCronSecret ?? requireCronSecretLikeServer,
     supabaseAdmin: overrides.supabaseAdmin,
     getIntentAmount: (intent) => Number(intent.amount || 0),
     jsonError,
@@ -32,8 +44,9 @@ function mount(deps) {
   return app;
 }
 
-function makeSupabaseMock({ pref = null, intents = [], debt = null, plan = null } = {}) {
+function makeSupabaseMock({ pref = null, intents = [], debt = null, plan = null, prefScanRows = null } = {}) {
   let savedPreference = null;
+  const rowsForCronScan = prefScanRows == null ? [] : prefScanRows;
   const api = {
     get savedPreference() {
       return savedPreference;
@@ -42,7 +55,7 @@ function makeSupabaseMock({ pref = null, intents = [], debt = null, plan = null 
       if (table === "notification_preferences") {
         return {
           select() {
-            return {
+            const chain = {
               eq() {
                 return {
                   maybeSingle() {
@@ -51,6 +64,11 @@ function makeSupabaseMock({ pref = null, intents = [], debt = null, plan = null 
                 };
               }
             };
+            return Object.assign(chain, {
+              then(onFulfilled, onRejected) {
+                return Promise.resolve({ data: rowsForCronScan, error: null }).then(onFulfilled, onRejected);
+              }
+            });
           },
           upsert(payload) {
             savedPreference = { id: "pref-1", ...payload, created_at: "2026-05-10T00:00:00Z" };
@@ -273,5 +291,68 @@ describe("routes/notifications-routes", () => {
     const res = await request(app).post("/notifications/send-test").send({ channel: "email" });
     assert.equal(res.status, 400);
     assert.match(res.body.error, /Email reminders are not enabled/);
+  });
+
+  it("run-due-reminders responde 401 sin x-cron-secret", async () => {
+    const prev = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "cron-test-v97";
+    try {
+      const app = mount(makeDeps({ supabaseAdmin: makeSupabaseMock() }));
+      const res = await request(app).post("/notifications/run-due-reminders").send({});
+      assert.equal(res.status, 401);
+    } finally {
+      if (prev == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prev;
+    }
+  });
+
+  it("run-due-reminders responde 401 con secreto incorrecto", async () => {
+    const prev = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "cron-test-v97";
+    try {
+      const app = mount(makeDeps({ supabaseAdmin: makeSupabaseMock() }));
+      const res = await request(app)
+        .post("/notifications/run-due-reminders")
+        .set("x-cron-secret", "wrong")
+        .send({});
+      assert.equal(res.status, 401);
+    } finally {
+      if (prev == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prev;
+    }
+  });
+
+  it("run-due-reminders responde 500 si falta CRON_SECRET", async () => {
+    const prev = process.env.CRON_SECRET;
+    delete process.env.CRON_SECRET;
+    try {
+      const app = mount(makeDeps({ supabaseAdmin: makeSupabaseMock() }));
+      const res = await request(app)
+        .post("/notifications/run-due-reminders")
+        .set("x-cron-secret", "any")
+        .send({});
+      assert.equal(res.status, 500);
+    } finally {
+      if (prev == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prev;
+    }
+  });
+
+  it("run-due-reminders responde 200 con escaneo vacio", async () => {
+    const prev = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "cron-test-v97";
+    try {
+      const app = mount(makeDeps({ supabaseAdmin: makeSupabaseMock() }));
+      const res = await request(app)
+        .post("/notifications/run-due-reminders")
+        .set("x-cron-secret", "cron-test-v97")
+        .send({});
+      assert.equal(res.status, 200);
+      assert.equal(res.body.ok, true);
+      assert.equal(res.body.scanned, 0);
+    } finally {
+      if (prev == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prev;
+    }
   });
 });

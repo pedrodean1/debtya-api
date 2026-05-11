@@ -248,6 +248,11 @@
         notif_phone_ph: "+15551234567",
         notif_time_lbl: "Preferred reminder time (24-hour HH:MM)",
         notif_tz_lbl: "Timezone (IANA)",
+        notif_freq_lbl: "Automatic reminder frequency",
+        notif_freq_smart: "Smart (recommended)",
+        notif_freq_daily: "Daily",
+        notif_freq_weekly: "Weekly",
+        notif_freq_off: "Off (manual test only)",
         notif_channel_lbl: "Preferred channel",
         notif_ch_none: "None",
         notif_ch_email: "Email",
@@ -925,6 +930,11 @@
         notif_phone_ph: "+15551234567",
         notif_time_lbl: "Hora preferida de recordatorio (24h HH:MM)",
         notif_tz_lbl: "Zona horaria (IANA)",
+        notif_freq_lbl: "Frecuencia de recordatorios automaticos",
+        notif_freq_smart: "Inteligente (recomendado)",
+        notif_freq_daily: "Diario",
+        notif_freq_weekly: "Semanal",
+        notif_freq_off: "Desactivado (solo prueba manual)",
         notif_channel_lbl: "Canal preferido",
         notif_ch_none: "Ninguno",
         notif_ch_email: "Email",
@@ -6017,6 +6027,8 @@
         $("notifPhone").value = d.phone_number || "";
         $("notifReminderTime").value = d.reminder_time ? String(d.reminder_time).slice(0, 5) : "";
         $("notifTimezone").value = d.timezone || "";
+        const rf = $("notifReminderFrequency");
+        if (rf) rf.value = d.reminder_frequency === "daily" || d.reminder_frequency === "weekly" || d.reminder_frequency === "off" ? d.reminder_frequency : "smart";
         $("notifPreferredChannel").value = d.preferred_channel || "none";
         const ec = $("notifEmailConsent");
         const sc = $("notifSmsConsent");
@@ -6909,6 +6921,7 @@
             preferred_channel: $("notifPreferredChannel")?.value || "none",
             reminder_time: ($("notifReminderTime")?.value || "").trim() || null,
             timezone: ($("notifTimezone")?.value || "").trim() || null,
+            reminder_frequency: ($("notifReminderFrequency")?.value || "").trim() || "smart",
             email_consent: !!$("notifEmailConsent")?.checked,
             sms_consent: !!$("notifSmsConsent")?.checked
           };

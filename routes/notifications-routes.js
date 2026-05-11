@@ -1,9 +1,11 @@
+const axios = require("axios");
 const {
   VALID_CHANNELS,
   buildNextPaymentReminderPreview,
   fetchNotificationPreferences,
   isProviderConfigured,
   normalizeNotificationPreferences,
+  runDuePaymentReminders,
   sendReminder,
   validateNotificationPreferencesInput
 } = require("../lib/notifications");
@@ -76,7 +78,10 @@ function isMissingNotificationPreferencesTable(error) {
 }
 
 function registerNotificationRoutes(app, deps) {
-  const { requireUser, supabaseAdmin, jsonError, getIntentAmount, appError } = deps;
+  const { requireUser, requireCronSecret, supabaseAdmin, jsonError, getIntentAmount, appError } = deps;
+  if (typeof requireCronSecret !== "function") {
+    throw new Error("registerNotificationRoutes requires requireCronSecret in deps");
+  }
 
   app.get("/notifications/preferences", requireUser, async (req, res) => {
     try {
@@ -95,6 +100,22 @@ function registerNotificationRoutes(app, deps) {
       return jsonError(res, 500, "Could not load notification preferences", {
         details: error.message
       });
+    }
+  });
+
+  app.post("/notifications/run-due-reminders", requireCronSecret, async (_req, res) => {
+    try {
+      if (!supabaseAdmin) return jsonError(res, 500, "Supabase is not configured");
+      const result = await runDuePaymentReminders({
+        supabaseAdmin,
+        getIntentAmount,
+        env: process.env,
+        http: axios
+      });
+      return res.json(result);
+    } catch (error) {
+      if (appError) appError("[notifications/run-due-reminders]", error.message);
+      return jsonError(res, 500, "Could not run due reminders", { details: error.message });
     }
   });
 

@@ -2,7 +2,10 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const {
   buildNextPaymentReminderPreview,
+  minGapMsForCadence,
   normalizePhoneNumber,
+  normalizeReminderFrequency,
+  runDuePaymentReminders,
   validateNotificationPreferencesInput
 } = require("../../lib/notifications");
 
@@ -115,6 +118,49 @@ describe("lib/notifications", () => {
     assert.ok(out.payload);
     assert.equal(out.payload.email_enabled, true);
     assert.ok(out.payload.consent_email_at);
+  });
+
+  it("acepta reminder_frequency weekly", () => {
+    const out = validateNotificationPreferencesInput(
+      { email_enabled: true, email_consent: true, reminder_frequency: "weekly" },
+      null
+    );
+    assert.ok(out.payload);
+    assert.equal(out.payload.reminder_frequency, "weekly");
+  });
+
+  it("normaliza reminder_frequency desconocido a smart", () => {
+    assert.equal(normalizeReminderFrequency("bogus"), "smart");
+  });
+
+  it("minGapMsForCadence refleja cadencia", () => {
+    assert.ok(minGapMsForCadence("daily") < minGapMsForCadence("smart"));
+    assert.ok(minGapMsForCadence("smart") < minGapMsForCadence("weekly"));
+    assert.equal(minGapMsForCadence("off"), Number.POSITIVE_INFINITY);
+  });
+
+  it("runDuePaymentReminders sin supabase devuelve error", async () => {
+    const r = await runDuePaymentReminders({});
+    assert.equal(r.ok, false);
+    assert.match(String(r.error || ""), /Supabase/i);
+  });
+
+  it("runDuePaymentReminders omite todo si falta tabla de preferencias", async () => {
+    const supabaseAdmin = {
+      from() {
+        return {
+          select() {
+            return Promise.resolve({
+              data: null,
+              error: { code: "42P01", message: "relation notification_preferences does not exist" }
+            });
+          }
+        };
+      }
+    };
+    const r = await runDuePaymentReminders({ supabaseAdmin });
+    assert.equal(r.ok, true);
+    assert.equal(r.skipped_all, true);
   });
 
   it("permite email sin marcar consent si ya existia consent_email_at", () => {
