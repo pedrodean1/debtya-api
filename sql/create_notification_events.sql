@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.notification_events (
   channel text NOT NULL CHECK (channel IN ('email', 'sms')),
   event_type text NOT NULL DEFAULT 'auto_reminder'
     CHECK (event_type IN ('auto_reminder', 'test', 'skipped_no_provider', 'skipped_cadence', 'skipped_window')),
+  message text NOT NULL DEFAULT 'DebtYa reminder sent',
   created_at timestamptz NOT NULL DEFAULT now()
 );
 

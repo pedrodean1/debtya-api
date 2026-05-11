@@ -7,7 +7,9 @@ const {
   minUserWideGapMs,
   normalizePhoneNumber,
   normalizeReminderFrequency,
+  NOTIFICATION_EVENT_MESSAGE_FALLBACK,
   resolveDebtYaReminderFromAddress,
+  resolveNotificationEventMessage,
   runDuePaymentReminders,
   validateNotificationPreferencesInput
 } = require("../../lib/notifications");
@@ -294,6 +296,31 @@ describe("lib/notifications", () => {
   });
 });
 
+describe("resolveNotificationEventMessage (V100.1)", () => {
+  it("nunca devuelve string vacio", () => {
+    assert.equal(resolveNotificationEventMessage(null, "email"), NOTIFICATION_EVENT_MESSAGE_FALLBACK);
+    assert.equal(resolveNotificationEventMessage({}, "email"), NOTIFICATION_EVENT_MESSAGE_FALLBACK);
+  });
+
+  it("email usa subject y cuerpo cuando existen", () => {
+    const m = resolveNotificationEventMessage(
+      { subject: "Pay $10", email_body: "Line one\nLine two" },
+      "email"
+    );
+    assert.match(m, /Pay \$10/);
+    assert.match(m, /Line one/);
+  });
+
+  it("sms usa sms_message o message", () => {
+    assert.match(resolveNotificationEventMessage({ sms_message: "SMS body here" }, "sms"), /SMS body/);
+    assert.equal(resolveNotificationEventMessage({ message: "" }, "sms"), NOTIFICATION_EVENT_MESSAGE_FALLBACK);
+  });
+
+  it("forceTest metadata no afecta resolve (solo insert); preview vacio cae en fallback", () => {
+    assert.equal(resolveNotificationEventMessage({ subject: "", message: "" }, "email"), NOTIFICATION_EVENT_MESSAGE_FALLBACK);
+  });
+});
+
 describe("runDuePaymentReminders cron (V100)", () => {
   const fixedNow = new Date("2030-06-15T12:00:00.000Z");
 
@@ -496,6 +523,9 @@ describe("runDuePaymentReminders cron (V100)", () => {
       assert.equal(out.sent, 1);
       assert.equal(sb.inserts.length, 1);
       assert.equal(sb.inserts[0].metadata.force_test, true);
+      assert.equal(typeof sb.inserts[0].message, "string");
+      assert.ok(sb.inserts[0].message.length > 0);
+      assert.notEqual(sb.inserts[0].message, null);
     } finally {
       if (prev == null) delete process.env.RESEND_API_KEY;
       else process.env.RESEND_API_KEY = prev;
@@ -578,6 +608,8 @@ describe("runDuePaymentReminders cron (V100)", () => {
       assert.equal(calls >= 1, true);
       assert.equal(sb.inserts.length, 1);
       assert.ok(!sb.inserts[0].metadata);
+      assert.equal(typeof sb.inserts[0].message, "string");
+      assert.ok(sb.inserts[0].message.length > 0);
     } finally {
       if (prev == null) delete process.env.RESEND_API_KEY;
       else process.env.RESEND_API_KEY = prev;
