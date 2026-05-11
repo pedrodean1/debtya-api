@@ -10,7 +10,22 @@ function metaSupabase(metadataByRead) {
   const arr = Array.isArray(metadataByRead) ? metadataByRead : [metadataByRead];
   let i = 0;
   return {
-    from() {
+    from(table) {
+      if (table === "notification_preferences") {
+        return {
+          select() {
+            return {
+              eq() {
+                return {
+                  maybeSingle() {
+                    return Promise.resolve({ data: { preferred_language: "en" }, error: null });
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
       return {
         select() {
           return {
@@ -21,6 +36,52 @@ function metaSupabase(metadataByRead) {
                     maybeSingle() {
                       const meta = arr[Math.min(i, arr.length - 1)] ?? {};
                       i += 1;
+                      return Promise.resolve({ data: { metadata: meta }, error: null });
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+      };
+    }
+  };
+}
+
+function transactionalSupabase({ prefRow = { preferred_language: "en" }, intentMetas = [{}] } = {}) {
+  const metaArr = Array.isArray(intentMetas) ? intentMetas : [intentMetas];
+  let metaIdx = 0;
+  return {
+    from(table) {
+      if (table === "notification_preferences") {
+        return {
+          select() {
+            return {
+              eq() {
+                return {
+                  maybeSingle() {
+                    return Promise.resolve({
+                      data: { user_id: "550e8400-e29b-41d4-a716-446655440000", ...prefRow },
+                      error: null
+                    });
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+      return {
+        select() {
+          return {
+            eq() {
+              return {
+                eq() {
+                  return {
+                    maybeSingle() {
+                      const meta = metaArr[Math.min(metaIdx, metaArr.length - 1)] ?? {};
+                      metaIdx += 1;
                       return Promise.resolve({ data: { metadata: meta }, error: null });
                     }
                   };
@@ -133,6 +194,84 @@ describe("lib/notifications transactional copy", () => {
     assert.equal(sends, 0);
     assert.equal(out.skipped, true);
     assert.equal(out.reason, "already_fully_paid_noop");
+  });
+
+  it("payment recorded email usa español cuando preferred_language es es", async () => {
+    const subjects = [];
+    const out = await sendTransactionalPaymentCelebrationEmails({
+      supabaseAdmin: transactionalSupabase({
+        prefRow: { preferred_language: "es" },
+        intentMetas: {}
+      }),
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "a@b.com",
+      intentId: "660e8400-e29b-41d4-a716-446655440000",
+      amount: 10,
+      debtNameDisplay: "X",
+      previousBalance: 100,
+      nextBalance: 50,
+      previousDebtStatus: "active",
+      env: { RESEND_API_KEY: "re_test_xxx" },
+      mergeIntentMetadata: async () => {},
+      appError: () => {},
+      sendEmailFn: async (opts) => {
+        subjects.push(opts.preview?.subject || "");
+      }
+    });
+    assert.equal(out.payment_email, true);
+    assert.match(subjects[0], /Pago registrado/i);
+  });
+
+  it("debt paid celebration email usa español cuando preferred_language es es", async () => {
+    const subjects = [];
+    await sendTransactionalPaymentCelebrationEmails({
+      supabaseAdmin: transactionalSupabase({
+        prefRow: { preferred_language: "es" },
+        intentMetas: [{}, {}]
+      }),
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "a@b.com",
+      intentId: "660e8400-e29b-41d4-a716-446655440000",
+      amount: 100,
+      debtNameDisplay: "Card",
+      previousBalance: 80,
+      nextBalance: 0,
+      previousDebtStatus: "active",
+      env: { RESEND_API_KEY: "re_test_xxx" },
+      mergeIntentMetadata: async () => {},
+      appError: () => {},
+      sendEmailFn: async (opts) => {
+        subjects.push(opts.preview?.subject || "");
+      }
+    });
+    assert.match(subjects[0], /Pago registrado/i);
+    assert.match(subjects[1], /Felicidades/i);
+  });
+
+  it("payment recorded y celebración en inglés cuando preferred_language es en", async () => {
+    const subjects = [];
+    await sendTransactionalPaymentCelebrationEmails({
+      supabaseAdmin: transactionalSupabase({
+        prefRow: { preferred_language: "en" },
+        intentMetas: [{}, {}]
+      }),
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "a@b.com",
+      intentId: "660e8400-e29b-41d4-a716-446655440000",
+      amount: 100,
+      debtNameDisplay: "Card",
+      previousBalance: 80,
+      nextBalance: 0,
+      previousDebtStatus: "active",
+      env: { RESEND_API_KEY: "re_test_xxx" },
+      mergeIntentMetadata: async () => {},
+      appError: () => {},
+      sendEmailFn: async (opts) => {
+        subjects.push(opts.preview?.subject || "");
+      }
+    });
+    assert.match(subjects[0], /Payment recorded/i);
+    assert.match(subjects[1], /Congrats/);
   });
 
   it("pago que liquida deuda: dos envíos y dos merges", async () => {

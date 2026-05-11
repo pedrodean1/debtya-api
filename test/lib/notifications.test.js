@@ -171,6 +171,42 @@ describe("lib/notifications", () => {
     assert.equal(out.payload.preferred_language, "en");
   });
 
+  it("partial preferred_language no apaga email_enabled ni borra consent_email_at", () => {
+    const existing = {
+      user_id: userId,
+      email_enabled: true,
+      sms_enabled: false,
+      preferred_channel: "email",
+      preferred_language: "en",
+      consent_email_at: "2026-01-01T00:00:00.000Z",
+      consent_sms_at: null,
+      phone_number: null
+    };
+    const out = validateNotificationPreferencesInput({ preferred_language: "es" }, existing);
+    assert.ok(out.payload);
+    assert.equal(out.payload.email_enabled, true);
+    assert.equal(out.payload.consent_email_at, "2026-01-01T00:00:00.000Z");
+    assert.equal(out.payload.preferred_language, "es");
+  });
+
+  it("partial preferred_language invalido conserva resto y normaliza idioma a en", () => {
+    const existing = {
+      user_id: userId,
+      email_enabled: true,
+      sms_enabled: false,
+      preferred_channel: "email",
+      preferred_language: "es",
+      consent_email_at: "2026-01-02T00:00:00.000Z",
+      consent_sms_at: null,
+      phone_number: null
+    };
+    const out = validateNotificationPreferencesInput({ preferred_language: "fr" }, existing);
+    assert.ok(out.payload);
+    assert.equal(out.payload.email_enabled, true);
+    assert.equal(out.payload.consent_email_at, "2026-01-02T00:00:00.000Z");
+    assert.equal(out.payload.preferred_language, "en");
+  });
+
   it("resolveDebtYaReminderFromAddress prioriza EMAIL_FROM y luego RESEND_FROM_EMAIL", () => {
     assert.equal(
       resolveDebtYaReminderFromAddress({

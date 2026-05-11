@@ -1762,6 +1762,7 @@
         $("sessionBadge").className = "pill blue";
         $("sessionBadge").textContent = t("badge_session");
       }
+      void persistPreferredLanguageForSession();
     }
 
     function wireLangButtons() {
@@ -2282,6 +2283,17 @@
       } finally {
         clearTimeout(timeoutId);
       }
+    }
+
+    async function persistPreferredLanguageForSession() {
+      try {
+        const tok = await getAccessToken();
+        if (!tok) return;
+        await api("/notifications/preferences", {
+          method: "POST",
+          body: JSON.stringify({ preferred_language: uiLang === "es" ? "es" : "en" })
+        });
+      } catch (_) {}
     }
 
     /**

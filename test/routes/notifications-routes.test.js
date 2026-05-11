@@ -292,6 +292,33 @@ describe("routes/notifications-routes", () => {
     assert.equal(supabaseAdmin.savedPreference.preferred_language, "en");
   });
 
+  it("POST solo preferred_language preserva email opt-in y consentimientos", async () => {
+    const prefExisting = {
+      user_id: userId,
+      email_enabled: true,
+      sms_enabled: false,
+      preferred_channel: "email",
+      preferred_language: "en",
+      consent_email_at: "2026-03-01T00:00:00.000Z",
+      consent_sms_at: null,
+      reminder_time: "09:00",
+      timezone: "America/Mexico_City",
+      reminder_frequency: "daily",
+      phone_number: null
+    };
+    const supabaseAdmin = makeSupabaseMock({ pref: prefExisting });
+    const app = mount(makeDeps({ supabaseAdmin }));
+    const res = await request(app).post("/notifications/preferences").send({ preferred_language: "es" });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.email_enabled, true);
+    assert.equal(res.body.data.preferred_channel, "email");
+    assert.equal(res.body.data.consent_email_at, "2026-03-01T00:00:00.000Z");
+    assert.equal(res.body.data.reminder_frequency, "daily");
+    assert.equal(res.body.data.preferred_language, "es");
+    assert.equal(supabaseAdmin.savedPreference.email_enabled, true);
+    assert.equal(supabaseAdmin.savedPreference.consent_email_at, "2026-03-01T00:00:00.000Z");
+  });
+
   it("rechaza SMS sin phone_number", async () => {
     const app = mount(makeDeps({ supabaseAdmin: makeSupabaseMock() }));
     const res = await request(app).post("/notifications/preferences").send({

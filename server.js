@@ -33,7 +33,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-11-v107-paid-debts-celebration-emails";
+const SERVER_VERSION = "debtya-2026-05-11-v107.1-transactional-email-language";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
