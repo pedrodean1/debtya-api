@@ -9,6 +9,7 @@ const { registerPlaidRoutes } = require("./plaid-routes");
 const { registerMethodRoutes } = require("./method-routes");
 const { registerSpinwheelRoutes } = require("./spinwheel-routes");
 const { registerAccountsDebtsRoutes } = require("./accounts-debts-routes");
+const { registerDebtsExtraPaymentRoutes } = require("./debts-extra-payment-routes");
 const { registerPaymentPlansRoutes } = require("./payment-plans-routes");
 const { registerRulesCrudRoutes } = require("./rules-crud-routes");
 const { registerStrategyRoutes } = require("./strategy-routes");
@@ -36,6 +37,7 @@ function registerAllRoutes(app, deps) {
   registerMethodRoutes(app, deps);
   registerSpinwheelRoutes(app, deps);
   registerAccountsDebtsRoutes(app, deps);
+  registerDebtsExtraPaymentRoutes(app, deps);
   registerPaymentPlansRoutes(app, deps);
   registerRulesCrudRoutes(app, deps);
   registerStrategyRoutes(app, deps);

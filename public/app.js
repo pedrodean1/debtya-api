@@ -858,9 +858,25 @@
         trace_col_amount: "Amount",
         trace_col_status: "Status",
         trace_col_origin: "Origin",
+        trace_col_type: "Type",
         trace_origin_manual: "Manual confirm",
         trace_origin_intent: "Intent",
         trace_origin_execution: "Execution record",
+        trace_kind_manual_extra: "Manual extra payment",
+        trace_status_done: "Completed",
+        btn_extra_payment_open: "Register extra payment",
+        extra_payment_title: "Register extra payment",
+        extra_payment_legal:
+          "DebtYa does not move money or make payments. First make the payment with your creditor or bank, then confirm it here to update your progress.",
+        extra_payment_amount_lbl: "Extra amount you paid",
+        extra_payment_note_lbl: "Note (optional)",
+        extra_payment_cancel: "Cancel",
+        extra_payment_confirm_btn: "I made this payment",
+        extra_payment_debt_lbl: "Debt",
+        extra_pay_ok: "Extra payment recorded. Your balances and history are updated.",
+        extra_pay_clamped: "That amount was higher than this debt's balance in DebtYa. We applied {{amt}} instead.",
+        extra_pay_need_amount: "Enter an amount greater than zero.",
+        extra_pay_need_debt: "Pick a debt with a balance first.",
         accounts_imp: "Snapshots updated",
         tx_imp: "Activity updated",
         rules_applied: "Rules applied. Created",
@@ -1573,9 +1589,25 @@
         trace_col_amount: "Monto",
         trace_col_status: "Estado",
         trace_col_origin: "Origen",
+        trace_col_type: "Tipo",
         trace_origin_manual: "Confirmacion manual",
         trace_origin_intent: "Intent",
         trace_origin_execution: "Registro de ejecucion",
+        trace_kind_manual_extra: "Pago extra manual",
+        trace_status_done: "Realizado",
+        btn_extra_payment_open: "Registrar pago extra",
+        extra_payment_title: "Registrar pago extra",
+        extra_payment_legal:
+          "DebtYa no mueve dinero ni ejecuta pagos. Primero haz el pago con tu acreedor o banco, luego confirma aquí para actualizar tu progreso.",
+        extra_payment_amount_lbl: "Monto extra que pagaste",
+        extra_payment_note_lbl: "Nota (opcional)",
+        extra_payment_cancel: "Cancelar",
+        extra_payment_confirm_btn: "Ya hice este pago",
+        extra_payment_debt_lbl: "Deuda",
+        extra_pay_ok: "Pago extra registrado. Balances e historial actualizados.",
+        extra_pay_clamped: "Ese monto superaba el saldo de esta deuda en DebtYa. Aplicamos {{amt}}.",
+        extra_pay_need_amount: "Escribe un monto mayor que cero.",
+        extra_pay_need_debt: "Primero elige una deuda con saldo.",
         accounts_imp: "Capturas actualizadas",
         tx_imp: "Actividad actualizada",
         rules_applied: "Reglas aplicadas. Creados",
@@ -4302,6 +4334,15 @@
             </div>
           </div>
           <div class="progress"><span style="width:${progress}%"></span></div>
+          ${
+            Number(debt.balance || 0) > 0
+              ? `<div style="margin-top:10px;">
+                  <button type="button" class="btn btn-light btn-small extra-pay-debt-btn" data-debt-id="${escapeHtml(
+                    String(debt.id)
+                  )}">${escapeHtml(t("btn_extra_payment_open"))}</button>
+                </div>`
+              : ""
+          }
         `;
         box.appendChild(el);
       });
@@ -4603,6 +4644,20 @@
       return t("trace_origin_intent");
     }
 
+    function tracePaymentKindLabel(row) {
+      const k = row && row.trace_payment_kind;
+      if (k === "manual_extra") return t("trace_kind_manual_extra");
+      if (k === "manual_confirm") return t("trace_origin_manual");
+      if (k === "execution") return t("trace_origin_execution");
+      return t("trace_origin_intent");
+    }
+
+    function traceStatusDisplay(row) {
+      const st = String(row && row.status ? row.status : "").toLowerCase();
+      if (st === "executed") return t("trace_status_done");
+      return row && row.status ? String(row.status) : "-";
+    }
+
     function renderTrace() {
       const box = $("traceList");
       box.innerHTML = "";
@@ -4621,6 +4676,8 @@
           : did || "-";
         const dateRaw = row.executed_at || row.created_at || row.updated_at;
         const origin = traceOriginLabel(row.trace_origin);
+        const kind = tracePaymentKindLabel(row);
+        const statusLine = traceStatusDisplay(row);
         const item = document.createElement("div");
         item.className = "item";
         item.innerHTML = `
@@ -4630,7 +4687,8 @@
               <div class="item-meta">
                 ${escapeHtml(t("trace_col_date"))}: <strong>${escapeHtml(fmtDate(dateRaw))}</strong><br />
                 ${escapeHtml(t("trace_col_amount"))}: <strong>${fmtMoney(row.total_amount ?? row.amount ?? 0)}</strong><br />
-                ${escapeHtml(t("trace_col_status"))}: <strong>${escapeHtml(row.status || "-")}</strong><br />
+                ${escapeHtml(t("trace_col_type"))}: <strong>${escapeHtml(kind)}</strong><br />
+                ${escapeHtml(t("trace_col_status"))}: <strong>${escapeHtml(statusLine)}</strong><br />
                 ${escapeHtml(t("trace_col_origin"))}: <strong>${escapeHtml(origin)}</strong>
               </div>
             </div>
@@ -5793,6 +5851,100 @@
       if (typeof fn === "function") fn(role);
     }
 
+    function closeExtraPaymentModal() {
+      const root = $("extraPaymentModalRoot");
+      if (!root) return;
+      root.classList.add("hidden");
+      root.setAttribute("aria-hidden", "true");
+    }
+
+    function populateExtraPaymentDebtSelect(preferredId) {
+      const sel = $("extraPaymentDebtSelect");
+      if (!sel) return;
+      sel.innerHTML = "";
+      const debts = (state.debts || []).filter((d) => d && Number(d.balance || 0) > 0);
+      debts.forEach((d) => {
+        const op = document.createElement("option");
+        op.value = String(d.id);
+        const nm = cleanVisibleDebtName(d.name) || t("debt_label");
+        op.textContent = `${nm} (${fmtMoney(d.balance)})`;
+        sel.appendChild(op);
+      });
+      const pid = preferredId && String(preferredId).trim();
+      if (pid && [...sel.options].some((o) => o.value === pid)) sel.value = pid;
+      else if (sel.options.length) sel.selectedIndex = 0;
+    }
+
+    function openExtraPaymentModal(preferredDebtId) {
+      const debtsWithBal = (state.debts || []).filter((d) => d && Number(d.balance || 0) > 0);
+      if (!debtsWithBal.length) {
+        showMessage(globalMessage, t("extra_pay_need_debt"), "warn");
+        return;
+      }
+      const root = $("extraPaymentModalRoot");
+      if (!root) return;
+      populateExtraPaymentDebtSelect(preferredDebtId);
+      const amt = $("extraPaymentAmount");
+      const note = $("extraPaymentNote");
+      const clamp = $("extraPaymentClampBanner");
+      if (amt) amt.value = "";
+      if (note) note.value = "";
+      if (clamp) {
+        clamp.textContent = "";
+        clamp.classList.add("hidden");
+      }
+      root.classList.remove("hidden");
+      root.setAttribute("aria-hidden", "false");
+      applyDomI18n();
+    }
+
+    async function submitExtraPaymentFromModal() {
+      const sel = $("extraPaymentDebtSelect");
+      const amtEl = $("extraPaymentAmount");
+      const noteEl = $("extraPaymentNote");
+      const btn = $("extraPaymentConfirmBtn");
+      if (!sel || !amtEl || !btn) return;
+      const debtId = String(sel.value || "").trim();
+      const amount = Number(amtEl.value);
+      if (!debtId) {
+        showMessage(globalMessage, t("extra_pay_need_debt"), "error");
+        return;
+      }
+      if (!Number.isFinite(amount) || !(amount > 0)) {
+        showMessage(globalMessage, t("extra_pay_need_amount"), "error");
+        return;
+      }
+      setLoading(btn, true, t("proc"));
+      try {
+        const note = noteEl && noteEl.value && String(noteEl.value).trim() ? String(noteEl.value).trim() : "";
+        const res = await api(`/debts/${encodeURIComponent(debtId)}/extra-payment`, {
+          method: "POST",
+          body: JSON.stringify({ amount, note: note || undefined })
+        });
+        let msg = t("extra_pay_ok");
+        if (res && res.amount_clamped === true && res.applied_amount != null) {
+          msg +=
+            " " +
+            String(t("extra_pay_clamped")).replace("{{amt}}", fmtMoney(res.applied_amount));
+        }
+        showMessage(globalMessage, msg, "success");
+        closeExtraPaymentModal();
+        await refreshDebts();
+        await refreshTrace();
+        try {
+          await rebuildManualPlanAndRefresh({ withRefreshPlan: true });
+        } catch (e) {
+          recordPlanBuildFailure(e);
+        }
+        renderDashboardNextStep();
+        updateNextActionGuide();
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+      } finally {
+        setLoading(btn, false, t("extra_payment_confirm_btn"));
+      }
+    }
+
     async function openBankPickDisconnectFlow() {
       try {
         await refreshAccounts();
@@ -6745,6 +6897,17 @@
     const bankRoleBothBtn = $("bankRoleBothBtn");
     if (bankRoleBothBtn) bankRoleBothBtn.addEventListener("click", () => finishBankConnectionRoleChoice("both"));
 
+    const openExtraPaymentModalBtn = $("openExtraPaymentModalBtn");
+    if (openExtraPaymentModalBtn) {
+      openExtraPaymentModalBtn.addEventListener("click", () => openExtraPaymentModal(null));
+    }
+    const extraPaymentBackdrop = $("extraPaymentBackdrop");
+    if (extraPaymentBackdrop) extraPaymentBackdrop.addEventListener("click", () => closeExtraPaymentModal());
+    const extraPaymentCancelBtn = $("extraPaymentCancelBtn");
+    if (extraPaymentCancelBtn) extraPaymentCancelBtn.addEventListener("click", () => closeExtraPaymentModal());
+    const extraPaymentConfirmBtn = $("extraPaymentConfirmBtn");
+    if (extraPaymentConfirmBtn) extraPaymentConfirmBtn.addEventListener("click", () => submitExtraPaymentFromModal());
+
     ["btnDisconnectBank", "accountsDisconnectBankBtn"].forEach((id) => {
       const el = $(id);
       if (el) el.addEventListener("click", () => openBankPickDisconnectFlow());
@@ -6766,6 +6929,11 @@
       const bankRoot = $("bankDisconnectModal");
       if (bankRoot && !bankRoot.classList.contains("hidden")) {
         closeBankDisconnectModal();
+        return;
+      }
+      const extraRoot = $("extraPaymentModalRoot");
+      if (extraRoot && !extraRoot.classList.contains("hidden")) {
+        closeExtraPaymentModal();
         return;
       }
       const root = $("helpModalRoot");
@@ -7567,6 +7735,12 @@
     });
 
     $("debtsList").addEventListener("click", async (e) => {
+      const extraBtn = e.target && e.target.closest ? e.target.closest(".extra-pay-debt-btn") : null;
+      if (extraBtn) {
+        const did = extraBtn.getAttribute("data-debt-id");
+        if (did) openExtraPaymentModal(did);
+        return;
+      }
       const btn = e.target && e.target.closest ? e.target.closest(".debt-sync-balance-btn") : null;
       if (!btn) return;
       const debtId = btn.getAttribute("data-debt-id");

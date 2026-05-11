@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-11-v105-official-dy-icon" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-11-v106-manual-extra-payment" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -49,7 +49,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-11-v105-official-dy-icon">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-11-v106-manual-extra-payment">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -64,7 +64,7 @@
     <div class="app">
       <div class="topbar">
         <div class="brand">
-          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v105-official-dy-icon" width="46" height="46" alt="DebtYa" />
+          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v106-manual-extra-payment" width="46" height="46" alt="DebtYa" />
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -246,7 +246,7 @@
         </div>
       </div>
       <div class="brand" style="margin-bottom:16px;">
-        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v105-official-dy-icon" width="46" height="46" alt="DebtYa" />
+        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v106-manual-extra-payment" width="46" height="46" alt="DebtYa" />
         <div>
           <h1 style="font-size:30px;margin:0;">DebtYa</h1>
           <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -373,7 +373,7 @@
         <div class="topbar topbar-app">
           <div class="topbar-brand-cell">
             <div class="brand">
-              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v105-official-dy-icon" width="44" height="44" alt="DebtYa" />
+              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v106-manual-extra-payment" width="44" height="44" alt="DebtYa" />
               <div>
                 <h1 style="margin:0;">DebtYa</h1>
                 <p id="welcomeText">Home</p>
@@ -577,6 +577,9 @@
                 <p class="sub" data-i18n="debts_sub">Step 1: add each debt manually (balance, APR, minimum) from your statements.</p>
               </div>
               <div class="section-actions">
+                <button id="openExtraPaymentModalBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_extra_payment_open">
+                  Register extra payment
+                </button>
                 <button id="refreshDebtsBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
               </div>
             </div>
@@ -1121,6 +1124,33 @@
     </div>
   </div>
 
+  <div id="extraPaymentModalRoot" class="bank-dc-modal-root hidden" aria-hidden="true">
+    <div class="bank-dc-backdrop" id="extraPaymentBackdrop" tabindex="-1"></div>
+    <div class="bank-dc-dialog" role="dialog" aria-modal="true" aria-labelledby="extraPaymentTitle">
+      <h3 id="extraPaymentTitle" class="bank-dc-title" data-i18n="extra_payment_title">Register extra payment</h3>
+      <p class="bank-dc-body" data-i18n="extra_payment_legal"></p>
+      <p id="extraPaymentClampBanner" class="notice warn hidden" role="status"></p>
+      <div class="field">
+        <label class="label" for="extraPaymentDebtSelect" data-i18n="extra_payment_debt_lbl">Debt</label>
+        <select id="extraPaymentDebtSelect" class="select"></select>
+      </div>
+      <div class="field">
+        <label class="label" for="extraPaymentAmount" data-i18n="extra_payment_amount_lbl">Extra amount you paid</label>
+        <input id="extraPaymentAmount" class="input" type="number" step="0.01" min="0.01" placeholder="0.00" />
+      </div>
+      <div class="field">
+        <label class="label" for="extraPaymentNote" data-i18n="extra_payment_note_lbl">Note (optional)</label>
+        <input id="extraPaymentNote" class="input" type="text" maxlength="500" />
+      </div>
+      <div class="bank-dc-actions">
+        <button type="button" id="extraPaymentCancelBtn" class="btn btn-light" data-i18n="extra_payment_cancel">Cancel</button>
+        <button type="button" id="extraPaymentConfirmBtn" class="btn btn-primary" data-i18n="extra_payment_confirm_btn">
+          I made this payment
+        </button>
+      </div>
+    </div>
+  </div>
+
   <button type="button" id="helpFab" class="help-fab" aria-expanded="false" aria-controls="helpModalPanel" aria-label="Open help and guide">
     ?
   </button>
@@ -1214,7 +1244,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-11-v105-official-dy-icon"></script>
+  <script src="/app.js?v=debtya-2026-05-11-v106-manual-extra-payment"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

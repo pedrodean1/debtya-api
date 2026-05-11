@@ -19,12 +19,13 @@ const {
   computeManualPriorityPaymentAmount
 } = require("./lib/manual-plan-next-payment");
 const { compareStrategiesFromDebtRows } = require("./lib/strategy-compare-sim");
+const { computeManualExtraAppliedAmount } = require("./lib/manual-extra-payment");
 
 const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-11-v105-official-dy-icon";
+const SERVER_VERSION = "debtya-2026-05-11-v106-manual-extra-payment";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -1920,6 +1921,172 @@ async function applyExecutedIntentToDebt(userId, intentInput, options = {}) {
   };
 }
 
+/**
+ * Registra un pago extra manual (usuario paga fuera de DebtYa) y rebaja balance una sola vez.
+ * Crea payment_intents ejecutado + payment_executions + aplica balance (misma semántica que confirm-manual).
+ */
+async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNote) {
+  const debtId = debtIdRaw != null ? String(debtIdRaw).trim() : "";
+  if (!isUuid(debtId)) {
+    const err = new Error("ID de deuda inválido");
+    err.status = 400;
+    throw err;
+  }
+
+  const { requested } = computeManualExtraAppliedAmount(safeNumber(rawAmount), 1e15);
+  if (!(requested > 0)) {
+    const err = new Error("El monto debe ser mayor que cero.");
+    err.status = 400;
+    throw err;
+  }
+
+  const { data: debt, error: debtErr } = await supabaseAdmin
+    .from("debts")
+    .select("*")
+    .eq("id", debtId)
+    .eq("user_id", userId)
+    .single();
+
+  if (debtErr || !debt) {
+    const err = new Error("Deuda no encontrada");
+    err.status = 404;
+    throw err;
+  }
+  if (debt.is_active === false) {
+    const err = new Error("Esta deuda está inactiva.");
+    err.status = 400;
+    throw err;
+  }
+
+  const currentBalance = safeNumber(debt.balance);
+  if (!(currentBalance > 0)) {
+    const err = new Error("Esta deuda no tiene saldo pendiente en DebtYa.");
+    err.status = 400;
+    throw err;
+  }
+
+  const { applied, amount_clamped } = computeManualExtraAppliedAmount(requested, currentBalance);
+  if (!(applied > 0)) {
+    const err = new Error("No se puede aplicar un monto con el saldo actual.");
+    err.status = 400;
+    throw err;
+  }
+
+  const now = new Date().toISOString();
+  const note =
+    rawNote != null && String(rawNote).trim() ? String(rawNote).trim().slice(0, 500) : null;
+
+  const meta = {
+    manual_extra_payment: true,
+    manual_confirmed: true,
+    paid_outside_app: true,
+    confirmed_at: now
+  };
+  if (note) meta.note = note;
+
+  const insertPayload = {
+    user_id: userId,
+    debt_id: debtId,
+    source: "manual_extra",
+    strategy: "avalanche",
+    amount: applied,
+    total_amount: applied,
+    status: "executed",
+    executed_at: now,
+    created_at: now,
+    updated_at: now,
+    execution_mode: "safe",
+    execution_frequency: "daily",
+    scheduled_for: now.slice(0, 10),
+    notes: "DebtYa — pago extra manual",
+    metadata: meta
+  };
+
+  const { data: inserted, error: insErr } = await supabaseAdmin
+    .from("payment_intents")
+    .insert(insertPayload)
+    .select()
+    .single();
+
+  if (insErr) throw insErr;
+  const intentId = inserted?.id;
+  if (!intentId) {
+    const err = new Error("No se pudo crear el registro de pago.");
+    err.status = 500;
+    throw err;
+  }
+
+  async function rollbackIntent() {
+    await supabaseAdmin.from("payment_executions").delete().eq("payment_intent_id", intentId);
+    await supabaseAdmin.from("payment_intents").delete().eq("id", intentId).eq("user_id", userId);
+  }
+
+  try {
+    const debtApply = await applyExecutedIntentToDebt(userId, inserted, {
+      amountOverride: applied
+    });
+
+    const appliedOk = debtApply && debtApply.ok === true && debtApply.skipped !== true;
+    const idempotentOk =
+      debtApply &&
+      debtApply.ok === true &&
+      debtApply.skipped === true &&
+      debtApply.reason === "ya_aplicado";
+    if (!appliedOk && !idempotentOk) {
+      await rollbackIntent();
+      const detail = (debtApply && (debtApply.reason || debtApply.error)) || "rebaja_no_aplicada";
+      const err = new Error(`No se pudo actualizar el saldo de la deuda (${detail}).`);
+      err.status = 409;
+      err.debt_apply = debtApply;
+      throw err;
+    }
+
+    const executionPayload = {
+      user_id: userId,
+      payment_intent_id: intentId,
+      amount: applied,
+      status: "executed",
+      executed_at: now,
+      created_at: now,
+      updated_at: now
+    };
+    const { error: executionError } = await supabaseAdmin
+      .from("payment_executions")
+      .upsert(executionPayload, { onConflict: "payment_intent_id" });
+    if (executionError) {
+      appDebug("No se pudo registrar payment_execution (pago extra):", executionError.message);
+    }
+
+    const { data: debtUpdated, error: loadErr } = await supabaseAdmin
+      .from("debts")
+      .select("*")
+      .eq("id", debtId)
+      .eq("user_id", userId)
+      .single();
+    if (loadErr) throw loadErr;
+
+    try {
+      await reconcileManualFirstPriorityIntent(userId);
+    } catch (reErr) {
+      appDebug("reconcile post pago extra:", reErr.message || String(reErr));
+    }
+
+    return {
+      ok: true,
+      intent_id: intentId,
+      debt_id: debtId,
+      requested_amount: requested,
+      applied_amount: applied,
+      amount_clamped,
+      data: debtUpdated,
+      debt_apply: debtApply
+    };
+  } catch (e) {
+    await rollbackIntent().catch(() => null);
+    throw e;
+  }
+}
+
 async function reconcileRecentExecutedIntents(userId, options = {}) {
   const days = Math.max(0, safeNumber(options.days, 2));
   const limit = Math.min(50, Math.max(1, safeNumber(options.limit, 10)));
@@ -2508,6 +2675,7 @@ registerAllRoutes(app, {
   approveIntentDirect,
   executeIntentDirect,
   confirmManualPaymentIntentDirect,
+  recordManualExtraDebtPayment,
   reconcileRecentExecutedIntents,
   isoDaysAgo,
   stripe,

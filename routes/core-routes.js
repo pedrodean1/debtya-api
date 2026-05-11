@@ -119,6 +119,11 @@ function registerCoreRoutes(app, deps) {
         const meta = traceIntentMetadata(x.metadata);
         const manual = !!(meta.manual_confirmed || meta.paid_outside_app);
         const origin = manual ? "manual" : String(x.source || "intent").toLowerCase();
+        const paymentKind = meta.manual_extra_payment
+          ? "manual_extra"
+          : manual
+            ? "manual_confirm"
+            : "intent";
         normalized.push({
           id: x.id,
           user_id: x.user_id,
@@ -132,7 +137,8 @@ function registerCoreRoutes(app, deps) {
           created_at: x.created_at,
           updated_at: x.updated_at,
           metadata: x.metadata || null,
-          trace_origin: origin
+          trace_origin: origin,
+          trace_payment_kind: paymentKind
         });
       }
 
@@ -153,7 +159,8 @@ function registerCoreRoutes(app, deps) {
           created_at: ex.created_at,
           updated_at: ex.updated_at,
           metadata: { from_payment_execution: true, payment_intent_id: pid },
-          trace_origin: "execution"
+          trace_origin: "execution",
+          trace_payment_kind: "execution"
         });
       }
 
