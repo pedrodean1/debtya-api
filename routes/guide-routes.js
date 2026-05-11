@@ -17,23 +17,51 @@ function guideCheckRate(key) {
   return true;
 }
 
+function buildGuideLocalFallback(lang, message) {
+  const hasQ = typeof message === "string" && message.trim().length > 0;
+  const snippet = hasQ ? message.trim().slice(0, 120) : "";
+
+  if (lang === "es") {
+    return (
+      "Estas en la beta de DebtYa (modo manual-first). DebtYa no mueve dinero ni ejecuta pagos: tu marcas lo que pagaste fuera de la app.\n\n" +
+      (snippet ? `Sobre tu pregunta (“${snippet}${message.length > 120 ? "…" : ""}”): ` : "") +
+      "No puedo dar asesoria financiera personalizada aqui. Para el producto: revisa la pestana FAQ, el plan de pago (avalanche/snowball) y el historial despues de confirmar con “Ya lo pagué”.\n\n" +
+      "Soporte por email: contact@debtya.com\n\n" +
+      "Esta respuesta es local (sin IA externa) porque el asistente conectado no esta configurado en este servidor."
+    );
+  }
+
+  return (
+    "You are on the DebtYa beta (manual-first). DebtYa does not move money or run payments for you; you confirm what you paid outside the app.\n\n" +
+    (snippet ? `About your question (“${snippet}${message.length > 120 ? "…" : ""}”): ` : "") +
+    "I cannot give personalized financial advice here. For the product itself, use the FAQ tab, your payoff plan (avalanche/snowball), and History after you tap “I paid it”.\n\n" +
+    "Support email: contact@debtya.com\n\n" +
+    "This answer was generated locally (no external AI) because the connected assistant is not configured on this server."
+  );
+}
+
 function registerGuideRoutes(app, deps) {
   const { jsonError, appError, requireUser } = deps;
 
+  const guideHardOff = process.env.OPENAI_GUIDE_DISABLED === "1";
+  const openAiReady = Boolean(process.env.OPENAI_API_KEY) && !guideHardOff;
+
   app.get("/guide-assistant/status", (_req, res) => {
-    const enabled =
-      Boolean(process.env.OPENAI_API_KEY) &&
-      process.env.OPENAI_GUIDE_DISABLED !== "1";
-    return res.json({ ok: true, enabled });
+    return res.json({
+      ok: true,
+      enabled: !guideHardOff,
+      mode: openAiReady ? "openai" : "local",
+      openai_ready: Boolean(process.env.OPENAI_API_KEY) && !guideHardOff
+    });
   });
 
   app.post("/guide-assistant", requireUser, async (req, res) => {
     try {
-      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_GUIDE_DISABLED === "1") {
+      if (guideHardOff) {
         return res.status(503).json({
           ok: false,
           disabled: true,
-          error: "Assistant not configured"
+          error: "Assistant disabled on this server"
         });
       }
 
@@ -52,6 +80,11 @@ function registerGuideRoutes(app, deps) {
         return jsonError(res, 400, "Message is required");
       }
 
+      if (!openAiReady) {
+        const reply = buildGuideLocalFallback(lang, message);
+        return res.json({ ok: true, mode: "local", reply });
+      }
+
       const axios = require("axios");
       const model = process.env.OPENAI_GUIDE_MODEL || "gpt-4o-mini";
       const langLine =
@@ -59,13 +92,13 @@ function registerGuideRoutes(app, deps) {
           ? "Respond entirely in Spanish."
           : "Respond entirely in English.";
 
-      const system = `You are the in-app guide for DebtYa, a web app that helps people organize paying down debt. Users connect their bank with Plaid, import accounts, add debts (balance, APR, minimum payment), choose avalanche or snowball strategy, set simple rules, prepare and approve suggested payment intents, execute them, and review history. Subscriptions are handled with Stripe.
+      const system = `You are the in-app guide for DebtYa, a web app that helps people organize paying down debt. Users connect their bank with Plaid, import accounts, add debts (balance, APR, minimum payment), choose avalanche or snowball strategy, and use a manual-first flow: they pay outside DebtYa and then confirm with “I paid it” / “Ya lo pagué”. DebtYa does not move money or execute payments. Subscriptions are handled with Stripe.
 
 Answer only about signing up, connecting the bank, using the DebtYa screens, and general product questions.
 
 Never give personalized financial, legal, tax, or investment advice. Do not promise results. Remind users to verify APR and minimum payments on their statements when relevant.
 
-If you are unsure or the question is outside DebtYa, suggest contacting support@debtya.com.
+If you are unsure or the question is outside DebtYa, suggest contacting contact@debtya.com.
 
 Keep answers concise (roughly under 180 words unless the user asks for more detail).
 
@@ -96,7 +129,7 @@ ${langLine}`;
         return jsonError(res, 502, "Assistant returned an empty answer");
       }
 
-      return res.json({ ok: true, reply });
+      return res.json({ ok: true, mode: "openai", reply });
     } catch (err) {
       appError("[guide-assistant]", err.response?.data || err.message);
       const msg =

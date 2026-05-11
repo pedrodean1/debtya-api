@@ -2,13 +2,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="192" height="192" role="img" aria-label="DebtYa">
   <defs>
     <linearGradient id="debtyaDyGrad192" x1="18%" y1="12%" x2="82%" y2="88%">
-      <stop offset="0%" stop-color="#93c5fd"/>
-      <stop offset="45%" stop-color="#38bdf8"/>
-      <stop offset="100%" stop-color="#1d4ed8"/>
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="55%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="#0b1220"/>
-  <rect width="512" height="512" rx="112" fill="none" stroke="rgba(148,163,184,0.12)" stroke-width="3"/>
   <text
     x="256"
     y="302"

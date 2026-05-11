@@ -212,7 +212,7 @@
         land_benefit2: "Reduce financial stress",
         land_benefit3: "Have a clear plan",
         land_footer_copy:
-          "DebtYa helps you organize and pay down debt. For help: support@debtya.com",
+          "DebtYa helps you organize and pay down debt. For help: contact@debtya.com",
         price_name: "DebtYa",
         price_copy:
           "Manual-first beta: add your debts, pick Avalanche or Snowball, see your next payment line, pay your lender outside DebtYa, then mark I paid it.",
@@ -304,7 +304,7 @@
           "Avalanche prioritizes higher-interest debt first. Snowball prioritizes lower-balance debt first to build momentum.",
         faq_q6: "Is DebtYa a financial advisor?",
         faq_a6:
-          "No. DebtYa is a debt copilot and educational organization tool, not a bank and not regulated financial, legal, tax, or credit advice. For account help email support@debtya.com.",
+          "No. DebtYa is a debt copilot and educational organization tool, not a bank and not regulated financial, legal, tax, or credit advice. For account help email contact@debtya.com.",
         help_modal_title: "Help & guide",
         help_close: "Close",
         help_tab_guide: "Guide",
@@ -322,7 +322,7 @@
         help_g4_p: "Use History to see payments and how balances changed. For more detail, open FAQ or email support.",
         help_jump_faq: "Scroll to FAQ on this page",
         guide_assistant_off:
-          "The assistant is not available here yet. Use the FAQ tab or email support@debtya.com.",
+          "The assistant is not available here yet. Use the FAQ tab or email contact@debtya.com.",
         help_ask_disclaimer:
           "The assistant explains how DebtYa works. It is not financial or legal advice. For exact numbers, use your statement or your lender.",
         help_ask_placeholder: "Ask how something works in DebtYa?",
@@ -374,6 +374,8 @@
         btn_logout: "Log out",
         advanced_operate_toggle: "More ? legacy payment tools",
         advanced_plan_toggle: "More plan options",
+        advanced_plan_tools_sub:
+          "Compare payoff order or rebuild your next payment line from your current debts and plan.",
         advanced_intents_toggle: "More payment list options",
         hero_title: "See your plan. Take the next step.",
         hero_copy:
@@ -846,6 +848,19 @@
         rule_deleted: "Rule deleted successfully.",
         plan_saved: "Plan saved. Your next payment line will refresh from this.",
         compare_ok: "Comparison ready.",
+        compare_insufficient:
+          "We do not have enough debt fields to estimate a fair comparison. Add balances, APR, and minimum payments from your statements, then try again.",
+        compare_disclaimer:
+          "Illustrative estimate only. Actual timing and interest depend on your statements, fees, and how you pay.",
+        compare_first_debt: "First extra payment target (month 1)",
+        trace_col_date: "Date",
+        trace_col_debt: "Debt",
+        trace_col_amount: "Amount",
+        trace_col_status: "Status",
+        trace_col_origin: "Origin",
+        trace_origin_manual: "Manual confirm",
+        trace_origin_intent: "Intent",
+        trace_origin_execution: "Execution record",
         accounts_imp: "Snapshots updated",
         tx_imp: "Activity updated",
         rules_applied: "Rules applied. Created",
@@ -909,7 +924,7 @@
         land_benefit2: "Reduce estr\u00e9s financiero",
         land_benefit3: "Ten un plan claro",
         land_footer_copy:
-          "DebtYa te ayuda a organizar y pagar tus deudas. Ayuda: support@debtya.com",
+          "DebtYa te ayuda a organizar y pagar tus deudas. Ayuda: contact@debtya.com",
         price_name: "DebtYa",
         price_copy:
           "Beta manual-first: agrega deudas, elige Avalancha o Bola de nieve, ve tu linea de proximo pago, paga al acreedor fuera de DebtYa y marca Ya lo pague.",
@@ -1001,7 +1016,7 @@
           "Avalanche prioriza la deuda con mayor interes. Snowball prioriza la deuda con menor balance para ganar impulso.",
         faq_q6: "DebtYa es asesor financiero?",
         faq_a6:
-          "No. DebtYa es un copiloto de deuda y herramienta educativa de organizacion; no es banco ni asesoria financiera, legal, fiscal ni crediticia regulada. Para ayuda de cuenta: support@debtya.com.",
+          "No. DebtYa es un copiloto de deuda y herramienta educativa de organizacion; no es banco ni asesoria financiera, legal, fiscal ni crediticia regulada. Para ayuda de cuenta: contact@debtya.com.",
         help_modal_title: "Ayuda y guia",
         help_close: "Cerrar",
         help_tab_guide: "Guia",
@@ -1019,7 +1034,7 @@
         help_g4_p: "Usa Historial para ver pagos y cambios de saldo. Para mas ayuda, abre FAQ o escribe a soporte.",
         help_jump_faq: "Ir a las FAQ en esta pagina",
         guide_assistant_off:
-          "El asistente no esta disponible en este servidor todavia. Usa la pestana FAQ o escribe a support@debtya.com.",
+          "El asistente no esta disponible en este servidor todavia. Usa la pestana FAQ o escribe a contact@debtya.com.",
         help_ask_disclaimer:
           "El asistente explica como funciona DebtYa. No es asesoria financiera ni legal. Para cifras exactas, usa tu estado de cuenta o tu prestamista.",
         help_ask_placeholder: "Pregunta como funciona algo en DebtYa?",
@@ -1071,6 +1086,8 @@
         btn_logout: "Salir",
         advanced_operate_toggle: "Mas ? herramientas heredadas de pagos",
         advanced_plan_toggle: "Mas opciones del plan",
+        advanced_plan_tools_sub:
+          "Compara el orden de pago o reconstruye la linea de proximo pago con tus deudas y plan actuales.",
         advanced_intents_toggle: "Mas opciones de la lista de pagos",
         hero_title: "Ve tu plan. Da el siguiente paso.",
         hero_copy:
@@ -1546,6 +1563,19 @@
         rule_deleted: "Regla borrada correctamente.",
         plan_saved: "Plan guardado. La linea de proximo pago se actualiza con esto.",
         compare_ok: "Comparacion lista.",
+        compare_insufficient:
+          "No hay suficientes datos de deudas para estimar una comparacion seria. Agrega saldos, TAE y pagos minimos segun tus extractos y vuelve a intentar.",
+        compare_disclaimer:
+          "Estimacion ilustrativa solamente. El tiempo real y los intereses dependen de tus extractos, comisiones y como pagues.",
+        compare_first_debt: "Primera deuda objetivo de extra (mes 1)",
+        trace_col_date: "Fecha",
+        trace_col_debt: "Deuda",
+        trace_col_amount: "Monto",
+        trace_col_status: "Estado",
+        trace_col_origin: "Origen",
+        trace_origin_manual: "Confirmacion manual",
+        trace_origin_intent: "Intent",
+        trace_origin_execution: "Registro de ejecucion",
         accounts_imp: "Capturas actualizadas",
         tx_imp: "Actividad actualizada",
         rules_applied: "Reglas aplicadas. Creados",
@@ -2390,10 +2420,6 @@
         guideAssistantEnabled = await fetchGuideAssistantStatus();
         const off = $("helpAssistantOff");
         if (off) off.classList.toggle("hidden", !!guideAssistantEnabled);
-        if (!guideAssistantEnabled) {
-          appendHelpChatBubble("err", t("guide_assistant_off"));
-          return;
-        }
         const reply = await postGuideAssistantMessage(msg);
         appendHelpChatBubble("bot", reply || "?");
       } catch (err) {
@@ -4570,6 +4596,13 @@
       updateNextActionGuide();
     }
 
+    function traceOriginLabel(origin) {
+      const s = String(origin || "").toLowerCase();
+      if (s === "manual" || s.includes("manual")) return t("trace_origin_manual");
+      if (s === "execution") return t("trace_origin_execution");
+      return t("trace_origin_intent");
+    }
+
     function renderTrace() {
       const box = $("traceList");
       box.innerHTML = "";
@@ -4586,17 +4619,19 @@
         const debtLine = dRow
           ? cleanVisibleDebtName(dRow.name) || did || "-"
           : did || "-";
+        const dateRaw = row.executed_at || row.created_at || row.updated_at;
+        const origin = traceOriginLabel(row.trace_origin);
         const item = document.createElement("div");
         item.className = "item";
         item.innerHTML = `
           <div class="item-top">
             <div>
-              <div class="item-title">${escapeHtml((row.id || "").slice(0, 8))} ? ${escapeHtml(row.status || "-")}</div>
+              <div class="item-title">${escapeHtml(debtLine)}</div>
               <div class="item-meta">
-                ${escapeHtml(t("meta_debt"))}: <strong>${escapeHtml(debtLine)}</strong><br />
-                ${escapeHtml(t("meta_amount"))}: <strong>${fmtMoney(row.total_amount ?? row.amount ?? 0)}</strong><br />
-                ${escapeHtml(t("meta_created"))}: <strong>${fmtDate(row.created_at)}</strong><br />
-                ${escapeHtml(t("meta_executed"))}: <strong>${fmtDate(row.executed_at)}</strong>
+                ${escapeHtml(t("trace_col_date"))}: <strong>${escapeHtml(fmtDate(dateRaw))}</strong><br />
+                ${escapeHtml(t("trace_col_amount"))}: <strong>${fmtMoney(row.total_amount ?? row.amount ?? 0)}</strong><br />
+                ${escapeHtml(t("trace_col_status"))}: <strong>${escapeHtml(row.status || "-")}</strong><br />
+                ${escapeHtml(t("trace_col_origin"))}: <strong>${escapeHtml(origin)}</strong>
               </div>
             </div>
             <div class="right">
@@ -5052,9 +5087,12 @@
     function renderPlan() {
       const plan = state.plan || {};
       $("planStrategy").value = plan.strategy || "avalanche";
-      $("planMode").value = plan.automation_mode || plan.auto_mode || "manual";
-      $("planMonthlyBudget").value = plan.monthly_budget_default ?? plan.monthly_budget ?? "";
-      $("planExtraPayment").value = plan.extra_payment_default ?? "";
+      const modeEl = $("planMode");
+      if (modeEl) modeEl.value = "manual";
+      const mb = plan.monthly_budget_default ?? plan.monthly_budget ?? 0;
+      const ex = plan.extra_payment_default ?? 0;
+      if ($("planMonthlyBudget")) $("planMonthlyBudget").value = mb === "" || mb == null ? "0" : String(mb);
+      if ($("planExtraPayment")) $("planExtraPayment").value = ex === "" || ex == null ? "0" : String(ex);
 
       populatePlanRoutingSelects();
 
@@ -5129,23 +5167,39 @@
       const box = $("compareResult");
       box.innerHTML = "";
 
-      if (!data?.avalanche || !data?.snowball) {
-        box.innerHTML = `<div class="empty">${escapeHtml(t("empty_compare"))}</div>`;
+      if (!data || data.insufficient_data) {
+        box.innerHTML = `<div class="empty">${escapeHtml(
+          data?.insufficient_reason ? t("compare_insufficient") : t("empty_compare")
+        )}</div>`;
         return;
       }
 
       const av = data.avalanche;
       const sn = data.snowball;
+      if (!av || !sn) {
+        box.innerHTML = `<div class="empty">${escapeHtml(t("empty_compare"))}</div>`;
+        return;
+      }
+
+      function firstDebtLine(row) {
+        const fd = row && row.first_recommended_debt;
+        if (!fd || !fd.id) return "";
+        const nm = fd.name && String(fd.name).trim() ? cleanVisibleDebtName(fd.name) : "";
+        const label = nm || String(fd.id).slice(0, 8);
+        return `${escapeHtml(t("compare_first_debt"))}: <strong>${escapeHtml(label)}</strong><br />`;
+      }
 
       box.innerHTML = `
+        <p class="helper-text" style="margin:0 0 10px;">${escapeHtml(t("compare_disclaimer"))}</p>
         <div class="item">
           <div class="item-top">
             <div>
               <div class="item-title">${escapeHtml(t("strategy_avalanche"))}</div>
               <div class="item-meta">
-                ${escapeHtml(t("months_lbl"))}: <strong>${av.months_to_payoff}</strong><br />
+                ${escapeHtml(t("months_lbl"))}: <strong>${escapeHtml(String(av.months_to_payoff))}</strong><br />
                 ${escapeHtml(t("interest_total_lbl"))}: <strong>${fmtMoney(av.total_interest)}</strong><br />
-                ${escapeHtml(t("total_paid_lbl"))}: <strong>${fmtMoney(av.total_paid)}</strong>
+                ${escapeHtml(t("total_paid_lbl"))}: <strong>${fmtMoney(av.total_paid)}</strong><br />
+                ${firstDebtLine(av)}
               </div>
             </div>
             <div>${statusPill("avalanche")}</div>
@@ -5156,9 +5210,10 @@
             <div>
               <div class="item-title">${escapeHtml(t("strategy_snowball"))}</div>
               <div class="item-meta">
-                ${escapeHtml(t("months_lbl"))}: <strong>${sn.months_to_payoff}</strong><br />
+                ${escapeHtml(t("months_lbl"))}: <strong>${escapeHtml(String(sn.months_to_payoff))}</strong><br />
                 ${escapeHtml(t("interest_total_lbl"))}: <strong>${fmtMoney(sn.total_interest)}</strong><br />
-                ${escapeHtml(t("total_paid_lbl"))}: <strong>${fmtMoney(sn.total_paid)}</strong>
+                ${escapeHtml(t("total_paid_lbl"))}: <strong>${fmtMoney(sn.total_paid)}</strong><br />
+                ${firstDebtLine(sn)}
               </div>
             </div>
             <div>${statusPill("snowball")}</div>
@@ -5579,13 +5634,15 @@
     }
 
     function collectPlanRebuildBodyFromForm() {
+      const bud = Number($("planMonthlyBudget")?.value || 0) || 0;
+      const ext = Number($("planExtraPayment")?.value || 0) || 0;
       return {
         strategy: String($("planStrategy")?.value || ""),
-        automation_mode: String($("planMode")?.value || ""),
-        auto_mode: String($("planMode")?.value || ""),
-        monthly_budget_default: Number($("planMonthlyBudget")?.value || 0),
-        monthly_budget: Number($("planMonthlyBudget")?.value || 0),
-        extra_payment_default: Number($("planExtraPayment")?.value || 0),
+        automation_mode: "manual",
+        auto_mode: "manual",
+        monthly_budget_default: bud,
+        monthly_budget: bud,
+        extra_payment_default: ext,
         funding_plaid_account_id: $("planFundingAccount")?.value?.trim() || null,
         payment_target_debt_id: $("planPaydownDebt")?.value?.trim() || null
       };
@@ -7015,8 +7072,33 @@
         setLoading(btn, false);
       }
     });
-    $("planStrategy").addEventListener("change", updatePlanFieldHints);
-    $("planMode").addEventListener("change", updatePlanFieldHints);
+    let persistPlanStrategyTimer = null;
+    async function flushPersistPlanStrategy() {
+      try {
+        await api("/payment-plan", {
+          method: "POST",
+          body: JSON.stringify({
+            strategy: $("planStrategy").value,
+            automation_mode: "manual",
+            auto_mode: "manual",
+            monthly_budget_default: 0,
+            monthly_budget: 0,
+            extra_payment_default: 0,
+            payment_target_debt_id: $("planPaydownDebt")?.value?.trim() || null
+          })
+        });
+        await refreshPlan();
+      } catch (e) {
+        showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
+      }
+    }
+    $("planStrategy").addEventListener("change", () => {
+      updatePlanFieldHints();
+      clearTimeout(persistPlanStrategyTimer);
+      persistPlanStrategyTimer = setTimeout(() => void flushPersistPlanStrategy(), 500);
+    });
+    const planModeEl = $("planMode");
+    if (planModeEl) planModeEl.addEventListener("change", updatePlanFieldHints);
     $("refreshIntentsBtn").addEventListener("click", refreshIntents);
     const refreshIntentsToolbarBtn = $("refreshIntentsToolbarBtn");
     if (refreshIntentsToolbarBtn) {
@@ -7567,8 +7649,7 @@
 
       if (session || getStoredAccessToken()) {
         showApp();
-        await refreshBillingStatus();
-        await refreshNotificationPreferences();
+        await refreshAll();
       } else {
         state.billing = null;
         renderBilling();

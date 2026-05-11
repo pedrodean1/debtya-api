@@ -1,6 +1,21 @@
 const { isMethodConfigured, readMethodEnv, readMethodApiVersion, readMethodKeyStatus } = require("../lib/method-env");
 const { isSpinwheelConfigured, readSpinwheelEnv, readSpinwheelKeyStatus } = require("../lib/spinwheel-env");
 
+function traceIntentMetadata(meta) {
+  if (meta && typeof meta === "object" && !Array.isArray(meta)) return meta;
+  if (typeof meta === "string") {
+    const s = meta.trim();
+    if (!s) return {};
+    try {
+      const p = JSON.parse(s);
+      return p && typeof p === "object" && !Array.isArray(p) ? p : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 function registerCoreRoutes(app, deps) {
   const {
     SERVER_VERSION,
@@ -73,46 +88,78 @@ function registerCoreRoutes(app, deps) {
 
   app.get("/payment-trace", requireUser, async (req, res) => {
     try {
-      const { data, error } = await supabaseAdmin
-        .from("v_payment_trace")
-        .select("*")
-        .eq("user_id", req.user.id);
+      const userId = req.user.id;
 
-      if (!error) {
-        return res.json({
-          ok: true,
-          source: "v_payment_trace",
-          data: sortTraceRows(data || [])
+      const { data: intents, error: intentErr } = await supabaseAdmin
+        .from("payment_intents")
+        .select("*")
+        .eq("user_id", userId)
+        .or("executed_at.not.is.null,status.eq.executed")
+        .order("executed_at", { ascending: false, nullsFirst: false })
+        .limit(200);
+
+      if (intentErr) throw intentErr;
+
+      const intentIds = new Set((intents || []).map((x) => x && x.id).filter(Boolean));
+
+      const { data: execs, error: execErr } = await supabaseAdmin
+        .from("payment_executions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("executed_at", { ascending: false, nullsFirst: false })
+        .limit(200);
+
+      if (execErr) {
+        appDebug("payment-trace: payment_executions omitido:", execErr.message);
+      }
+
+      const normalized = [];
+
+      for (const x of intents || []) {
+        const meta = traceIntentMetadata(x.metadata);
+        const manual = !!(meta.manual_confirmed || meta.paid_outside_app);
+        const origin = manual ? "manual" : String(x.source || "intent").toLowerCase();
+        normalized.push({
+          id: x.id,
+          user_id: x.user_id,
+          debt_id: x.debt_id,
+          status: x.status,
+          total_amount: getIntentAmount(x),
+          amount: getIntentAmount(x),
+          scheduled_for: x.scheduled_for,
+          approved_at: x.approved_at,
+          executed_at: x.executed_at,
+          created_at: x.created_at,
+          updated_at: x.updated_at,
+          metadata: x.metadata || null,
+          trace_origin: origin
         });
       }
 
-      appDebug("Fallback payment-trace por error en vista:", error.message);
-
-      const { data: intents, error: fallbackError } = await supabaseAdmin
-        .from("payment_intents")
-        .select("*")
-        .eq("user_id", req.user.id)
-        .order("created_at", { ascending: false });
-
-      if (fallbackError) throw fallbackError;
-
-      const normalized = (intents || []).map((x) => ({
-        id: x.id,
-        user_id: x.user_id,
-        debt_id: x.debt_id,
-        status: x.status,
-        total_amount: getIntentAmount(x),
-        scheduled_for: x.scheduled_for,
-        approved_at: x.approved_at,
-        executed_at: x.executed_at,
-        created_at: x.created_at,
-        updated_at: x.updated_at,
-        metadata: x.metadata || null
-      }));
+      for (const ex of execs || []) {
+        const pid = ex.payment_intent_id;
+        if (!pid || intentIds.has(pid)) continue;
+        const amt = Number(ex.amount ?? ex.total_amount ?? 0);
+        normalized.push({
+          id: ex.id || pid,
+          user_id: ex.user_id,
+          debt_id: ex.debt_id || null,
+          status: ex.status || "executed",
+          total_amount: amt,
+          amount: amt,
+          scheduled_for: null,
+          approved_at: null,
+          executed_at: ex.executed_at || ex.created_at,
+          created_at: ex.created_at,
+          updated_at: ex.updated_at,
+          metadata: { from_payment_execution: true, payment_intent_id: pid },
+          trace_origin: "execution"
+        });
+      }
 
       return res.json({
         ok: true,
-        source: "payment_intents_fallback",
+        source: "payment_intents_and_executions",
         data: sortTraceRows(normalized)
       });
     } catch (error) {

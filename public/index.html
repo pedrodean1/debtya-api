@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-11-v104-mobile-brand-assets" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-11-v105-manual-plan-persistence-polish" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -49,7 +49,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-11-v104-mobile-brand-assets">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-11-v105-manual-plan-persistence-polish">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -174,7 +174,7 @@
             </details>
             <details class="faq-item">
               <summary data-i18n="faq_q6">Is DebtYa a financial advisor?</summary>
-              <p class="faq-a" data-i18n="faq_a6">No. DebtYa is a debt copilot and educational organization tool, not a bank and not regulated financial, legal, tax, or credit advice. For account help email support@debtya.com.</p>
+              <p class="faq-a" data-i18n="faq_a6">No. DebtYa is a debt copilot and educational organization tool, not a bank and not regulated financial, legal, tax, or credit advice. For account help email contact@debtya.com.</p>
             </details>
           </div>
         </div>
@@ -226,7 +226,7 @@
 
       <footer class="landing-footer-clean" role="contentinfo">
         <p class="landing-footer-copy" data-i18n="land_footer_copy">
-          DebtYa helps you organize and pay down debt. For help: support@debtya.com
+          DebtYa helps you organize and pay down debt. For help: contact@debtya.com
         </p>
         <div class="legal-links landing-footer-links">
           <a class="legal-link" href="/legal.html#terminos" data-i18n="legal_link_terms">Terms</a>
@@ -768,19 +768,9 @@
                 </select>
                 <p id="planStrategyHint" class="plan-field-hint" aria-live="polite"></p>
               </div>
-              <details class="ux-advanced-details plan-mode-advanced" style="grid-column:1 / -1;">
-                <summary data-i18n="plan_mode_advanced_summary">Optional legacy automation mode</summary>
-                <div class="field" style="margin-top:10px;">
-                  <label class="label" data-i18n="lbl_mode">Mode</label>
-                  <select id="planMode" class="select" aria-describedby="planModeHint">
-                    <option value="manual" data-i18n-opt="plan_manual">Manual</option>
-                    <option value="safe_auto" data-i18n-opt="plan_safe_auto">Safe auto</option>
-                    <option value="full_auto" data-i18n-opt="plan_full_auto">Full auto</option>
-                  </select>
-                  <p id="planModeHint" class="plan-field-hint" aria-live="polite"></p>
-                </div>
-              </details>
-              <div class="field">
+              <input type="hidden" id="planMode" value="manual" />
+              <p id="planModeHint" class="plan-field-hint hidden" aria-hidden="true"></p>
+              <div id="planFundingWrap" class="field hidden" aria-hidden="true">
                 <label class="label" for="planFundingAccount" data-i18n="lbl_plan_pay_from">Optional pay-from label</label>
                 <select id="planFundingAccount" class="select" aria-describedby="planFundingHint">
                   <option value="">—</option>
@@ -798,19 +788,19 @@
                   Optional: highlight which debt you consider the main target. Your strategy can still spread extra across multiple debts.
                 </p>
               </div>
-              <div class="field">
+              <div id="planBudgetWrap" class="field hidden" aria-hidden="true">
                 <div class="field-label-row">
                   <label class="label" for="planMonthlyBudget" data-i18n="lbl_monthly_budget">Monthly budget</label>
                   <button type="button" class="info-bubble-btn" data-i18n-title="hint_monthly_budget" title="" aria-label="">?</button>
                 </div>
-                <input id="planMonthlyBudget" class="input" type="number" step="0.01" placeholder="0.00" />
+                <input id="planMonthlyBudget" class="input" type="number" step="0.01" value="0" placeholder="0.00" />
               </div>
-              <div class="field">
+              <div id="planExtraWrap" class="field hidden" aria-hidden="true">
                 <div class="field-label-row">
                   <label class="label" for="planExtraPayment" data-i18n="lbl_monthly_extra">Monthly extra</label>
                   <button type="button" class="info-bubble-btn" data-i18n-title="hint_monthly_extra" title="" aria-label="">?</button>
                 </div>
-                <input id="planExtraPayment" class="input" type="number" step="0.01" placeholder="0.00" />
+                <input id="planExtraPayment" class="input" type="number" step="0.01" value="0" placeholder="0.00" />
               </div>
               <div class="field" style="grid-column:1 / -1;">
                 <button id="savePlanBtn" class="btn btn-primary" type="submit" data-i18n="btn_create_plan">Create my plan</button>
@@ -819,15 +809,18 @@
 
             <div class="divider"></div>
 
-            <details class="ux-advanced-details" style="margin-top:14px;">
-              <summary data-i18n="advanced_plan_toggle">More plan options</summary>
-              <div class="ux-advanced-inner">
-                <div class="grid-2">
-                  <button id="compareStrategyBtn" class="btn btn-light" type="button" data-i18n="btn_compare">Compare strategies</button>
-                  <button id="refreshPlanBtn" class="btn btn-light" type="button" data-i18n="btn_refresh_plan">Refresh plan</button>
-                </div>
+            <div class="plan-extra-tools stack" style="margin-top:14px;">
+              <div class="field" style="margin-bottom:0;">
+                <div class="label" data-i18n="advanced_plan_toggle">More plan options</div>
+                <p class="helper-text" style="margin-top:4px;" data-i18n="advanced_plan_tools_sub">
+                  Compare payoff order or rebuild your next payment line from your current debts and plan.
+                </p>
               </div>
-            </details>
+              <div class="ux-advanced-inline-btns" style="padding:0;">
+                <button id="compareStrategyBtn" class="btn btn-light" type="button" data-i18n="btn_compare">Compare strategies</button>
+                <button id="refreshPlanBtn" class="btn btn-light" type="button" data-i18n="btn_refresh_plan">Refresh plan</button>
+              </div>
+            </div>
 
             <div id="compareResult" class="list" style="margin-top:14px;"></div>
           </section>
@@ -1065,7 +1058,7 @@
                 <a href="/legal.html#terminos" data-i18n="legal_link_terms">Terms</a>
                 <a href="/legal.html#privacidad" data-i18n="legal_link_privacy">Privacy</a>
                 <a href="/legal.html#cancelacion" data-i18n="legal_link_cancel">Account</a>
-                <a href="mailto:support@debtya.com" data-i18n="legal_link_support">Support</a>
+                <a href="mailto:contact@debtya.com" data-i18n="legal_link_support">Support</a>
               </div>
             </div>
           </div>
@@ -1181,7 +1174,7 @@
       </div>
 
       <div id="helpPanelAsk" class="help-panel hidden" data-help-panel="ask">
-        <p id="helpAssistantOff" class="help-mini hidden" data-i18n="guide_assistant_off">The assistant is not available here yet. Use the FAQ tab or email support@debtya.com.</p>
+        <p id="helpAssistantOff" class="help-mini hidden" data-i18n="guide_assistant_off">The assistant is not available here yet. Use the FAQ tab or email contact@debtya.com.</p>
         <p class="help-mini" data-i18n="help_ask_disclaimer">The assistant explains how DebtYa works. It is not financial or legal advice. For exact numbers, use your statement or your lender.</p>
         <div id="helpChatLog" class="help-chat-log" aria-live="polite"></div>
         <div class="help-chat-row">
@@ -1214,14 +1207,14 @@
           </details>
           <details class="faq-item">
             <summary data-i18n="faq_q6">Is DebtYa a financial advisor?</summary>
-            <p class="faq-a" data-i18n="faq_a6">No. DebtYa is a debt copilot and educational organization tool, not a bank and not regulated financial, legal, tax, or credit advice. For account help email support@debtya.com.</p>
+            <p class="faq-a" data-i18n="faq_a6">No. DebtYa is a debt copilot and educational organization tool, not a bank and not regulated financial, legal, tax, or credit advice. For account help email contact@debtya.com.</p>
           </details>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-11-v104-mobile-brand-assets"></script>
+  <script src="/app.js?v=debtya-2026-05-11-v105-manual-plan-persistence-polish"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

@@ -8,6 +8,7 @@ function registerManualPlanRoutes(app, deps) {
     normalizePaymentPlan,
     safeNumber,
     isUuid,
+    savePaymentPlanForUser,
     appDebug
   } = deps;
 
@@ -20,7 +21,8 @@ function registerManualPlanRoutes(app, deps) {
         getCurrentPaymentPlan,
         normalizePaymentPlan,
         safeNumber,
-        isUuid
+        isUuid,
+        savePaymentPlanForUser
       });
       return res.json(out);
     } catch (e) {

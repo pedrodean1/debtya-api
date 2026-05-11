@@ -18,12 +18,13 @@ const {
   pickPriorityDebtForManualPlan,
   computeManualPriorityPaymentAmount
 } = require("./lib/manual-plan-next-payment");
+const { compareStrategiesFromDebtRows } = require("./lib/strategy-compare-sim");
 
 const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-11-v104-mobile-brand-assets";
+const SERVER_VERSION = "debtya-2026-05-11-v105-manual-plan-persistence-polish";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -1788,83 +1789,7 @@ async function compareStrategiesForUser(userId, monthlyBudget = 0, extraPayment 
 
   if (error) throw error;
 
-  const normalizedDebts = (debts || []).map((d) => ({
-    id: d.id,
-    name: d.name,
-    balance: safeNumber(d.balance),
-    apr: safeNumber(d.apr),
-    minimum_payment: safeNumber(d.minimum_payment)
-  }));
-
-  const compare = (strategyName) => {
-    let items = normalizedDebts.map((d) => ({ ...d }));
-    let month = 0;
-    let totalInterest = 0;
-    const timeline = [];
-
-    while (items.some((d) => d.balance > 0.009) && month < 600) {
-      month += 1;
-
-      const active = items.filter((d) => d.balance > 0.009);
-      const minimums = active.reduce((sum, d) => sum + d.minimum_payment, 0);
-      const extra = Math.max(0, monthlyBudget + extraPayment - minimums);
-
-      active.forEach((d) => {
-        const monthlyRate = d.apr / 100 / 12;
-        const interest = d.balance * monthlyRate;
-        totalInterest += interest;
-        d.balance += interest;
-      });
-
-      let ordered = [...active];
-      if (strategyName === "avalanche") {
-        ordered.sort((a, b) => b.apr - a.apr || a.balance - b.balance);
-      } else {
-        ordered.sort((a, b) => a.balance - b.balance || b.apr - a.apr);
-      }
-
-      ordered.forEach((d, index) => {
-        let payment = d.minimum_payment;
-        if (index === 0) payment += extra;
-        payment = Math.min(payment, d.balance);
-        d.balance = Math.max(0, d.balance - payment);
-      });
-
-      timeline.push({
-        month,
-        remaining_balance: Number(
-          items.reduce((sum, d) => sum + d.balance, 0).toFixed(2)
-        )
-      });
-    }
-
-    return {
-      strategy: strategyName,
-      months: month,
-      months_to_payoff: month,
-      total_interest: Number(totalInterest.toFixed(2)),
-      total_paid: Number(
-        (
-          normalizedDebts.reduce((sum, d) => sum + d.balance, 0) +
-          totalInterest
-        ).toFixed(2)
-      ),
-      timeline
-    };
-  };
-
-  const avalanche = compare("avalanche");
-  const snowball = compare("snowball");
-
-  return {
-    inputs: {
-      debts: normalizedDebts,
-      monthly_budget: monthlyBudget,
-      extra_payment: extraPayment
-    },
-    avalanche,
-    snowball
-  };
+  return compareStrategiesFromDebtRows(debts || [], monthlyBudget, extraPayment, safeNumber);
 }
 
 async function markIntentMetadata(intentId, userId, patch = {}) {
