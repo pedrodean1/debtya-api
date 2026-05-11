@@ -13,6 +13,7 @@
     "sql:apply:spinwheel-debts": "node scripts/apply-sql-file.mjs sql/add_debts_spinwheel_columns_if_missing.sql",
     "test": "node --test ./test/lib/validation.test.js ./test/lib/manual-plan-next-payment.test.js ./test/lib/manual-plan-rebuild.test.js ./test/lib/method-env.test.js ./test/lib/method-client.test.js ./test/lib/notifications.test.js ./test/lib/spinwheel-env.test.js ./test/lib/spinwheel-client.test.js ./test/lib/spinwheel-users.test.js ./test/lib/spinwheel-debt-import.test.js ./test/lib/spinwheel-payable-summary.test.js ./test/lib/spinwheel-payment-intents.test.js ./test/lib/spinwheel-payments-validate.test.js ./test/scripts/validate-env.test.js ./test/routes/payment-intents-routes.test.js ./test/routes/ai-coach-routes.test.js ./test/routes/notifications-routes.test.js ./test/routes/stripe-webhook-routes.test.js ./test/routes/spinwheel-routes.test.js",
     "security:preflight": "powershell -ExecutionPolicy Bypass -File ./scripts/security-preflight.ps1",
+    "gen:brand": "node scripts/gen-debtya-brand-pngs.cjs",
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android",
     "cap:open:ios": "npx cap open ios"
@@ -37,6 +38,7 @@
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.3.2",
     "pg": "^8.14.1",
+    "sharp": "^0.34.1",
     "supertest": "^7.2.2"
   }
 }

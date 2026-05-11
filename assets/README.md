@@ -1,19 +1,29 @@
-# Capacitor Asset Sources
+# Capacitor asset sources (V104)
 
-This folder is reserved for Capacitor source artwork.
+DebtYa ships final **square** brand sources here for `@capacitor/assets` and Android/iOS generation.
 
-The repo currently has SVG PWA icons in `public/icons/` and a non-square `public/logo.png` (`1024x682`). Android/iOS release artwork still needs reviewed PNG sources, so V92 does not invent final PNG files here.
+## Canonical artwork
 
-Expected source files before running `npx capacitor-assets generate`:
+- **`logo.png`** — 1024×1024, monograma **dy**, degradado azul sobre fondo oscuro redondeado (misma pieza que `public/icons/debtya-brand.svg` rasterizada con `npm run gen:brand`).
+- **`splash.png`** / **`splash-dark.png`** — 2732×2732, fondo `#0b1220` con el logo centrado (generados por el mismo script).
 
-- `icon-only.png` at least `1024x1024`
-- `icon-foreground.png` at least `1024x1024`
-- `icon-background.png` at least `1024x1024`
-- `splash.png` at least `2732x2732`
-- `splash-dark.png` at least `2732x2732`
+## Regenerar PNG públicos + `assets/logo.png` + splashes
 
-What is still missing for release:
+Tras editar `public/icons/debtya-brand.svg`:
 
-- A final square DebtYa app icon PNG, at least `1024x1024`.
-- A final splash PNG, at least `2732x2732`.
-- A dark splash PNG, at least `2732x2732`, if the launch screen should support a dark variant.
+```sh
+npm run gen:brand
+```
+
+Luego regenerar recursos nativos (solo Android en este repo, típico):
+
+```sh
+npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor "#0b1220" --splashBackgroundColor "#0b1220" --splashBackgroundColorDark "#050810"
+npx cap sync android
+```
+
+## PWA / web
+
+- Vectores: `public/icons/debtya-192.svg`, `public/icons/debtya-512.svg`, `public/icons/debtya-brand.svg`
+- PNG PWA / favicon / Apple: `public/icons/debtya-192.png`, `debtya-512.png`, `favicon-32.png`, `apple-touch-icon.png`
+- Marca en cabecera HTML: `public/logo.png` (1024×1024, cuadrado)

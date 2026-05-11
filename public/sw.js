@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v1";
+const SW_CACHE = "debtya-static-v104";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -6,6 +6,10 @@ const STATIC_ASSETS = [
   "/app.js",
   "/manifest.webmanifest",
   "/logo.png",
+  "/icons/favicon-32.png",
+  "/icons/apple-touch-icon.png",
+  "/icons/debtya-192.png",
+  "/icons/debtya-512.png",
   "/icons/debtya-192.svg",
   "/icons/debtya-512.svg"
 ];

@@ -1,5 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#1f6fff" />
-  <circle cx="256" cy="256" r="176" fill="#ffffff" opacity="0.14" />
-  <text x="256" y="300" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="180" font-weight="700">D</text>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="DebtYa">
+  <defs>
+    <linearGradient id="debtyaDyGrad512" x1="18%" y1="12%" x2="82%" y2="88%">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="45%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0b1220"/>
+  <rect width="512" height="512" rx="112" fill="none" stroke="rgba(148,163,184,0.12)" stroke-width="3"/>
+  <text
+    x="256"
+    y="302"
+    text-anchor="middle"
+    font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+    font-size="178"
+    font-weight="800"
+    fill="url(#debtyaDyGrad512)"
+    letter-spacing="-10">dy</text>
 </svg>

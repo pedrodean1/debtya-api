@@ -152,26 +152,19 @@ android/app/build/outputs/bundle/release/app-release.aab
 
 Upload the AAB in Google Play Console under the chosen testing or production track. Complete the store listing, app access, content rating, data safety, privacy policy, and release notes before rollout.
 
-## Android Assets
+## Android Assets (V104)
 
-Current source assets are not final release assets:
+Final square brand sources live under `assets/` and `public/icons/`:
 
-- `public/icons/debtya-192.svg`
-- `public/icons/debtya-512.svg`
-- `public/logo.png` is `1024x682`, not square.
+- `assets/logo.png` (1024×1024) — easy mode input for `@capacitor/assets`
+- `assets/splash.png` / `assets/splash-dark.png` (2732×2732)
+- Vector master: `public/icons/debtya-brand.svg`
 
-Before generating final assets, add reviewed PNG artwork:
-
-- `assets/icon-only.png` at least `1024x1024`
-- `assets/icon-foreground.png` at least `1024x1024`
-- `assets/icon-background.png` at least `1024x1024`
-- `assets/splash.png` at least `2732x2732`
-- `assets/splash-dark.png` at least `2732x2732`, if needed
-
-Then run:
+Regenerate mipmaps and splashes after changing the SVG:
 
 ```sh
-npx capacitor-assets generate --android
+npm run gen:brand
+npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor "#0b1220" --splashBackgroundColor "#0b1220" --splashBackgroundColorDark "#050810"
 npx cap sync android
 ```
 
@@ -196,7 +189,7 @@ Before publishing, Google Play will require production-ready store and complianc
 - Confirm no Plaid/Spinwheel/Method, Rules, or Suggested Payments UI is visible.
 - Confirm only one next payment is recommended.
 - Confirm "Ya lo pague" lowers balance once.
-- Replace placeholder/default Android icons and splash with final reviewed DebtYa artwork.
+- Confirm launcher and splash match the current DebtYa brand (regenerate with `npm run gen:brand` + `@capacitor/assets` if sources changed).
 - Configure release signing with `android/key.properties` and keep signing secrets out of git.
 - Build and install a release-signed artifact on a real Android device.
 - Generate `android/app/build/outputs/bundle/release/app-release.aab` only after the local keystore is ready.
