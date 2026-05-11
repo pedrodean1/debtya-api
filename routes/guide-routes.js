@@ -41,7 +41,14 @@ function buildGuideLocalFallback(lang, message) {
 }
 
 function registerGuideRoutes(app, deps) {
-  const { jsonError, appError, requireUser } = deps;
+  const { jsonError, appError, requireUser, openAiChatCompletions } = deps;
+
+  async function defaultOpenAiChatCompletions(payload, axiosOpts) {
+    const axios = require("axios");
+    return axios.post("https://api.openai.com/v1/chat/completions", payload, axiosOpts);
+  }
+
+  const postOpenAiChat = typeof openAiChatCompletions === "function" ? openAiChatCompletions : defaultOpenAiChatCompletions;
 
   const guideHardOff = process.env.OPENAI_GUIDE_DISABLED === "1";
   const openAiReady = Boolean(process.env.OPENAI_API_KEY) && !guideHardOff;
@@ -106,8 +113,7 @@ Keep answers concise (roughly under 180 words unless the user asks for more deta
 
 ${langLine}`;
 
-      const r = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
+      const r = await postOpenAiChat(
         {
           model,
           messages: [
@@ -128,15 +134,16 @@ ${langLine}`;
 
       const reply = r.data?.choices?.[0]?.message?.content?.trim();
       if (!reply) {
-        return jsonError(res, 502, "Assistant returned an empty answer");
+        appError("[guide-assistant] empty reply from provider");
+        return res.status(503).json({ ok: false, error: "assistant_unavailable" });
       }
 
       return res.json({ ok: true, mode: "openai", reply });
     } catch (err) {
-      appError("[guide-assistant]", err.response?.data || err.message);
-      const msg =
-        err.response?.data?.error?.message || err.message || "Unknown error";
-      return jsonError(res, 500, "Assistant request failed", { details: msg });
+      const status = err.response?.status;
+      const code = err.response?.data?.error?.code;
+      appError("[guide-assistant] provider_error", { status: status || null, code: code || null });
+      return res.status(503).json({ ok: false, error: "assistant_unavailable" });
     }
   });
 }

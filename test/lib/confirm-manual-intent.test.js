@@ -244,4 +244,125 @@ describe("lib/confirm-manual-intent", () => {
     assert.equal(applyCount, 0);
     assert.equal(emailCount, 0);
   });
+
+  it("executed sin debt_balance_applied_at devuelve confirmation_in_progress y no llama apply ni email", async () => {
+    const supabaseAdmin = createSupabaseMock();
+    supabaseAdmin._setRow({
+      status: "executed",
+      executed_at: "2020-01-01T00:00:00.000Z",
+      metadata: { manual_confirmed: true, paid_outside_app: true }
+    });
+    supabaseAdmin._setClaimPass(false);
+
+    let applyCount = 0;
+    let emailCount = 0;
+
+    const confirm = createConfirmManualPaymentIntentHandler({
+      supabaseAdmin,
+      isUuid: (id) =>
+        typeof id === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+      getIntentAmount: (intent) => Number(intent.total_amount || intent.amount || 0),
+      getIntentMetadata: (intent) => parseMeta(intent?.metadata),
+      intentRowForDebtBalanceApply: (pre, post, amt) => ({
+        ...post,
+        debt_id: post.debt_id || pre.debt_id,
+        total_amount: amt,
+        amount: amt
+      }),
+      applyExecutedIntentToDebt: async () => {
+        applyCount += 1;
+        return { ok: true, skipped: false, previous_balance: 100, next_balance: 90 };
+      },
+      sendPaymentRecordedEmailsSafe: async () => {
+        emailCount += 1;
+      },
+      appDebug: () => {}
+    });
+
+    const r = await confirm(userId, intentId, {});
+    assert.equal(r.ok, true);
+    assert.equal(r.confirmation_in_progress, true);
+    assert.equal(r.already_confirmed, true);
+    assert.equal(r.debt_apply && r.debt_apply.reason, "confirmacion_en_progreso");
+    assert.equal(applyCount, 0);
+    assert.equal(emailCount, 0);
+  });
+
+  it("claim perdido: executed sin metadata (carrera) devuelve confirmation_in_progress sin apply", async () => {
+    const supabaseAdmin = createSupabaseMock();
+    supabaseAdmin._setRow({
+      status: "executed",
+      executed_at: "2020-01-01T00:00:00.000Z",
+      metadata: {}
+    });
+    supabaseAdmin._setClaimPass(false);
+
+    let applyCount = 0;
+    let emailCount = 0;
+    const confirm = createConfirmManualPaymentIntentHandler({
+      supabaseAdmin,
+      isUuid: (id) =>
+        typeof id === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+      getIntentAmount: (intent) => Number(intent.total_amount || intent.amount || 0),
+      getIntentMetadata: (intent) => parseMeta(intent?.metadata),
+      intentRowForDebtBalanceApply: (pre, post, amt) => ({
+        ...post,
+        debt_id: post.debt_id || pre.debt_id,
+        total_amount: amt,
+        amount: amt
+      }),
+      applyExecutedIntentToDebt: async () => {
+        applyCount += 1;
+        return { ok: true, skipped: false };
+      },
+      sendPaymentRecordedEmailsSafe: async () => {
+        emailCount += 1;
+      },
+      appDebug: () => {}
+    });
+
+    const r = await confirm(userId, intentId, {});
+    assert.equal(r.confirmation_in_progress, true);
+    assert.equal(applyCount, 0);
+    assert.equal(emailCount, 0);
+  });
+
+  it("doble llamada en paralelo a executed sin metadata: ninguna rebaja (sin apply)", async () => {
+    const supabaseAdmin = createSupabaseMock();
+    supabaseAdmin._setRow({
+      status: "executed",
+      executed_at: "2020-01-01T00:00:00.000Z",
+      metadata: {}
+    });
+    supabaseAdmin._setClaimPass(false);
+
+    let applyCount = 0;
+    const confirm = createConfirmManualPaymentIntentHandler({
+      supabaseAdmin,
+      isUuid: (id) =>
+        typeof id === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+      getIntentAmount: (intent) => Number(intent.total_amount || intent.amount || 0),
+      getIntentMetadata: (intent) => parseMeta(intent?.metadata),
+      intentRowForDebtBalanceApply: (pre, post, amt) => ({
+        ...post,
+        debt_id: post.debt_id || pre.debt_id,
+        total_amount: amt,
+        amount: amt
+      }),
+      applyExecutedIntentToDebt: async () => {
+        applyCount += 1;
+        return { ok: true, skipped: false };
+      },
+      sendPaymentRecordedEmailsSafe: async () => {},
+      appDebug: () => {}
+    });
+
+    const [a, b] = await Promise.all([confirm(userId, intentId, {}), confirm(userId, intentId, {})]);
+    assert.equal(a.confirmation_in_progress, true);
+    assert.equal(b.confirmation_in_progress, true);
+    assert.equal(applyCount, 0);
+  });
 });

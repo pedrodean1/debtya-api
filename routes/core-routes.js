@@ -39,31 +39,41 @@ function registerCoreRoutes(app, deps) {
     const methodStatus = readMethodKeyStatus();
     const spinOn = isSpinwheelConfigured();
     const spinStatus = readSpinwheelKeyStatus();
-    const payload = {
+
+    const exposeTechnical =
+      process.env.NODE_ENV !== "production" || String(process.env.DEBTYA_HEALTH_TECHNICAL || "").trim() === "1";
+
+    const minimalPayload = {
       ok: true,
       message: "DebtYa API funcionando",
       server_version: SERVER_VERSION,
-      bank_disconnect_page: "/bank-disconnect",
-      bank_disconnect_page_alt: "/disconnect-bank.html",
-      bank_disconnect_page_plaid: "/plaid/manage-disconnect",
-      bank_disconnect_page_api: "/api/bank-disconnect",
-      now: new Date().toISOString(),
-      has_method_api_key: methodStatus.configured,
-      method_key_source: methodStatus.key_source,
-      method_configured: methodOn,
-      method_env: methodOn ? readMethodEnv() : null,
-      method_api_version: methodOn ? readMethodApiVersion() : null,
-      spinwheel_configured: spinOn,
-      spinwheel_key_source: spinStatus.key_source,
-      spinwheel_env: readSpinwheelEnv(),
-      has_spinwheel_api_secret: spinOn
+      now: new Date().toISOString()
     };
+
+    const payload = exposeTechnical
+      ? {
+          ...minimalPayload,
+          bank_disconnect_page: "/bank-disconnect",
+          bank_disconnect_page_alt: "/disconnect-bank.html",
+          bank_disconnect_page_plaid: "/plaid/manage-disconnect",
+          bank_disconnect_page_api: "/api/bank-disconnect",
+          has_method_api_key: methodStatus.configured,
+          method_key_source: methodStatus.key_source,
+          method_configured: methodOn,
+          method_env: methodOn ? readMethodEnv() : null,
+          method_api_version: methodOn ? readMethodApiVersion() : null,
+          spinwheel_configured: spinOn,
+          spinwheel_key_source: spinStatus.key_source,
+          spinwheel_env: readSpinwheelEnv(),
+          has_spinwheel_api_secret: spinOn
+        }
+      : minimalPayload;
 
     const exposeEnvDebug =
       process.env.NODE_ENV !== "production" ||
       process.env.HEALTH_EXPOSE_DEBUG === "1";
 
-    if (exposeEnvDebug) {
+    if (exposeEnvDebug && exposeTechnical) {
       payload.env_debug = {
         has_supabase_url: !!SUPABASE_URL,
         has_anon_key: !!SUPABASE_ANON_KEY,

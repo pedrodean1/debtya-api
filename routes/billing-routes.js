@@ -1,4 +1,7 @@
-const { isStripeCheckoutBlockedForBeta } = require("../lib/debtya-beta-flags");
+const {
+  isStripeCheckoutBlockedForBeta,
+  isStripePortalBlockedDuringBeta
+} = require("../lib/debtya-beta-flags");
 
 function registerBillingRoutes(app, deps) {
   const {
@@ -165,6 +168,9 @@ function registerBillingRoutes(app, deps) {
 
   app.post("/stripe/create-portal-session", requireUser, async (req, res) => {
     try {
+      if (isStripePortalBlockedDuringBeta()) {
+        return res.status(403).json({ ok: false, error: "billing_portal_disabled_during_beta" });
+      }
       if (!stripe) {
         return jsonError(res, 500, "Stripe no configurado");
       }

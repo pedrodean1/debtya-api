@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v109-google-play-blockers-fix";
+const SW_CACHE = "debtya-static-v109.1-confirm-manual-atomic-hardening";
 const STATIC_ASSETS = [
   "/",
   "/index.html",

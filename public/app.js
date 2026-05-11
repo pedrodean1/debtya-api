@@ -367,12 +367,12 @@
         pw_recovery_cancel: "Cancel and sign out",
         pw_recovery_code_sent: "Check your email for the 6-digit code.",
         pw_recovery_done: "Password updated. Loading your account?",
-        auth_footer_hint: "Sign in to add your debts, activate your plan, and track your payoff path.",
+        auth_footer_hint: "Sign in to add your debts, create your plan, and track your payoff path.",
         app_welcome_default: "Home",
         badge_session: "Signed in",
         badge_sub_active: "Subscription active",
         badge_sub_until_end: "Active until period ends",
-        btn_activate_plan: "Activate plan",
+        btn_activate_plan: "Create plan",
         btn_manage_plan: "Manage plan",
         btn_logout: "Log out",
         advanced_operate_toggle: "More ? legacy payment tools",
@@ -470,7 +470,7 @@
         method_panel_title: "Legacy liabilities",
         method_panel_hint: "When liability integrations are enabled on the server, you can sync optional liability rows and add them as debts in DebtYa.",
         method_panel_disabled:
-          "Method is not enabled on this API host. Add METHOD_API_KEY to the Node service on Render and redeploy; open /health and confirm method_configured is true.",
+          "Optional liability linking is not enabled on this API host. If you expected it here, contact support with your workspace details.",
         method_lbl_first: "First name",
         method_lbl_last: "Last name",
         method_lbl_phone: "Phone (E.164)",
@@ -709,7 +709,10 @@
         err_no_auth: "You need to sign in first.",
         err_stripe_cfg: "Payments are not available right now.",
         err_checkout_beta: "Checkout is not available during the free beta. Continue in the app to track your plan.",
+        err_portal_beta: "Account billing links are not available during the free beta. Continue in the app to track your plan.",
         manual_pay_already_recorded: "This payment was already recorded in DebtYa.",
+        manual_pay_confirmation_in_progress:
+          "We are finishing recording this payment. Refresh in a moment if your balance does not update.",
         err_plaid_cfg: "That option is not available right now.",
         debt_select_placeholder: "Select a debt",
         empty_debts: "You have no saved debts yet.",
@@ -1108,12 +1111,12 @@
         pw_recovery_cancel: "Cancelar y cerrar sesion",
         pw_recovery_code_sent: "Revisa tu correo para el codigo de 6 digitos.",
         pw_recovery_done: "Contrasena actualizada. Cargando tu cuenta?",
-        auth_footer_hint: "Inicia sesion para agregar tus deudas, activar tu plan y seguir tu camino de pago.",
+        auth_footer_hint: "Inicia sesion para agregar tus deudas, crear tu plan y seguir tu camino de pago.",
         app_welcome_default: "Panel principal",
         badge_session: "Sesion activa",
         badge_sub_active: "Suscripcion activa",
         badge_sub_until_end: "Activa hasta fin de periodo",
-        btn_activate_plan: "Activar plan",
+        btn_activate_plan: "Crear plan",
         btn_manage_plan: "Administrar plan",
         btn_logout: "Salir",
         advanced_operate_toggle: "Mas ? herramientas heredadas de pagos",
@@ -1212,7 +1215,7 @@
         method_panel_title: "Pasivos heredados",
         method_panel_hint: "Si el servidor tiene integraciones de pasivos, puedes sincronizar filas opcionales y agregarlas como deudas en DebtYa.",
         method_panel_disabled:
-          "Method no esta activo en esta API: falta METHOD_API_KEY en el servicio Node (Render) o la API desplegada no es la ultima version. Abre /health y comprueba method_configured: true.",
+          "El enlace opcional de pasivos no esta activo en esta API. Si lo esperabas aqui, escribe a soporte con los datos de tu espacio de trabajo.",
         method_lbl_first: "Nombre",
         method_lbl_last: "Apellido",
         method_lbl_phone: "Telefono (E.164)",
@@ -1451,7 +1454,10 @@
         err_no_auth: "Necesitas iniciar sesion primero.",
         err_stripe_cfg: "El sistema de pagos no esta listo ahora mismo.",
         err_checkout_beta: "El checkout no esta disponible durante la beta gratuita. Sigue en la app para registrar tu plan.",
+        err_portal_beta: "Los enlaces de cuenta para facturacion no estan disponibles durante la beta gratuita. Sigue en la app para registrar tu plan.",
         manual_pay_already_recorded: "Este pago ya estaba registrado en DebtYa.",
+        manual_pay_confirmation_in_progress:
+          "Estamos terminando de registrar este pago. Actualiza en un momento si no ves el saldo actualizado.",
         err_plaid_cfg: "Esa opcion no esta disponible ahora mismo.",
         debt_select_placeholder: "Selecciona deuda",
         empty_debts: "Todavia no tienes deudas guardadas.",
@@ -2198,6 +2204,7 @@
       if (text.includes("Falta Authorization Bearer token")) return t("err_no_auth");
       if (text.includes("Stripe no configurado")) return t("err_stripe_cfg");
       if (text.includes("checkout_disabled_during_beta")) return t("err_checkout_beta");
+      if (text.includes("billing_portal_disabled_during_beta")) return t("err_portal_beta");
       if (text.includes("Plaid no configurado")) return t("err_plaid_cfg");
       if (text.includes("Invalid linked Plaid account")) return t("err_debt_link_invalid");
       if (text.includes("Cuenta de origen no encontrada")) return t("err_plan_funding_missing");
@@ -3736,17 +3743,20 @@
               if (
                 da &&
                 da.ok !== true &&
-                !(da.skipped === true && da.reason === "ya_aplicado")
+                !(da.skipped === true && da.reason === "ya_aplicado") &&
+                !(da.skipped === true && da.reason === "confirmacion_en_progreso")
               ) {
                 throw new Error(
                   da.reason || da.error || "El servidor no rebajó el balance de la deuda."
                 );
               }
               applyManualConfirmDebtToLocalState(confirmRes);
-              let payMsg =
-                confirmRes && confirmRes.already_confirmed
-                  ? t("manual_pay_already_recorded")
-                  : t("manual_pay_ok");
+              let payMsg = t("manual_pay_ok");
+              if (confirmRes && confirmRes.confirmation_in_progress) {
+                payMsg = t("manual_pay_confirmation_in_progress");
+              } else if (confirmRes && confirmRes.already_confirmed) {
+                payMsg = t("manual_pay_already_recorded");
+              }
               if (
                 !(confirmRes && confirmRes.already_confirmed) &&
                 confirmRes &&
@@ -3756,7 +3766,8 @@
                   cleanVisibleDebtName(confirmRes.debt_name || "") || t("debt_label");
                 payMsg += " " + String(t("debt_fully_paid_toast")).replace("{{name}}", nm);
               }
-              showMessage(globalMessage, payMsg, "success");
+              const payTone = confirmRes && confirmRes.confirmation_in_progress ? "warn" : "success";
+              showMessage(globalMessage, payMsg, payTone);
               clearManualPriorityStateFull();
               await refreshDebts();
               await refreshIntents();
