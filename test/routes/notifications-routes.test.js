@@ -44,9 +44,18 @@ function mount(deps) {
   return app;
 }
 
-function makeSupabaseMock({ pref = null, intents = [], debt = null, plan = null, prefScanRows = null } = {}) {
+function makeSupabaseMock({
+  pref = null,
+  intents = [],
+  debt = null,
+  plan = null,
+  prefScanRows = null,
+  cronLastUserReminderCreatedAtIso = null,
+  cronEventInsertCaptures = null
+} = {}) {
   let savedPreference = null;
   const rowsForCronScan = prefScanRows == null ? [] : prefScanRows;
+  const inserts = cronEventInsertCaptures;
   const api = {
     get savedPreference() {
       return savedPreference;
@@ -138,6 +147,42 @@ function makeSupabaseMock({ pref = null, intents = [], debt = null, plan = null,
                         return {
                           maybeSingle() {
                             return Promise.resolve({ data: plan, error: null });
+                          }
+                        };
+                      }
+                    };
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+      if (table === "notification_events") {
+        return {
+          insert(payload) {
+            if (inserts) inserts.push(payload);
+            return Promise.resolve({ data: {}, error: null });
+          },
+          select() {
+            return {
+              eq() {
+                return {
+                  eq() {
+                    return {
+                      order() {
+                        return {
+                          limit() {
+                            return {
+                              maybeSingle() {
+                                return Promise.resolve({
+                                  data: cronLastUserReminderCreatedAtIso
+                                    ? { created_at: cronLastUserReminderCreatedAtIso }
+                                    : null,
+                                  error: null
+                                });
+                              }
+                            };
                           }
                         };
                       }
@@ -354,5 +399,81 @@ describe("routes/notifications-routes", () => {
       if (prev == null) delete process.env.CRON_SECRET;
       else process.env.CRON_SECRET = prev;
     }
+  });
+
+  it("run-due-reminders con ?forceTest=1 incluye force_test en JSON de respuesta", async () => {
+    const prevCron = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "cron-test-force";
+    try {
+      const app = mount(makeDeps({ supabaseAdmin: makeSupabaseMock() }));
+      const res = await request(app)
+        .post("/notifications/run-due-reminders?forceTest=1")
+        .set("x-cron-secret", "cron-test-force")
+        .send({});
+      assert.equal(res.status, 200);
+      assert.equal(res.body.ok, true);
+      assert.equal(res.body.force_test, true);
+    } finally {
+      if (prevCron == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prevCron;
+    }
+  });
+
+  it("run-due-reminders con forceTest sigue rechazando x-cron-secret invalido", async () => {
+    const prevCron = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "cron-test-force";
+    try {
+      const app = mount(makeDeps({ supabaseAdmin: makeSupabaseMock() }));
+      const res = await request(app)
+        .post("/notifications/run-due-reminders?forceTest=1")
+        .set("x-cron-secret", "wrong")
+        .send({});
+      assert.equal(res.status, 401);
+    } finally {
+      if (prevCron == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prevCron;
+    }
+  });
+
+  it("run-due-reminders normal respeta cooldown y no envía", async () => {
+    await withProviderEnvCleared(async () => {
+      const prevCron = process.env.CRON_SECRET;
+      process.env.CRON_SECRET = "cron-test-cd";
+      try {
+        const prefRow = {
+          user_id: userId,
+          email_enabled: true,
+          sms_enabled: false,
+          preferred_channel: "email",
+          reminder_frequency: "weekly",
+          consent_email_at: "2026-05-01T00:00:00.000Z",
+          reminder_time: null,
+          timezone: null,
+          phone_number: null,
+          consent_sms_at: null
+        };
+        const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const app = mount(
+          makeDeps({
+            supabaseAdmin: makeSupabaseMock({
+              prefScanRows: [prefRow],
+              ...reminderRows(),
+              cronLastUserReminderCreatedAtIso: hourAgo
+            })
+          })
+        );
+        const res = await request(app)
+          .post("/notifications/run-due-reminders")
+          .set("x-cron-secret", "cron-test-cd")
+          .send({});
+        assert.equal(res.status, 200);
+        assert.equal(res.body.ok, true);
+        assert.equal(res.body.sent, 0);
+        assert.ok(!Object.prototype.hasOwnProperty.call(res.body, "force_test"));
+      } finally {
+        if (prevCron == null) delete process.env.CRON_SECRET;
+        else process.env.CRON_SECRET = prevCron;
+      }
+    });
   });
 });

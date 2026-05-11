@@ -103,14 +103,16 @@ function registerNotificationRoutes(app, deps) {
     }
   });
 
-  app.post("/notifications/run-due-reminders", requireCronSecret, async (_req, res) => {
+  app.post("/notifications/run-due-reminders", requireCronSecret, async (req, res) => {
     try {
       if (!supabaseAdmin) return jsonError(res, 500, "Supabase is not configured");
+      const forceTest = String(req.query?.forceTest || "").trim() === "1";
       const result = await runDuePaymentReminders({
         supabaseAdmin,
         getIntentAmount,
         env: process.env,
-        http: axios
+        http: axios,
+        forceTest
       });
       return res.json(result);
     } catch (error) {
