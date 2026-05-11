@@ -1,5 +1,7 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const {
   buildNextPaymentReminderPreview,
   defaultNotificationPreferences,
@@ -349,6 +351,8 @@ describe("lib/notifications", () => {
     assert.match(preview.email_body || preview.message, /DebtYa no mueve dinero/i);
     assert.match(preview.email_body || preview.message, /Deuda recomendada:\s*Tarjeta A/i);
   });
+
+
 });
 
 describe("resolveNotificationEventMessage (V100.1)", () => {
@@ -700,5 +704,44 @@ describe("runDuePaymentReminders cron (V100)", () => {
       if (prev == null) delete process.env.RESEND_API_KEY;
       else process.env.RESEND_API_KEY = prev;
     }
+  });
+  it("cron response sanitiza error crudo del provider", async () => {
+    const prev = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "test";
+    try {
+      const sb = makeCronSupabase({ prefRows: [prefEligible()], lastUserReminderIso: null });
+      const err = new Error("provider raw body with sk_live_secret and Authorization header");
+      err.code = "E_PROVIDER_RAW";
+      const out = await runDuePaymentReminders({
+        supabaseAdmin: sb,
+        getIntentAmount: (intent) => Number(intent.amount || 0),
+        now: fixedNow,
+        env: process.env,
+        sendReminderFn: async () => {
+          throw err;
+        }
+      });
+      assert.equal(out.ok, true);
+      assert.equal(out.sent, 0);
+      assert.equal(out.errors.length, 1);
+      assert.equal(out.errors[0].message, "provider_send_failed");
+      assert.equal(out.errors[0].code, "E_PROVIDER_RAW");
+      const serialized = JSON.stringify(out);
+      assert.doesNotMatch(serialized, /sk_live_secret/i);
+      assert.doesNotMatch(serialized, /Authorization header/i);
+      assert.doesNotMatch(serialized, /provider raw body/i);
+    } finally {
+      if (prev == null) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = prev;
+    }
+  });
+
+});
+
+
+describe("notifications UI frequency safety", () => {
+  it("no expone daily en el selector de recordatorios", () => {
+    const html = fs.readFileSync(path.join(__dirname, "..", "..", "public", "index.html"), "utf8");
+    assert.doesNotMatch(html, /<option\s+value="daily"/i);
   });
 });

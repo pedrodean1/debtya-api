@@ -6156,7 +6156,7 @@
           const rf = $("notifReminderFrequency");
           if (rf) {
             const fq = String(d.reminder_frequency || "weekly").toLowerCase();
-            const allowed = ["daily", "weekly", "off", "smart", "twice_weekly"];
+            const allowed = ["weekly", "off", "smart", "twice_weekly"];
             rf.value = allowed.includes(fq) ? fq : "weekly";
           }
           $("notifPreferredChannel").value = d.preferred_channel || "none";

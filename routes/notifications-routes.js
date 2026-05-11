@@ -108,8 +108,8 @@ function registerNotificationRoutes(app, deps) {
       });
       return res.json(result);
     } catch (error) {
-      if (appError) appError("[notifications/run-due-reminders]", error.message);
-      return jsonError(res, 500, "Could not run due reminders", { details: error.message });
+      if (appError) appError("[notifications/run-due-reminders]", "notification_cron_failed");
+      return jsonError(res, 500, "Could not run due reminders", { details: "notification_cron_failed" });
     }
   });
 
