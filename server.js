@@ -23,7 +23,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-11-v101-polished-reminder-email";
+const SERVER_VERSION = "debtya-2026-05-11-v102-reminder-email-language";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;

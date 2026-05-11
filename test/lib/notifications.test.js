@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const {
   buildNextPaymentReminderPreview,
   defaultNotificationPreferences,
+  normalizePreferredLanguage,
   minGapMsForCadence,
   minUserWideGapMs,
   normalizePhoneNumber,
@@ -147,6 +148,25 @@ describe("lib/notifications", () => {
   it("defaultNotificationPreferences usa weekly", () => {
     const d = defaultNotificationPreferences(userId);
     assert.equal(d.reminder_frequency, "weekly");
+    assert.equal(d.preferred_language, "en");
+  });
+
+  it("normalizePreferredLanguage solo acepta en o es", () => {
+    assert.equal(normalizePreferredLanguage("es"), "es");
+    assert.equal(normalizePreferredLanguage("EN"), "en");
+    assert.equal(normalizePreferredLanguage("fr"), "en");
+    assert.equal(normalizePreferredLanguage(""), "en");
+  });
+
+  it("validateNotificationPreferencesInput normaliza preferred_language invalido a en", () => {
+    const out = validateNotificationPreferencesInput({
+      email_enabled: false,
+      sms_enabled: false,
+      preferred_channel: "none",
+      preferred_language: "xx"
+    });
+    assert.ok(out.payload);
+    assert.equal(out.payload.preferred_language, "en");
   });
 
   it("resolveDebtYaReminderFromAddress prioriza EMAIL_FROM y luego RESEND_FROM_EMAIL", () => {
@@ -267,7 +287,7 @@ describe("lib/notifications", () => {
     });
     const body = preview.email_body || preview.message;
     assert.match(body, /I paid it/i);
-    assert.match(body, /DebtYa does not move money/i);
+    assert.match(body, /DebtYa does not move money or make payments for you/i);
     assert.match(body, /Recommended debt:\s*Card A/i);
   });
 
@@ -298,7 +318,7 @@ describe("lib/notifications", () => {
     });
     const body = preview.email_body || preview.message;
     assert.match(body, /I paid it/i);
-    assert.match(body, /DebtYa does not move money/i);
+    assert.match(body, /DebtYa does not move money or make payments for you/i);
     assert.match(body, /Recommended debt:\s*your priority debt/i);
   });
 
@@ -496,7 +516,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
     return supabaseAdmin;
   }
 
-  const prefEligible = () => ({
+  const prefEligible = (over = {}) => ({
     user_id: userId,
     email_enabled: true,
     sms_enabled: true,
@@ -506,7 +526,9 @@ describe("runDuePaymentReminders cron (V100)", () => {
     consent_sms_at: "2030-01-01T00:00:00.000Z",
     reminder_frequency: "weekly",
     reminder_time: null,
-    timezone: null
+    timezone: null,
+    preferred_language: "en",
+    ...over
   });
 
   it("cron normal respeta cooldown (envio reciente) y no envia", async () => {
@@ -532,6 +554,35 @@ describe("runDuePaymentReminders cron (V100)", () => {
       assert.equal(out.sent, 0);
       assert.equal(out.eligible, 0);
       assert.equal(calls, 0);
+    } finally {
+      if (prev == null) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = prev;
+    }
+  });
+
+  it("cron forceTest usa preferred_language es en el preview enviado", async () => {
+    const prev = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "test";
+    try {
+      let capturedPreview = null;
+      const sb = makeCronSupabase({
+        prefRows: [prefEligible({ preferred_language: "es" })],
+        lastUserReminderIso: null
+      });
+      await runDuePaymentReminders({
+        supabaseAdmin: sb,
+        getIntentAmount: (intent) => Number(intent.amount || 0),
+        now: fixedNow,
+        env: process.env,
+        forceTest: true,
+        sendReminderFn: async ({ preview }) => {
+          capturedPreview = preview;
+          return { channel: "email", sent: true, provider: "resend" };
+        }
+      });
+      assert.ok(capturedPreview);
+      assert.match(String(capturedPreview.email_body || ""), /Ya lo pagué/i);
+      assert.match(String(capturedPreview.email_body || ""), /DebtYa no mueve dinero/i);
     } finally {
       if (prev == null) delete process.env.RESEND_API_KEY;
       else process.env.RESEND_API_KEY = prev;

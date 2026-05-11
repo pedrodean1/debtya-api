@@ -259,7 +259,37 @@ describe("routes/notifications-routes", () => {
     assert.equal(res.body.data.email_enabled, true);
     assert.equal(res.body.data.sms_enabled, false);
     assert.equal(res.body.data.preferred_channel, "email");
+    assert.equal(res.body.data.preferred_language, "en");
     assert.ok(res.body.data.consent_email_at);
+  });
+
+  it("POST preferences guarda preferred_language es", async () => {
+    const supabaseAdmin = makeSupabaseMock();
+    const app = mount(makeDeps({ supabaseAdmin }));
+    const res = await request(app).post("/notifications/preferences").send({
+      email_enabled: true,
+      email_consent: true,
+      sms_enabled: false,
+      preferred_channel: "email",
+      preferred_language: "es"
+    });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.preferred_language, "es");
+    assert.equal(supabaseAdmin.savedPreference.preferred_language, "es");
+  });
+
+  it("POST preferences preferred_language invalido normaliza a en", async () => {
+    const supabaseAdmin = makeSupabaseMock();
+    const app = mount(makeDeps({ supabaseAdmin }));
+    const res = await request(app).post("/notifications/preferences").send({
+      email_enabled: false,
+      sms_enabled: false,
+      preferred_channel: "none",
+      preferred_language: "fr"
+    });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.preferred_language, "en");
+    assert.equal(supabaseAdmin.savedPreference.preferred_language, "en");
   });
 
   it("rechaza SMS sin phone_number", async () => {
@@ -297,6 +327,52 @@ describe("routes/notifications-routes", () => {
     assert.equal(res.body.preview.intent_id, intentId);
     assert.equal(res.body.preview.debt_name, "CBUSASEARS");
     assert.match(res.body.preview.message, /\$82\.00/);
+  });
+
+  it("preview-next-reminder en español cuando preferred_language es es", async () => {
+    const app = mount(
+      makeDeps({
+        supabaseAdmin: makeSupabaseMock({
+          pref: {
+            user_id: userId,
+            email_enabled: true,
+            sms_enabled: false,
+            preferred_channel: "email",
+            preferred_language: "es",
+            consent_email_at: "2026-01-01T00:00:00Z"
+          },
+          ...reminderRows()
+        })
+      })
+    );
+    const res = await request(app).post("/notifications/preview-next-reminder").send({ channel: "email" });
+    assert.equal(res.status, 200);
+    const body = res.body.preview.email_body || res.body.preview.message;
+    assert.match(body, /Ya lo pagué/i);
+    assert.match(body, /DebtYa no mueve dinero/i);
+  });
+
+  it("preview-next-reminder en inglés cuando preferred_language es en", async () => {
+    const app = mount(
+      makeDeps({
+        supabaseAdmin: makeSupabaseMock({
+          pref: {
+            user_id: userId,
+            email_enabled: true,
+            sms_enabled: false,
+            preferred_channel: "email",
+            preferred_language: "en",
+            consent_email_at: "2026-01-01T00:00:00Z"
+          },
+          ...reminderRows()
+        })
+      })
+    );
+    const res = await request(app).post("/notifications/preview-next-reminder").send({ channel: "email" });
+    assert.equal(res.status, 200);
+    const body = res.body.preview.email_body || res.body.preview.message;
+    assert.match(body, /I paid it/i);
+    assert.match(body, /DebtYa does not move money or make payments for you/i);
   });
 
   it("send-test devuelve preview si no hay provider keys", async () => {

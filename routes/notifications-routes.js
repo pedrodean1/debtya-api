@@ -10,14 +10,6 @@ const {
   validateNotificationPreferencesInput
 } = require("../lib/notifications");
 
-function inferLang(req) {
-  const b = String(req.body?.lang || "").trim().toLowerCase();
-  if (b === "es" || b === "en") return b;
-  const al = String(req.headers["accept-language"] || "").toLowerCase();
-  if (al.startsWith("es")) return "es";
-  return "en";
-}
-
 function choosePreviewChannel(reqBody, prefs) {
   const requested = String(reqBody?.channel || "").trim().toLowerCase();
   if (requested === "email" || requested === "sms") return requested;
@@ -175,7 +167,7 @@ function registerNotificationRoutes(app, deps) {
         userId: req.user.id,
         channel,
         getIntentAmount,
-        lang: inferLang(req)
+        preferredLanguage: prefs.preferred_language
       });
       return res.json({ ok: true, preview });
     } catch (error) {
@@ -214,7 +206,7 @@ function registerNotificationRoutes(app, deps) {
             userId: req.user.id,
             channel,
             getIntentAmount,
-            lang: inferLang(req)
+            preferredLanguage: prefs.preferred_language
           })
         );
       }

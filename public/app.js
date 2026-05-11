@@ -2689,6 +2689,7 @@
           reminder_frequency: "off",
           reminder_time: d.reminder_time || null,
           timezone: d.timezone || null,
+          preferred_language: uiLang === "es" ? "es" : "en",
           email_consent: false,
           sms_consent: false
         };
@@ -2707,6 +2708,7 @@
         reminder_frequency: "weekly",
         reminder_time: d.reminder_time || null,
         timezone: d.timezone || deviceTz || null,
+        preferred_language: uiLang === "es" ? "es" : "en",
         email_consent: !!$("simpleNotifEmailConsent")?.checked,
         sms_consent: !!$("simpleNotifSmsConsent")?.checked
       };
@@ -7082,6 +7084,7 @@
             reminder_time: ($("notifReminderTime")?.value || "").trim() || null,
             timezone: ($("notifTimezone")?.value || "").trim() || null,
             reminder_frequency: ($("notifReminderFrequency")?.value || "").trim() || "weekly",
+            preferred_language: uiLang === "es" ? "es" : "en",
             email_consent: !!$("notifEmailConsent")?.checked,
             sms_consent: !!$("notifSmsConsent")?.checked
           };
