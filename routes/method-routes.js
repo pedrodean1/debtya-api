@@ -1,5 +1,6 @@
 const { createMethodClient, computePaymentCapable, methodErrorMessageFromJson } = require("../lib/method-client");
 const { readMethodApiKey, readMethodEnv, readMethodApiVersion, isMethodConfigured, readMethodKeyStatus } = require("../lib/method-env");
+const { isLegacyStatusRoutesAllowed } = require("../lib/debtya-beta-flags");
 
 function methodInfo(req, ...parts) {
   const rid = req && req.requestId ? req.requestId : "-";
@@ -295,6 +296,9 @@ function registerMethodRoutes(app, deps) {
   }
 
   app.get("/method/status", (_req, res) => {
+    if (!isLegacyStatusRoutesAllowed()) {
+      return res.status(404).json({ ok: false, error: "not_found" });
+    }
     const configured = isMethodConfigured();
     const methodStatus = readMethodKeyStatus();
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");

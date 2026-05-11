@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v109.1-confirm-manual-atomic-hardening";
+const SW_CACHE = "debtya-static-v110-google-play-internal-readiness";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -40,8 +40,30 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Never cache private/authenticated API responses.
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) {
+  // Never intercept caching for dynamic API-style paths (GET JSON, auth, etc.).
+  const bypassPrefixes = [
+    "/api/",
+    "/auth/",
+    "/debts",
+    "/payment-intents",
+    "/billing",
+    "/notifications",
+    "/stripe",
+    "/guide-assistant",
+    "/spinwheel",
+    "/method",
+    "/manual-plan",
+    "/plaid",
+    "/health",
+    "/cron",
+    "/ai-coach"
+  ];
+  const path = url.pathname;
+  if (
+    bypassPrefixes.some((p) =>
+      p.endsWith("/") ? path.startsWith(p) || path === p.slice(0, -1) : path === p || path.startsWith(`${p}/`)
+    )
+  ) {
     return;
   }
 

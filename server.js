@@ -34,7 +34,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-11-v109.2-confirmation-progress-route";
+const SERVER_VERSION = "debtya-2026-05-11-v110-google-play-internal-readiness";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;

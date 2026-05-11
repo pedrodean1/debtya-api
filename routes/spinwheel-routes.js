@@ -21,6 +21,7 @@ const {
 } = require("../lib/spinwheel-debt-import");
 const { createSpinwheelPaymentIntent, validateSpinwheelPaymentPayload } = require("../lib/spinwheel-payments");
 const { buildSpinwheelPayableSummary } = require("../lib/spinwheel-payable-summary");
+const { isLegacyStatusRoutesAllowed } = require("../lib/debtya-beta-flags");
 
 function spinwheelInfo(req, ...parts) {
   const rid = req && req.requestId ? req.requestId : "-";
@@ -156,6 +157,9 @@ function registerSpinwheelRoutes(app, deps) {
   }
 
   app.get("/spinwheel/status", (_req, res) => {
+    if (!isLegacyStatusRoutesAllowed()) {
+      return res.status(404).json({ ok: false, error: "not_found" });
+    }
     const configured = isSpinwheelConfigured();
     const st = readSpinwheelKeyStatus();
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
