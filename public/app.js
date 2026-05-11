@@ -445,14 +445,18 @@
         lbl_monthly_extra: "Monthly extra",
         lbl_how_it_works: "How it works",
         plan_how_hint: "Avalanche targets the highest interest rate first. Snowball targets the smallest balance first.",
-        sub_title: "Subscription",
-        sub_sub: "Plan status and renewal.",
+        sub_title: "Free beta",
+        sub_sub: "Your access is active during beta. You do not need to manage a subscription right now.",
+        billing_beta_title: "Free beta",
+        billing_beta_body:
+          "Your access is active during beta. You do not need to manage a subscription right now.",
         btn_refresh: "Refresh",
         lbl_status: "Status",
         lbl_active: "Active",
         lbl_next_period: "Next period",
         lbl_actions: "Actions",
-        sub_portal_hint: "If your plan is active, you can open your account page to manage it.",
+        sub_portal_hint:
+          "Your access is active during beta. You do not need to manage a subscription right now.",
         operate_title: "Legacy: optional external link",
         operate_sub:
           "Hidden in manual-first mode. Optional tools for workspaces that still use external snapshots.",
@@ -1179,14 +1183,19 @@
         lbl_monthly_extra: "Extra mensual",
         lbl_how_it_works: "Como funciona",
         plan_how_hint: "Avalancha ataca primero la tasa mas alta. Bola de nieve ataca primero el saldo mas pequeno.",
-        sub_title: "Suscripcion",
-        sub_sub: "Estado del plan y renovacion.",
+        sub_title: "Beta gratis",
+        sub_sub:
+          "Tu acceso está activo durante la beta. No necesitas administrar una suscripción ahora.",
+        billing_beta_title: "Beta gratis",
+        billing_beta_body:
+          "Tu acceso está activo durante la beta. No necesitas administrar una suscripción ahora.",
         btn_refresh: "Refrescar",
         lbl_status: "Estado",
         lbl_active: "Activo",
         lbl_next_period: "Proximo periodo",
         lbl_actions: "Acciones",
-        sub_portal_hint: "Si tu plan esta activo, puedes abrir la pagina de tu cuenta para administrarlo.",
+        sub_portal_hint:
+          "Tu acceso está activo durante la beta. No necesitas administrar una suscripción ahora.",
         operate_title: "Heredado: enlace externo opcional",
         operate_sub:
           "Oculto en modo manual. Herramientas opcionales si tu espacio de trabajo aun usa capturas externas.",
@@ -5239,6 +5248,9 @@
         : t("app_welcome_default");
     }
 
+    /** Stripe Customer Portal (manage plan) is hidden during the free manual-first beta — UI only; backend unchanged. */
+    const DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA = true;
+
     function renderBilling() {
       const billing = state.billing || {
         status: "inactive",
@@ -5272,8 +5284,16 @@
       const topManageBillingBtn = $("topManageBillingBtn");
       const billingStartBtn = $("billingStartBtn");
       const topUpgradeBtn = $("topUpgradeBtn");
-      if (billingManageBtn) billingManageBtn.classList.toggle("hidden", !canManage);
-      if (topManageBillingBtn) topManageBillingBtn.classList.toggle("hidden", !canManage);
+      const billingBetaTopWrap = $("billingBetaTopWrap");
+      if (DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA) {
+        if (billingManageBtn) billingManageBtn.classList.add("hidden");
+        if (topManageBillingBtn) topManageBillingBtn.classList.add("hidden");
+        if (billingBetaTopWrap) billingBetaTopWrap.classList.toggle("hidden", !state.user);
+      } else {
+        if (billingManageBtn) billingManageBtn.classList.toggle("hidden", !canManage);
+        if (topManageBillingBtn) topManageBillingBtn.classList.toggle("hidden", !canManage);
+        if (billingBetaTopWrap) billingBetaTopWrap.classList.add("hidden");
+      }
       if (billingStartBtn) billingStartBtn.classList.toggle("hidden", isActive);
       if (topUpgradeBtn) topUpgradeBtn.classList.toggle("hidden", isActive);
 
@@ -6676,6 +6696,10 @@
     }
 
     async function openBillingPortal(buttonEl = null) {
+      if (DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA) {
+        if (buttonEl) setLoading(buttonEl, false);
+        return;
+      }
       try {
         if (buttonEl) setLoading(buttonEl, true, t("portal_opening"));
 
@@ -7488,8 +7512,19 @@
     const promoCompBtn = $("promoCompBtn");
     if (promoCompBtn) promoCompBtn.addEventListener("click", () => applyPromoCompCode($("promoCompBtn")));
     const billingManageBtn = $("billingManageBtn");
-    if (billingManageBtn) billingManageBtn.addEventListener("click", () => openBillingPortal($("billingManageBtn")));
-    $("topManageBillingBtn").addEventListener("click", () => openBillingPortal($("topManageBillingBtn")));
+    if (billingManageBtn) {
+      billingManageBtn.addEventListener("click", () => {
+        if (DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA) return;
+        openBillingPortal(billingManageBtn);
+      });
+    }
+    const topManageBillingBtn = $("topManageBillingBtn");
+    if (topManageBillingBtn) {
+      topManageBillingBtn.addEventListener("click", () => {
+        if (DEBTYA_HIDE_STRIPE_MANAGE_PLAN_BETA) return;
+        openBillingPortal(topManageBillingBtn);
+      });
+    }
     $("btnConnectBank").addEventListener("click", connectBankDirect);
 
     const heroRulesSwitchEl = $("heroRulesEnabledSwitch");
