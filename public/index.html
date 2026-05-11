@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-11-v106.1-hide-stripe-manage-plan-beta" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-11-v106.2-hide-beta-billing-copy" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -49,7 +49,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-11-v106.1-hide-stripe-manage-plan-beta">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-11-v106.2-hide-beta-billing-copy">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -64,7 +64,7 @@
     <div class="app">
       <div class="topbar">
         <div class="brand">
-          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v106.1-hide-stripe-manage-plan-beta" width="46" height="46" alt="DebtYa" />
+          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v106.2-hide-beta-billing-copy" width="46" height="46" alt="DebtYa" />
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -246,7 +246,7 @@
         </div>
       </div>
       <div class="brand" style="margin-bottom:16px;">
-        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v106.1-hide-stripe-manage-plan-beta" width="46" height="46" alt="DebtYa" />
+        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v106.2-hide-beta-billing-copy" width="46" height="46" alt="DebtYa" />
         <div>
           <h1 style="font-size:30px;margin:0;">DebtYa</h1>
           <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -373,7 +373,7 @@
         <div class="topbar topbar-app">
           <div class="topbar-brand-cell">
             <div class="brand">
-              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v106.1-hide-stripe-manage-plan-beta" width="44" height="44" alt="DebtYa" />
+              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-11-v106.2-hide-beta-billing-copy" width="44" height="44" alt="DebtYa" />
               <div>
                 <h1 style="margin:0;">DebtYa</h1>
                 <p id="welcomeText">Home</p>
@@ -387,18 +387,6 @@
               <button type="button" data-lang-btn="es">ES</button>
             </div>
             <span id="sessionBadge" class="pill blue">Signed in</span>
-            <div
-              id="billingBetaTopWrap"
-              class="billing-beta-top-wrap hidden"
-              style="max-width: min(280px, 38vw); text-align: right; font-size: 12px; line-height: 1.35; color: var(--muted)"
-            >
-              <div class="pill blue" style="display: inline-block; margin-bottom: 4px; font-size: 11px" data-i18n="billing_beta_title">
-                Free beta
-              </div>
-              <div data-i18n="billing_beta_body">
-                Your access is active during beta. You do not need to manage a subscription right now.
-              </div>
-            </div>
             <button id="topUpgradeBtn" class="btn btn-primary hidden" type="button" data-i18n="btn_activate_plan">Activate plan</button>
             <button id="topManageBillingBtn" class="btn btn-light hidden" type="button" data-i18n="btn_manage_plan" aria-hidden="true" tabindex="-1">
               Manage plan
@@ -1266,7 +1254,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-11-v106.1-hide-stripe-manage-plan-beta"></script>
+  <script src="/app.js?v=debtya-2026-05-11-v106.2-hide-beta-billing-copy"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

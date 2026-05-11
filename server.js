@@ -33,7 +33,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-11-v106.1-hide-stripe-manage-plan-beta";
+const SERVER_VERSION = "debtya-2026-05-11-v106.2-hide-beta-billing-copy";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
