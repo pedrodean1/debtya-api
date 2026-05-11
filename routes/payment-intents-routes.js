@@ -127,6 +127,7 @@ function registerPaymentIntentRoutes(app, deps) {
         ok: true,
         bypass_sql_function: true,
         ...(result.already_confirmed ? { already_confirmed: true } : {}),
+        ...(result.confirmation_in_progress ? { confirmation_in_progress: true } : {}),
         intent_id: result.intent_id,
         debt_id: result.debt_id,
         amount_confirmed: result.amount_confirmed,

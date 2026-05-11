@@ -113,6 +113,40 @@ describe("routes/payment-intents-routes", () => {
     assert.equal(res.body.already_confirmed, true);
   });
 
+  it("POST confirm-manual propaga confirmation_in_progress; debt_apply omitido en rebaja (skipped); sin email en JSON", async () => {
+    let handlerCalls = 0;
+    const app = mount(
+      makeDeps({
+        confirmManualPaymentIntentDirect: async () => {
+          handlerCalls += 1;
+          return {
+            ok: true,
+            already_confirmed: true,
+            confirmation_in_progress: true,
+            intent_id: intentId,
+            debt_id: "770e8400-e29b-41d4-a716-446655440000",
+            amount_confirmed: 25,
+            old_balance: null,
+            new_balance: null,
+            data: { id: intentId, status: "executed" },
+            debt_apply: { ok: true, skipped: true, reason: "confirmacion_en_progreso" },
+            debt_marked_paid: false
+          };
+        }
+      })
+    );
+    const res = await request(app).post(`/payment-intents/${intentId}/confirm-manual`).send({});
+    assert.equal(res.status, 200);
+    assert.equal(res.body.ok, true);
+    assert.equal(res.body.already_confirmed, true);
+    assert.equal(res.body.confirmation_in_progress, true);
+    assert.equal(res.body.debt_apply && res.body.debt_apply.reason, "confirmacion_en_progreso");
+    assert.equal(res.body.debt_apply && res.body.debt_apply.skipped, true);
+    assert.equal(res.body.new_balance, null);
+    assert.equal(Object.prototype.hasOwnProperty.call(res.body, "email_sent"), false);
+    assert.equal(handlerCalls, 1);
+  });
+
   it("POST confirm-manual pasa preferred_language al handler", async () => {
     let captured;
     const app = mount(
