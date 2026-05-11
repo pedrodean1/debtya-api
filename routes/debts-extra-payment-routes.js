@@ -1,3 +1,5 @@
+const { parsePreferredLanguageHintFromHttp } = require("../lib/notifications");
+
 function registerDebtsExtraPaymentRoutes(app, deps) {
   const { requireUser, recordManualExtraDebtPayment, jsonError } = deps;
 
@@ -6,7 +8,10 @@ function registerDebtsExtraPaymentRoutes(app, deps) {
       const debtId = req.params.id;
       const amount = req.body && req.body.amount;
       const note = req.body && req.body.note;
-      const out = await recordManualExtraDebtPayment(req.user.id, debtId, amount, note);
+      const langHint = parsePreferredLanguageHintFromHttp(req);
+      const out = await recordManualExtraDebtPayment(req.user.id, debtId, amount, note, {
+        preferredLanguageHint: langHint
+      });
       return res.json(out);
     } catch (error) {
       const status = error.status && Number(error.status) >= 400 ? Number(error.status) : 500;

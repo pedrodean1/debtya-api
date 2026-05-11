@@ -2,6 +2,7 @@ const {
   validatePaymentIntentCreate,
   validateIntentRouteParamId
 } = require("../lib/validation");
+const { parsePreferredLanguageHintFromHttp } = require("../lib/notifications");
 
 function registerPaymentIntentRoutes(app, deps) {
   const {
@@ -117,7 +118,10 @@ function registerPaymentIntentRoutes(app, deps) {
       if (idErr) {
         return jsonError(res, 400, idErr);
       }
-      const result = await confirmManualPaymentIntentDirect(req.user.id, intentId);
+      const langHint = parsePreferredLanguageHintFromHttp(req);
+      const result = await confirmManualPaymentIntentDirect(req.user.id, intentId, {
+        preferredLanguageHint: langHint
+      });
 
       return res.json({
         ok: true,

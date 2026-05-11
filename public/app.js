@@ -3702,9 +3702,11 @@
                   });
                 } catch (_) {}
               }
+              await persistPreferredLanguageForSession();
+              const pl = uiLang === "es" ? "es" : "en";
               const confirmRes = await api(`/payment-intents/${encodeURIComponent(intentId)}/confirm-manual`, {
                 method: "POST",
-                body: "{}"
+                body: JSON.stringify({ preferred_language: pl })
               });
               if (isPlanDebugUrl()) {
                 try {
@@ -6021,9 +6023,11 @@
       setLoading(btn, true, t("proc"));
       try {
         const note = noteEl && noteEl.value && String(noteEl.value).trim() ? String(noteEl.value).trim() : "";
+        await persistPreferredLanguageForSession();
+        const pl = uiLang === "es" ? "es" : "en";
         const res = await api(`/debts/${encodeURIComponent(debtId)}/extra-payment`, {
           method: "POST",
-          body: JSON.stringify({ amount, note: note || undefined })
+          body: JSON.stringify({ amount, note: note || undefined, preferred_language: pl })
         });
         let msg = t("extra_pay_ok");
         if (res && res.amount_clamped === true && res.applied_amount != null) {

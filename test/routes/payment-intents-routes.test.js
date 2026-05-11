@@ -91,6 +91,56 @@ describe("routes/payment-intents-routes", () => {
     assert.equal(res.body.amount_confirmed, 25);
   });
 
+  it("POST confirm-manual pasa preferred_language al handler", async () => {
+    let captured;
+    const app = mount(
+      makeDeps({
+        confirmManualPaymentIntentDirect: async (uid, id, opts) => {
+          captured = { uid, id, opts };
+          return {
+            ok: true,
+            intent_id: id,
+            debt_id: "770e8400-e29b-41d4-a716-446655440000",
+            amount_confirmed: 25,
+            new_balance: 100,
+            data: { id, status: "executed" },
+            debt_apply: { ok: true, next_balance: 100 }
+          };
+        }
+      })
+    );
+    const res = await request(app)
+      .post(`/payment-intents/${intentId}/confirm-manual`)
+      .send({ preferred_language: "es" });
+    assert.equal(res.status, 200);
+    assert.equal(captured.opts.preferredLanguageHint, "es");
+  });
+
+  it("POST confirm-manual lee x-debtya-language si no hay body", async () => {
+    let captured;
+    const app = mount(
+      makeDeps({
+        confirmManualPaymentIntentDirect: async (_uid, id, opts) => {
+          captured = opts;
+          return {
+            ok: true,
+            intent_id: id,
+            debt_id: "770e8400-e29b-41d4-a716-446655440000",
+            amount_confirmed: 1,
+            new_balance: 0,
+            data: { id, status: "executed" },
+            debt_apply: { ok: true }
+          };
+        }
+      })
+    );
+    await request(app)
+      .post(`/payment-intents/${intentId}/confirm-manual`)
+      .set("x-debtya-language", "en")
+      .send({});
+    assert.equal(captured.preferredLanguageHint, "en");
+  });
+
   it("POST crea intent cuando insert ok", async () => {
     const supabaseAdmin = {
       from() {

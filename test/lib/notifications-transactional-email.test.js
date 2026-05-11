@@ -196,6 +196,84 @@ describe("lib/notifications transactional copy", () => {
     assert.equal(out.reason, "already_fully_paid_noop");
   });
 
+  it("hint es fuerza español aunque notification_preferences sea en", async () => {
+    const subjects = [];
+    await sendTransactionalPaymentCelebrationEmails({
+      supabaseAdmin: transactionalSupabase({
+        prefRow: { preferred_language: "en" },
+        intentMetas: {}
+      }),
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "a@b.com",
+      intentId: "660e8400-e29b-41d4-a716-446655440000",
+      amount: 10,
+      debtNameDisplay: "X",
+      previousBalance: 100,
+      nextBalance: 50,
+      previousDebtStatus: "active",
+      preferredLanguageHint: "es",
+      env: { RESEND_API_KEY: "re_test_xxx" },
+      mergeIntentMetadata: async () => {},
+      appError: () => {},
+      sendEmailFn: async (opts) => {
+        subjects.push(opts.preview?.subject || "");
+      }
+    });
+    assert.match(subjects[0], /Pago registrado/i);
+  });
+
+  it("hint en fuerza inglés aunque notification_preferences sea es", async () => {
+    const subjects = [];
+    await sendTransactionalPaymentCelebrationEmails({
+      supabaseAdmin: transactionalSupabase({
+        prefRow: { preferred_language: "es" },
+        intentMetas: {}
+      }),
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "a@b.com",
+      intentId: "660e8400-e29b-41d4-a716-446655440000",
+      amount: 10,
+      debtNameDisplay: "X",
+      previousBalance: 100,
+      nextBalance: 50,
+      previousDebtStatus: "active",
+      preferredLanguageHint: "en",
+      env: { RESEND_API_KEY: "re_test_xxx" },
+      mergeIntentMetadata: async () => {},
+      appError: () => {},
+      sendEmailFn: async (opts) => {
+        subjects.push(opts.preview?.subject || "");
+      }
+    });
+    assert.match(subjects[0], /Payment recorded/i);
+  });
+
+  it("hint inválido normaliza a en aunque preferences sean es", async () => {
+    const subjects = [];
+    await sendTransactionalPaymentCelebrationEmails({
+      supabaseAdmin: transactionalSupabase({
+        prefRow: { preferred_language: "es" },
+        intentMetas: {}
+      }),
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "a@b.com",
+      intentId: "660e8400-e29b-41d4-a716-446655440000",
+      amount: 10,
+      debtNameDisplay: "X",
+      previousBalance: 100,
+      nextBalance: 50,
+      previousDebtStatus: "active",
+      preferredLanguageHint: "fr",
+      env: { RESEND_API_KEY: "re_test_xxx" },
+      mergeIntentMetadata: async () => {},
+      appError: () => {},
+      sendEmailFn: async (opts) => {
+        subjects.push(opts.preview?.subject || "");
+      }
+    });
+    assert.match(subjects[0], /Payment recorded/i);
+  });
+
   it("payment recorded email usa español cuando preferred_language es es", async () => {
     const subjects = [];
     const out = await sendTransactionalPaymentCelebrationEmails({
@@ -220,6 +298,33 @@ describe("lib/notifications transactional copy", () => {
     });
     assert.equal(out.payment_email, true);
     assert.match(subjects[0], /Pago registrado/i);
+  });
+
+  it("hint es y deuda liquidada envía celebración en español", async () => {
+    const subjects = [];
+    await sendTransactionalPaymentCelebrationEmails({
+      supabaseAdmin: transactionalSupabase({
+        prefRow: { preferred_language: "en" },
+        intentMetas: [{}, {}]
+      }),
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "a@b.com",
+      intentId: "660e8400-e29b-41d4-a716-446655440000",
+      amount: 100,
+      debtNameDisplay: "Card",
+      previousBalance: 80,
+      nextBalance: 0,
+      previousDebtStatus: "active",
+      preferredLanguageHint: "es",
+      env: { RESEND_API_KEY: "re_test_xxx" },
+      mergeIntentMetadata: async () => {},
+      appError: () => {},
+      sendEmailFn: async (opts) => {
+        subjects.push(opts.preview?.subject || "");
+      }
+    });
+    assert.match(subjects[0], /Pago registrado/i);
+    assert.match(subjects[1], /Felicidades/i);
   });
 
   it("debt paid celebration email usa español cuando preferred_language es es", async () => {

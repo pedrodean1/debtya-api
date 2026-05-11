@@ -33,7 +33,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-11-v107.1-transactional-email-language";
+const SERVER_VERSION = "debtya-2026-05-11-v107.2-confirm-manual-email-language";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -1862,6 +1862,7 @@ async function sendPaymentRecordedEmailsSafe(userId, params) {
       previousBalance: params.previousBalance,
       nextBalance: params.nextBalance,
       previousDebtStatus: params.previousDebtStatus,
+      preferredLanguageHint: params.preferredLanguageHint,
       env: process.env,
       mergeIntentMetadata: mergeMeta,
       appError
@@ -2003,7 +2004,7 @@ async function applyExecutedIntentToDebt(userId, intentInput, options = {}) {
  * Registra un pago extra manual (usuario paga fuera de DebtYa) y rebaja balance una sola vez.
  * Crea payment_intents ejecutado + payment_executions + aplica balance (misma semántica que confirm-manual).
  */
-async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNote) {
+async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNote, emailLangOptions = {}) {
   const debtId = debtIdRaw != null ? String(debtIdRaw).trim() : "";
   if (!isUuid(debtId)) {
     const err = new Error("ID de deuda inválido");
@@ -2161,7 +2162,8 @@ async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNot
         debtName: debt.name,
         previousBalance: debtApply.previous_balance,
         nextBalance: debtApply.next_balance,
-        previousDebtStatus: debt.status
+        previousDebtStatus: debt.status,
+        preferredLanguageHint: emailLangOptions.preferredLanguageHint
       });
     }
 
@@ -2372,7 +2374,7 @@ async function executeIntentDirect(userId, intentId) {
  * Usuario confirma que pagó fuera de DebtYa (sin rail de pago). Marca intent ejecutado,
  * registra payment_executions y rebaja balance como executeIntentDirect, incl. Spinwheel.
  */
-async function confirmManualPaymentIntentDirect(userId, intentId) {
+async function confirmManualPaymentIntentDirect(userId, intentId, options = {}) {
   if (!isUuid(intentId)) {
     const err = new Error("intent_id inválido");
     err.status = 400;
@@ -2524,7 +2526,8 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
         debtName: debtPreview?.name,
         previousBalance: debtApply.previous_balance,
         nextBalance: debtApply.next_balance,
-        previousDebtStatus: debtPreview?.status || debtApply.previous_status
+        previousDebtStatus: debtPreview?.status || debtApply.previous_status,
+        preferredLanguageHint: options.preferredLanguageHint
       });
     }
 

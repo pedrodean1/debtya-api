@@ -107,6 +107,31 @@ describe("routes/debts-extra-payment-routes", () => {
     assert.equal(res.body.data.balance, 10);
   });
 
+  it("extra-payment pasa preferred_language al handler", async () => {
+    let captured;
+    const app = mount(
+      makeDeps({
+        recordManualExtraDebtPayment: async (uid, did, amt, note, opts) => {
+          captured = { uid, did, amt, note, opts };
+          return {
+            ok: true,
+            intent_id: "660e8400-e29b-41d4-a716-446655440000",
+            debt_id: did,
+            requested_amount: amt,
+            applied_amount: amt,
+            amount_clamped: false,
+            data: { id: did, balance: 10 }
+          };
+        }
+      })
+    );
+    const res = await request(app)
+      .post(`/debts/${debtId}/extra-payment`)
+      .send({ amount: 10, preferred_language: "es" });
+    assert.equal(res.status, 200);
+    assert.equal(captured.opts.preferredLanguageHint, "es");
+  });
+
   it("propaga status del error sin status como 500", async () => {
     const app = mount(
       makeDeps({

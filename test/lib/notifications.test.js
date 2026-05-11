@@ -6,6 +6,7 @@ const {
   buildNextPaymentReminderPreview,
   defaultNotificationPreferences,
   normalizePreferredLanguage,
+  parsePreferredLanguageHintFromHttp,
   minGapMsForCadence,
   minUserWideGapMs,
   normalizePhoneNumber,
@@ -158,6 +159,15 @@ describe("lib/notifications", () => {
     assert.equal(normalizePreferredLanguage("EN"), "en");
     assert.equal(normalizePreferredLanguage("fr"), "en");
     assert.equal(normalizePreferredLanguage(""), "en");
+  });
+
+  it("parsePreferredLanguageHintFromHttp lee body y header", () => {
+    assert.equal(parsePreferredLanguageHintFromHttp({ body: { preferred_language: "es" } }), "es");
+    assert.equal(
+      parsePreferredLanguageHintFromHttp({ body: {}, headers: { "x-debtya-language": "en" } }),
+      "en"
+    );
+    assert.equal(parsePreferredLanguageHintFromHttp({ body: {}, headers: {} }), null);
   });
 
   it("validateNotificationPreferencesInput normaliza preferred_language invalido a en", () => {
