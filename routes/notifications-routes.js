@@ -203,7 +203,7 @@ function registerNotificationRoutes(app, deps) {
       if (!channels.length) return jsonError(res, 400, "No reminder channel is enabled");
 
       const previews = [];
-      const missingProvider = channels.some((channel) => !isProviderConfigured(channel, process.env));
+      const skipReasons = [];
       for (const channel of channels) {
         assertChannelOptIn(channel, prefs, req.user);
         previews.push(
@@ -217,24 +217,34 @@ function registerNotificationRoutes(app, deps) {
         );
       }
 
-      if (missingProvider) {
-        return res.json({
-          ok: true,
-          sent: false,
-          warning: "Notification provider is not configured; returning preview only.",
-          preview: previews[0],
-          previews
-        });
+      const results = [];
+      for (let i = 0; i < channels.length; i++) {
+        const channel = channels[i];
+        const preview = previews[i];
+        if (!isProviderConfigured(channel, process.env)) {
+          skipReasons.push(
+            channel === "sms"
+              ? "SMS sending is disabled or not configured yet."
+              : "Email provider is not configured; skipped."
+          );
+          continue;
+        }
+        const to = assertChannelOptIn(channel, prefs, req.user);
+        results.push(await sendReminder({ channel, to, preview, env: process.env }));
       }
 
-      const results = [];
-      for (const preview of previews) {
-        const to = assertChannelOptIn(preview.channel, prefs, req.user);
-        results.push(await sendReminder({ channel: preview.channel, to, preview }));
+      const sent = results.some((r) => r.sent);
+      let warning;
+      if (!sent && skipReasons.length) {
+        warning = ["Notification provider is not configured; returning preview only.", ...skipReasons].join(" ");
+      } else if (skipReasons.length) {
+        warning = skipReasons.join(" ");
       }
+
       return res.json({
         ok: true,
-        sent: results.some((r) => r.sent),
+        sent,
+        ...(warning ? { warning } : {}),
         preview: previews[0],
         previews,
         results

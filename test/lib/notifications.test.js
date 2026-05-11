@@ -7,6 +7,7 @@ const {
   minUserWideGapMs,
   normalizePhoneNumber,
   normalizeReminderFrequency,
+  resolveDebtYaReminderFromAddress,
   runDuePaymentReminders,
   validateNotificationPreferencesInput
 } = require("../../lib/notifications");
@@ -144,6 +145,23 @@ describe("lib/notifications", () => {
   it("defaultNotificationPreferences usa weekly", () => {
     const d = defaultNotificationPreferences(userId);
     assert.equal(d.reminder_frequency, "weekly");
+  });
+
+  it("resolveDebtYaReminderFromAddress prioriza EMAIL_FROM y luego RESEND_FROM_EMAIL", () => {
+    assert.equal(
+      resolveDebtYaReminderFromAddress({
+        EMAIL_FROM: "  DebtYa <notifications@debtya.com>  ",
+        RESEND_FROM_EMAIL: "Onboarding <onboarding@resend.dev>"
+      }),
+      "DebtYa <notifications@debtya.com>"
+    );
+    assert.equal(
+      resolveDebtYaReminderFromAddress({
+        RESEND_FROM_EMAIL: "Onboarding <verified@example.com>"
+      }),
+      "Onboarding <verified@example.com>"
+    );
+    assert.match(resolveDebtYaReminderFromAddress({}), /onboarding@resend\.dev/);
   });
 
   it("minGapMsForCadence: moderacion semanal para smart y daily", () => {
