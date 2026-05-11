@@ -57,4 +57,30 @@ describe("lib/strategy-compare-sim", () => {
     assert.equal(out.insufficient_data, true);
     assert.equal(out.avalanche, null);
   });
+
+  it("Ignora deudas marcadas paid en la comparación", () => {
+    const debts = [
+      {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        name: "Paid card",
+        balance: 5000,
+        apr: 30,
+        minimum_payment: 100,
+        status: "paid",
+        is_active: true
+      },
+      {
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        name: "Active card",
+        balance: 900,
+        apr: 18,
+        minimum_payment: 35,
+        is_active: true
+      }
+    ];
+    const out = compareStrategiesFromDebtRows(debts, 200, 0, safeNumber);
+    assert.equal(out.insufficient_data, false);
+    assert.equal(out.inputs.debts.length, 1);
+    assert.equal(out.inputs.debts[0].id, "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+  });
 });

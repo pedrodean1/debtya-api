@@ -1,4 +1,5 @@
 const { validateDebtCreatePayload, validateDebtPatch } = require("../lib/validation");
+const { debtRowListedAsActiveCarrying, debtRowListedAsPaid } = require("../lib/debt-paid-helpers");
 
 function registerAccountsDebtsRoutes(app, deps) {
   const {
@@ -39,9 +40,14 @@ function registerAccountsDebtsRoutes(app, deps) {
 
       if (error) throw error;
 
+      const rows = data || [];
+      const active = rows.filter((d) => debtRowListedAsActiveCarrying(d, safeNumber));
+      const paid_debts = rows.filter((d) => debtRowListedAsPaid(d, safeNumber));
+
       return res.json({
         ok: true,
-        data: data || []
+        data: active,
+        paid_debts
       });
     } catch (error) {
       return jsonError(res, 500, "Error cargando deudas", {
@@ -62,6 +68,7 @@ function registerAccountsDebtsRoutes(app, deps) {
         type: req.body.type || "credit_card",
         goal_note: req.body.goal_note || null,
         is_active: true,
+        status: "active",
         updated_at: new Date().toISOString()
       };
 

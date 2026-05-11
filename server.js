@@ -20,12 +20,20 @@ const {
 } = require("./lib/manual-plan-next-payment");
 const { compareStrategiesFromDebtRows } = require("./lib/strategy-compare-sim");
 const { computeManualExtraAppliedAmount } = require("./lib/manual-extra-payment");
+const {
+  PAID_BALANCE_THRESHOLD,
+  isDebtBalancePaidOff,
+  debtRowEligibleForPlan
+} = require("./lib/debt-paid-helpers");
+const {
+  sendTransactionalPaymentCelebrationEmails
+} = require("./lib/notifications");
 
 const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-11-v106-manual-extra-payment";
+const SERVER_VERSION = "debtya-2026-05-11-v107-paid-debts-celebration-emails";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -1790,7 +1798,8 @@ async function compareStrategiesForUser(userId, monthlyBudget = 0, extraPayment 
 
   if (error) throw error;
 
-  return compareStrategiesFromDebtRows(debts || [], monthlyBudget, extraPayment, safeNumber);
+  const usable = (debts || []).filter((d) => debtRowEligibleForPlan(d, safeNumber));
+  return compareStrategiesFromDebtRows(usable, monthlyBudget, extraPayment, safeNumber);
 }
 
 async function markIntentMetadata(intentId, userId, patch = {}) {
@@ -1821,6 +1830,47 @@ async function markIntentMetadata(intentId, userId, patch = {}) {
 
   if (error) throw error;
   return data;
+}
+
+async function getAuthUserEmailForUser(userId) {
+  try {
+    if (!supabaseAdmin || typeof supabaseAdmin.auth?.admin?.getUserById !== "function") return null;
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (error || !data?.user?.email) return null;
+    const e = String(data.user.email).trim();
+    return e.includes("@") ? e : null;
+  } catch {
+    return null;
+  }
+}
+
+async function sendPaymentRecordedEmailsSafe(userId, params) {
+  const intentId = params && params.intentId != null ? String(params.intentId).trim() : "";
+  if (!intentId || !isUuid(intentId)) return;
+  const email = await getAuthUserEmailForUser(userId);
+  const mergeMeta = async (patch) => {
+    await markIntentMetadata(intentId, userId, patch);
+  };
+  try {
+    await sendTransactionalPaymentCelebrationEmails({
+      supabaseAdmin,
+      userId,
+      userEmail: email,
+      intentId,
+      amount: params.amount,
+      debtNameDisplay: params.debtName,
+      previousBalance: params.previousBalance,
+      nextBalance: params.nextBalance,
+      previousDebtStatus: params.previousDebtStatus,
+      env: process.env,
+      mergeIntentMetadata: mergeMeta,
+      appError
+    });
+  } catch (e) {
+    try {
+      appError("sendPaymentRecordedEmailsSafe:", e);
+    } catch (_) {}
+  }
 }
 
 async function applyExecutedIntentToDebt(userId, intentInput, options = {}) {
@@ -1887,22 +1937,48 @@ async function applyExecutedIntentToDebt(userId, intentInput, options = {}) {
     return { ok: false, skipped: true, reason: "deuda no encontrada", debt_id: debtId, amount };
   }
 
-  const now = new Date().toISOString();
+  const prevStatus = String(debt.status || "active").toLowerCase();
   const currentBalance = safeNumber(debt.balance);
+  if (prevStatus === "paid" && isDebtBalancePaidOff(currentBalance, safeNumber)) {
+    return {
+      ok: true,
+      skipped: true,
+      reason: "deuda_ya_pagada",
+      debt_id: debtId,
+      amount,
+      previous_balance: currentBalance,
+      next_balance: currentBalance,
+      previous_status: debt.status || "active",
+      debt_marked_paid_now: false
+    };
+  }
+
+  const now = new Date().toISOString();
   const nextBalance = Math.max(0, Number((currentBalance - amount).toFixed(2)));
+  const paidOffNow = isDebtBalancePaidOff(nextBalance, safeNumber);
+
+  const debtPatch = {
+    balance: nextBalance,
+    updated_at: now
+  };
+  if (paidOffNow) {
+    debtPatch.status = "paid";
+    if (!debt.paid_at) {
+      debtPatch.paid_at = now;
+    }
+  }
 
   const { error: debtUpdateError } = await supabaseAdmin
     .from("debts")
-    .update({
-      balance: nextBalance,
-      updated_at: now
-    })
+    .update(debtPatch)
     .eq("id", debtId)
     .eq("user_id", userId);
 
   if (debtUpdateError) {
     throw debtUpdateError;
   }
+
+  const debtMarkedPaidNow = paidOffNow && currentBalance > nextBalance + 1e-9;
 
   await markIntentMetadata(intentId, userId, {
     debt_balance_applied_at: now,
@@ -1917,7 +1993,9 @@ async function applyExecutedIntentToDebt(userId, intentInput, options = {}) {
     debt_id: debtId,
     amount,
     previous_balance: currentBalance,
-    next_balance: nextBalance
+    next_balance: nextBalance,
+    previous_status: debt.status || "active",
+    debt_marked_paid_now: debtMarkedPaidNow
   };
 }
 
@@ -1957,9 +2035,14 @@ async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNot
     err.status = 400;
     throw err;
   }
+  if (String(debt.status || "").toLowerCase() === "paid") {
+    const err = new Error("Esta deuda ya está marcada como pagada en DebtYa.");
+    err.status = 400;
+    throw err;
+  }
 
   const currentBalance = safeNumber(debt.balance);
-  if (!(currentBalance > 0)) {
+  if (!(currentBalance > PAID_BALANCE_THRESHOLD)) {
     const err = new Error("Esta deuda no tiene saldo pendiente en DebtYa.");
     err.status = 400;
     throw err;
@@ -2071,6 +2154,17 @@ async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNot
       appDebug("reconcile post pago extra:", reErr.message || String(reErr));
     }
 
+    if (appliedOk) {
+      await sendPaymentRecordedEmailsSafe(userId, {
+        intentId,
+        amount: applied,
+        debtName: debt.name,
+        previousBalance: debtApply.previous_balance,
+        nextBalance: debtApply.next_balance,
+        previousDebtStatus: debt.status
+      });
+    }
+
     return {
       ok: true,
       intent_id: intentId,
@@ -2079,7 +2173,8 @@ async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNot
       applied_amount: applied,
       amount_clamped,
       data: debtUpdated,
-      debt_apply: debtApply
+      debt_apply: debtApply,
+      debt_marked_paid: !!debtApply.debt_marked_paid_now
     };
   } catch (e) {
     await rollbackIntent().catch(() => null);
@@ -2326,6 +2421,13 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
     throw err;
   }
 
+  const { data: debtPreview } = await supabaseAdmin
+    .from("debts")
+    .select("id,name,status,balance")
+    .eq("id", debtId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
   const now = new Date().toISOString();
   const meta = {
     ...getIntentMetadata(intent),
@@ -2415,6 +2517,17 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
       throw err;
     }
 
+    if (appliedOk) {
+      await sendPaymentRecordedEmailsSafe(userId, {
+        intentId: updatedIntent.id,
+        amount,
+        debtName: debtPreview?.name,
+        previousBalance: debtApply.previous_balance,
+        nextBalance: debtApply.next_balance,
+        previousDebtStatus: debtPreview?.status || debtApply.previous_status
+      });
+    }
+
     return {
       ok: true,
       intent_id: updatedIntent.id,
@@ -2423,7 +2536,9 @@ async function confirmManualPaymentIntentDirect(userId, intentId) {
       old_balance: debtApply.previous_balance ?? null,
       new_balance: debtApply.next_balance ?? null,
       data: updatedIntent,
-      debt_apply: debtApply
+      debt_apply: debtApply,
+      debt_marked_paid: !!debtApply.debt_marked_paid_now,
+      debt_name: debtPreview?.name ?? null
     };
   } catch (e) {
     await rollbackManualExecute().catch(() => null);
@@ -2458,7 +2573,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
     .eq("is_active", true);
 
   if (debtErr) throw debtErr;
-  const debts = debtRows || [];
+  const debts = (debtRows || []).filter((d) => debtRowEligibleForPlan(d, safeNumber));
 
   let priorityDebt = pickPriorityDebtForManualPlan(strategy, debts, safeNumber);
 
@@ -2467,7 +2582,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
     const locked = debts.find(
       (d) =>
         String(d.id) === String(targetId) &&
-        safeNumber(d.balance) > 0 &&
+        safeNumber(d.balance) > PAID_BALANCE_THRESHOLD &&
         d.is_active !== false
     );
     if (locked) priorityDebt = locked;

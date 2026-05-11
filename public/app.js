@@ -877,6 +877,11 @@
         extra_pay_clamped: "That amount was higher than this debt's balance in DebtYa. We applied {{amt}} instead.",
         extra_pay_need_amount: "Enter an amount greater than zero.",
         extra_pay_need_debt: "Pick a debt with a balance first.",
+        empty_active_debts: "No active balances here — see Paid debts below if you already cleared some.",
+        paid_debts_title: "Paid debts",
+        paid_debts_sub:
+          "These balances are at or near zero in DebtYa. They stay in your history — nothing is deleted.",
+        debt_fully_paid_toast: "Congrats! You paid off {{name}} completely.",
         accounts_imp: "Snapshots updated",
         tx_imp: "Activity updated",
         rules_applied: "Rules applied. Created",
@@ -1608,6 +1613,11 @@
         extra_pay_clamped: "Ese monto superaba el saldo de esta deuda en DebtYa. Aplicamos {{amt}}.",
         extra_pay_need_amount: "Escribe un monto mayor que cero.",
         extra_pay_need_debt: "Primero elige una deuda con saldo.",
+        empty_active_debts: "No hay saldos activos aquí: revisa Deudas pagadas abajo si ya liquidaste alguna.",
+        paid_debts_title: "Deudas pagadas",
+        paid_debts_sub:
+          "Estos saldos están en cero (o casi) en DebtYa. Siguen en tu historial: no se borran.",
+        debt_fully_paid_toast: "¡Felicidades! Pagaste completamente {{name}}.",
         accounts_imp: "Capturas actualizadas",
         tx_imp: "Actividad actualizada",
         rules_applied: "Reglas aplicadas. Creados",
@@ -1844,6 +1854,7 @@
       session: null,
       user: null,
       debts: [],
+      paidDebts: [],
       rules: [],
       plan: null,
       intents: [],
@@ -3238,7 +3249,7 @@
       const debts = Array.isArray(state.debts) ? state.debts : [];
       const plan = state.plan || {};
       const strategy = String(plan.strategy || "avalanche").toLowerCase();
-      const active = debts.filter((d) => d && d.is_active !== false && toNum(d.balance) > 0);
+      const active = debts.filter((d) => isDebtActiveForDashboard(d));
       if (!active.length) return null;
 
       let priority = null;
@@ -3284,8 +3295,7 @@
         const locked = debts.find(
           (d) =>
             String(d.id) === String(tid).trim() &&
-            toNum(d.balance) > 0 &&
-            d.is_active !== false
+            isDebtActiveForDashboard(d)
         );
         if (locked) priority = locked;
       }
@@ -3700,7 +3710,13 @@
                 );
               }
               applyManualConfirmDebtToLocalState(confirmRes);
-              showMessage(globalMessage, t("manual_pay_ok"), "success");
+              let payMsg = t("manual_pay_ok");
+              if (confirmRes && confirmRes.debt_marked_paid) {
+                const nm =
+                  cleanVisibleDebtName(confirmRes.debt_name || "") || t("debt_label");
+                payMsg += " " + String(t("debt_fully_paid_toast")).replace("{{name}}", nm);
+              }
+              showMessage(globalMessage, payMsg, "success");
               clearManualPriorityStateFull();
               await refreshDebts();
               await refreshIntents();
@@ -3783,6 +3799,14 @@
       return Number.isFinite(n) ? n : 0;
     }
 
+    const PAID_BALANCE_THRESHOLD_UI = 0.01;
+
+    function isDebtActiveForDashboard(d) {
+      if (!d || d.is_active === false) return false;
+      if (String(d.status || "").toLowerCase() === "paid") return false;
+      return toNum(d.balance) > PAID_BALANCE_THRESHOLD_UI;
+    }
+
     function parseAprValue(debt) {
       const raw = debt?.apr ?? debt?.interest_rate ?? null;
       if (raw === null || raw === undefined || raw === "") return null;
@@ -3812,10 +3836,10 @@
       const countsEl = $("simCountsLine");
       if (!totalEl || !minEl || !urgentEl || !strategyEl || !countsEl) return;
 
-      const debts = Array.isArray(state.debts) ? state.debts : [];
+      const debts = (Array.isArray(state.debts) ? state.debts : []).filter((d) => isDebtActiveForDashboard(d));
       const totalDebtBalance = debts.reduce((sum, d) => sum + toNum(d.balance), 0);
       const totalMinimumPayment = debts.reduce((sum, d) => sum + toNum(d.minimum_payment), 0);
-      const activeDebts = debts.filter((d) => toNum(d.balance) > 0).length;
+      const activeDebts = debts.length;
 
       let urgentDebt = null;
       let urgentApr = -1;
@@ -3952,6 +3976,7 @@
       select.appendChild(empty);
 
       state.debts.forEach((debt) => {
+        if (!isDebtActiveForDashboard(debt)) return;
         const op = document.createElement("option");
         op.value = debt.id;
         op.textContent = `${cleanVisibleDebtName(debt.name) || t("debt_label")} - ${fmtMoney(debt.balance)}`;
@@ -4289,12 +4314,51 @@
       else sel.value = "";
     }
 
+    function renderPaidDebts() {
+      const section = $("paidDebtsSection");
+      const list = $("paidDebtsList");
+      if (!section || !list) return;
+      const rows = Array.isArray(state.paidDebts) ? state.paidDebts : [];
+      if (!rows.length) {
+        section.classList.add("hidden");
+        list.innerHTML = "";
+        return;
+      }
+      section.classList.remove("hidden");
+      list.innerHTML = "";
+      rows.forEach((debt) => {
+        const el = document.createElement("div");
+        el.className = "item item-paid-debt";
+        el.innerHTML = `
+          <div class="item-top">
+            <div>
+              <div class="item-title">${escapeHtml(cleanVisibleDebtName(debt.name) || t("debt_label"))}</div>
+              <div class="item-meta muted">${escapeHtml(t("paid_debts_title"))}</div>
+            </div>
+            <div class="right">
+              <div class="money">${fmtMoney(debt.balance)}</div>
+              <div class="muted" style="font-size:12px;margin-top:4px;">${escapeHtml(t("updated_label"))}: ${fmtDate(debt.updated_at)}</div>
+            </div>
+          </div>
+        `;
+        list.appendChild(el);
+      });
+      document.querySelectorAll("#paidDebtsSection [data-i18n]").forEach((node) => {
+        const k = node.getAttribute("data-i18n");
+        if (k) node.textContent = t(k);
+      });
+    }
+
     function renderDebts() {
       const box = $("debtsList");
       box.innerHTML = "";
 
-      if (!state.debts.length) {
+      const activeRowsRaw = Array.isArray(state.debts) ? state.debts : [];
+      const activeRows = activeRowsRaw.filter((d) => isDebtActiveForDashboard(d));
+      const paidRows = Array.isArray(state.paidDebts) ? state.paidDebts : [];
+      if (!activeRows.length && !paidRows.length) {
         box.innerHTML = `<div class="empty">${escapeHtml(t("empty_debts"))}</div>`;
+        renderPaidDebts();
         renderStats();
         renderDebtTargetOptions();
         populateDebtFormLinkedSelect();
@@ -4305,9 +4369,13 @@
         return;
       }
 
-      const highestBalance = Math.max(...state.debts.map(d => Number(d.balance || 0)), 1);
+      if (!activeRows.length) {
+        box.innerHTML = `<div class="empty muted">${escapeHtml(t("empty_active_debts"))}</div>`;
+      }
 
-      state.debts.forEach((debt) => {
+      const highestBalance = Math.max(...activeRows.map((d) => Number(d.balance || 0)), 1);
+
+      activeRows.forEach((debt) => {
         const progress = Math.max(5, Math.min(100, (Number(debt.balance || 0) / highestBalance) * 100));
         const el = document.createElement("div");
         el.className = "item";
@@ -4335,7 +4403,7 @@
           </div>
           <div class="progress"><span style="width:${progress}%"></span></div>
           ${
-            Number(debt.balance || 0) > 0
+            toNum(debt.balance) > PAID_BALANCE_THRESHOLD_UI
               ? `<div style="margin-top:10px;">
                   <button type="button" class="btn btn-light btn-small extra-pay-debt-btn" data-debt-id="${escapeHtml(
                     String(debt.id)
@@ -4346,6 +4414,8 @@
         `;
         box.appendChild(el);
       });
+
+      renderPaidDebts();
 
       document.querySelectorAll("#debtsList [data-i18n]").forEach((node) => {
         const k = node.getAttribute("data-i18n");
@@ -5129,7 +5199,7 @@
       de.textContent = t("plan_pay_toward_none");
       debtSel.appendChild(de);
       (state.debts || []).forEach((d) => {
-        if (!d?.id) return;
+        if (!d?.id || !isDebtActiveForDashboard(d)) return;
         const op = document.createElement("option");
         op.value = d.id;
         op.textContent = `${cleanVisibleDebtName(d.name) || t("debt_label")} ? ${fmtMoney(d.balance)}`;
@@ -5292,13 +5362,16 @@
       const arr = Array.isArray(state.debts) ? state.debts : [];
       const idx = arr.findIndex((d) => d && String(d.id).trim() === idStr);
       if (idx >= 0) {
-        state.debts[idx] = { ...state.debts[idx], balance: n };
+        const row = { ...state.debts[idx], balance: n };
+        if (j.debt_marked_paid) row.status = "paid";
+        state.debts[idx] = row;
       }
     }
 
     async function refreshDebts() {
       const res = await api("/debts");
       state.debts = res.data || [];
+      state.paidDebts = res.paid_debts || [];
       renderDebts();
     }
 
@@ -5862,7 +5935,9 @@
       const sel = $("extraPaymentDebtSelect");
       if (!sel) return;
       sel.innerHTML = "";
-      const debts = (state.debts || []).filter((d) => d && Number(d.balance || 0) > 0);
+      const debts = (state.debts || []).filter(
+        (d) => d && isDebtActiveForDashboard(d) && toNum(d.balance) > PAID_BALANCE_THRESHOLD_UI
+      );
       debts.forEach((d) => {
         const op = document.createElement("option");
         op.value = String(d.id);
@@ -5876,7 +5951,9 @@
     }
 
     function openExtraPaymentModal(preferredDebtId) {
-      const debtsWithBal = (state.debts || []).filter((d) => d && Number(d.balance || 0) > 0);
+      const debtsWithBal = (state.debts || []).filter(
+        (d) => d && isDebtActiveForDashboard(d) && toNum(d.balance) > PAID_BALANCE_THRESHOLD_UI
+      );
       if (!debtsWithBal.length) {
         showMessage(globalMessage, t("extra_pay_need_debt"), "warn");
         return;
@@ -5926,6 +6003,10 @@
           msg +=
             " " +
             String(t("extra_pay_clamped")).replace("{{amt}}", fmtMoney(res.applied_amount));
+        }
+        if (res && res.debt_marked_paid) {
+          const nm = cleanVisibleDebtName(res.data?.name || "") || t("debt_label");
+          msg += " " + String(t("debt_fully_paid_toast")).replace("{{name}}", nm);
         }
         showMessage(globalMessage, msg, "success");
         closeExtraPaymentModal();

@@ -49,6 +49,13 @@ describe("lib/manual-plan-next-payment", () => {
     assert.equal(pickPriorityDebtForManualPlan("avalanche", [a, b], safeNumber), null);
   });
 
+  it("ignora deudas con status paid aunque balance positivo", () => {
+    const a = { ...mk("a", 500, 20), status: "paid" };
+    const b = mk("b", 200, 8);
+    const p = pickPriorityDebtForManualPlan("avalanche", [a, b], safeNumber);
+    assert.equal(p.id, "b");
+  });
+
   it("computeManualPriorityPaymentAmount no supera el balance", () => {
     const debt = mk("x", 100, 15, 40);
     const plan = { monthly_budget: 900, extra_payment_default: 50 };
