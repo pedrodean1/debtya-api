@@ -2,7 +2,9 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const {
   buildNextPaymentReminderPreview,
+  defaultNotificationPreferences,
   minGapMsForCadence,
+  minUserWideGapMs,
   normalizePhoneNumber,
   normalizeReminderFrequency,
   runDuePaymentReminders,
@@ -129,14 +131,31 @@ describe("lib/notifications", () => {
     assert.equal(out.payload.reminder_frequency, "weekly");
   });
 
-  it("normaliza reminder_frequency desconocido a smart", () => {
-    assert.equal(normalizeReminderFrequency("bogus"), "smart");
+  it("sin reminder_frequency en body usa weekly por defecto", () => {
+    const out = validateNotificationPreferencesInput({ email_enabled: true, email_consent: true }, null);
+    assert.ok(out.payload);
+    assert.equal(out.payload.reminder_frequency, "weekly");
   });
 
-  it("minGapMsForCadence refleja cadencia", () => {
-    assert.ok(minGapMsForCadence("daily") < minGapMsForCadence("smart"));
-    assert.ok(minGapMsForCadence("smart") < minGapMsForCadence("weekly"));
+  it("normaliza reminder_frequency desconocido a weekly", () => {
+    assert.equal(normalizeReminderFrequency("bogus"), "weekly");
+  });
+
+  it("defaultNotificationPreferences usa weekly", () => {
+    const d = defaultNotificationPreferences(userId);
+    assert.equal(d.reminder_frequency, "weekly");
+  });
+
+  it("minGapMsForCadence: moderacion semanal para smart y daily", () => {
+    const w = minGapMsForCadence("weekly");
+    assert.equal(minGapMsForCadence("daily"), w);
+    assert.equal(minGapMsForCadence("smart"), w);
+    assert.ok(minGapMsForCadence("twice_weekly") < w);
     assert.equal(minGapMsForCadence("off"), Number.POSITIVE_INFINITY);
+  });
+
+  it("minUserWideGapMs twice_weekly mas corto que weekly", () => {
+    assert.ok(minUserWideGapMs("twice_weekly") < minUserWideGapMs("weekly"));
   });
 
   it("runDuePaymentReminders sin supabase devuelve error", async () => {
@@ -200,6 +219,33 @@ describe("lib/notifications", () => {
     assert.equal(preview.amount, 82);
     assert.match(preview.message, /Pay \$82\.00 to CBUSASEARS/);
     assert.match(preview.message, /outside DebtYa/);
+  });
+
+  it("preview email EN con APR incluye ballpark de interes", async () => {
+    const supabaseAdmin = makeSupabaseMock({
+      intents: [
+        {
+          id: intentId,
+          user_id: userId,
+          debt_id: debtId,
+          amount: 100,
+          status: "pending_review",
+          strategy: "avalanche",
+          metadata: { manual_first_priority: true },
+          created_at: "2026-05-10T00:00:00Z"
+        }
+      ],
+      debt: { id: debtId, user_id: userId, name: "Card A", balance: 1200, apr: 18 },
+      plan: { strategy: "avalanche" }
+    });
+    const preview = await buildNextPaymentReminderPreview({
+      supabaseAdmin,
+      userId,
+      channel: "email",
+      lang: "en"
+    });
+    assert.match(preview.email_body || preview.message, /Ballpark/i);
+    assert.match(preview.email_body || preview.message, /APR/i);
   });
 
   it("preview en espanol menciona Ya lo pague", async () => {

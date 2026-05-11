@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-10-v97-smart-automatic-reminders" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-10-v97-1-simple-notification-permission" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -49,7 +49,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-10-v97-smart-automatic-reminders">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-10-v97-1-simple-notification-permission">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -832,7 +832,57 @@
             <div id="compareResult" class="list" style="margin-top:14px;"></div>
           </section>
 
-          <section class="card" id="notificationsPanel">
+          <section class="card" id="simpleNotifPermissionSection">
+            <div class="section-head">
+              <div>
+                <h2 data-i18n="notif_simple_title">Smart reminders</h2>
+                <p class="sub" data-i18n="notif_simple_sub">
+                  DebtYa can let you know when to pay, how much to pay, and why we recommend that payment.
+                </p>
+              </div>
+            </div>
+            <p class="helper-text" data-i18n="notif_simple_moderation">
+              We send reminders in moderation, usually about once a week or when there is an important next payment.
+            </p>
+            <label class="field" style="flex-direction:row;align-items:center;gap:10px;margin-top:10px;">
+              <input type="checkbox" id="simpleNotifMaster" />
+              <span data-i18n="notif_simple_master">Turn on reminders</span>
+            </label>
+            <div id="simpleNotifDetailWrap" class="stack hidden" style="margin-top:12px;">
+              <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
+                <input type="checkbox" id="simpleNotifEmail" />
+                <span data-i18n="notif_simple_email">Email</span>
+              </label>
+              <div id="simpleNotifEmailConsentWrap" class="field hidden">
+                <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
+                  <input type="checkbox" id="simpleNotifEmailConsent" />
+                  <span data-i18n="notif_simple_email_consent">I agree to receive payment reminder emails from DebtYa.</span>
+                </label>
+              </div>
+              <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
+                <input type="checkbox" id="simpleNotifSms" />
+                <span data-i18n="notif_simple_sms">SMS (optional)</span>
+              </label>
+              <div id="simpleNotifPhoneWrap" class="field hidden">
+                <label class="label" for="simpleNotifPhone" data-i18n="notif_phone_lbl">Mobile phone (E.164)</label>
+                <input id="simpleNotifPhone" class="input" type="tel" autocomplete="tel" data-i18n-placeholder="notif_phone_ph" placeholder="+15551234567" />
+              </div>
+              <div id="simpleNotifSmsConsentWrap" class="field hidden">
+                <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
+                  <input type="checkbox" id="simpleNotifSmsConsent" />
+                  <span data-i18n="notif_simple_sms_consent"
+                    >You agree to receive messages from DebtYa. Message and data rates may apply. You can reply STOP to opt out.</span>
+                </label>
+              </div>
+            </div>
+            <button type="button" id="simpleNotifSaveBtn" class="btn btn-primary" style="margin-top:12px;" data-i18n="notif_simple_save">
+              Save
+            </button>
+            <p id="simpleNotifWarn" class="notice warn hidden" role="status"></p>
+          </section>
+
+          <section class="card hidden" id="notificationsPanel">
+            <p class="plan-debug-kicker" data-i18n="notif_debug_kicker">Notification debug (?debugNotifications=1 or ?debugPlan=1)</p>
             <div class="section-head">
               <div>
                 <h2 data-i18n="notif_title">Reminders</h2>
@@ -884,10 +934,11 @@
             <div class="field">
               <label class="label" for="notifReminderFrequency" data-i18n="notif_freq_lbl">Automatic reminder frequency</label>
               <select id="notifReminderFrequency" class="select">
-                <option value="smart" data-i18n-opt="notif_freq_smart">Smart (recommended)</option>
-                <option value="daily" data-i18n-opt="notif_freq_daily">Daily</option>
                 <option value="weekly" data-i18n-opt="notif_freq_weekly">Weekly</option>
-                <option value="off" data-i18n-opt="notif_freq_off">Off (manual test only)</option>
+                <option value="smart" data-i18n-opt="notif_freq_smart">Smart (legacy)</option>
+                <option value="daily" data-i18n-opt="notif_freq_daily">Daily (legacy)</option>
+                <option value="twice_weekly" data-i18n-opt="notif_freq_twice_weekly">Twice weekly (internal)</option>
+                <option value="off" data-i18n-opt="notif_freq_off">Off</option>
               </select>
             </div>
             <div class="field">
@@ -1171,7 +1222,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-10-v97-smart-automatic-reminders"></script>
+  <script src="/app.js?v=debtya-2026-05-10-v97-1-simple-notification-permission"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

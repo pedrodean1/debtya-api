@@ -253,6 +253,8 @@
         notif_freq_daily: "Daily",
         notif_freq_weekly: "Weekly",
         notif_freq_off: "Off (manual test only)",
+        notif_freq_twice_weekly: "Twice weekly (internal)",
+        notif_debug_kicker: "Notification debug (?debugNotifications=1 or ?debugPlan=1)",
         notif_channel_lbl: "Preferred channel",
         notif_ch_none: "None",
         notif_ch_email: "Email",
@@ -265,6 +267,19 @@
         notif_preview_only:
           "Preview only: connect Resend/SendGrid (email) or Twilio (SMS) on the server to send real test messages.",
         notif_test_sent: "Test reminder sent (check inbox or phone).",
+        notif_simple_title: "Smart reminders",
+        notif_simple_sub:
+          "DebtYa can let you know when to pay, how much to pay, and why we recommend that payment.",
+        notif_simple_moderation:
+          "We send reminders in moderation, usually about once a week or when there is an important next payment.",
+        notif_simple_master: "Turn on reminders",
+        notif_simple_email: "Email",
+        notif_simple_sms: "SMS (optional)",
+        notif_simple_email_consent: "I agree to receive payment reminder emails from DebtYa.",
+        notif_simple_sms_consent:
+          "You agree to receive messages from DebtYa. Message and data rates may apply. You can reply STOP to opt out.",
+        notif_simple_save: "Save",
+        notif_simple_need_channel: "Choose email or SMS (or both) to receive reminders.",
         legal_link_terms: "Terms",
         legal_link_privacy: "Privacy",
         legal_link_cancel: "Account",
@@ -934,7 +949,9 @@
         notif_freq_smart: "Inteligente (recomendado)",
         notif_freq_daily: "Diario",
         notif_freq_weekly: "Semanal",
-        notif_freq_off: "Desactivado (solo prueba manual)",
+        notif_freq_off: "Desactivado",
+        notif_freq_twice_weekly: "Dos veces por semana (interno)",
+        notif_debug_kicker: "Depuracion de notificaciones (?debugNotifications=1 o ?debugPlan=1)",
         notif_channel_lbl: "Canal preferido",
         notif_ch_none: "Ninguno",
         notif_ch_email: "Email",
@@ -947,6 +964,19 @@
         notif_preview_only:
           "Solo vista previa: configura Resend/SendGrid (email) o Twilio (SMS) en el servidor para enviar pruebas reales.",
         notif_test_sent: "Recordatorio de prueba enviado (revisa email o telefono).",
+        notif_simple_title: "Recordatorios inteligentes",
+        notif_simple_sub:
+          "DebtYa puede avisarte cuando pagar, cuanto pagar y por que recomendamos ese pago.",
+        notif_simple_moderation:
+          "Te enviamos recordatorios con moderacion, normalmente una vez por semana o cuando haya un proximo pago importante.",
+        notif_simple_master: "Activar recordatorios",
+        notif_simple_email: "Email",
+        notif_simple_sms: "SMS (opcional)",
+        notif_simple_email_consent: "Acepto recibir emails de recordatorio de pago de DebtYa.",
+        notif_simple_sms_consent:
+          "Aceptas recibir mensajes de DebtYa. Pueden aplicar tarifas de mensajes y datos. Puedes responder STOP para darte de baja.",
+        notif_simple_save: "Guardar",
+        notif_simple_need_channel: "Elige email o SMS (o ambos) para recibir recordatorios.",
         legal_link_terms: "Terminos",
         legal_link_privacy: "Privacidad",
         legal_link_cancel: "Cuenta",
@@ -1614,6 +1644,7 @@
       localStorage.setItem(I18N_STORAGE_KEY, uiLang);
       syncLangButtons();
       applyDomI18n();
+      applyNotifPanelsVisibility();
       document.querySelectorAll("button").forEach((b) => delete b.dataset.originalText);
       updateAuthModeUI();
       renderUser();
@@ -2595,6 +2626,90 @@
       } catch (_) {
         return false;
       }
+    }
+
+    function isNotificationsDebugUrl() {
+      try {
+        const q = new URLSearchParams(window.location.search || "");
+        return q.get("debugNotifications") === "1" || q.get("debugPlan") === "1";
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function applyNotifPanelsVisibility() {
+      const panel = $("notificationsPanel");
+      if (panel) panel.classList.toggle("hidden", !isNotificationsDebugUrl());
+    }
+
+    function syncSimpleNotifConsentVisibility() {
+      const d = state.notificationPrefs || {};
+      const master = !!$("simpleNotifMaster")?.checked;
+      const emailOn = !!$("simpleNotifEmail")?.checked;
+      const smsOn = !!$("simpleNotifSms")?.checked;
+      const detail = $("simpleNotifDetailWrap");
+      if (detail) detail.classList.toggle("hidden", !master);
+      const phoneWrap = $("simpleNotifPhoneWrap");
+      if (phoneWrap) phoneWrap.classList.toggle("hidden", !master || !smsOn);
+      const ec = $("simpleNotifEmailConsentWrap");
+      if (ec) ec.classList.toggle("hidden", !master || !emailOn || !!d.consent_email_at);
+      const sc = $("simpleNotifSmsConsentWrap");
+      if (sc) sc.classList.toggle("hidden", !master || !smsOn || !!d.consent_sms_at);
+    }
+
+    function syncSimpleNotifUIFromPrefs() {
+      if (!$("simpleNotifMaster")) return;
+      const d = state.notificationPrefs || {};
+      const freq = String(d.reminder_frequency || "weekly").toLowerCase();
+      const masterOn = (!!d.email_enabled || !!d.sms_enabled) && freq !== "off";
+      $("simpleNotifMaster").checked = masterOn;
+      if ($("simpleNotifEmail")) $("simpleNotifEmail").checked = !!d.email_enabled;
+      if ($("simpleNotifSms")) $("simpleNotifSms").checked = !!d.sms_enabled;
+      if ($("simpleNotifPhone")) $("simpleNotifPhone").value = d.phone_number || "";
+      const ec = $("simpleNotifEmailConsent");
+      const sc = $("simpleNotifSmsConsent");
+      if (ec) ec.checked = false;
+      if (sc) sc.checked = false;
+      syncSimpleNotifConsentVisibility();
+    }
+
+    function collectSimpleNotifBody() {
+      const d = state.notificationPrefs || {};
+      const master = !!$("simpleNotifMaster")?.checked;
+      const deviceTz =
+        typeof Intl !== "undefined" && Intl.DateTimeFormat
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : null;
+      if (!master) {
+        return {
+          email_enabled: false,
+          sms_enabled: false,
+          phone_number: ($("simpleNotifPhone")?.value || "").trim() || d.phone_number || null,
+          preferred_channel: "none",
+          reminder_frequency: "off",
+          reminder_time: d.reminder_time || null,
+          timezone: d.timezone || null,
+          email_consent: false,
+          sms_consent: false
+        };
+      }
+      const emailOn = !!$("simpleNotifEmail")?.checked;
+      const smsOn = !!$("simpleNotifSms")?.checked;
+      let preferred = "none";
+      if (emailOn && smsOn) preferred = "both";
+      else if (emailOn) preferred = "email";
+      else if (smsOn) preferred = "sms";
+      return {
+        email_enabled: emailOn,
+        sms_enabled: smsOn,
+        phone_number: ($("simpleNotifPhone")?.value || "").trim() || null,
+        preferred_channel: preferred,
+        reminder_frequency: "weekly",
+        reminder_time: d.reminder_time || null,
+        timezone: d.timezone || deviceTz || null,
+        email_consent: !!$("simpleNotifEmailConsent")?.checked,
+        sms_consent: !!$("simpleNotifSmsConsent")?.checked
+      };
     }
 
     function reconcileSkippedTrue(m) {
@@ -6005,43 +6120,57 @@
     }
 
     async function refreshNotificationPreferences() {
-      if (!$("notifEmailEnabled")) return;
+      if (!$("notifEmailEnabled") && !$("simpleNotifMaster")) return;
       const warn = $("notifTableWarn");
+      const simpleWarn = $("simpleNotifWarn");
+      const setWarn = (el, text, cls) => {
+        if (!el) return;
+        el.classList.remove("error", "warn", "success", "hidden");
+        if (!text) {
+          el.textContent = "";
+          el.classList.add("hidden");
+          return;
+        }
+        el.textContent = text;
+        el.classList.add(cls || "warn");
+      };
       try {
         const res = await api("/notifications/preferences");
         const d = res.data || {};
         state.notificationPrefs = d;
-        if (warn) {
-          warn.classList.remove("error", "warn", "success");
-          if (res.warning) {
-            warn.textContent = res.warning;
-            warn.classList.remove("hidden");
-            warn.classList.add("warn");
-          } else {
-            warn.textContent = "";
-            warn.classList.add("hidden");
-          }
+        if (res.warning) {
+          setWarn(warn, res.warning, "warn");
+          setWarn(simpleWarn, res.warning, "warn");
+        } else {
+          setWarn(warn, "", "");
+          setWarn(simpleWarn, "", "");
         }
-        $("notifEmailEnabled").checked = !!d.email_enabled;
-        $("notifSmsEnabled").checked = !!d.sms_enabled;
-        $("notifPhone").value = d.phone_number || "";
-        $("notifReminderTime").value = d.reminder_time ? String(d.reminder_time).slice(0, 5) : "";
-        $("notifTimezone").value = d.timezone || "";
-        const rf = $("notifReminderFrequency");
-        if (rf) rf.value = d.reminder_frequency === "daily" || d.reminder_frequency === "weekly" || d.reminder_frequency === "off" ? d.reminder_frequency : "smart";
-        $("notifPreferredChannel").value = d.preferred_channel || "none";
-        const ec = $("notifEmailConsent");
-        const sc = $("notifSmsConsent");
-        if (ec) ec.checked = false;
-        if (sc) sc.checked = false;
-        syncNotifConsentVisibility();
+        if ($("notifEmailEnabled")) {
+          $("notifEmailEnabled").checked = !!d.email_enabled;
+          $("notifSmsEnabled").checked = !!d.sms_enabled;
+          $("notifPhone").value = d.phone_number || "";
+          $("notifReminderTime").value = d.reminder_time ? String(d.reminder_time).slice(0, 5) : "";
+          $("notifTimezone").value = d.timezone || "";
+          const rf = $("notifReminderFrequency");
+          if (rf) {
+            const fq = String(d.reminder_frequency || "weekly").toLowerCase();
+            const allowed = ["daily", "weekly", "off", "smart", "twice_weekly"];
+            rf.value = allowed.includes(fq) ? fq : "weekly";
+          }
+          $("notifPreferredChannel").value = d.preferred_channel || "none";
+          const ec = $("notifEmailConsent");
+          const sc = $("notifSmsConsent");
+          if (ec) ec.checked = false;
+          if (sc) sc.checked = false;
+          syncNotifConsentVisibility();
+        }
+        syncSimpleNotifUIFromPrefs();
+        applyNotifPanelsVisibility();
       } catch (e) {
         state.notificationPrefs = null;
-        if (warn) {
-          warn.textContent = normalizeErrorMessage(e.message);
-          warn.classList.remove("hidden", "warn", "success");
-          warn.classList.add("error");
-        }
+        const msg = normalizeErrorMessage(e.message);
+        setWarn(warn, msg, "error");
+        setWarn(simpleWarn, msg, "error");
       }
     }
 
@@ -6909,6 +7038,37 @@
     const notifSmsEl = $("notifSmsEnabled");
     if (notifEmailEl) notifEmailEl.addEventListener("change", syncNotifConsentVisibility);
     if (notifSmsEl) notifSmsEl.addEventListener("change", syncNotifConsentVisibility);
+    const simpleMaster = $("simpleNotifMaster");
+    if (simpleMaster) simpleMaster.addEventListener("change", syncSimpleNotifConsentVisibility);
+    const simpleEmail = $("simpleNotifEmail");
+    if (simpleEmail) simpleEmail.addEventListener("change", syncSimpleNotifConsentVisibility);
+    const simpleSms = $("simpleNotifSms");
+    if (simpleSms) simpleSms.addEventListener("change", syncSimpleNotifConsentVisibility);
+    const simpleNotifSaveBtn = $("simpleNotifSaveBtn");
+    if (simpleNotifSaveBtn) {
+      simpleNotifSaveBtn.addEventListener("click", async () => {
+        setLoading(simpleNotifSaveBtn, true);
+        try {
+          const master = !!$("simpleNotifMaster")?.checked;
+          if (master) {
+            const emailOn = !!$("simpleNotifEmail")?.checked;
+            const smsOn = !!$("simpleNotifSms")?.checked;
+            if (!emailOn && !smsOn) {
+              showMessage(globalMessage, t("notif_simple_need_channel"), "error");
+              return;
+            }
+          }
+          const body = collectSimpleNotifBody();
+          await api("/notifications/preferences", { method: "POST", body: JSON.stringify(body) });
+          showMessage(globalMessage, t("notif_saved_ok"), "success");
+          await refreshNotificationPreferences();
+        } catch (err) {
+          showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        } finally {
+          setLoading(simpleNotifSaveBtn, false);
+        }
+      });
+    }
     const notifSaveBtn = $("notifSaveBtn");
     if (notifSaveBtn) {
       notifSaveBtn.addEventListener("click", async () => {
@@ -6921,7 +7081,7 @@
             preferred_channel: $("notifPreferredChannel")?.value || "none",
             reminder_time: ($("notifReminderTime")?.value || "").trim() || null,
             timezone: ($("notifTimezone")?.value || "").trim() || null,
-            reminder_frequency: ($("notifReminderFrequency")?.value || "").trim() || "smart",
+            reminder_frequency: ($("notifReminderFrequency")?.value || "").trim() || "weekly",
             email_consent: !!$("notifEmailConsent")?.checked,
             sms_consent: !!$("notifSmsConsent")?.checked
           };
@@ -6938,6 +7098,7 @@
     const notifPreviewBtn = $("notifPreviewBtn");
     if (notifPreviewBtn) {
       notifPreviewBtn.addEventListener("click", async () => {
+        if (!isNotificationsDebugUrl()) return;
         const out = $("notifPreviewOut");
         setLoading(notifPreviewBtn, true);
         try {
@@ -6964,6 +7125,7 @@
     const notifSendTestBtn = $("notifSendTestBtn");
     if (notifSendTestBtn) {
       notifSendTestBtn.addEventListener("click", async () => {
+        if (!isNotificationsDebugUrl()) return;
         setLoading(notifSendTestBtn, true);
         try {
           const res = await api("/notifications/send-test", {
