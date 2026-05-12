@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v111-android-official-icon";
+const SW_CACHE = "debtya-static-v112-closed-testing-version-bump";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
