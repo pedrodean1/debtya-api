@@ -154,15 +154,16 @@ android/app/build/outputs/bundle/release/app-release.aab
 
 Upload the AAB in Google Play Console under the chosen testing or production track. Complete the store listing, app access, content rating, data safety, privacy policy, and release notes before rollout.
 
-## Android Assets (V104)
+## Android Assets (V111)
 
-Final square brand sources live under `assets/` and `public/icons/`:
+Final square brand sources live under `assets/`:
 
-- `assets/logo.png` (1024×1024) — easy mode input for `@capacitor/assets`
+- `assets/debtya-official-icon.png` — canonical launcher/store icon source
+- `assets/logo.png` (1024×1024) — regenerated helper input for `@capacitor/assets`
+- `assets/google-play-icon-512.png` (512×512) — upload this manually in Play Console
 - `assets/splash.png` / `assets/splash-dark.png` (2732×2732)
-- Vector master: `public/icons/debtya-brand.svg`
 
-Regenerate mipmaps and splashes after changing the SVG:
+Regenerate mipmaps and splashes after changing the official PNG:
 
 ```sh
 npm run gen:brand

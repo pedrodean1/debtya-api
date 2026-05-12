@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v110-google-play-internal-readiness";
+const SW_CACHE = "debtya-static-v111-android-official-icon";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -9,9 +9,7 @@ const STATIC_ASSETS = [
   "/icons/favicon-32.png",
   "/icons/apple-touch-icon.png",
   "/icons/debtya-192.png",
-  "/icons/debtya-512.png",
-  "/icons/debtya-192.svg",
-  "/icons/debtya-512.svg"
+  "/icons/debtya-512.png"
 ];
 
 self.addEventListener("install", (event) => {

@@ -1,6 +1,6 @@
 # DebtYa — Google Play Internal Testing (checklist)
 
-This document supports **Google Play Console** setup for **Internal testing**. Regenerate the **AAB after each server/UI release** you want reflected in the build (for example after `debtya-2026-05-11-v110-google-play-internal-readiness`).
+This document supports **Google Play Console** setup for **Internal testing**. Regenerate the **AAB after each server/UI release** you want reflected in the build (for example after `debtya-2026-05-11-v111-android-official-icon`).
 
 ## AAB output path (local)
 

@@ -1,5 +1,6 @@
 /**
- * Rasteriza public/icons/debtya-brand.svg a PNGs (PWA, favicon, apple-touch, logo cuadrado).
+ * Rasteriza PNGs oficiales de DebtYa desde assets/debtya-official-icon.png
+ * (PWA, favicon, apple-touch, logo cuadrado y Google Play icon).
  * Requiere: npm install (sharp en devDependencies).
  * Uso: node scripts/gen-debtya-brand-pngs.cjs
  */
@@ -17,22 +18,42 @@ try {
 }
 
 const root = path.join(__dirname, "..");
-const svgPath = path.join(root, "public", "icons", "debtya-brand.svg");
-const svg = fs.readFileSync(svgPath);
+const assetsDir = path.join(root, "assets");
+const iconsDir = path.join(root, "public", "icons");
+const publicDir = path.join(root, "public");
+const preferredSource = path.join(assetsDir, "debtya-official-icon.png");
+const fallbackSource = path.join(assetsDir, "assetsdebtya-official-icon.png");
+
+async function resolveSourcePath() {
+  try {
+    await fs.promises.access(preferredSource, fs.constants.F_OK);
+    return preferredSource;
+  } catch {}
+
+  try {
+    await fs.promises.access(fallbackSource, fs.constants.F_OK);
+    await fs.promises.copyFile(fallbackSource, preferredSource);
+    return preferredSource;
+  } catch {}
+
+  throw new Error(
+    "Missing official icon. Expected assets/debtya-official-icon.png (fallback: assets/assetsdebtya-official-icon.png)."
+  );
+}
 
 async function main() {
-  const iconsDir = path.join(root, "public", "icons");
-  const assetsDir = path.join(root, "assets");
-  const publicDir = path.join(root, "public");
+  const sourcePath = await resolveSourcePath();
+  const official = fs.readFileSync(sourcePath);
 
-  await sharp(svg).resize(192, 192).png().toFile(path.join(iconsDir, "debtya-192.png"));
-  await sharp(svg).resize(512, 512).png().toFile(path.join(iconsDir, "debtya-512.png"));
-  await sharp(svg).resize(180, 180).png().toFile(path.join(iconsDir, "apple-touch-icon.png"));
-  await sharp(svg).resize(32, 32).png().toFile(path.join(iconsDir, "favicon-32.png"));
-  await sharp(svg).resize(1024, 1024).png().toFile(path.join(publicDir, "logo.png"));
-  await sharp(svg).resize(1024, 1024).png().toFile(path.join(assetsDir, "logo.png"));
+  await sharp(official).resize(192, 192).png().toFile(path.join(iconsDir, "debtya-192.png"));
+  await sharp(official).resize(512, 512).png().toFile(path.join(iconsDir, "debtya-512.png"));
+  await sharp(official).resize(180, 180).png().toFile(path.join(iconsDir, "apple-touch-icon.png"));
+  await sharp(official).resize(32, 32).png().toFile(path.join(iconsDir, "favicon-32.png"));
+  await sharp(official).resize(1024, 1024).png().toFile(path.join(publicDir, "logo.png"));
+  await sharp(official).resize(1024, 1024).png().toFile(path.join(assetsDir, "logo.png"));
+  await sharp(official).resize(512, 512).png().toFile(path.join(assetsDir, "google-play-icon-512.png"));
 
-  const logoSplash = await sharp(svg).resize(820, 820).png().toBuffer();
+  const logoSplash = await sharp(official).resize(820, 820).png().toBuffer();
   await sharp({
     create: {
       width: 2732,
@@ -47,7 +68,9 @@ async function main() {
 
   await fs.promises.copyFile(path.join(assetsDir, "splash.png"), path.join(assetsDir, "splash-dark.png"));
 
-  console.log("OK: debtya-192.png, debtya-512.png, apple-touch-icon.png, favicon-32.png, public/logo.png, assets/logo.png, splash.png");
+  console.log(
+    "OK: official icon -> debtya-192.png, debtya-512.png, apple-touch-icon.png, favicon-32.png, public/logo.png, assets/logo.png, google-play-icon-512.png, splash.png"
+  );
 }
 
 main().catch((e) => {
