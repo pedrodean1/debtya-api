@@ -427,7 +427,6 @@
           "Next: open the dashboard to generate or refresh your next payment line when you are ready.",
         next_step_prepare_btn: "Open dashboard",
         next_step_review: "Next: confirm your payment on the dashboard when you are ready.",
-        next_step_review_btn: "See next payment",
         next_step_done: "You are set up for now. When your situation changes, update debts or save your plan again.",
         next_step_done_btn: "Open dashboard",
         btn_connect_bank: "Start external link",
@@ -1178,7 +1177,6 @@
           "Siguiente: abre el panel principal para generar o actualizar la linea de proximo pago cuando quieras.",
         next_step_prepare_btn: "Ir al panel principal",
         next_step_review: "Siguiente: confirma tu pago en el panel principal cuando estes listo.",
-        next_step_review_btn: "Ver proximo pago",
         next_step_done: "Por ahora vas al dia. Si cambia tu situacion, actualiza deudas o vuelve a guardar el plan.",
         next_step_done_btn: "Ir al panel principal",
         btn_connect_bank: "Iniciar enlace externo",
@@ -2659,7 +2657,6 @@
       if (hasFeaturedPayableIntent()) {
         return {
           textKey: "next_step_review",
-          btnKey: "next_step_review_btn",
           nav: "setup",
           scrollId: "dashboardNextStepCard",
           openOperateMore: false
@@ -2686,7 +2683,6 @@
       if (hasPendingIntents()) {
         return {
           textKey: "next_step_review",
-          btnKey: "next_step_review_btn",
           nav: "setup",
           scrollId: "dashboardNextStepCard",
           openOperateMore: false
@@ -2722,18 +2718,24 @@
 
       const step = computeNextStepAction();
       txt.textContent = t(step.textKey);
-      btn.textContent = t(step.btnKey);
-      btn.classList.remove("hidden");
-      btn.onclick = () => {
-        setNav(step.nav);
-        window.requestAnimationFrame(() => {
-          scrollToAppSection(step.scrollId);
-          if (step.openOperateMore) {
-            const det = document.querySelector("details.ux-operate-advanced");
-            if (det) det.open = true;
-          }
-        });
-      };
+      if (step.btnKey) {
+        btn.textContent = t(step.btnKey);
+        btn.classList.remove("hidden");
+        btn.onclick = () => {
+          setNav(step.nav);
+          window.requestAnimationFrame(() => {
+            scrollToAppSection(step.scrollId);
+            if (step.openOperateMore) {
+              const det = document.querySelector("details.ux-operate-advanced");
+              if (det) det.open = true;
+            }
+          });
+        };
+      } else {
+        btn.textContent = "";
+        btn.onclick = null;
+        btn.classList.add("hidden");
+      }
       wrap.classList.remove("hidden");
     }
 

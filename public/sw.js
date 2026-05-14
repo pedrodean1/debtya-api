@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v112-closed-testing-version-bump";
+const SW_CACHE = "debtya-static-v114-ui-polish-next-step-callout";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
