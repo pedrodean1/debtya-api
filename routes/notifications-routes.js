@@ -2,6 +2,7 @@ const axios = require("axios");
 const {
   VALID_CHANNELS,
   buildNextPaymentReminderPreview,
+  buildReminderDebugState,
   fetchNotificationPreferences,
   isProviderConfigured,
   normalizeNotificationPreferences,
@@ -95,6 +96,24 @@ function registerNotificationRoutes(app, deps) {
     }
   });
 
+  app.get("/notifications/reminder-debug", requireUser, async (req, res) => {
+    try {
+      if (!supabaseAdmin) return jsonError(res, 500, "Supabase is not configured");
+      const data = await buildReminderDebugState({
+        supabaseAdmin,
+        userId: req.user.id,
+        getIntentAmount,
+        env: process.env
+      });
+      return res.json(data);
+    } catch (error) {
+      if (appError) appError("[notifications/reminder-debug]", "notification_debug_failed");
+      return jsonError(res, 500, "Could not build reminder debug", {
+        error_code: "notification_debug_failed"
+      });
+    }
+  });
+
   app.post("/notifications/run-due-reminders", requireCronSecret, async (req, res) => {
     try {
       if (!supabaseAdmin) return jsonError(res, 500, "Supabase is not configured");
@@ -106,6 +125,18 @@ function registerNotificationRoutes(app, deps) {
         http: axios,
         forceTest
       });
+      console.log(
+        "[notifications/run-due-reminders]",
+        JSON.stringify({
+          force_test: !!forceTest,
+          scanned: result.scanned || 0,
+          eligible: result.eligible || 0,
+          sent: result.sent || 0,
+          skipped: result.skipped || 0,
+          failures: Array.isArray(result.errors) ? result.errors.length : 0,
+          reason_counts: result.reason_counts || {}
+        })
+      );
       return res.json(result);
     } catch (error) {
       if (appError) appError("[notifications/run-due-reminders]", "notification_cron_failed");

@@ -51,11 +51,32 @@ function makeSupabaseMock({
   plan = null,
   prefScanRows = null,
   cronLastUserReminderCreatedAtIso = null,
+  cronLastUserReminderMetadata = null,
   cronEventInsertCaptures = null
 } = {}) {
   let savedPreference = null;
   const rowsForCronScan = prefScanRows == null ? [] : prefScanRows;
   const inserts = cronEventInsertCaptures;
+  const eventRows = cronLastUserReminderCreatedAtIso
+    ? [{ created_at: cronLastUserReminderCreatedAtIso, metadata: cronLastUserReminderMetadata || {} }]
+    : [];
+  function eventSelectChain() {
+    const chain = {
+      eq() {
+        return chain;
+      },
+      order() {
+        return chain;
+      },
+      limit() {
+        return Promise.resolve({ data: eventRows, error: null });
+      },
+      maybeSingle() {
+        return Promise.resolve({ data: eventRows[0] || null, error: null });
+      }
+    };
+    return chain;
+  }
   const api = {
     get savedPreference() {
       return savedPreference;
@@ -165,32 +186,7 @@ function makeSupabaseMock({
             return Promise.resolve({ data: {}, error: null });
           },
           select() {
-            return {
-              eq() {
-                return {
-                  eq() {
-                    return {
-                      order() {
-                        return {
-                          limit() {
-                            return {
-                              maybeSingle() {
-                                return Promise.resolve({
-                                  data: cronLastUserReminderCreatedAtIso
-                                    ? { created_at: cronLastUserReminderCreatedAtIso }
-                                    : null,
-                                  error: null
-                                });
-                              }
-                            };
-                          }
-                        };
-                      }
-                    };
-                  }
-                };
-              }
-            };
+            return eventSelectChain();
           }
         };
       }
@@ -439,6 +435,88 @@ describe("routes/notifications-routes", () => {
     const res = await request(app).post("/notifications/send-test").send({ channel: "email" });
     assert.equal(res.status, 400);
     assert.match(res.body.error, /Email reminders are not enabled/);
+  });
+
+  it("reminder-debug devuelve email_consent_missing sin exponer datos sensibles", async () => {
+    const app = mount(
+      makeDeps({
+        supabaseAdmin: makeSupabaseMock({
+          pref: {
+            user_id: userId,
+            email_enabled: true,
+            sms_enabled: false,
+            preferred_channel: "email",
+            consent_email_at: null,
+            reminder_frequency: "weekly",
+            preferred_language: "en"
+          },
+          ...reminderRows()
+        })
+      })
+    );
+    const res = await request(app).get("/notifications/reminder-debug");
+    assert.equal(res.status, 200);
+    assert.equal(res.body.ok, true);
+    assert.equal(res.body.has_preferences, true);
+    assert.equal(res.body.email_enabled, true);
+    assert.equal(res.body.has_email_consent, false);
+    assert.equal(res.body.has_next_intent, true);
+    assert.equal(res.body.reason_if_not_eligible, "email_consent_missing");
+    assert.equal(Object.prototype.hasOwnProperty.call(res.body, "phone_number"), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(res.body, "email"), false);
+  });
+
+  it("reminder-debug devuelve no_next_manual_first_intent cuando no hay intent", async () => {
+    const app = mount(
+      makeDeps({
+        supabaseAdmin: makeSupabaseMock({
+          pref: {
+            user_id: userId,
+            email_enabled: true,
+            sms_enabled: false,
+            preferred_channel: "email",
+            consent_email_at: "2026-05-01T00:00:00.000Z",
+            reminder_frequency: "weekly",
+            preferred_language: "en"
+          },
+          intents: [],
+          debt: null,
+          plan: null
+        })
+      })
+    );
+    const res = await request(app).get("/notifications/reminder-debug");
+    assert.equal(res.status, 200);
+    assert.equal(res.body.reason_if_not_eligible, "no_next_manual_first_intent");
+    assert.equal(res.body.has_next_intent, false);
+    assert.equal(res.body.next_intent_status, null);
+    assert.equal(res.body.next_intent_amount, null);
+  });
+
+  it("reminder-debug muestra cooldown activo y proximo permitido", async () => {
+    const app = mount(
+      makeDeps({
+        supabaseAdmin: makeSupabaseMock({
+          pref: {
+            user_id: userId,
+            email_enabled: true,
+            sms_enabled: false,
+            preferred_channel: "email",
+            consent_email_at: "2026-05-01T00:00:00.000Z",
+            reminder_frequency: "weekly",
+            preferred_language: "en"
+          },
+          ...reminderRows(),
+          cronLastUserReminderCreatedAtIso: new Date(Date.now() - 60 * 60 * 1000).toISOString()
+        })
+      })
+    );
+    const res = await request(app).get("/notifications/reminder-debug");
+    assert.equal(res.status, 200);
+    assert.equal(res.body.cooldown_active, true);
+    assert.equal(res.body.reason_if_not_eligible, "cooldown_active");
+    assert.ok(res.body.last_email_event_at);
+    assert.ok(res.body.next_allowed_at);
   });
 
   it("run-due-reminders responde 401 sin x-cron-secret", async () => {

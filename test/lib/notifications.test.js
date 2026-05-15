@@ -442,8 +442,33 @@ describe("runDuePaymentReminders cron (V100)", () => {
   const debtRow = { id: debtId, user_id: userId, name: "CBUSASEARS", balance: 1000 };
   const planRow = { strategy: "avalanche" };
 
-  function makeCronSupabase({ prefRows, lastUserReminderIso = null }) {
+  function makeCronSupabase({
+    prefRows,
+    lastUserReminderIso = null,
+    lastUserReminderMetadata = null,
+    intentRows = [intentRow]
+  }) {
     const inserts = [];
+    const eventRows = lastUserReminderIso
+      ? [{ created_at: lastUserReminderIso, metadata: lastUserReminderMetadata || {} }]
+      : [];
+    function eventSelectChain() {
+      const chain = {
+        eq() {
+          return chain;
+        },
+        order() {
+          return chain;
+        },
+        limit() {
+          return Promise.resolve({ data: eventRows, error: null });
+        },
+        maybeSingle() {
+          return Promise.resolve({ data: eventRows[0] || null, error: null });
+        }
+      };
+      return chain;
+    }
     const supabaseAdmin = {
       inserts,
       auth: {
@@ -468,30 +493,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
               return Promise.resolve({ data: null, error: null });
             },
             select() {
-              return {
-                eq() {
-                  return {
-                    eq() {
-                      return {
-                        order() {
-                          return {
-                            limit() {
-                              return {
-                                maybeSingle() {
-                                  return Promise.resolve({
-                                    data: lastUserReminderIso ? { created_at: lastUserReminderIso } : null,
-                                    error: null
-                                  });
-                                }
-                              };
-                            }
-                          };
-                        }
-                      };
-                    }
-                  };
-                }
-              };
+              return eventSelectChain();
             }
           };
         }
@@ -506,7 +508,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
                         order() {
                           return {
                             limit() {
-                              return Promise.resolve({ data: [intentRow], error: null });
+                              return Promise.resolve({ data: intentRows, error: null });
                             }
                           };
                         }
@@ -603,6 +605,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
       assert.equal(out.ok, true);
       assert.equal(out.sent, 0);
       assert.equal(out.eligible, 0);
+      assert.equal(out.reason_counts.cooldown_active, 1);
       assert.equal(calls, 0);
     } finally {
       if (prev == null) delete process.env.RESEND_API_KEY;
@@ -712,6 +715,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
         sendReminderFn: async () => ({ channel: "email", sent: true, provider: "resend" })
       });
       assert.equal(out.sent, 0);
+      assert.equal(out.reason_counts.force_email_not_consented, 1);
       assert.equal(sb.inserts.length, 0);
     } finally {
       if (prev == null) delete process.env.RESEND_API_KEY;
@@ -751,6 +755,83 @@ describe("runDuePaymentReminders cron (V100)", () => {
       else process.env.RESEND_API_KEY = prev;
     }
   });
+
+  it("cron normal usuario sin consentimiento no es elegible", async () => {
+    const prev = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "test";
+    try {
+      const sb = makeCronSupabase({
+        prefRows: [prefEligible({ consent_email_at: null, sms_enabled: false, preferred_channel: "email" })],
+        lastUserReminderIso: null
+      });
+      const out = await runDuePaymentReminders({
+        supabaseAdmin: sb,
+        getIntentAmount: (intent) => Number(intent.amount || 0),
+        now: fixedNow,
+        env: process.env,
+        sendReminderFn: async () => ({ channel: "email", sent: true, provider: "resend" })
+      });
+      assert.equal(out.sent, 0);
+      assert.equal(out.eligible, 0);
+      assert.equal(out.reason_counts.email_consent_missing, 1);
+      assert.equal(sb.inserts.length, 0);
+    } finally {
+      if (prev == null) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = prev;
+    }
+  });
+
+  it("cron normal usuario con consentimiento pero sin intent no es elegible", async () => {
+    const prev = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "test";
+    try {
+      const sb = makeCronSupabase({
+        prefRows: [prefEligible({ sms_enabled: false, preferred_channel: "email" })],
+        intentRows: []
+      });
+      const out = await runDuePaymentReminders({
+        supabaseAdmin: sb,
+        getIntentAmount: (intent) => Number(intent.amount || 0),
+        now: fixedNow,
+        env: process.env,
+        sendReminderFn: async () => ({ channel: "email", sent: true, provider: "resend" })
+      });
+      assert.equal(out.sent, 0);
+      assert.equal(out.eligible, 0);
+      assert.equal(out.reason_counts.no_next_manual_first_intent, 1);
+      assert.equal(sb.inserts.length, 0);
+    } finally {
+      if (prev == null) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = prev;
+    }
+  });
+
+  it("cron normal ignora eventos force_test para cooldown", async () => {
+    const prev = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "test";
+    try {
+      const sb = makeCronSupabase({
+        prefRows: [prefEligible({ sms_enabled: false, preferred_channel: "email" })],
+        lastUserReminderIso: "2030-06-14T12:00:00.000Z",
+        lastUserReminderMetadata: { force_test: true }
+      });
+      const out = await runDuePaymentReminders({
+        supabaseAdmin: sb,
+        getIntentAmount: (intent) => Number(intent.amount || 0),
+        now: fixedNow,
+        env: process.env,
+        sendReminderFn: async () => ({ channel: "email", sent: true, provider: "resend" })
+      });
+      assert.equal(out.sent, 1);
+      assert.equal(out.eligible, 1);
+      assert.equal(out.reason_counts.cooldown_active, undefined);
+      assert.equal(sb.inserts.length, 1);
+    } finally {
+      if (prev == null) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = prev;
+    }
+  });
+
   it("cron response sanitiza error crudo del provider", async () => {
     const prev = process.env.RESEND_API_KEY;
     process.env.RESEND_API_KEY = "test";
