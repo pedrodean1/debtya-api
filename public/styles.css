@@ -221,7 +221,8 @@
     #historyPanel{order:7}
     #accountsPanel{order:8}
     #integrationsNotice{order:9}
-    .footer-legal{order:10}
+    #accountDeletionSection{order:10}
+    .footer-legal{order:11}
 
     .stack{
       display:grid;
