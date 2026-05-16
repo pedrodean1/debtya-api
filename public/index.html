@@ -430,7 +430,7 @@
             aria-labelledby="dashboardNextStepHeading"
           >
             <h3 id="dashboardNextStepHeading" class="dashboard-next-step-heading">
-              <span data-i18n="dashboard_next_step_title">Tu próximo paso</span>
+              <span data-i18n="dashboard_next_step_title">Your next step</span>
             </h3>
             <p id="dashboardNextStepPrimary" class="dashboard-next-step-primary"></p>
             <p id="dashboardNextStepSecondary" class="dashboard-next-step-secondary hidden"></p>
@@ -488,22 +488,22 @@
           </div>
 
           <section id="payoffSimulationCard" class="payoff-simulation-card" aria-live="polite">
-            <h3>Simulación de salida de deuda</h3>
+            <h3 data-i18n="sim_title">Debt payoff simulation</h3>
             <div class="payoff-sim-grid">
               <div class="payoff-sim-item">
-                <div class="k">Balance total de deudas</div>
+                <div class="k" data-i18n="sim_total_debt_balance">Total debt balance</div>
                 <div id="simTotalDebtBalance" class="v">$0.00</div>
               </div>
               <div class="payoff-sim-item">
-                <div class="k">Pagos mínimos mensuales estimados</div>
+                <div class="k" data-i18n="sim_total_min_payment">Estimated monthly minimum payments</div>
                 <div id="simTotalMinimumPayment" class="v">$0.00</div>
               </div>
               <div class="payoff-sim-item payoff-sim-item-wide">
-                <div class="k">Deuda más urgente por APR</div>
-                <div id="simUrgentDebtByApr" class="v">Sin datos de APR por ahora.</div>
+                <div class="k" data-i18n="sim_urgent_debt_by_apr">Most urgent debt by APR</div>
+                <div id="simUrgentDebtByApr" class="v" data-i18n="sim_no_apr_data">No APR data yet.</div>
               </div>
               <div class="payoff-sim-item payoff-sim-item-wide">
-                <div class="k">Estrategia recomendada</div>
+                <div class="k" data-i18n="sim_recommended_strategy">Recommended strategy</div>
                 <div id="simRecommendedStrategy" class="v">Snowball</div>
               </div>
             </div>
@@ -512,13 +512,13 @@
               <p id="simSavingsLine" class="sub payoff-savings-line" style="margin:10px 0 0;"></p>
               <p id="simMonthsLine" class="sub payoff-savings-line" style="margin:4px 0 0;"></p>
               <p class="sub payoff-savings-disclaimer" style="margin:8px 0 0;font-size:11px;color:var(--muted);">
-                Estimación aproximada basada en tu perfil
+                <span data-i18n="sim_savings_disclaimer">Approximate estimate based on your profile</span>
               </p>
             </div>
-            <p class="sub" style="margin:10px 0 0;">Esto es una simulación. No ejecuta pagos reales.</p>
+            <p class="sub" style="margin:10px 0 0;" data-i18n="sim_manual_first_note">This is a simulation. It does not execute real payments.</p>
             <div class="payoff-sim-help">
-              <p style="margin:0 0 4px;"><strong>Avalanche:</strong> pagar primero APR más alto para reducir intereses.</p>
-              <p style="margin:0;"><strong>Snowball:</strong> pagar primero balance bajo para cerrar cuentas más rápido.</p>
+              <p style="margin:0 0 4px;" data-i18n-html="sim_avalanche_help_html"><strong>Avalanche:</strong> pay the highest APR first to reduce interest.</p>
+              <p style="margin:0;" data-i18n-html="sim_snowball_help_html"><strong>Snowball:</strong> pay the lowest balance first to close accounts faster.</p>
             </div>
           </section>
 

@@ -547,8 +547,33 @@
         sw_connect_err_verify: "That code did not work. Request a new code and try again.",
         sw_connect_err_unexpected_link: "The link step returned an unexpected status. Try again or contact support.",
         sw_connect_unavailable: "Debt lookup is not available right now. Please try again later.",
+        sim_title: "Debt payoff simulation",
+        sim_total_debt_balance: "Total debt balance",
+        sim_total_min_payment: "Estimated monthly minimum payments",
+        sim_urgent_debt_by_apr: "Most urgent debt by APR",
+        sim_no_apr_data: "No APR data yet.",
+        sim_recommended_strategy: "Recommended strategy",
+        sim_savings_disclaimer: "Approximate estimate based on your profile",
+        sim_manual_first_note: "This is a simulation. It does not execute real payments.",
+        sim_avalanche_help_html: "<strong>Avalanche:</strong> pay the highest APR first to reduce interest.",
+        sim_snowball_help_html: "<strong>Snowball:</strong> pay the lowest balance first to close accounts faster.",
+        sim_unnamed_debt: "Unnamed debt",
+        sim_savings_line: "Estimated savings: ~{amount}",
+        sim_months_reduced_one: "Estimated time reduced: ~1 month",
+        sim_months_reduced_many: "Estimated time reduced: ~{months} months",
         sim_counts_active_label: "Active debts",
         sim_counts_line_placeholder: "Active debts: 0",
+        intent_reason_high_apr: "High priority due to high APR ({apr}%)",
+        intent_reason_low_balance: "Low balance; could be paid off sooner",
+        intent_reason_plan: "Recommended payment from your plan",
+        intent_reason_current_balance: "Current balance: {amount}",
+        intent_reason_interest_missing: "Interest rate not available",
+        intent_reason_monthly_interest: "Approx. monthly interest: {amount}",
+        intent_reason_interest_low: "Interest is currently very low",
+        intent_reason_avalanche: "Reduces total interest",
+        intent_reason_snowball: "Helps close accounts sooner",
+        plan_debug_missing_hint: "Use Save plan, Refresh next payment line, or Calculate next payment to call POST /manual-plan/rebuild.",
+        manual_pay_balance_not_applied: "The server did not lower the debt balance.",
         debt_source_plaid: "External snapshot",
         debt_method_payable: "Payable liability",
         debt_method_info_only: "Informational",
@@ -1298,8 +1323,33 @@
         sw_connect_err_verify: "Ese codigo no funciono. Pide uno nuevo e intentalo.",
         sw_connect_err_unexpected_link: "El enlace devolvio un estado inesperado. Reintenta o contacta soporte.",
         sw_connect_unavailable: "La busqueda de deudas no esta disponible ahora. Intentalo mas tarde.",
+        sim_title: "Simulacion de salida de deuda",
+        sim_total_debt_balance: "Balance total de deudas",
+        sim_total_min_payment: "Pagos minimos mensuales estimados",
+        sim_urgent_debt_by_apr: "Deuda mas urgente por APR",
+        sim_no_apr_data: "Sin datos de APR por ahora.",
+        sim_recommended_strategy: "Estrategia recomendada",
+        sim_savings_disclaimer: "Estimacion aproximada basada en tu perfil",
+        sim_manual_first_note: "Esto es una simulacion. No ejecuta pagos reales.",
+        sim_avalanche_help_html: "<strong>Avalanche:</strong> pagar primero el APR mas alto para reducir intereses.",
+        sim_snowball_help_html: "<strong>Snowball:</strong> pagar primero el balance bajo para cerrar cuentas mas rapido.",
+        sim_unnamed_debt: "Deuda sin nombre",
+        sim_savings_line: "Ahorro estimado: ~{amount}",
+        sim_months_reduced_one: "Tiempo estimado reducido: ~1 mes",
+        sim_months_reduced_many: "Tiempo estimado reducido: ~{months} meses",
         sim_counts_active_label: "Deudas activas",
         sim_counts_line_placeholder: "Deudas activas: 0",
+        intent_reason_high_apr: "Alta prioridad por APR alto ({apr}%)",
+        intent_reason_low_balance: "Balance bajo; se puede eliminar rapido",
+        intent_reason_plan: "Pago recomendado segun tu plan",
+        intent_reason_current_balance: "Balance actual: {amount}",
+        intent_reason_interest_missing: "Tasa de interes no disponible",
+        intent_reason_monthly_interest: "Intereses mensuales aprox: {amount}",
+        intent_reason_interest_low: "Intereses muy bajos actualmente",
+        intent_reason_avalanche: "Reduce intereses totales",
+        intent_reason_snowball: "Ayuda a cerrar cuentas mas rapido",
+        plan_debug_missing_hint: "Usa Guardar plan, Actualizar linea de proximo pago o Calcular proximo pago para llamar POST /manual-plan/rebuild.",
+        manual_pay_balance_not_applied: "El servidor no rebajo el balance de la deuda.",
         debt_source_plaid: "Captura externa",
         debt_method_payable: "Pasivo pagable",
         debt_method_info_only: "Informativa",
@@ -1759,6 +1809,7 @@
         renderIntents();
         renderTrace();
         renderAccounts();
+        renderPayoffSimulation();
         renderPlan();
         syncRuleModeFields();
         updateRuleModeHint();
@@ -2859,7 +2910,7 @@
       if (iid == null || String(iid).trim() === "") return null;
       const debtId = m.priorityDebtId ?? m.priority_debt_id ?? res?.intent?.debt_id ?? null;
       const nameRaw = m.priorityDebtName ?? m.priority_debt_name ?? "";
-      const displayName = String(nameRaw || "esta deuda").trim() || "esta deuda";
+      const displayName = String(nameRaw || t("dashboard_debt_fallback")).trim() || t("dashboard_debt_fallback");
       const strat =
         String(m.strategy || "avalanche").toLowerCase() === "snowball" ? "snowball" : "avalanche";
       const amt = Number(m.amount);
@@ -2901,7 +2952,7 @@
               : null;
 
       const nameRaw = m.priorityDebtName ?? m.priority_debt_name ?? "";
-      const displayName = String(nameRaw || "esta deuda").trim() || "esta deuda";
+      const displayName = String(nameRaw || t("dashboard_debt_fallback")).trim() || t("dashboard_debt_fallback");
       const baseMeta = intent ? normalizeIntentMetadata(intent.metadata) : {};
       const stratRaw = m.strategy ?? baseMeta.strategy ?? "avalanche";
       const strat = String(stratRaw || "avalanche").toLowerCase() === "snowball" ? "snowball" : "avalanche";
@@ -2988,7 +3039,7 @@
       const amt = toNum(snap.total_amount ?? snap.amount);
       state.manualPriorityAmount = Number.isFinite(amt) && amt >= 0 ? amt : 0;
       state.manualPriorityDebtName =
-        String(snap.debt_name || snap.creditor_name || snap.name || "").trim() || "esta deuda";
+        String(snap.debt_name || snap.creditor_name || snap.name || "").trim() || t("dashboard_debt_fallback");
       state.manualPriorityIntentSnapshot = snap;
       state.pendingManualConfirmedIntentId = null;
     }
@@ -3218,8 +3269,7 @@
         out.build_http_error = raw.message;
       }
       if (manualStr === "missing") {
-        out.hint =
-          "Usa Guardar plan, Actualizar linea de proximo pago o Calcular proximo pago para llamar POST /manual-plan/rebuild.";
+        out.hint = t("plan_debug_missing_hint");
       }
 
       body.textContent = JSON.stringify(out, null, 2);
@@ -3761,7 +3811,7 @@
                 !(da.skipped === true && da.reason === "confirmacion_en_progreso")
               ) {
                 throw new Error(
-                  da.reason || da.error || "El servidor no rebajó el balance de la deuda."
+                  da.reason || da.error || t("manual_pay_balance_not_applied")
                 );
               }
               applyManualConfirmDebtToLocalState(confirmRes);
@@ -3924,10 +3974,10 @@
 
       if (urgentDebt) {
         const debtName =
-          cleanVisibleDebtName(urgentDebt.name) || String(urgentDebt.id || "").trim() || "Deuda sin nombre";
+          cleanVisibleDebtName(urgentDebt.name) || String(urgentDebt.id || "").trim() || t("sim_unnamed_debt");
         urgentEl.textContent = `${debtName} (${urgentApr.toFixed(2)}% APR)`;
       } else {
-        urgentEl.textContent = "Sin datos de APR por ahora.";
+        urgentEl.textContent = t("sim_no_apr_data");
       }
 
       const aprValues = debts
@@ -3939,7 +3989,7 @@
       const savingsLineEl = $("simSavingsLine");
       const monthsLineEl = $("simMonthsLine");
       if (savingsLineEl && monthsLineEl) {
-        savingsLineEl.textContent = `Ahorro estimado: ~${fmtMoney(savingsEstimate)}`;
+        savingsLineEl.textContent = tf("sim_savings_line", { amount: fmtMoney(savingsEstimate) });
         let reducedMonths = 1;
         if (savingsEstimate > 0 && totalMinimumPayment > 0) {
           reducedMonths = Math.round(savingsEstimate / Math.max(totalMinimumPayment * 0.25, 20));
@@ -3949,8 +3999,8 @@
         }
         monthsLineEl.textContent =
           reducedMonths === 1
-            ? "Tiempo estimado reducido: ~1 mes"
-            : `Tiempo estimado reducido: ~${reducedMonths} meses`;
+            ? t("sim_months_reduced_one")
+            : tf("sim_months_reduced_many", { months: reducedMonths });
       }
     }
 
@@ -4000,35 +4050,35 @@
 
         const parts = [];
         if (apr !== null && apr >= 20) {
-          parts.push(`Alta prioridad por APR alto (${apr.toFixed(0)}%)`);
+          parts.push(tf("intent_reason_high_apr", { apr: apr.toFixed(0) }));
         } else if (Number.isFinite(balance) && balance < 500) {
-          parts.push("Balance bajo, se puede eliminar r\u00E1pido");
+          parts.push(t("intent_reason_low_balance"));
         } else {
-          parts.push("Pago recomendado seg\u00fan tu plan");
+          parts.push(t("intent_reason_plan"));
         }
         if (Number.isFinite(balance)) {
-          parts.push(`Balance actual: ${fmtMoney(balance)}`);
+          parts.push(tf("intent_reason_current_balance", { amount: fmtMoney(balance) }));
         }
         const hasValidApr = apr !== null && Number.isFinite(apr) && apr > 0;
         if (!hasValidApr) {
-          parts.push("Tasa de inter\u00E9s no disponible");
+          parts.push(t("intent_reason_interest_missing"));
         } else if (Number.isFinite(balance) && balance >= 0) {
           const monthlyInterest = (balance * apr) / 100 / 12;
           if (!Number.isFinite(monthlyInterest)) {
-            parts.push("Tasa de inter\u00E9s no disponible");
+            parts.push(t("intent_reason_interest_missing"));
           } else if (monthlyInterest >= 1) {
-            parts.push(`Intereses mensuales aprox: ${fmtMoney(monthlyInterest)}`);
+            parts.push(tf("intent_reason_monthly_interest", { amount: fmtMoney(monthlyInterest) }));
           } else {
-            parts.push("Intereses muy bajos actualmente");
+            parts.push(t("intent_reason_interest_low"));
           }
         }
-        if (isAvalanche) parts.push("Reduce intereses totales");
-        if (isSnowball) parts.push("Ayuda a cerrar cuentas m\u00E1s r\u00E1pido");
+        if (isAvalanche) parts.push(t("intent_reason_avalanche"));
+        if (isSnowball) parts.push(t("intent_reason_snowball"));
 
         const inner = parts.map((p) => escapeHtml(p)).join("<br />");
         return `<div class="intent-reason">${inner}</div>`;
       } catch {
-        return `<div class="intent-reason">${escapeHtml("Pago recomendado seg\u00fan tu plan")}</div>`;
+        return `<div class="intent-reason">${escapeHtml(t("intent_reason_plan"))}</div>`;
       }
     }
 
