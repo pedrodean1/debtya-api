@@ -547,14 +547,15 @@
         sw_connect_err_verify: "That code did not work. Request a new code and try again.",
         sw_connect_err_unexpected_link: "The link step returned an unexpected status. Try again or contact support.",
         sw_connect_unavailable: "Debt lookup is not available right now. Please try again later.",
-        sim_title: "Debt payoff simulation",
+        sim_title: "Payoff simulation",
         sim_total_debt_balance: "Total debt balance",
-        sim_total_min_payment: "Estimated monthly minimum payments",
-        sim_urgent_debt_by_apr: "Most urgent debt by APR",
+        sim_total_min_payment: "Total minimum payment",
+        sim_urgent_debt_by_apr: "Highest APR debt",
         sim_no_apr_data: "No APR data yet.",
         sim_recommended_strategy: "Recommended strategy",
-        sim_savings_disclaimer: "Approximate estimate based on your profile",
-        sim_manual_first_note: "This is a simulation. It does not execute real payments.",
+        sim_savings_disclaimer: "DebtYa estimates are educational and may vary.",
+        sim_manual_first_note:
+          "This is a simulation only. DebtYa does not move money or execute payments—you pay your lender yourself.",
         sim_avalanche_help_html: "<strong>Avalanche:</strong> pay the highest APR first to reduce interest.",
         sim_snowball_help_html: "<strong>Snowball:</strong> pay the lowest balance first to close accounts faster.",
         sim_unnamed_debt: "Unnamed debt",
@@ -1323,14 +1324,15 @@
         sw_connect_err_verify: "Ese codigo no funciono. Pide uno nuevo e intentalo.",
         sw_connect_err_unexpected_link: "El enlace devolvio un estado inesperado. Reintenta o contacta soporte.",
         sw_connect_unavailable: "La busqueda de deudas no esta disponible ahora. Intentalo mas tarde.",
-        sim_title: "Simulacion de salida de deuda",
-        sim_total_debt_balance: "Balance total de deudas",
-        sim_total_min_payment: "Pagos minimos mensuales estimados",
-        sim_urgent_debt_by_apr: "Deuda mas urgente por APR",
+        sim_title: "Simulaci\u00F3n de salida de deuda",
+        sim_total_debt_balance: "Saldo total de deuda",
+        sim_total_min_payment: "Pago m\u00EDnimo total",
+        sim_urgent_debt_by_apr: "Deuda m\u00E1s urgente por APR",
         sim_no_apr_data: "Sin datos de APR por ahora.",
         sim_recommended_strategy: "Estrategia recomendada",
-        sim_savings_disclaimer: "Estimacion aproximada basada en tu perfil",
-        sim_manual_first_note: "Esto es una simulacion. No ejecuta pagos reales.",
+        sim_savings_disclaimer: "Las estimaciones de DebtYa son educativas y pueden variar.",
+        sim_manual_first_note:
+          "Esto es solo una simulaci\u00F3n. DebtYa no mueve dinero ni ejecuta pagos: pagas t\u00FA mismo a tu acreedor.",
         sim_avalanche_help_html: "<strong>Avalanche:</strong> pagar primero el APR mas alto para reducir intereses.",
         sim_snowball_help_html: "<strong>Snowball:</strong> pagar primero el balance bajo para cerrar cuentas mas rapido.",
         sim_unnamed_debt: "Deuda sin nombre",
@@ -1793,6 +1795,19 @@
       if (helpFabEl) helpFabEl.setAttribute("aria-label", t("help_fab_aria"));
     }
 
+    function applyPayoffSimulationCardI18n() {
+      const root = document.getElementById("payoffSimulationCard");
+      if (!root) return;
+      root.querySelectorAll("[data-i18n]").forEach((el) => {
+        const key = el.getAttribute("data-i18n");
+        if (key) el.textContent = t(key);
+      });
+      root.querySelectorAll("[data-i18n-html]").forEach((el) => {
+        const key = el.getAttribute("data-i18n-html");
+        if (key) el.innerHTML = t(key);
+      });
+    }
+
     function setUiLang(next) {
       uiLang = next === "es" ? "es" : "en";
       localStorage.setItem(I18N_STORAGE_KEY, uiLang);
@@ -2049,6 +2064,7 @@
       appView.classList.remove("hidden");
       patchOverviewPanelLayout();
       mountFallbackDisconnectFabIfMissing();
+      applyPayoffSimulationCardI18n();
       if (debtyaLegacyBankDebugEnabled()) void refreshSpinwheelPayableDiag();
     }
 
@@ -3950,6 +3966,8 @@
       const strategyEl = $("simRecommendedStrategy");
       const countsEl = $("simCountsLine");
       if (!totalEl || !minEl || !urgentEl || !strategyEl || !countsEl) return;
+
+      applyPayoffSimulationCardI18n();
 
       const debts = (Array.isArray(state.debts) ? state.debts : []).filter((d) => isDebtActiveForDashboard(d));
       const totalDebtBalance = debts.reduce((sum, d) => sum + toNum(d.balance), 0);
