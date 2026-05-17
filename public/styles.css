@@ -1676,7 +1676,11 @@
     }
 
     /* --- Dashboard layout polish (appView) --- */
-    .page-endcap{display:contents}
+    .page-endcap{
+      order:99;
+      display:grid;
+      gap:14px;
+    }
 
     #appView .page-grid{gap:14px}
     #appView .page-grid .card{
