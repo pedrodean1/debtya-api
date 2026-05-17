@@ -1,9 +1,7 @@
-const SW_CACHE = "debtya-static-v114-ui-polish-next-step-callout";
+const SW_CACHE = "debtya-static-v116-sim-i18n-sw-network-first";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
-  "/styles.css",
-  "/app.js",
   "/manifest.webmanifest",
   "/logo.png",
   "/icons/favicon-32.png",
@@ -32,13 +30,16 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+function isVersionedScriptOrStyle(url) {
+  return url.pathname === "/app.js" || url.pathname === "/styles.css";
+}
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Never intercept caching for dynamic API-style paths (GET JSON, auth, etc.).
   const bypassPrefixes = [
     "/api/",
     "/auth/",
@@ -72,6 +73,21 @@ self.addEventListener("fetch", (event) => {
     destination === "image" ||
     destination === "font" ||
     url.pathname === "/manifest.webmanifest";
+
+  if (isStaticAsset && isVersionedScriptOrStyle(url)) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(SW_CACHE).then((cache) => cache.put(req, copy)).catch(() => null);
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
 
   if (isStaticAsset) {
     event.respondWith(

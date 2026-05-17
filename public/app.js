@@ -1745,10 +1745,59 @@
       }
     };
 
+    const SIM_UI_FALLBACK = {
+      en: {
+        sim_title: "Payoff simulation",
+        sim_total_debt_balance: "Total debt balance",
+        sim_total_min_payment: "Total minimum payment",
+        sim_urgent_debt_by_apr: "Highest APR debt",
+        sim_recommended_strategy: "Recommended strategy",
+        sim_savings_disclaimer: "DebtYa estimates are educational and may vary.",
+        sim_manual_first_note:
+          "This is a simulation only. DebtYa does not move money or execute payments—you pay your lender yourself.",
+        sim_avalanche_help_html:
+          "<strong>Avalanche:</strong> pay the highest APR first to reduce interest.",
+        sim_snowball_help_html:
+          "<strong>Snowball:</strong> pay the lowest balance first to close accounts faster."
+      },
+      es: {
+        sim_title: "Simulaci\u00F3n de salida de deuda",
+        sim_total_debt_balance: "Saldo total de deuda",
+        sim_total_min_payment: "Pago m\u00EDnimo total",
+        sim_urgent_debt_by_apr: "Deuda m\u00E1s urgente por APR",
+        sim_recommended_strategy: "Estrategia recomendada",
+        sim_savings_disclaimer: "Las estimaciones de DebtYa son educativas y pueden variar.",
+        sim_manual_first_note:
+          "Esto es solo una simulaci\u00F3n. DebtYa no mueve dinero ni ejecuta pagos: pagas t\u00FA mismo a tu acreedor.",
+        sim_avalanche_help_html:
+          "<strong>Avalanche:</strong> pagar primero el APR m\u00E1s alto para reducir intereses.",
+        sim_snowball_help_html:
+          "<strong>Snowball:</strong> pagar primero el balance bajo para cerrar cuentas m\u00E1s r\u00E1pido."
+      }
+    };
+
+    const SIM_LABEL_BINDINGS = [
+      { id: "simTitleLabel", key: "sim_title", html: false },
+      { id: "simTotalDebtBalanceLabel", key: "sim_total_debt_balance", html: false },
+      { id: "simTotalMinPaymentLabel", key: "sim_total_min_payment", html: false },
+      { id: "simUrgentDebtByAprLabel", key: "sim_urgent_debt_by_apr", html: false },
+      { id: "simRecommendedStrategyLabel", key: "sim_recommended_strategy", html: false },
+      { id: "simSavingsDisclaimerLabel", key: "sim_savings_disclaimer", html: false },
+      { id: "simManualFirstNoteLabel", key: "sim_manual_first_note", html: false },
+      { id: "simAvalancheHelpHtml", key: "sim_avalanche_help_html", html: true },
+      { id: "simSnowballHelpHtml", key: "sim_snowball_help_html", html: true }
+    ];
+
     function t(key) {
       const pack = M[uiLang] || M.en;
       if (pack[key] !== undefined) return pack[key];
       return M.en[key] !== undefined ? M.en[key] : key;
+    }
+
+    function labelText(key, fallback) {
+      const translated = t(key);
+      if (translated !== key) return translated;
+      return fallback || key;
     }
 
     function tf(key, vars = {}) {
@@ -1769,11 +1818,15 @@
       document.documentElement.lang = uiLang;
       document.querySelectorAll("[data-i18n]").forEach((el) => {
         const key = el.getAttribute("data-i18n");
-        if (key) el.textContent = t(key);
+        if (!key) return;
+        const translated = t(key);
+        if (translated !== key) el.textContent = translated;
       });
       document.querySelectorAll("[data-i18n-html]").forEach((el) => {
         const key = el.getAttribute("data-i18n-html");
-        if (key) el.innerHTML = t(key);
+        if (!key) return;
+        const translated = t(key);
+        if (translated !== key) el.innerHTML = translated;
       });
       document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
         const key = el.getAttribute("data-i18n-placeholder");
@@ -1796,15 +1849,14 @@
     }
 
     function applyPayoffSimulationCardI18n() {
-      const root = document.getElementById("payoffSimulationCard");
-      if (!root) return;
-      root.querySelectorAll("[data-i18n]").forEach((el) => {
-        const key = el.getAttribute("data-i18n");
-        if (key) el.textContent = t(key);
-      });
-      root.querySelectorAll("[data-i18n-html]").forEach((el) => {
-        const key = el.getAttribute("data-i18n-html");
-        if (key) el.innerHTML = t(key);
+      const fbPack = SIM_UI_FALLBACK[uiLang] || SIM_UI_FALLBACK.en;
+      SIM_LABEL_BINDINGS.forEach(({ id, key, html }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const fallback = fbPack[key] || SIM_UI_FALLBACK.en[key] || "";
+        const text = labelText(key, fallback);
+        if (html) el.innerHTML = text;
+        else el.textContent = text;
       });
     }
 

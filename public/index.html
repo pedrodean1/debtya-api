@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-17-v115-sim-i18n" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-17-v116-sim-i18n-sw-network-first" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-17-v115-sim-i18n">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -82,7 +82,7 @@
     <div class="app">
       <div class="topbar">
         <div class="brand">
-          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-17-v115-sim-i18n" width="46" height="46" alt="DebtYa" />
+          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first" width="46" height="46" alt="DebtYa" />
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -269,7 +269,7 @@
         </div>
       </div>
       <div class="brand" style="margin-bottom:16px;">
-        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-17-v115-sim-i18n" width="46" height="46" alt="DebtYa" />
+        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first" width="46" height="46" alt="DebtYa" />
         <div>
           <h1 style="font-size:30px;margin:0;">DebtYa</h1>
           <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -396,7 +396,7 @@
         <div class="topbar topbar-app">
           <div class="topbar-brand-cell">
             <div class="brand">
-              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-17-v115-sim-i18n" width="44" height="44" alt="DebtYa" />
+              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first" width="44" height="44" alt="DebtYa" />
               <div>
                 <h1 style="margin:0;">DebtYa</h1>
                 <p id="welcomeText">Home</p>
@@ -488,22 +488,22 @@
           </div>
 
           <section id="payoffSimulationCard" class="payoff-simulation-card" aria-live="polite">
-            <h3 data-i18n="sim_title">Payoff simulation</h3>
+            <h3 id="simTitleLabel">Payoff simulation</h3>
             <div class="payoff-sim-grid">
               <div class="payoff-sim-item">
-                <div class="k" data-i18n="sim_total_debt_balance">Total debt balance</div>
+                <div id="simTotalDebtBalanceLabel" class="k">Total debt balance</div>
                 <div id="simTotalDebtBalance" class="v">$0.00</div>
               </div>
               <div class="payoff-sim-item">
-                <div class="k" data-i18n="sim_total_min_payment">Total minimum payment</div>
+                <div id="simTotalMinPaymentLabel" class="k">Total minimum payment</div>
                 <div id="simTotalMinimumPayment" class="v">$0.00</div>
               </div>
               <div class="payoff-sim-item payoff-sim-item-wide">
-                <div class="k" data-i18n="sim_urgent_debt_by_apr">Highest APR debt</div>
+                <div id="simUrgentDebtByAprLabel" class="k">Highest APR debt</div>
                 <div id="simUrgentDebtByApr" class="v">No APR data yet.</div>
               </div>
               <div class="payoff-sim-item payoff-sim-item-wide">
-                <div class="k" data-i18n="sim_recommended_strategy">Recommended strategy</div>
+                <div id="simRecommendedStrategyLabel" class="k">Recommended strategy</div>
                 <div id="simRecommendedStrategy" class="v">Snowball</div>
               </div>
             </div>
@@ -512,13 +512,13 @@
               <p id="simSavingsLine" class="sub payoff-savings-line" style="margin:10px 0 0;"></p>
               <p id="simMonthsLine" class="sub payoff-savings-line" style="margin:4px 0 0;"></p>
               <p class="sub payoff-savings-disclaimer" style="margin:8px 0 0;font-size:11px;color:var(--muted);">
-                <span data-i18n="sim_savings_disclaimer">DebtYa estimates are educational and may vary.</span>
+                <span id="simSavingsDisclaimerLabel">DebtYa estimates are educational and may vary.</span>
               </p>
             </div>
-            <p class="sub" style="margin:10px 0 0;" data-i18n="sim_manual_first_note">This is a simulation only. DebtYa does not move money or execute payments—you pay your lender yourself.</p>
+            <p id="simManualFirstNoteLabel" class="sub" style="margin:10px 0 0;">This is a simulation only. DebtYa does not move money or execute payments—you pay your lender yourself.</p>
             <div class="payoff-sim-help">
-              <p style="margin:0 0 4px;" data-i18n-html="sim_avalanche_help_html"><strong>Avalanche:</strong> pay the highest APR first to reduce interest.</p>
-              <p style="margin:0;" data-i18n-html="sim_snowball_help_html"><strong>Snowball:</strong> pay the lowest balance first to close accounts faster.</p>
+              <p id="simAvalancheHelpHtml" style="margin:0 0 4px;"><strong>Avalanche:</strong> pay the highest APR first to reduce interest.</p>
+              <p id="simSnowballHelpHtml" style="margin:0;"><strong>Snowball:</strong> pay the lowest balance first to close accounts faster.</p>
             </div>
           </section>
 
@@ -1297,7 +1297,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-17-v115-sim-i18n"></script>
+  <script src="/app.js?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
