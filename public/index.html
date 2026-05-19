@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-17-v116-sim-i18n-sw-network-first" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-19-v117-ui-dashboard-cleanup" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-19-v117-ui-dashboard-cleanup">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -82,7 +82,7 @@
     <div class="app">
       <div class="topbar">
         <div class="brand">
-          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first" width="46" height="46" alt="DebtYa" />
+          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-19-v117-ui-dashboard-cleanup" width="46" height="46" alt="DebtYa" />
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -269,7 +269,7 @@
         </div>
       </div>
       <div class="brand" style="margin-bottom:16px;">
-        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first" width="46" height="46" alt="DebtYa" />
+        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-19-v117-ui-dashboard-cleanup" width="46" height="46" alt="DebtYa" />
         <div>
           <h1 style="font-size:30px;margin:0;">DebtYa</h1>
           <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -396,7 +396,7 @@
         <div class="topbar topbar-app">
           <div class="topbar-brand-cell">
             <div class="brand">
-              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first" width="44" height="44" alt="DebtYa" />
+              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-19-v117-ui-dashboard-cleanup" width="44" height="44" alt="DebtYa" />
               <div>
                 <h1 style="margin:0;">DebtYa</h1>
                 <p id="welcomeText">Home</p>
@@ -458,13 +458,6 @@
                 <input type="checkbox" id="heroRulesEnabledSwitch" />
                 <span class="ux-switch-track" aria-hidden="true"></span>
               </label>
-            </div>
-          </div>
-
-          <div id="nextStepCallout" class="next-step-callout hidden">
-            <div class="next-step-callout-inner">
-              <p id="nextStepText" class="next-step-text"></p>
-              <button id="nextStepBtn" class="btn btn-primary" type="button"></button>
             </div>
           </div>
 
@@ -699,7 +692,7 @@
               <p class="helper-text" style="margin:0 0 12px;" data-i18n="paid_debts_sub">
                 These balances are at or near zero in DebtYa. They stay in your history — nothing is deleted.
               </p>
-              <div id="paidDebtsList" class="list"></div>
+              <div id="paidDebtsList" class="list list-scroll-sm paid-debts-list-scroll"></div>
             </div>
           </section>
 
@@ -888,15 +881,15 @@
                   <span data-i18n="notif_simple_email_consent">I agree to receive payment reminder emails from DebtYa.</span>
                 </label>
               </div>
-              <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
-                <input type="checkbox" id="simpleNotifSms" />
+              <label class="field ui-sms-channel-hidden" style="flex-direction:row;align-items:center;gap:10px;" hidden aria-hidden="true">
+                <input type="checkbox" id="simpleNotifSms" tabindex="-1" />
                 <span data-i18n="notif_simple_sms">SMS (optional)</span>
               </label>
-              <div id="simpleNotifPhoneWrap" class="field hidden">
+              <div id="simpleNotifPhoneWrap" class="field hidden ui-sms-channel-hidden" hidden aria-hidden="true">
                 <label class="label" for="simpleNotifPhone" data-i18n="notif_phone_lbl">Mobile phone (E.164)</label>
                 <input id="simpleNotifPhone" class="input" type="tel" autocomplete="tel" data-i18n-placeholder="notif_phone_ph" placeholder="+15551234567" />
               </div>
-              <div id="simpleNotifSmsConsentWrap" class="field hidden">
+              <div id="simpleNotifSmsConsentWrap" class="field hidden ui-sms-channel-hidden" hidden aria-hidden="true">
                 <label class="field" style="flex-direction:row;align-items:center;gap:10px;">
                   <input type="checkbox" id="simpleNotifSmsConsent" />
                   <span data-i18n="notif_simple_sms_consent"
@@ -1088,7 +1081,7 @@
               <div data-i18n-html="integrations_notice_html"></div>
             </section>
 
-            <section class="card" id="accountDeletionSection" aria-labelledby="accountDeletionHeading">
+            <section class="card hidden" id="accountDeletionSection" aria-labelledby="accountDeletionHeading" aria-hidden="true">
               <div class="section-head">
                 <div>
                   <h2 id="accountDeletionHeading" data-i18n="account_delete_title">Delete account</h2>
@@ -1297,7 +1290,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-17-v116-sim-i18n-sw-network-first"></script>
+  <script src="/app.js?v=debtya-2026-05-19-v117-ui-dashboard-cleanup"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

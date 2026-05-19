@@ -184,6 +184,8 @@
     const REQUEST_TIMEOUT_MS = 15000;
 
     const I18N_STORAGE_KEY = "debtya_ui_lang";
+    /** Smart reminders UI: SMS hidden in normal product surface; API fields unchanged. */
+    const SMS_CHANNEL_UI_ENABLED = false;
     const LS_BANK_EXCHANGED = "debtya_bank_exchange_done";
     const LS_BANK_DISCONNECT_PENDING = "debtya_open_bank_disconnect";
     let uiLang = localStorage.getItem(I18N_STORAGE_KEY) || "en";
@@ -279,7 +281,7 @@
         notif_simple_sms_consent:
           "You agree to receive messages from DebtYa. Message and data rates may apply. You can reply STOP to opt out.",
         notif_simple_save: "Save",
-        notif_simple_need_channel: "Choose email or SMS (or both) to receive reminders.",
+        notif_simple_need_channel: "Select email to receive reminders.",
         legal_link_terms: "Terms",
         legal_link_privacy: "Privacy",
         legal_link_delete_account: "Delete account",
@@ -1054,7 +1056,7 @@
         notif_simple_sms_consent:
           "Aceptas recibir mensajes de DebtYa. Pueden aplicar tarifas de mensajes y datos. Puedes responder STOP para darte de baja.",
         notif_simple_save: "Guardar",
-        notif_simple_need_channel: "Elige email o SMS (o ambos) para recibir recordatorios.",
+        notif_simple_need_channel: "Elige email para recibir recordatorios.",
         legal_link_terms: "Terminos",
         legal_link_privacy: "Privacidad",
         legal_link_delete_account: "Eliminar cuenta",
@@ -2827,35 +2829,7 @@
 
     function renderNextStepCallout() {
       const wrap = $("nextStepCallout");
-      const txt = $("nextStepText");
-      const btn = $("nextStepBtn");
-      if (!wrap || !txt || !btn) return;
-      if (!appView || appView.classList.contains("hidden")) {
-        wrap.classList.add("hidden");
-        return;
-      }
-
-      const step = computeNextStepAction();
-      txt.textContent = t(step.textKey);
-      if (step.btnKey) {
-        btn.textContent = t(step.btnKey);
-        btn.classList.remove("hidden");
-        btn.onclick = () => {
-          setNav(step.nav);
-          window.requestAnimationFrame(() => {
-            scrollToAppSection(step.scrollId);
-            if (step.openOperateMore) {
-              const det = document.querySelector("details.ux-operate-advanced");
-              if (det) det.open = true;
-            }
-          });
-        };
-      } else {
-        btn.textContent = "";
-        btn.onclick = null;
-        btn.classList.add("hidden");
-      }
-      wrap.classList.remove("hidden");
+      if (wrap) wrap.classList.add("hidden");
     }
 
     function isPlanDebugUrl() {
@@ -2884,15 +2858,19 @@
       const d = state.notificationPrefs || {};
       const master = !!$("simpleNotifMaster")?.checked;
       const emailOn = !!$("simpleNotifEmail")?.checked;
-      const smsOn = !!$("simpleNotifSms")?.checked;
+      const smsOn = SMS_CHANNEL_UI_ENABLED && !!$("simpleNotifSms")?.checked;
       const detail = $("simpleNotifDetailWrap");
       if (detail) detail.classList.toggle("hidden", !master);
       const phoneWrap = $("simpleNotifPhoneWrap");
-      if (phoneWrap) phoneWrap.classList.toggle("hidden", !master || !smsOn);
+      if (phoneWrap) {
+        phoneWrap.classList.toggle("hidden", !SMS_CHANNEL_UI_ENABLED || !master || !smsOn);
+      }
       const ec = $("simpleNotifEmailConsentWrap");
       if (ec) ec.classList.toggle("hidden", !master || !emailOn || !!d.consent_email_at);
       const sc = $("simpleNotifSmsConsentWrap");
-      if (sc) sc.classList.toggle("hidden", !master || !smsOn || !!d.consent_sms_at);
+      if (sc) {
+        sc.classList.toggle("hidden", !SMS_CHANNEL_UI_ENABLED || !master || !smsOn || !!d.consent_sms_at);
+      }
     }
 
     function syncSimpleNotifUIFromPrefs() {
@@ -2933,7 +2911,7 @@
         };
       }
       const emailOn = !!$("simpleNotifEmail")?.checked;
-      const smsOn = !!$("simpleNotifSms")?.checked;
+      const smsOn = SMS_CHANNEL_UI_ENABLED && !!$("simpleNotifSms")?.checked;
       let preferred = "none";
       if (emailOn && smsOn) preferred = "both";
       else if (emailOn) preferred = "email";
@@ -7671,7 +7649,7 @@
           const master = !!$("simpleNotifMaster")?.checked;
           if (master) {
             const emailOn = !!$("simpleNotifEmail")?.checked;
-            const smsOn = !!$("simpleNotifSms")?.checked;
+            const smsOn = SMS_CHANNEL_UI_ENABLED && !!$("simpleNotifSms")?.checked;
             if (!emailOn && !smsOn) {
               showMessage(globalMessage, t("notif_simple_need_channel"), "error");
               return;

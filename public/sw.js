@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v116-sim-i18n-sw-network-first";
+const SW_CACHE = "debtya-static-v117-ui-dashboard-cleanup";
 const STATIC_ASSETS = [
   "/",
   "/index.html",

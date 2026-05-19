@@ -2518,6 +2518,16 @@
       background:var(--surface-2, rgba(0,0,0,.03));
     }
 
+    .ui-sms-channel-hidden{
+      display:none !important;
+    }
+
+    .paid-debts-section .paid-debts-list-scroll{
+      max-height:min(360px,52vh);
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+
     .paid-debts-section .item-paid-debt .item-top{
       flex-wrap:wrap;
       gap:10px;
@@ -2536,6 +2546,9 @@
 
     /* Mobile polish for beta launch */
     @media (max-width: 640px){
+      .paid-debts-section .paid-debts-list-scroll{
+        max-height:min(300px,42vh);
+      }
       .app{
         padding-left:max(14px, env(safe-area-inset-left, 0px));
         padding-right:max(14px, env(safe-area-inset-right, 0px));
