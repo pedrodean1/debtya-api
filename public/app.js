@@ -924,6 +924,7 @@
         extra_pay_need_amount: "Enter an amount greater than zero.",
         extra_pay_need_debt: "Pick a debt with a balance first.",
         empty_active_debts: "No active balances here — see Paid debts below if you already cleared some.",
+        active_debts_list_title: "Active debts",
         paid_debts_title: "Paid debts",
         paid_debts_sub:
           "These balances are at or near zero in DebtYa. They stay in your history — nothing is deleted.",
@@ -1706,6 +1707,7 @@
         extra_pay_need_amount: "Escribe un monto mayor que cero.",
         extra_pay_need_debt: "Primero elige una deuda con saldo.",
         empty_active_debts: "No hay saldos activos aquí: revisa Deudas pagadas abajo si ya liquidaste alguna.",
+        active_debts_list_title: "Deudas activas",
         paid_debts_title: "Deudas pagadas",
         paid_debts_sub:
           "Estos saldos están en cero (o casi) en DebtYa. Siguen en tu historial: no se borran.",
