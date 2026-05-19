@@ -2522,6 +2522,12 @@
       display:none !important;
     }
 
+    .active-debts-list-scroll{
+      max-height:min(520px,62vh);
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+
     .paid-debts-section .paid-debts-list-scroll{
       max-height:min(360px,52vh);
       overflow-y:auto;
@@ -2546,6 +2552,9 @@
 
     /* Mobile polish for beta launch */
     @media (max-width: 640px){
+      .active-debts-list-scroll{
+        max-height:min(420px,56vh);
+      }
       .paid-debts-section .paid-debts-list-scroll{
         max-height:min(300px,42vh);
       }
