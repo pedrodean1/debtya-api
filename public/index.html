@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-05-19-v117-ui-dashboard-cleanup" />
+  <meta name="debtya-ui-rev" content="debtya-2026-05-19-v118-reminders-minimum-tracking" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-19-v117-ui-dashboard-cleanup">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-05-19-v118-reminders-minimum-tracking">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -82,7 +82,7 @@
     <div class="app">
       <div class="topbar">
         <div class="brand">
-          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-19-v117-ui-dashboard-cleanup" width="46" height="46" alt="DebtYa" />
+          <img class="brand-logo" src="/logo.png?v=debtya-2026-05-19-v118-reminders-minimum-tracking" width="46" height="46" alt="DebtYa" />
           <div>
             <h1 style="margin:0;">DebtYa</h1>
             <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -269,7 +269,7 @@
         </div>
       </div>
       <div class="brand" style="margin-bottom:16px;">
-        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-19-v117-ui-dashboard-cleanup" width="46" height="46" alt="DebtYa" />
+        <img class="brand-logo" src="/logo.png?v=debtya-2026-05-19-v118-reminders-minimum-tracking" width="46" height="46" alt="DebtYa" />
         <div>
           <h1 style="font-size:30px;margin:0;">DebtYa</h1>
           <p data-i18n="brand_tagline">Pay down debt with more structure and less stress.</p>
@@ -396,7 +396,7 @@
         <div class="topbar topbar-app">
           <div class="topbar-brand-cell">
             <div class="brand">
-              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-19-v117-ui-dashboard-cleanup" width="44" height="44" alt="DebtYa" />
+              <img class="brand-logo" src="/logo.png?v=debtya-2026-05-19-v118-reminders-minimum-tracking" width="44" height="44" alt="DebtYa" />
               <div>
                 <h1 style="margin:0;">DebtYa</h1>
                 <p id="welcomeText">Home</p>
@@ -897,7 +897,13 @@
                 </label>
               </div>
             </div>
-            <button type="button" id="simpleNotifSaveBtn" class="btn btn-primary" style="margin-top:12px;" data-i18n="notif_simple_save">
+            <label class="field" style="flex-direction:row;align-items:center;gap:10px;margin-top:12px;">
+              <input type="checkbox" id="autoTrackMinimumPayments" />
+              <span data-i18n="auto_track_minimum_label">Automatically track scheduled minimum payments</span>
+            </label>
+            <p class="helper-text" data-i18n="auto_track_minimum_hint">
+              DebtYa can automatically track your scheduled minimum payments when their due date arrives. DebtYa does not make the payment for you.
+            </p>            <button type="button" id="simpleNotifSaveBtn" class="btn btn-primary" style="margin-top:12px;" data-i18n="notif_simple_save">
               Save
             </button>
             <p id="simpleNotifWarn" class="notice warn hidden" role="status"></p>
@@ -1290,7 +1296,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-05-19-v117-ui-dashboard-cleanup"></script>
+  <script src="/app.js?v=debtya-2026-05-19-v118-reminders-minimum-tracking"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

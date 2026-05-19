@@ -27,6 +27,14 @@ describe("public debt list UI", () => {
     assert.match(css, /@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*?\.paid-debts-section\s+\.paid-debts-list-scroll/i);
   });
 
+  it("shows manual-first auto tracking copy in both languages", () => {
+    const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
+    const app = fs.readFileSync(path.join(__dirname, "../public/app.js"), "utf8");
+
+    assert.match(html, /id="autoTrackMinimumPayments"/i);
+    assert.match(html, /DebtYa does not make the payment for you/i);
+    assert.match(app, /DebtYa no hace el pago por ti/i);
+  });
   it("hides SMS reminder controls in normal UI", () => {
     const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
     const css = fs.readFileSync(path.join(__dirname, "../public/styles.css"), "utf8");

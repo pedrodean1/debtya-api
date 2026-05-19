@@ -34,7 +34,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-19-v117-ui-dashboard-cleanup";
+const SERVER_VERSION = "debtya-2026-05-19-v118-reminders-minimum-tracking";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2628,6 +2628,7 @@ registerAllRoutes(app, {
   safeNullableNumber,
   stampRecentIntentsFundingFromPlan,
   reconcileManualFirstPriorityIntent,
+  applyExecutedIntentToDebt,
   approveIntentDirect,
   executeIntentDirect,
   confirmManualPaymentIntentDirect,

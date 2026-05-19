@@ -1,4 +1,5 @@
 const { appendSpinwheelPaymentIntents } = require("../lib/spinwheel-payment-intents");
+const { runMinimumPaymentAutoTracking } = require("../lib/minimum-payment-tracking");
 
 function registerCronRoutes(app, deps) {
   const {
@@ -13,6 +14,9 @@ function registerCronRoutes(app, deps) {
     safeNumber,
     getCurrentPaymentPlan,
     stampRecentIntentsFundingFromPlan,
+    applyExecutedIntentToDebt,
+    reconcileManualFirstPriorityIntent,
+    appDebug,
     SERVER_VERSION,
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
@@ -20,6 +24,24 @@ function registerCronRoutes(app, deps) {
     CRON_SECRET
   } = deps;
 
+  app.post("/cron/track-minimum-payments", requireCronSecret, async (_req, res) => {
+    try {
+      if (!supabaseAdmin) return jsonError(res, 500, "Supabase no configurado");
+      const result = await runMinimumPaymentAutoTracking({
+        supabaseAdmin,
+        applyExecutedIntentToDebt,
+        reconcileManualFirstPriorityIntent,
+        appDebug,
+        now: new Date()
+      });
+      return res.json({ ok: true, server_version: SERVER_VERSION, ran_at: new Date().toISOString(), ...result });
+    } catch (error) {
+      if (typeof appDebug === "function") appDebug("cron track-minimum-payments:", error?.message || String(error));
+      return jsonError(res, 500, "Error registrando pagos minimos programados", {
+        details: "auto_track_minimum_failed"
+      });
+    }
+  });
   app.post("/cron/full-auto", requireCronSecret, async (_req, res) => {
     try {
       if (!supabaseAdmin) {

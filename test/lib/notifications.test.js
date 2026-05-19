@@ -155,6 +155,13 @@ describe("lib/notifications", () => {
     assert.equal(d.preferred_language, "en");
   });
 
+  it("preserva preferencia auto_track_minimum_payments apagada por defecto y permite opt-in", () => {
+    const defaults = defaultNotificationPreferences(userId);
+    assert.equal(defaults.auto_track_minimum_payments, false);
+    const out = validateNotificationPreferencesInput({ auto_track_minimum_payments: true }, defaults);
+    assert.ok(out.payload);
+    assert.equal(out.payload.auto_track_minimum_payments, true);
+  });
   it("normalizePreferredLanguage solo acepta en o es", () => {
     assert.equal(normalizePreferredLanguage("es"), "es");
     assert.equal(normalizePreferredLanguage("EN"), "en");

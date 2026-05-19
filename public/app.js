@@ -278,6 +278,9 @@
         notif_simple_email: "Email",
         notif_simple_sms: "SMS (optional)",
         notif_simple_email_consent: "I agree to receive payment reminder emails from DebtYa.",
+        auto_track_minimum_label: "Automatically track scheduled minimum payments",
+        auto_track_minimum_hint:
+          "DebtYa can automatically track your scheduled minimum payments when their due date arrives. DebtYa does not make the payment for you.",
         notif_simple_sms_consent:
           "You agree to receive messages from DebtYa. Message and data rates may apply. You can reply STOP to opt out.",
         notif_simple_save: "Save",
@@ -905,6 +908,7 @@
         trace_origin_intent: "Intent",
         trace_origin_execution: "Execution record",
         trace_kind_manual_extra: "Manual extra payment",
+        trace_kind_auto_tracked_minimum: "Auto-tracked minimum payment",
         trace_status_done: "Completed",
         btn_extra_payment_open: "Register extra payment",
         extra_payment_title: "Register extra payment",
@@ -1053,6 +1057,9 @@
         notif_simple_email: "Email",
         notif_simple_sms: "SMS (opcional)",
         notif_simple_email_consent: "Acepto recibir emails de recordatorio de pago de DebtYa.",
+        auto_track_minimum_label: "Registrar automaticamente pagos minimos programados",
+        auto_track_minimum_hint:
+          "DebtYa puede registrar automaticamente tus pagos minimos programados cuando llegue la fecha. DebtYa no hace el pago por ti.",
         notif_simple_sms_consent:
           "Aceptas recibir mensajes de DebtYa. Pueden aplicar tarifas de mensajes y datos. Puedes responder STOP para darte de baja.",
         notif_simple_save: "Guardar",
@@ -1683,6 +1690,7 @@
         trace_origin_intent: "Intent",
         trace_origin_execution: "Registro de ejecucion",
         trace_kind_manual_extra: "Pago extra manual",
+        trace_kind_auto_tracked_minimum: "Pago minimo registrado automaticamente",
         trace_status_done: "Realizado",
         btn_extra_payment_open: "Registrar pago extra",
         extra_payment_title: "Registrar pago extra",
@@ -2882,6 +2890,7 @@
       if ($("simpleNotifEmail")) $("simpleNotifEmail").checked = !!d.email_enabled;
       if ($("simpleNotifSms")) $("simpleNotifSms").checked = !!d.sms_enabled;
       if ($("simpleNotifPhone")) $("simpleNotifPhone").value = d.phone_number || "";
+      if ($("autoTrackMinimumPayments")) $("autoTrackMinimumPayments").checked = !!d.auto_track_minimum_payments;
       const ec = $("simpleNotifEmailConsent");
       const sc = $("simpleNotifSmsConsent");
       if (ec) ec.checked = false;
@@ -2907,7 +2916,8 @@
           timezone: d.timezone || null,
           preferred_language: uiLang === "es" ? "es" : "en",
           email_consent: false,
-          sms_consent: false
+          sms_consent: false,
+          auto_track_minimum_payments: !!$("autoTrackMinimumPayments")?.checked
         };
       }
       const emailOn = !!$("simpleNotifEmail")?.checked;
@@ -2926,7 +2936,8 @@
         timezone: d.timezone || deviceTz || null,
         preferred_language: uiLang === "es" ? "es" : "en",
         email_consent: !!$("simpleNotifEmailConsent")?.checked,
-        sms_consent: !!$("simpleNotifSmsConsent")?.checked
+        sms_consent: !!$("simpleNotifSmsConsent")?.checked,
+        auto_track_minimum_payments: !!$("autoTrackMinimumPayments")?.checked
       };
     }
 
@@ -4882,6 +4893,7 @@
 
     function tracePaymentKindLabel(row) {
       const k = row && row.trace_payment_kind;
+      if (k === "auto_tracked_minimum") return t("trace_kind_auto_tracked_minimum");
       if (k === "manual_extra") return t("trace_kind_manual_extra");
       if (k === "manual_confirm") return t("trace_origin_manual");
       if (k === "execution") return t("trace_origin_execution");
@@ -7681,7 +7693,8 @@
             reminder_frequency: ($("notifReminderFrequency")?.value || "").trim() || "twice_weekly",
             preferred_language: uiLang === "es" ? "es" : "en",
             email_consent: !!$("notifEmailConsent")?.checked,
-            sms_consent: !!$("notifSmsConsent")?.checked
+            sms_consent: !!$("notifSmsConsent")?.checked,
+            auto_track_minimum_payments: !!state.notificationPrefs?.auto_track_minimum_payments
           };
           await api("/notifications/preferences", { method: "POST", body: JSON.stringify(body) });
           showMessage(globalMessage, t("notif_saved_ok"), "success");

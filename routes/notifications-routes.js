@@ -70,6 +70,10 @@ function isMissingNotificationPreferencesTable(error) {
   return false;
 }
 
+function isMissingAutoTrackMinimumColumn(error) {
+  const msg = String(error?.message || error?.details || "").toLowerCase();
+  return msg.includes("auto_track_minimum_payments") && (msg.includes("column") || msg.includes("schema cache"));
+}
 function registerNotificationRoutes(app, deps) {
   const { requireUser, requireCronSecret, supabaseAdmin, jsonError, getIntentAmount, appError, notificationNow } = deps;
   const currentReminderNow = () => {
@@ -170,13 +174,32 @@ function registerNotificationRoutes(app, deps) {
         ...validation.payload
       };
 
-      const { data, error } = await supabaseAdmin
+      let savePayload = payload;
+      let autoTrackWarning = null;
+      let { data, error } = await supabaseAdmin
         .from("notification_preferences")
-        .upsert(payload, { onConflict: "user_id" })
+        .upsert(savePayload, { onConflict: "user_id" })
         .select("*")
         .single();
+      if (error && isMissingAutoTrackMinimumColumn(error)) {
+        savePayload = { ...payload };
+        delete savePayload.auto_track_minimum_payments;
+        autoTrackWarning =
+          "auto_track_minimum_payments column is not installed yet. Apply sql/alter_notification_preferences_auto_track_minimums_v118.sql in Supabase, then retry.";
+        const retry = await supabaseAdmin
+          .from("notification_preferences")
+          .upsert(savePayload, { onConflict: "user_id" })
+          .select("*")
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
       if (error) throw error;
-      return res.json({ ok: true, data: normalizeNotificationPreferences(data, req.user.id) });
+      return res.json({
+        ok: true,
+        data: normalizeNotificationPreferences(data, req.user.id),
+        ...(autoTrackWarning ? { warning: autoTrackWarning } : {})
+      });
     } catch (error) {
       if (isMissingNotificationPreferencesTable(error)) {
         return jsonError(

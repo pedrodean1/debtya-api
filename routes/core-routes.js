@@ -129,11 +129,13 @@ function registerCoreRoutes(app, deps) {
         const meta = traceIntentMetadata(x.metadata);
         const manual = !!(meta.manual_confirmed || meta.paid_outside_app);
         const origin = manual ? "manual" : String(x.source || "intent").toLowerCase();
-        const paymentKind = meta.manual_extra_payment
-          ? "manual_extra"
-          : manual
-            ? "manual_confirm"
-            : "intent";
+        const paymentKind = meta.auto_tracked_minimum_payment
+          ? "auto_tracked_minimum"
+          : meta.manual_extra_payment
+            ? "manual_extra"
+            : manual
+              ? "manual_confirm"
+              : "intent";
         normalized.push({
           id: x.id,
           user_id: x.user_id,
