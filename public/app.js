@@ -251,11 +251,11 @@
         notif_time_lbl: "Preferred reminder time (24-hour HH:MM)",
         notif_tz_lbl: "Timezone (IANA)",
         notif_freq_lbl: "Reminder cadence",
-        notif_freq_smart: "Smart (recommended)",
-        notif_freq_daily: "Daily",
-        notif_freq_weekly: "Weekly",
+        notif_freq_smart: "Smart (legacy/internal)",
+        notif_freq_daily: "Daily (legacy/internal)",
+        notif_freq_weekly: "Weekly (legacy/internal)",
         notif_freq_off: "Off (manual test only)",
-        notif_freq_twice_weekly: "Twice weekly (internal)",
+        notif_freq_twice_weekly: "Tuesday and Friday (recommended)",
         notif_debug_kicker: "Notification debug (?debugNotifications=1)",
         notif_channel_lbl: "Preferred channel",
         notif_ch_none: "None",
@@ -273,7 +273,7 @@
         notif_simple_sub:
           "DebtYa can let you know when to pay, how much to pay, and why we recommend that payment.",
         notif_simple_moderation:
-          "We send reminders in moderation, usually about once a week or when there is an important next payment.",
+          "DebtYa sends reminders in moderation on Tuesdays and Fridays when there is an important next payment.",
         notif_simple_master: "Turn on reminders",
         notif_simple_email: "Email",
         notif_simple_sms: "SMS (optional)",
@@ -1026,11 +1026,11 @@
         notif_time_lbl: "Hora preferida de recordatorio (24h HH:MM)",
         notif_tz_lbl: "Zona horaria (IANA)",
         notif_freq_lbl: "Frecuencia de recordatorios",
-        notif_freq_smart: "Inteligente (recomendado)",
-        notif_freq_daily: "Diario",
-        notif_freq_weekly: "Semanal",
+        notif_freq_smart: "Inteligente (legacy/interno)",
+        notif_freq_daily: "Diario (legacy/interno)",
+        notif_freq_weekly: "Semanal (legacy/interno)",
         notif_freq_off: "Desactivado",
-        notif_freq_twice_weekly: "Dos veces por semana (interno)",
+        notif_freq_twice_weekly: "Martes y viernes (recomendado)",
         notif_debug_kicker: "Depuracion de notificaciones (?debugNotifications=1)",
         notif_channel_lbl: "Canal preferido",
         notif_ch_none: "Ninguno",
@@ -1048,7 +1048,7 @@
         notif_simple_sub:
           "DebtYa puede avisarte cuando pagar, cuanto pagar y por que recomendamos ese pago.",
         notif_simple_moderation:
-          "Te enviamos recordatorios con moderacion, normalmente una vez por semana o cuando haya un proximo pago importante.",
+          "DebtYa envia recordatorios con moderacion los martes y viernes cuando haya un proximo pago importante.",
         notif_simple_master: "Activar recordatorios",
         notif_simple_email: "Email",
         notif_simple_sms: "SMS (opcional)",
@@ -2876,7 +2876,7 @@
     function syncSimpleNotifUIFromPrefs() {
       if (!$("simpleNotifMaster")) return;
       const d = state.notificationPrefs || {};
-      const freq = String(d.reminder_frequency || "weekly").toLowerCase();
+      const freq = String(d.reminder_frequency || "twice_weekly").toLowerCase();
       const masterOn = (!!d.email_enabled || !!d.sms_enabled) && freq !== "off";
       $("simpleNotifMaster").checked = masterOn;
       if ($("simpleNotifEmail")) $("simpleNotifEmail").checked = !!d.email_enabled;
@@ -2921,7 +2921,7 @@
         sms_enabled: smsOn,
         phone_number: ($("simpleNotifPhone")?.value || "").trim() || null,
         preferred_channel: preferred,
-        reminder_frequency: "weekly",
+        reminder_frequency: "twice_weekly",
         reminder_time: d.reminder_time || null,
         timezone: d.timezone || deviceTz || null,
         preferred_language: uiLang === "es" ? "es" : "en",
@@ -6669,9 +6669,9 @@
           $("notifTimezone").value = d.timezone || "";
           const rf = $("notifReminderFrequency");
           if (rf) {
-            const fq = String(d.reminder_frequency || "weekly").toLowerCase();
+            const fq = String(d.reminder_frequency || "twice_weekly").toLowerCase();
             const allowed = ["weekly", "off", "smart", "twice_weekly"];
-            rf.value = allowed.includes(fq) ? fq : "weekly";
+            rf.value = allowed.includes(fq) ? fq : "twice_weekly";
           }
           $("notifPreferredChannel").value = d.preferred_channel || "none";
           const ec = $("notifEmailConsent");
@@ -7678,7 +7678,7 @@
             preferred_channel: $("notifPreferredChannel")?.value || "none",
             reminder_time: ($("notifReminderTime")?.value || "").trim() || null,
             timezone: ($("notifTimezone")?.value || "").trim() || null,
-            reminder_frequency: ($("notifReminderFrequency")?.value || "").trim() || "weekly",
+            reminder_frequency: ($("notifReminderFrequency")?.value || "").trim() || "twice_weekly",
             preferred_language: uiLang === "es" ? "es" : "en",
             email_consent: !!$("notifEmailConsent")?.checked,
             sms_consent: !!$("notifSmsConsent")?.checked

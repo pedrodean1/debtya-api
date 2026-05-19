@@ -71,7 +71,13 @@ function isMissingNotificationPreferencesTable(error) {
 }
 
 function registerNotificationRoutes(app, deps) {
-  const { requireUser, requireCronSecret, supabaseAdmin, jsonError, getIntentAmount, appError } = deps;
+  const { requireUser, requireCronSecret, supabaseAdmin, jsonError, getIntentAmount, appError, notificationNow } = deps;
+  const currentReminderNow = () => {
+    if (typeof notificationNow !== "function") return new Date();
+    const value = notificationNow();
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime()) ? new Date() : date;
+  };
   if (typeof requireCronSecret !== "function") {
     throw new Error("registerNotificationRoutes requires requireCronSecret in deps");
   }
@@ -103,7 +109,8 @@ function registerNotificationRoutes(app, deps) {
         supabaseAdmin,
         userId: req.user.id,
         getIntentAmount,
-        env: process.env
+        env: process.env,
+        now: currentReminderNow()
       });
       return res.json(data);
     } catch (error) {
@@ -123,7 +130,8 @@ function registerNotificationRoutes(app, deps) {
         getIntentAmount,
         env: process.env,
         http: axios,
-        forceTest
+        forceTest,
+        now: currentReminderNow()
       });
       console.log(
         "[notifications/run-due-reminders]",

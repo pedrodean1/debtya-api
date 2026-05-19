@@ -32,6 +32,7 @@ function makeDeps(overrides = {}) {
     getIntentAmount: (intent) => Number(intent.amount || 0),
     jsonError,
     appError: () => {},
+    notificationNow: () => new Date("2030-06-14T12:00:00.000Z"),
     ...overrides
   };
 }
@@ -507,7 +508,7 @@ describe("routes/notifications-routes", () => {
             preferred_language: "en"
           },
           ...reminderRows(),
-          cronLastUserReminderCreatedAtIso: new Date(Date.now() - 60 * 60 * 1000).toISOString()
+          cronLastUserReminderCreatedAtIso: "2030-06-14T11:00:00.000Z"
         })
       })
     );
@@ -633,7 +634,7 @@ describe("routes/notifications-routes", () => {
           phone_number: null,
           consent_sms_at: null
         };
-        const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const hourAgo = "2030-06-14T11:00:00.000Z";
         const app = mount(
           makeDeps({
             supabaseAdmin: makeSupabaseMock({

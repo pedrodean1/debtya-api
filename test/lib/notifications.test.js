@@ -9,6 +9,7 @@ const {
   parsePreferredLanguageHintFromHttp,
   minGapMsForCadence,
   minUserWideGapMs,
+  isTuesdayFridayReminderDay,
   normalizePhoneNumber,
   normalizeReminderFrequency,
   NOTIFICATION_EVENT_MESSAGE_FALLBACK,
@@ -138,19 +139,19 @@ describe("lib/notifications", () => {
     assert.equal(out.payload.reminder_frequency, "weekly");
   });
 
-  it("sin reminder_frequency en body usa weekly por defecto", () => {
+  it("sin reminder_frequency en body usa twice_weekly por defecto", () => {
     const out = validateNotificationPreferencesInput({ email_enabled: true, email_consent: true }, null);
     assert.ok(out.payload);
-    assert.equal(out.payload.reminder_frequency, "weekly");
+    assert.equal(out.payload.reminder_frequency, "twice_weekly");
   });
 
-  it("normaliza reminder_frequency desconocido a weekly", () => {
-    assert.equal(normalizeReminderFrequency("bogus"), "weekly");
+  it("normaliza reminder_frequency desconocido a twice_weekly", () => {
+    assert.equal(normalizeReminderFrequency("bogus"), "twice_weekly");
   });
 
-  it("defaultNotificationPreferences usa weekly", () => {
+  it("defaultNotificationPreferences usa twice_weekly", () => {
     const d = defaultNotificationPreferences(userId);
-    assert.equal(d.reminder_frequency, "weekly");
+    assert.equal(d.reminder_frequency, "twice_weekly");
     assert.equal(d.preferred_language, "en");
   });
 
@@ -234,16 +235,25 @@ describe("lib/notifications", () => {
     assert.match(resolveDebtYaReminderFromAddress({}), /onboarding@resend\.dev/);
   });
 
-  it("minGapMsForCadence: moderacion semanal para smart y daily", () => {
-    const w = minGapMsForCadence("weekly");
-    assert.equal(minGapMsForCadence("daily"), w);
-    assert.equal(minGapMsForCadence("smart"), w);
-    assert.ok(minGapMsForCadence("twice_weekly") < w);
+  it("minGapMsForCadence: todos los modos normales usan proteccion martes/viernes", () => {
+    const gap = minGapMsForCadence("twice_weekly");
+    assert.equal(minGapMsForCadence("daily"), gap);
+    assert.equal(minGapMsForCadence("smart"), gap);
+    assert.equal(minGapMsForCadence("weekly"), gap);
+    assert.equal(gap, 36 * 60 * 60 * 1000);
     assert.equal(minGapMsForCadence("off"), Number.POSITIVE_INFINITY);
   });
 
-  it("minUserWideGapMs twice_weekly mas corto que weekly", () => {
-    assert.ok(minUserWideGapMs("twice_weekly") < minUserWideGapMs("weekly"));
+  it("minUserWideGapMs evita duplicados del dia pero permite martes/viernes", () => {
+    assert.equal(minUserWideGapMs("twice_weekly"), 36 * 60 * 60 * 1000);
+    assert.equal(minUserWideGapMs("weekly"), minUserWideGapMs("twice_weekly"));
+  });
+
+  it("isTuesdayFridayReminderDay solo permite martes y viernes", () => {
+    assert.equal(isTuesdayFridayReminderDay(new Date("2030-06-11T12:00:00.000Z"), "UTC"), true);
+    assert.equal(isTuesdayFridayReminderDay(new Date("2030-06-14T12:00:00.000Z"), "UTC"), true);
+    assert.equal(isTuesdayFridayReminderDay(new Date("2030-06-10T12:00:00.000Z"), "UTC"), false);
+    assert.equal(isTuesdayFridayReminderDay(new Date("2030-06-15T12:00:00.000Z"), "UTC"), false);
   });
 
   it("runDuePaymentReminders sin supabase devuelve error", async () => {
@@ -427,7 +437,7 @@ describe("resolveNotificationEventMessage (V100.1)", () => {
 });
 
 describe("runDuePaymentReminders cron (V100)", () => {
-  const fixedNow = new Date("2030-06-15T12:00:00.000Z");
+  const fixedNow = new Date("2030-06-14T12:00:00.000Z");
 
   const intentRow = {
     id: intentId,
@@ -576,7 +586,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
     preferred_channel: "both",
     consent_email_at: "2030-01-01T00:00:00.000Z",
     consent_sms_at: "2030-01-01T00:00:00.000Z",
-    reminder_frequency: "weekly",
+    reminder_frequency: "twice_weekly",
     reminder_time: null,
     timezone: null,
     preferred_language: "en",
@@ -625,7 +635,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
       await runDuePaymentReminders({
         supabaseAdmin: sb,
         getIntentAmount: (intent) => Number(intent.amount || 0),
-        now: fixedNow,
+        now: new Date("2030-06-15T12:00:00.000Z"),
         env: process.env,
         forceTest: true,
         sendReminderFn: async ({ preview }) => {
@@ -642,7 +652,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
     }
   });
 
-  it("cron forceTest omite cooldown y registra metadata.force_test en evento", async () => {
+  it("cron forceTest omite cooldown, dia de semana y registra metadata.force_test en evento", async () => {
     const prev = process.env.RESEND_API_KEY;
     process.env.RESEND_API_KEY = "test";
     try {
@@ -653,7 +663,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
       const out = await runDuePaymentReminders({
         supabaseAdmin: sb,
         getIntentAmount: (intent) => Number(intent.amount || 0),
-        now: fixedNow,
+        now: new Date("2030-06-15T12:00:00.000Z"),
         env: process.env,
         forceTest: true,
         sendReminderFn: async () => ({ channel: "email", sent: true, provider: "resend" })
@@ -684,7 +694,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
       await runDuePaymentReminders({
         supabaseAdmin: sb,
         getIntentAmount: (intent) => Number(intent.amount || 0),
-        now: fixedNow,
+        now: new Date("2030-06-15T12:00:00.000Z"),
         env: process.env,
         forceTest: true,
         sendReminderFn: async ({ channel }) => {
@@ -709,7 +719,7 @@ describe("runDuePaymentReminders cron (V100)", () => {
       const out = await runDuePaymentReminders({
         supabaseAdmin: sb,
         getIntentAmount: (intent) => Number(intent.amount || 0),
-        now: fixedNow,
+        now: new Date("2030-06-15T12:00:00.000Z"),
         env: process.env,
         forceTest: true,
         sendReminderFn: async () => ({ channel: "email", sent: true, provider: "resend" })
@@ -756,6 +766,68 @@ describe("runDuePaymentReminders cron (V100)", () => {
     }
   });
 
+  it("cron normal no envia lunes, miercoles, jueves, sabado ni domingo", async () => {
+    const blockedDays = [
+      "2030-06-10T12:00:00.000Z",
+      "2030-06-12T12:00:00.000Z",
+      "2030-06-13T12:00:00.000Z",
+      "2030-06-15T12:00:00.000Z",
+      "2030-06-16T12:00:00.000Z"
+    ];
+    const prev = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "test";
+    try {
+      for (const day of blockedDays) {
+        const sb = makeCronSupabase({
+          prefRows: [prefEligible({ sms_enabled: false, preferred_channel: "email" })],
+          lastUserReminderIso: null
+        });
+        let calls = 0;
+        const out = await runDuePaymentReminders({
+          supabaseAdmin: sb,
+          getIntentAmount: (intent) => Number(intent.amount || 0),
+          now: new Date(day),
+          env: process.env,
+          sendReminderFn: async () => {
+            calls += 1;
+            return { channel: "email", sent: true, provider: "resend" };
+          }
+        });
+        assert.equal(out.sent, 0, day);
+        assert.equal(out.eligible, 0, day);
+        assert.equal(out.reason_counts.outside_tuesday_friday_schedule, 1, day);
+        assert.equal(calls, 0, day);
+        assert.equal(sb.inserts.length, 0, day);
+      }
+    } finally {
+      if (prev == null) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = prev;
+    }
+  });
+
+  it("cron normal permite martes sin evento previo", async () => {
+    const prev = process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "test";
+    try {
+      const sb = makeCronSupabase({
+        prefRows: [prefEligible({ sms_enabled: false, preferred_channel: "email" })],
+        lastUserReminderIso: null
+      });
+      const out = await runDuePaymentReminders({
+        supabaseAdmin: sb,
+        getIntentAmount: (intent) => Number(intent.amount || 0),
+        now: new Date("2030-06-11T12:00:00.000Z"),
+        env: process.env,
+        sendReminderFn: async () => ({ channel: "email", sent: true, provider: "resend" })
+      });
+      assert.equal(out.sent, 1);
+      assert.equal(out.eligible, 1);
+      assert.equal(sb.inserts.length, 1);
+    } finally {
+      if (prev == null) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = prev;
+    }
+  });
   it("cron normal usuario sin consentimiento no es elegible", async () => {
     const prev = process.env.RESEND_API_KEY;
     process.env.RESEND_API_KEY = "test";
