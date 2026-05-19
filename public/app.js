@@ -7588,18 +7588,20 @@
     window.addEventListener("hashchange", () => void refreshSpinwheelPayableDiag());
     const refreshRulesBtn = $("refreshRulesBtn");
     if (refreshRulesBtn) refreshRulesBtn.addEventListener("click", refreshRules);
-    $("refreshPlanBtn").addEventListener("click", async () => {
-      const btn = $("refreshPlanBtn");
-      setLoading(btn, true, t("proc"));
-      try {
-        await rebuildManualPlanAndRefresh();
-      } catch (err) {
-        recordPlanBuildFailure(err);
-        showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
-      } finally {
-        setLoading(btn, false);
-      }
-    });
+    const refreshPlanBtn = $("refreshPlanBtn");
+    if (refreshPlanBtn) {
+      refreshPlanBtn.addEventListener("click", async () => {
+        setLoading(refreshPlanBtn, true, t("proc"));
+        try {
+          await rebuildManualPlanAndRefresh();
+        } catch (err) {
+          recordPlanBuildFailure(err);
+          showMessage(globalMessage, normalizeErrorMessage(err.message), "error");
+        } finally {
+          setLoading(refreshPlanBtn, false);
+        }
+      });
+    }
     let persistPlanStrategyTimer = null;
     async function flushPersistPlanStrategy() {
       try {
