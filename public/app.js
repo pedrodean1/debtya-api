@@ -7573,7 +7573,8 @@
     });
 
     $("logoutBtn").addEventListener("click", logout);
-    $("refreshDebtsBtn").addEventListener("click", refreshDebts);
+    const refreshDebtsBtn = $("refreshDebtsBtn");
+    if (refreshDebtsBtn) refreshDebtsBtn.addEventListener("click", refreshDebts);
     const spinwheelPayableDiagRefreshBtn = $("spinwheelPayableDiagRefreshBtn");
     if (spinwheelPayableDiagRefreshBtn) {
       spinwheelPayableDiagRefreshBtn.addEventListener("click", () => void refreshSpinwheelPayableDiag());
