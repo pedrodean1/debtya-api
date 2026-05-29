@@ -17,6 +17,11 @@ function registerCronRoutes(app, deps) {
     applyExecutedIntentToDebt,
     reconcileManualFirstPriorityIntent,
     appDebug,
+    appError,
+    sendEmailFn,
+    sendMinimumPaymentDueEmailFn,
+    sendTransactionalPaymentCelebrationEmailsFn,
+    fetchAuthUserEmailFn,
     SERVER_VERSION,
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
@@ -24,6 +29,7 @@ function registerCronRoutes(app, deps) {
     CRON_SECRET
   } = deps;
 
+  // Render Cron Job recommendation: run this in the target local evening, for example 7:00 PM.
   app.post("/cron/track-minimum-payments", requireCronSecret, async (_req, res) => {
     try {
       if (!supabaseAdmin) return jsonError(res, 500, "Supabase no configurado");
@@ -32,6 +38,11 @@ function registerCronRoutes(app, deps) {
         applyExecutedIntentToDebt,
         reconcileManualFirstPriorityIntent,
         appDebug,
+        appError,
+        sendEmailFn,
+        sendMinimumPaymentDueEmailFn,
+        sendTransactionalPaymentCelebrationEmailsFn,
+        fetchAuthUserEmailFn,
         now: new Date()
       });
       return res.json({ ok: true, server_version: SERVER_VERSION, ran_at: new Date().toISOString(), ...result });

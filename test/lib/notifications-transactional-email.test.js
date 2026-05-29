@@ -1,6 +1,7 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const {
+  buildMinimumPaymentDueEmailPreview,
   buildPaymentRecordedTransactionalCopy,
   buildDebtPaidOffTransactionalCopy,
   sendTransactionalPaymentCelebrationEmails
@@ -96,6 +97,32 @@ function transactionalSupabase({ prefRow = { preferred_language: "en" }, intentM
 }
 
 describe("lib/notifications transactional copy", () => {
+  it("EN minimum payment due email usa copy manual-first y solo email", () => {
+    const c = buildMinimumPaymentDueEmailPreview({
+      preferredLanguage: "en",
+      amount: 35,
+      debtName: "Visa"
+    });
+    assert.equal(c.channel, "email");
+    assert.match(c.body || c.email_body, /Today is your scheduled minimum payment day for Visa\./);
+    assert.match(c.email_body, /DebtYa does not make the payment for you\./);
+    assert.match(c.email_body, /DebtYa will record the minimum payment amount you set and update your progress\./);
+    assert.doesNotMatch(c.email_body, /automatic payment made/i);
+    assert.doesNotMatch(c.email_body, /will send money/i);
+  });
+
+  it("ES minimum payment due email respeta preferred_language", () => {
+    const c = buildMinimumPaymentDueEmailPreview({
+      preferredLanguage: "es",
+      amount: 12,
+      debtName: "Tarjeta"
+    });
+    assert.equal(c.channel, "email");
+    assert.match(c.email_body, /Hoy es el día del pago mínimo programado para Tarjeta\./);
+    assert.match(c.email_body, /DebtYa no hace el pago por ti\./);
+    assert.match(c.email_body, /Si tienes activado el registro automático de pagos mínimos/);
+  });
+
   it("ES pago registrado contiene frase clave", () => {
     const c = buildPaymentRecordedTransactionalCopy("es", 50, "Visa");
     assert.match(c.subject, /Pago registrado/i);

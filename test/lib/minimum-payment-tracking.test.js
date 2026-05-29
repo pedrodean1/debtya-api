@@ -133,44 +133,69 @@ function pref(over = {}) {
   };
 }
 
+function emailDeps(events = []) {
+  return {
+    fetchAuthUserEmailFn: async () => "user@example.com",
+    sendMinimumPaymentDueEmailFn: async (args) => {
+      events.push({ type: "due_email", args });
+      return { ok: true, sent: true, user_email: "user@example.com" };
+    },
+    sendTransactionalPaymentCelebrationEmailsFn: async (args) => {
+      events.push({ type: "payment_recorded_email", args });
+      return { ok: true, payment_email: true };
+    }
+  };
+}
+
 describe("lib/minimum-payment-tracking", () => {
   it("no corre si la preferencia esta apagada", async () => {
     const supabaseAdmin = makeSupabase({ prefs: [pref({ auto_track_minimum_payments: false })], debts: [dueDebt()] });
     let applyCalls = 0;
+    const events = [];
     const out = await runMinimumPaymentAutoTracking({
       supabaseAdmin,
       now: new Date("2030-05-19T12:00:00.000Z"),
       applyExecutedIntentToDebt: async () => {
         applyCalls += 1;
         return { ok: true };
-      }
+      },
+      ...emailDeps(events)
     });
     assert.equal(out.tracked, 0);
     assert.equal(applyCalls, 0);
+    assert.deepEqual(events, []);
     assert.equal(supabaseAdmin.intents.length, 0);
   });
 
-  it("corre si la preferencia esta activada y llego due_day", async () => {
+  it("envia email previo, rebaja y luego dispara email transaccional si llego due_day", async () => {
     const supabaseAdmin = makeSupabase({ prefs: [pref()], debts: [dueDebt()] });
+    const events = [];
     let reconcileCalls = 0;
     const out = await runMinimumPaymentAutoTracking({
       supabaseAdmin,
       now: new Date("2030-05-19T12:00:00.000Z"),
       applyExecutedIntentToDebt: async (_uid, intent, opts) => {
+        events.push({ type: "apply", intent, opts });
         assert.equal(intent.source, AUTO_TRACK_SOURCE);
         assert.equal(opts.amountOverride, 35);
         return { ok: true, skipped: false, previous_balance: 100, next_balance: 65 };
       },
       reconcileManualFirstPriorityIntent: async () => {
         reconcileCalls += 1;
-      }
+      },
+      ...emailDeps(events)
     });
     assert.equal(out.tracked, 1);
+    assert.equal(out.minimum_due_emails_sent, 1);
+    assert.equal(out.payment_recorded_emails_sent, 1);
     assert.equal(supabaseAdmin.intents.length, 1);
     assert.equal(supabaseAdmin.executions.length, 1);
     assert.equal(reconcileCalls, 1);
     assert.equal(supabaseAdmin.intents[0].metadata.auto_tracked_minimum_payment, true);
     assert.equal(supabaseAdmin.intents[0].metadata.source, AUTO_TRACK_SOURCE);
+    assert.deepEqual(events.map((e) => e.type), ["due_email", "apply", "payment_recorded_email"]);
+    assert.equal(events[0].args.preferredLanguage, "en");
+    assert.equal(events[2].args.preferredLanguageHint, "en");
   });
 
   it("no baja balance debajo de cero: usa el balance restante si es menor que el minimo", () => {
@@ -194,26 +219,72 @@ describe("lib/minimum-payment-tracking", () => {
       ]
     });
     let applyCalls = 0;
+    const events = [];
     const out = await runMinimumPaymentAutoTracking({
       supabaseAdmin,
       now: new Date("2030-05-19T12:00:00.000Z"),
       applyExecutedIntentToDebt: async () => {
         applyCalls += 1;
         return { ok: true };
-      }
+      },
+      ...emailDeps(events)
     });
     assert.equal(out.tracked, 0);
     assert.equal(out.reason_counts.already_tracked_for_date, 1);
     assert.equal(applyCalls, 0);
+    assert.deepEqual(events, []);
     assert.equal(supabaseAdmin.intents.length, 1);
+  });
+
+  it("no duplica emails ni rebaja si el cron corre dos veces el mismo dia", async () => {
+    const supabaseAdmin = makeSupabase({ prefs: [pref()], debts: [dueDebt()] });
+    const events = [];
+    let applyCalls = 0;
+    const deps = {
+      supabaseAdmin,
+      now: new Date("2030-05-19T12:00:00.000Z"),
+      applyExecutedIntentToDebt: async () => {
+        applyCalls += 1;
+        events.push({ type: "apply" });
+        return { ok: true, skipped: false, previous_balance: 100, next_balance: 65 };
+      },
+      ...emailDeps(events)
+    };
+    const first = await runMinimumPaymentAutoTracking(deps);
+    const second = await runMinimumPaymentAutoTracking(deps);
+    assert.equal(first.tracked, 1);
+    assert.equal(second.tracked, 0);
+    assert.equal(second.reason_counts.already_tracked_for_date, 1);
+    assert.equal(applyCalls, 1);
+    assert.deepEqual(events.map((e) => e.type), ["due_email", "apply", "payment_recorded_email"]);
+  });
+
+  it("registra solo el balance restante cuando es menor que el minimo", async () => {
+    const supabaseAdmin = makeSupabase({ prefs: [pref()], debts: [dueDebt({ balance: 12, minimum_payment: 35 })] });
+    const events = [];
+    const out = await runMinimumPaymentAutoTracking({
+      supabaseAdmin,
+      now: new Date("2030-05-19T12:00:00.000Z"),
+      applyExecutedIntentToDebt: async (_uid, _intent, opts) => {
+        events.push({ type: "apply", amount: opts.amountOverride });
+        return { ok: true, skipped: false, previous_balance: 12, next_balance: 0 };
+      },
+      ...emailDeps(events)
+    });
+    assert.equal(out.tracked, 1);
+    assert.equal(supabaseAdmin.intents[0].amount, 12);
+    assert.equal(events.find((e) => e.type === "due_email").args.amount, 12);
+    assert.equal(events.find((e) => e.type === "apply").amount, 12);
   });
 
   it("escribe historial/traza clara sin decir que DebtYa hizo el pago", async () => {
     const supabaseAdmin = makeSupabase({ prefs: [pref()], debts: [dueDebt({ balance: 20, minimum_payment: 25 })] });
+    const events = [];
     const out = await runMinimumPaymentAutoTracking({
       supabaseAdmin,
       now: new Date("2030-05-19T12:00:00.000Z"),
-      applyExecutedIntentToDebt: async () => ({ ok: true, skipped: false, previous_balance: 20, next_balance: 0 })
+      applyExecutedIntentToDebt: async () => ({ ok: true, skipped: false, previous_balance: 20, next_balance: 0 }),
+      ...emailDeps(events)
     });
     assert.equal(out.tracked, 1);
     const intent = supabaseAdmin.intents[0];
@@ -232,5 +303,29 @@ describe("lib/minimum-payment-tracking", () => {
     const result = debtIsEligibleForAutoTrack(dueDebt({ due_day: 20 }), 19);
     assert.equal(result.ok, false);
     assert.equal(result.reason, "not_due_today");
+  });
+
+  it("acepta payment_due_day como alias de due_day", () => {
+    const result = debtIsEligibleForAutoTrack(dueDebt({ due_day: undefined, payment_due_day: 19 }), 19);
+    assert.equal(result.ok, true);
+  });
+
+  it("acepta min_payment como alias positivo de minimum_payment", () => {
+    const computed = computeAutoTrackedMinimumPayment(dueDebt({ minimum_payment: 0, min_payment: 18 }));
+    assert.equal(computed.amount, 18);
+  });
+
+  it("pasa idioma espanol al email previo y al transaccional", async () => {
+    const supabaseAdmin = makeSupabase({ prefs: [pref({ preferred_language: "es" })], debts: [dueDebt()] });
+    const events = [];
+    const out = await runMinimumPaymentAutoTracking({
+      supabaseAdmin,
+      now: new Date("2030-05-19T12:00:00.000Z"),
+      applyExecutedIntentToDebt: async () => ({ ok: true, skipped: false, previous_balance: 100, next_balance: 65 }),
+      ...emailDeps(events)
+    });
+    assert.equal(out.tracked, 1);
+    assert.equal(events.find((e) => e.type === "due_email").args.preferredLanguage, "es");
+    assert.equal(events.find((e) => e.type === "payment_recorded_email").args.preferredLanguageHint, "es");
   });
 });
