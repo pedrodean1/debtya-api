@@ -45,6 +45,19 @@ function registerCronRoutes(app, deps) {
         fetchAuthUserEmailFn,
         now: new Date()
       });
+      console.log(
+        "[cron/track-minimum-payments]",
+        JSON.stringify({
+          preferences_checked: result.preferences_checked || 0,
+          users_checked: result.users_checked || 0,
+          debts_checked: result.debts_checked || 0,
+          tracked: result.tracked || 0,
+          skipped: result.skipped || 0,
+          email_failures: result.email_failures || 0,
+          failures: result.failures || 0,
+          reason_counts: result.reason_counts || {}
+        })
+      );
       return res.json({ ok: true, server_version: SERVER_VERSION, ran_at: new Date().toISOString(), ...result });
     } catch (error) {
       if (typeof appDebug === "function") appDebug("cron track-minimum-payments:", error?.message || String(error));
