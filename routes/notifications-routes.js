@@ -272,6 +272,16 @@ function registerNotificationRoutes(app, deps) {
           })
         );
       }
+      if (previews.some((preview) => preview?.no_active_debts)) {
+        return res.json({
+          ok: true,
+          sent: false,
+          warning: "No active debts to remind.",
+          preview: previews[0],
+          previews,
+          results: []
+        });
+      }
 
       const results = [];
       for (let i = 0; i < channels.length; i++) {

@@ -56,6 +56,21 @@ describe("lib/manual-plan-next-payment", () => {
     assert.equal(p.id, "b");
   });
 
+  it("ignora deudas con status paid_off aunque balance positivo", () => {
+    const a = { ...mk("a", 500, 20), status: "paid_off" };
+    const b = mk("b", 200, 8);
+    const p = pickPriorityDebtForManualPlan("avalanche", [a, b], safeNumber);
+    assert.equal(p.id, "b");
+  });
+
+  it("usa current_balance cuando balance no existe", () => {
+    const a = { id: "a", is_active: true, current_balance: 80, apr: 20 };
+    const b = { id: "b", is_active: true, current_balance: 400, apr: 10 };
+    const p = pickPriorityDebtForManualPlan("snowball", [a, b], safeNumber);
+    assert.equal(p.id, "a");
+    assert.equal(computeManualPriorityPaymentAmount(a, {}, safeNumber), 25);
+  });
+
   it("computeManualPriorityPaymentAmount no supera el balance", () => {
     const debt = mk("x", 100, 15, 40);
     const plan = { monthly_budget: 900, extra_payment_default: 50 };

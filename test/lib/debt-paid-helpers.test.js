@@ -21,12 +21,14 @@ describe("lib/debt-paid-helpers", () => {
 
   it("debtRowEligibleForPlan excluye paid y balance bajo", () => {
     assert.equal(debtRowEligibleForPlan({ is_active: true, status: "paid", balance: 500 }, Number), false);
+    assert.equal(debtRowEligibleForPlan({ is_active: true, status: "paid_off", balance: 500 }, Number), false);
     assert.equal(debtRowEligibleForPlan({ is_active: true, status: "active", balance: 0.005 }, Number), false);
     assert.equal(debtRowEligibleForPlan({ is_active: true, status: "active", balance: 100 }, Number), true);
   });
 
   it("debtRowListedAsPaid", () => {
     assert.equal(debtRowListedAsPaid({ is_active: true, status: "paid", balance: 5 }, Number), true);
+    assert.equal(debtRowListedAsPaid({ is_active: true, status: "paid_off", balance: 5 }, Number), true);
     assert.equal(debtRowListedAsPaid({ is_active: true, status: "active", balance: 0 }, Number), true);
     assert.equal(debtRowListedAsPaid({ is_active: false, status: "active", balance: 0 }, Number), false);
   });

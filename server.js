@@ -2423,7 +2423,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
     const locked = debts.find(
       (d) =>
         String(d.id) === String(targetId) &&
-        safeNumber(d.balance) > PAID_BALANCE_THRESHOLD &&
+        safeNumber(d.balance ?? d.current_balance) > PAID_BALANCE_THRESHOLD &&
         d.is_active !== false
     );
     if (locked) priorityDebt = locked;

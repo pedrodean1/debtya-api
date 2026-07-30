@@ -49,6 +49,7 @@ function makeSupabaseMock({
   pref = null,
   intents = [],
   debt = null,
+  debts = null,
   plan = null,
   prefScanRows = null,
   cronLastUserReminderCreatedAtIso = null,
@@ -56,6 +57,7 @@ function makeSupabaseMock({
   cronEventInsertCaptures = null
 } = {}) {
   let savedPreference = null;
+  const debtRows = Array.isArray(debts) ? debts : debt ? [debt] : [];
   const rowsForCronScan = prefScanRows == null ? [] : prefScanRows;
   const inserts = cronEventInsertCaptures;
   const eventRows = cronLastUserReminderCreatedAtIso
@@ -141,19 +143,18 @@ function makeSupabaseMock({
       if (table === "debts") {
         return {
           select() {
-            return {
+            const chain = {
               eq() {
-                return {
-                  eq() {
-                    return {
-                      maybeSingle() {
-                        return Promise.resolve({ data: debt, error: null });
-                      }
-                    };
-                  }
-                };
+                return chain;
+              },
+              maybeSingle() {
+                return Promise.resolve({ data: debtRows[0] || null, error: null });
+              },
+              then(onFulfilled, onRejected) {
+                return Promise.resolve({ data: debtRows, error: null }).then(onFulfilled, onRejected);
               }
             };
+            return chain;
           }
         };
       }
@@ -211,7 +212,7 @@ function reminderRows() {
         created_at: "2026-05-10T00:00:00Z"
       }
     ],
-    debt: { id: debtId, user_id: userId, name: "CBUSASEARS" },
+    debt: { id: debtId, user_id: userId, name: "CBUSASEARS", balance: 1000 },
     plan: { strategy: "avalanche" }
   };
 }
@@ -467,7 +468,7 @@ describe("routes/notifications-routes", () => {
     assert.equal(Object.prototype.hasOwnProperty.call(res.body, "email"), false);
   });
 
-  it("reminder-debug devuelve no_next_manual_first_intent cuando no hay intent", async () => {
+  it("reminder-debug devuelve no_active_debts cuando no hay deudas activas", async () => {
     const app = mount(
       makeDeps({
         supabaseAdmin: makeSupabaseMock({
@@ -488,8 +489,9 @@ describe("routes/notifications-routes", () => {
     );
     const res = await request(app).get("/notifications/reminder-debug");
     assert.equal(res.status, 200);
-    assert.equal(res.body.reason_if_not_eligible, "no_next_manual_first_intent");
+    assert.equal(res.body.reason_if_not_eligible, "no_active_debts");
     assert.equal(res.body.has_next_intent, false);
+    assert.equal(res.body.has_active_debt_recommendation, false);
     assert.equal(res.body.next_intent_status, null);
     assert.equal(res.body.next_intent_amount, null);
   });

@@ -23,7 +23,8 @@ const userId = "550e8400-e29b-41d4-a716-446655440000";
 const intentId = "660e8400-e29b-41d4-a716-446655440000";
 const debtId = "770e8400-e29b-41d4-a716-446655440000";
 
-function makeSupabaseMock({ intents = [], debt = null, plan = null } = {}) {
+function makeSupabaseMock({ intents = [], debt = null, debts = null, plan = null } = {}) {
+  const debtRows = Array.isArray(debts) ? debts : debt ? [debt] : [];
   return {
     from(table) {
       if (table === "payment_intents") {
@@ -52,19 +53,18 @@ function makeSupabaseMock({ intents = [], debt = null, plan = null } = {}) {
       if (table === "debts") {
         return {
           select() {
-            return {
+            const chain = {
               eq() {
-                return {
-                  eq() {
-                    return {
-                      maybeSingle() {
-                        return Promise.resolve({ data: debt, error: null });
-                      }
-                    };
-                  }
-                };
+                return chain;
+              },
+              maybeSingle() {
+                return Promise.resolve({ data: debtRows[0] || null, error: null });
+              },
+              then(onFulfilled, onRejected) {
+                return Promise.resolve({ data: debtRows, error: null }).then(onFulfilled, onRejected);
               }
             };
+            return chain;
           }
         };
       }
@@ -309,7 +309,7 @@ describe("lib/notifications", () => {
           created_at: "2026-05-10T00:00:00Z"
         }
       ],
-      debt: { id: debtId, user_id: userId, name: "CBUSASEARS" },
+      debt: { id: debtId, user_id: userId, name: "CBUSASEARS", balance: 1000 },
       plan: { strategy: "avalanche" }
     });
 
@@ -372,7 +372,7 @@ describe("lib/notifications", () => {
           created_at: "2026-05-10T00:00:00Z"
         }
       ],
-      debt: null,
+      debt: { id: debtId, user_id: userId, balance: 500 },
       plan: { strategy: "avalanche" }
     });
     const preview = await buildNextPaymentReminderPreview({
@@ -401,7 +401,7 @@ describe("lib/notifications", () => {
           created_at: "2026-05-10T00:00:00Z"
         }
       ],
-      debt: { id: debtId, user_id: userId, name: "Tarjeta A" },
+      debt: { id: debtId, user_id: userId, name: "Tarjeta A", balance: 500 },
       plan: { strategy: "snowball" }
     });
     const preview = await buildNextPaymentReminderPreview({
@@ -413,6 +413,132 @@ describe("lib/notifications", () => {
     assert.match(preview.email_body || preview.message, /Ya lo pagué/i);
     assert.match(preview.email_body || preview.message, /DebtYa no mueve dinero/i);
     assert.match(preview.email_body || preview.message, /Deuda recomendada:\s*Tarjeta A/i);
+  });
+
+  it("preview omite deuda pagada previa y recomienda la siguiente activa segun estrategia", async () => {
+    const paidDebtId = "770e8400-e29b-41d4-a716-446655440001";
+    const nextDebtId = "770e8400-e29b-41d4-a716-446655440002";
+    const supabaseAdmin = makeSupabaseMock({
+      intents: [
+        {
+          id: "660e8400-e29b-41d4-a716-446655440001",
+          user_id: userId,
+          debt_id: paidDebtId,
+          amount: 100,
+          status: "pending_review",
+          strategy: "avalanche",
+          metadata: { manual_first_priority: true },
+          created_at: "2026-05-10T00:00:00Z"
+        }
+      ],
+      debts: [
+        { id: paidDebtId, user_id: userId, name: "Old Paid Card", balance: 0, status: "paid", is_active: true, apr: 29 },
+        { id: nextDebtId, user_id: userId, name: "Next Active Card", balance: 450, status: "active", is_active: true, apr: 18, minimum_payment: 40 },
+        { id: debtId, user_id: userId, name: "Lower APR Card", balance: 300, status: "active", is_active: true, apr: 5 }
+      ],
+      plan: { strategy: "avalanche" }
+    });
+
+    const preview = await buildNextPaymentReminderPreview({
+      supabaseAdmin,
+      userId,
+      channel: "email",
+      preferredLanguage: "en"
+    });
+
+    const body = preview.email_body || preview.message;
+    assert.equal(preview.debt_id, nextDebtId);
+    assert.equal(preview.intent_id, null);
+    assert.equal(preview.skipped_paid_debt_count, 1);
+    assert.match(body, /Recommended debt:\s*Next Active Card/i);
+    assert.doesNotMatch(body, /Old Paid Card/i);
+  });
+
+  it("preview refleja current_balance actualizado y no recomienda mas que el saldo", async () => {
+    const supabaseAdmin = makeSupabaseMock({
+      intents: [
+        {
+          id: intentId,
+          user_id: userId,
+          debt_id: debtId,
+          amount: 250,
+          status: "pending_review",
+          strategy: "avalanche",
+          metadata: { manual_first_priority: true },
+          created_at: "2026-05-10T00:00:00Z"
+        }
+      ],
+      debt: { id: debtId, user_id: userId, name: "Updated Balance Card", current_balance: 60, status: "active", is_active: true, apr: 24 },
+      plan: { strategy: "avalanche" }
+    });
+
+    const preview = await buildNextPaymentReminderPreview({
+      supabaseAdmin,
+      userId,
+      channel: "email",
+      preferredLanguage: "en"
+    });
+
+    const body = preview.email_body || preview.message;
+    assert.equal(preview.current_balance, 60);
+    assert.equal(preview.amount, 60);
+    assert.match(body, /Current balance:\s*\$60\.00/i);
+    assert.match(body, /Suggested payment amount:\s*\$60\.00/i);
+    assert.doesNotMatch(body, /\$250\.00/);
+  });
+
+  it("preview sin deudas activas usa all-caught-up EN sin recomendacion vieja", async () => {
+    const supabaseAdmin = makeSupabaseMock({
+      intents: [
+        {
+          id: intentId,
+          user_id: userId,
+          debt_id: debtId,
+          amount: 80,
+          status: "pending_review",
+          strategy: "snowball",
+          debt_name: "Old Paid Card",
+          metadata: { manual_first_priority: true },
+          created_at: "2026-05-10T00:00:00Z"
+        }
+      ],
+      debt: { id: debtId, user_id: userId, name: "Old Paid Card", current_balance: 0, status: "paid_off", is_active: true },
+      plan: { strategy: "snowball" }
+    });
+
+    const preview = await buildNextPaymentReminderPreview({
+      supabaseAdmin,
+      userId,
+      channel: "email",
+      preferredLanguage: "en"
+    });
+
+    const body = preview.email_body || preview.message;
+    assert.equal(preview.no_active_debts, true);
+    assert.equal(preview.amount, null);
+    assert.match(body, /all caught up/i);
+    assert.match(body, /active debts to track/i);
+    assert.doesNotMatch(body, /Recommended debt/i);
+    assert.doesNotMatch(body, /Old Paid Card/i);
+  });
+
+  it("preview sin deudas activas respeta preferred_language es", async () => {
+    const supabaseAdmin = makeSupabaseMock({
+      intents: [],
+      debts: [{ id: debtId, user_id: userId, name: "Tarjeta pagada", balance: 0, status: "paid", is_active: true }],
+      plan: { strategy: "avalanche" }
+    });
+
+    const preview = await buildNextPaymentReminderPreview({
+      supabaseAdmin,
+      userId,
+      channel: "email",
+      preferredLanguage: "es"
+    });
+
+    assert.equal(preview.no_active_debts, true);
+    assert.match(preview.email_body || preview.message, /Est.s al d.a/i);
+    assert.match(preview.email_body || preview.message, /No tienes deudas activas/i);
   });
 
 
@@ -463,7 +589,8 @@ describe("runDuePaymentReminders cron (V100)", () => {
     prefRows,
     lastUserReminderIso = null,
     lastUserReminderMetadata = null,
-    intentRows = [intentRow]
+    intentRows = [intentRow],
+    debtRows = [debtRow]
   }) {
     const inserts = [];
     const eventRows = lastUserReminderIso
@@ -540,19 +667,18 @@ describe("runDuePaymentReminders cron (V100)", () => {
         if (table === "debts") {
           return {
             select() {
-              return {
+              const chain = {
                 eq() {
-                  return {
-                    eq() {
-                      return {
-                        maybeSingle() {
-                          return Promise.resolve({ data: debtRow, error: null });
-                        }
-                      };
-                    }
-                  };
+                  return chain;
+                },
+                maybeSingle() {
+                  return Promise.resolve({ data: debtRows[0] || null, error: null });
+                },
+                then(onFulfilled, onRejected) {
+                  return Promise.resolve({ data: debtRows, error: null }).then(onFulfilled, onRejected);
                 }
               };
+              return chain;
             }
           };
         }
@@ -716,6 +842,34 @@ describe("runDuePaymentReminders cron (V100)", () => {
     }
   });
 
+  it("cron normal no invoca sms aunque este habilitado", async () => {
+    const prev = process.env.RESEND_API_KEY;
+    const channelsSeen = [];
+    process.env.RESEND_API_KEY = "test";
+    try {
+      const sb = makeCronSupabase({
+        prefRows: [prefEligible()],
+        lastUserReminderIso: null
+      });
+      const out = await runDuePaymentReminders({
+        supabaseAdmin: sb,
+        getIntentAmount: (intent) => Number(intent.amount || 0),
+        now: fixedNow,
+        env: process.env,
+        sendReminderFn: async ({ channel }) => {
+          channelsSeen.push(channel);
+          return { channel, sent: false, provider: "resend" };
+        }
+      });
+      assert.deepEqual(channelsSeen, ["email"]);
+      assert.equal(out.sent, 0);
+      assert.equal(out.reason_counts.provider_returned_not_sent, 1);
+    } finally {
+      if (prev == null) delete process.env.RESEND_API_KEY;
+      else process.env.RESEND_API_KEY = prev;
+    }
+  });
+
   it("cron forceTest omite usuarios sin consentimiento email", async () => {
     const prev = process.env.RESEND_API_KEY;
     process.env.RESEND_API_KEY = "test";
@@ -860,13 +1014,14 @@ describe("runDuePaymentReminders cron (V100)", () => {
     }
   });
 
-  it("cron normal usuario con consentimiento pero sin intent no es elegible", async () => {
+  it("cron normal sin deudas activas no envia recomendacion vieja", async () => {
     const prev = process.env.RESEND_API_KEY;
     process.env.RESEND_API_KEY = "test";
     try {
       const sb = makeCronSupabase({
         prefRows: [prefEligible({ sms_enabled: false, preferred_channel: "email" })],
-        intentRows: []
+        intentRows: [{ ...intentRow, debt_name: "Old Paid Card" }],
+        debtRows: [{ ...debtRow, name: "Old Paid Card", balance: 0, current_balance: 0, status: "paid_off" }]
       });
       const out = await runDuePaymentReminders({
         supabaseAdmin: sb,
@@ -877,7 +1032,8 @@ describe("runDuePaymentReminders cron (V100)", () => {
       });
       assert.equal(out.sent, 0);
       assert.equal(out.eligible, 0);
-      assert.equal(out.reason_counts.no_next_manual_first_intent, 1);
+      assert.equal(out.reason_counts.no_active_debts, 1);
+      assert.equal(out.reason_counts.skipped_paid_debt, 1);
       assert.equal(sb.inserts.length, 0);
     } finally {
       if (prev == null) delete process.env.RESEND_API_KEY;
