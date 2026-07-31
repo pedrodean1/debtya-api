@@ -34,7 +34,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-07-31-v120-payment-email-status";
+const SERVER_VERSION = "debtya-2026-07-31-v121-stale-intent-guard";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2013,12 +2013,26 @@ async function applyExecutedIntentToDebt(userId, intentInput, options = {}) {
   }
 
   const prevStatus = String(debt.status || "active").toLowerCase();
-  const currentBalance = safeNumber(debt.balance);
-  if (prevStatus === "paid" && isDebtBalancePaidOff(currentBalance, safeNumber)) {
+  const currentBalance = safeNumber(debt.balance ?? debt.current_balance);
+  const alreadySettled =
+    prevStatus === "paid" ||
+    prevStatus === "paid_off" ||
+    isDebtBalancePaidOff(currentBalance, safeNumber);
+
+  if (!debtRowEligibleForPlan(debt, safeNumber)) {
+    const reason = alreadySettled ? "deuda_ya_pagada" : "deuda_no_activa";
+    await markIntentMetadata(intentId, userId, {
+      debt_balance_apply_skipped_at: new Date().toISOString(),
+      debt_balance_apply_reason: reason,
+      debt_balance_apply_attempted_amount: amount,
+      debt_balance_previous: currentBalance,
+      debt_balance_next: currentBalance
+    }).catch(() => null);
+
     return {
       ok: true,
       skipped: true,
-      reason: "deuda_ya_pagada",
+      reason,
       debt_id: debtId,
       amount,
       previous_balance: currentBalance,

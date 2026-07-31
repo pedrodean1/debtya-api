@@ -3,6 +3,9 @@ const {
   validateIntentRouteParamId
 } = require("../lib/validation");
 const { parsePreferredLanguageHintFromHttp } = require("../lib/notifications");
+const {
+  retireStaleOpenPaymentIntentsForInactiveDebts
+} = require("../lib/payment-intent-stale-guard");
 
 function logManualConfirmOutcome(userId, result) {
   try {
@@ -15,6 +18,20 @@ function logManualConfirmOutcome(userId, result) {
         confirmation_in_progress: result?.confirmation_in_progress === true,
         debt_apply_reason: result?.debt_apply?.reason || result?.debt_apply?.error || null,
         transactional_email: result?.transactional_email || null
+      })
+    );
+  } catch (_) {}
+}
+
+function logStaleIntentGuardOutcome(userId, result) {
+  if (!result || result.retired_count <= 0) return;
+  try {
+    console.log(
+      "[payment-intents-stale-guard]",
+      JSON.stringify({
+        user_id: userId,
+        retired_count: result.retired_count,
+        reason_counts: result.reason_counts || {}
       })
     );
   } catch (_) {}
@@ -43,7 +60,26 @@ function registerPaymentIntentRoutes(app, deps) {
 
       if (error) throw error;
 
-      return res.json({ ok: true, data: data || [] });
+      const staleGuard = await retireStaleOpenPaymentIntentsForInactiveDebts({
+        userId: req.user.id,
+        intents: data || [],
+        supabaseAdmin,
+        safeNumber
+      });
+      logStaleIntentGuardOutcome(req.user.id, staleGuard);
+
+      return res.json({
+        ok: true,
+        data: staleGuard.intents || [],
+        ...(staleGuard.retired_count > 0
+          ? {
+              stale_payment_intents: {
+                retired_count: staleGuard.retired_count,
+                reason_counts: staleGuard.reason_counts || {}
+              }
+            }
+          : {})
+      });
     } catch (error) {
       return jsonError(res, 500, "Error cargando intents", {
         details: error.message

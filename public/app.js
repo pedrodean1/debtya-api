@@ -2017,6 +2017,7 @@
       session: null,
       user: null,
       debts: [],
+      debtsLoaded: false,
       paidDebts: [],
       rules: [],
       plan: null,
@@ -2737,7 +2738,10 @@
     function hasPendingIntents() {
       return (state.intents || []).some((x) => {
         const s = String(x.status || "").toLowerCase();
-        return ["draft", "pending", "built", "proposed", "ready", "pending_review"].includes(s);
+        return (
+          ["draft", "pending", "built", "proposed", "ready", "pending_review"].includes(s) &&
+          intentTargetsActiveDebtForDashboard(x, { allowUnknownDebt: true })
+        );
       });
     }
 
@@ -3092,6 +3096,10 @@
         snap = buildMinimalManualPrioritySnapshotFromReconcile(res);
       }
       if (!snap || snap.id == null) return;
+      if (!intentTargetsActiveDebtForDashboard(snap, { allowUnknownDebt: true })) {
+        clearManualPriorityStateFull();
+        return;
+      }
 
       state.manualPriorityIntentId = String(snap.id);
       state.manualPriorityDebtId = snap.debt_id != null ? String(snap.debt_id) : null;
@@ -3107,6 +3115,10 @@
       const snap = state.manualPriorityIntentSnapshot;
       const id = state.manualPriorityIntentId;
       if (!snap || !id) return;
+      if (!intentTargetsActiveDebtForDashboard(snap, { allowUnknownDebt: true })) {
+        clearManualPriorityStateFull();
+        return;
+      }
       const idStr = String(id).trim();
       const without = (arr) =>
         (Array.isArray(arr) ? arr : []).filter((i) => String(i?.id || "").trim() !== idStr);
@@ -3414,7 +3426,7 @@
       let priority = null;
       if (strategy === "snowball") {
         active.sort((a, b) => {
-          const db = toNum(a.balance) - toNum(b.balance);
+          const db = debtBalanceForDashboard(a) - debtBalanceForDashboard(b);
           if (db !== 0) return db;
           const aprDiff =
             toNum(b.apr ?? b.interest_rate ?? 0) - toNum(a.apr ?? a.interest_rate ?? 0);
@@ -3434,11 +3446,11 @@
             const va = aa != null && aa > 0 ? aa : -Infinity;
             const vb = bb != null && bb > 0 ? bb : -Infinity;
             if (vb !== va) return vb - va;
-            return toNum(b.balance) - toNum(a.balance);
+            return debtBalanceForDashboard(b) - debtBalanceForDashboard(a);
           });
         } else {
           active.sort((a, b) => {
-            const bal = toNum(b.balance) - toNum(a.balance);
+            const bal = debtBalanceForDashboard(b) - debtBalanceForDashboard(a);
             if (bal !== 0) return bal;
             const da = a.due_day != null ? Number(a.due_day) : 999;
             const dbd = b.due_day != null ? Number(b.due_day) : 999;
@@ -3495,12 +3507,28 @@
           String(smeta.manual_first_priority || "").toLowerCase() === "true" ||
           smeta.manual_first_rebuild === true ||
           String(smeta.manual_first_rebuild || "").toLowerCase() === "true";
-        if ((snapStatus === "pending_review" || snapStatus === "approved") && snapManualFirst) {
+        if (
+          (snapStatus === "pending_review" || snapStatus === "approved") &&
+          snapManualFirst &&
+          intentTargetsActiveDebtForDashboard(snap, { allowUnknownDebt: true })
+        ) {
           return snap;
         }
       }
+      if (
+        state.manualPriorityDebtId &&
+        !intentTargetsActiveDebtForDashboard(
+          { debt_id: state.manualPriorityDebtId },
+          { allowUnknownDebt: true }
+        )
+      ) {
+        clearManualPrioritySelection({ clearDebtAnchor: true });
+        return null;
+      }
+      if (!state.manualPriorityDebtId) return null;
       const amountNum = Number(state.manualPriorityAmount);
       const amount = Number.isFinite(amountNum) && amountNum > 0 ? amountNum : 0;
+      if (!(amount > 0)) return null;
       return {
         id: state.manualPriorityIntentId || null,
         debt_id: state.manualPriorityDebtId || null,
@@ -3519,6 +3547,7 @@
       const st = String(status || "").toLowerCase().trim();
       return (
         st === "executed" ||
+        st === "canceled" ||
         st === "cancelled" ||
         st === "failed" ||
         st === "skipped" ||
@@ -3550,6 +3579,14 @@
       const list = Array.isArray(intents) ? intents : [];
       const byId = list.find((i) => String(i?.id || "").trim() === forcedIdRaw) || null;
       const status = String(byId?.status || "").toLowerCase().trim();
+      if (byId && !intentTargetsActiveDebtForDashboard(byId, { allowUnknownDebt: true })) {
+        clearManualPrioritySelection({
+          confirmedIntentId: forcedIdRaw,
+          clearDebtAnchorIfMatches: true
+        });
+        state.pendingManualConfirmedIntentId = null;
+        return;
+      }
       const pendingConfirmedRaw =
         state.pendingManualConfirmedIntentId != null
           ? String(state.pendingManualConfirmedIntentId).trim()
@@ -3584,20 +3621,32 @@
 
       if (forcedIdRaw) {
         const realHit = listAll.find((i) => String(i?.id || "").trim() === forcedIdRaw);
-        if (realHit && intentStatusDashboardActionable(realHit)) {
+        if (
+          realHit &&
+          intentStatusDashboardActionable(realHit) &&
+          intentTargetsActiveDebtForDashboard(realHit, { allowUnknownDebt: true })
+        ) {
           return realHit;
         }
         const snapOnly = buildManualPrioritySnapshotIntent();
-        if (snapOnly && intentStatusDashboardActionable(snapOnly)) {
+        if (
+          snapOnly &&
+          intentStatusDashboardActionable(snapOnly) &&
+          intentTargetsActiveDebtForDashboard(snapOnly, { allowUnknownDebt: true })
+        ) {
           return snapOnly;
         }
-        if (realHit) {
-          return realHit;
+        if (realHit && !intentTargetsActiveDebtForDashboard(realHit, { allowUnknownDebt: true })) {
+          clearManualPrioritySelection({ confirmedIntentId: forcedIdRaw, clearDebtAnchor: true });
         }
       }
 
       const list = listAll;
-      const actionable = list.filter((intent) => intentStatusDashboardActionable(intent));
+      const actionable = list.filter(
+        (intent) =>
+          intentStatusDashboardActionable(intent) &&
+          intentTargetsActiveDebtForDashboard(intent, { allowUnknownDebt: true })
+      );
 
       if (!actionable.length) {
         if (forcedIdRaw) return buildManualPrioritySnapshotIntent();
@@ -3954,14 +4003,16 @@
     }
 
     function renderStats() {
-      const totalDebt = state.debts.reduce((sum, d) => sum + Number(d.balance || 0), 0);
+      const activeDebts = (Array.isArray(state.debts) ? state.debts : []).filter((d) => isDebtActiveForDashboard(d));
+      const totalDebt = activeDebts.reduce((sum, d) => sum + debtBalanceForDashboard(d), 0);
       const pending = state.intents.filter(x =>
-        ["draft","pending","built","proposed","ready","pending_review","approved"].includes(String(x.status || "").toLowerCase())
+        ["draft","pending","built","proposed","ready","pending_review","approved"].includes(String(x.status || "").toLowerCase()) &&
+        intentTargetsActiveDebtForDashboard(x, { allowUnknownDebt: true })
       ).length;
       const executed = state.intents.filter(x => String(x.status || "").toLowerCase() === "executed").length;
 
       $("statDebtTotal").textContent = fmtMoney(totalDebt);
-      $("statDebtCount").textContent = String(state.debts.length);
+      $("statDebtCount").textContent = String(activeDebts.length);
       $("statPendingIntents").textContent = String(pending);
       $("statExecutedIntents").textContent = String(executed);
       renderPayoffSimulation();
@@ -3975,10 +4026,35 @@
 
     const PAID_BALANCE_THRESHOLD_UI = 0.01;
 
+    function debtBalanceForDashboard(d) {
+      return toNum(d?.balance ?? d?.current_balance);
+    }
+
     function isDebtActiveForDashboard(d) {
       if (!d || d.is_active === false) return false;
-      if (String(d.status || "").toLowerCase() === "paid") return false;
-      return toNum(d.balance) > PAID_BALANCE_THRESHOLD_UI;
+      const status = String(d.status || "").toLowerCase().trim();
+      if (status === "paid" || status === "paid_off" || status === "archived") return false;
+      return debtBalanceForDashboard(d) > PAID_BALANCE_THRESHOLD_UI;
+    }
+
+    function intentDebtIdForDashboard(intent) {
+      const raw = intent?.debt_id ?? intent?.target_debt_id ?? null;
+      const s = raw != null ? String(raw).trim() : "";
+      return s || "";
+    }
+
+    function findDebtForIntentDashboard(intent) {
+      const did = intentDebtIdForDashboard(intent);
+      if (!did) return null;
+      return (Array.isArray(state.debts) ? state.debts : []).find((d) => String(d?.id || "") === did) || null;
+    }
+
+    function intentTargetsActiveDebtForDashboard(intent, options = {}) {
+      const did = intentDebtIdForDashboard(intent);
+      if (!did) return false;
+      const debt = findDebtForIntentDashboard(intent);
+      if (debt) return isDebtActiveForDashboard(debt);
+      return options.allowUnknownDebt === true && state.debtsLoaded !== true;
     }
 
     function parseAprValue(debt) {
@@ -4013,7 +4089,7 @@
       applyPayoffSimulationCardI18n();
 
       const debts = (Array.isArray(state.debts) ? state.debts : []).filter((d) => isDebtActiveForDashboard(d));
-      const totalDebtBalance = debts.reduce((sum, d) => sum + toNum(d.balance), 0);
+      const totalDebtBalance = debts.reduce((sum, d) => sum + debtBalanceForDashboard(d), 0);
       const totalMinimumPayment = debts.reduce((sum, d) => sum + toNum(d.minimum_payment), 0);
       const activeDebts = debts.length;
 
@@ -4552,10 +4628,11 @@
         box.innerHTML = `<div class="empty muted">${escapeHtml(t("empty_active_debts"))}</div>`;
       }
 
-      const highestBalance = Math.max(...activeRows.map((d) => Number(d.balance || 0)), 1);
+      const highestBalance = Math.max(...activeRows.map((d) => debtBalanceForDashboard(d)), 1);
 
       activeRows.forEach((debt) => {
-        const progress = Math.max(5, Math.min(100, (Number(debt.balance || 0) / highestBalance) * 100));
+        const balance = debtBalanceForDashboard(debt);
+        const progress = Math.max(5, Math.min(100, (balance / highestBalance) * 100));
         const el = document.createElement("div");
         el.className = "item";
         el.innerHTML = `
@@ -4576,13 +4653,13 @@
               </div>
             </div>
             <div class="right">
-              <div class="money">${fmtMoney(debt.balance)}</div>
+              <div class="money">${fmtMoney(balance)}</div>
               <div class="muted" style="font-size:12px;margin-top:4px;">${escapeHtml(t("updated_label"))}: ${fmtDate(debt.updated_at)}</div>
             </div>
           </div>
           <div class="progress"><span style="width:${progress}%"></span></div>
           ${
-            toNum(debt.balance) > PAID_BALANCE_THRESHOLD_UI
+            balance > PAID_BALANCE_THRESHOLD_UI
               ? `<div style="margin-top:10px;">
                   <button type="button" class="btn btn-light btn-small extra-pay-debt-btn" data-debt-id="${escapeHtml(
                     String(debt.id)
@@ -4845,10 +4922,16 @@
         const meta = normalizeIntentMetadata(intent.metadata);
         const item = document.createElement("div");
         item.className = "item";
-        const actionsHtml = `<div class="item-actions">
+        const status = String(intent.status || "").toLowerCase().trim();
+        const canActOnIntent =
+          ["draft", "pending", "built", "proposed", "ready", "pending_review", "approved"].includes(status) &&
+          intentTargetsActiveDebtForDashboard(intent, { allowUnknownDebt: true });
+        const actionsHtml = canActOnIntent
+          ? `<div class="item-actions">
             <button class="btn btn-success btn-small" type="button" onclick="approveIntent('${intent.id}')">${escapeHtml(t("btn_approve"))}</button>
             <button class="btn btn-primary btn-small" type="button" onclick="executeIntent('${intent.id}')">${escapeHtml(t("btn_execute"))}</button>
-          </div>`;
+          </div>`
+          : "";
         item.innerHTML = `
           <div class="item-top">
             <div>
@@ -5382,7 +5465,7 @@
         if (!d?.id || !isDebtActiveForDashboard(d)) return;
         const op = document.createElement("option");
         op.value = d.id;
-        op.textContent = `${cleanVisibleDebtName(d.name) || t("debt_label")} ? ${fmtMoney(d.balance)}`;
+        op.textContent = `${cleanVisibleDebtName(d.name) || t("debt_label")} ? ${fmtMoney(debtBalanceForDashboard(d))}`;
         debtSel.appendChild(op);
       });
 
@@ -5552,7 +5635,7 @@
       const arr = Array.isArray(state.debts) ? state.debts : [];
       const idx = arr.findIndex((d) => d && String(d.id).trim() === idStr);
       if (idx >= 0) {
-        const row = { ...state.debts[idx], balance: n };
+        const row = { ...state.debts[idx], balance: n, current_balance: n };
         if (j.debt_marked_paid) row.status = "paid";
         state.debts[idx] = row;
       }
@@ -5561,8 +5644,10 @@
     async function refreshDebts() {
       const res = await api("/debts");
       state.debts = res.data || [];
+      state.debtsLoaded = true;
       state.paidDebts = res.paid_debts || [];
       renderDebts();
+      renderIntents();
     }
 
     function isSpinwheelMeNoMappingError(err) {

@@ -51,6 +51,113 @@ function mount(deps) {
 }
 
 describe("routes/payment-intents-routes", () => {
+  it("GET retira intents abiertos que apuntan a deuda pagada antes de devolverlos", async () => {
+    const staleId = "661e8400-e29b-41d4-a716-446655440001";
+    const activeId = "661e8400-e29b-41d4-a716-446655440002";
+    const staleDebtId = "771e8400-e29b-41d4-a716-446655440001";
+    const activeDebtId = "771e8400-e29b-41d4-a716-446655440002";
+    const updates = [];
+    const supabaseAdmin = {
+      from(table) {
+        if (table === "payment_intents") {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    order() {
+                      return Promise.resolve({
+                        data: [
+                          {
+                            id: staleId,
+                            user_id: userId,
+                            debt_id: staleDebtId,
+                            status: "pending_review",
+                            metadata: {}
+                          },
+                          {
+                            id: activeId,
+                            user_id: userId,
+                            debt_id: activeDebtId,
+                            status: "pending_review",
+                            metadata: {}
+                          }
+                        ],
+                        error: null
+                      });
+                    }
+                  };
+                }
+              };
+            },
+            update(payload) {
+              const call = { payload, eqs: [], inArgs: null };
+              updates.push(call);
+              const builder = {
+                eq(col, value) {
+                  call.eqs.push({ col, value });
+                  return builder;
+                },
+                in(col, values) {
+                  call.inArgs = { col, values };
+                  return Promise.resolve({ error: null });
+                }
+              };
+              return builder;
+            }
+          };
+        }
+        if (table === "debts") {
+          return {
+            select() {
+              return {
+                eq() {
+                  return {
+                    in() {
+                      return Promise.resolve({
+                        data: [
+                          {
+                            id: staleDebtId,
+                            user_id: userId,
+                            status: "paid",
+                            balance: 0,
+                            current_balance: 0,
+                            is_active: true
+                          },
+                          {
+                            id: activeDebtId,
+                            user_id: userId,
+                            status: "active",
+                            balance: 150,
+                            current_balance: 150,
+                            is_active: true
+                          }
+                        ],
+                        error: null
+                      });
+                    }
+                  };
+                }
+              };
+            }
+          };
+        }
+        throw new Error(`tabla inesperada ${table}`);
+      }
+    };
+    const app = mount(makeDeps({ supabaseAdmin }));
+    const res = await request(app).get("/payment-intents");
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.ok, true);
+    assert.equal(res.body.stale_payment_intents.retired_count, 1);
+    assert.deepEqual(res.body.stale_payment_intents.reason_counts, { debt_paid: 1 });
+    assert.equal(res.body.data.find((x) => x.id === staleId).status, "skipped");
+    assert.equal(res.body.data.find((x) => x.id === activeId).status, "pending_review");
+    assert.equal(updates.length, 1);
+    assert.equal(updates[0].payload.metadata.stale_intent_retired_reason, "debt_paid");
+  });
+
   it("POST rechaza amount negativo con request_id y http_status", async () => {
     const app = mount(
       makeDeps({
