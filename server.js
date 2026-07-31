@@ -34,7 +34,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-05-19-v119-minimum-payment-due-email";
+const SERVER_VERSION = "debtya-2026-07-31-v120-payment-email-status";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -1884,7 +1884,7 @@ function summarizePaymentEmailResult(result) {
 }
 
 function logPaymentEmailOutcome(userId, intentId, summary) {
-  if (!summary || (summary.ok && summary.payment_email_sent && !summary.reason && !summary.error)) return;
+  if (!summary) return;
   try {
     console.log(
       "[payment-email]",
