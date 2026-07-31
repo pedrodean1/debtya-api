@@ -197,9 +197,38 @@ describe("lib/notifications transactional copy", () => {
         throw new Error("Resend down");
       }
     });
+    assert.equal(out.ok, false);
+    assert.equal(out.reason, "provider_send_failed");
     assert.equal(out.payment_email, false);
     assert.ok(out.payment_email_error);
     assert.equal(merges, 0);
+  });
+
+  it("sin provider configurado devuelve motivo seguro y no envía", async () => {
+    let sends = 0;
+    const out = await sendTransactionalPaymentCelebrationEmails({
+      supabaseAdmin: metaSupabase({}),
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "a@b.com",
+      intentId: "660e8400-e29b-41d4-a716-446655440000",
+      amount: 10,
+      debtNameDisplay: "X",
+      previousBalance: 100,
+      nextBalance: 90,
+      previousDebtStatus: "active",
+      env: {},
+      mergeIntentMetadata: async () => {
+        throw new Error("should not merge");
+      },
+      appError: () => {},
+      sendEmailFn: async () => {
+        sends += 1;
+      }
+    });
+    assert.equal(out.skipped, true);
+    assert.equal(out.reason, "email_provider_not_configured");
+    assert.equal(out.payment_email, false);
+    assert.equal(sends, 0);
   });
 
   it("deuda ya pagada y sin cambio: no envía emails", async () => {

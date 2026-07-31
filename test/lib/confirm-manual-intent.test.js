@@ -189,6 +189,12 @@ describe("lib/confirm-manual-intent", () => {
       },
       sendPaymentRecordedEmailsSafe: async () => {
         emailCount += 1;
+        return {
+          ok: true,
+          payment_email_sent: true,
+          celebration_email_sent: false,
+          skipped: false
+        };
       },
       appDebug: () => {}
     });
@@ -199,6 +205,12 @@ describe("lib/confirm-manual-intent", () => {
     assert.equal(r1.ok, true);
     assert.equal(applyCount, 1);
     assert.equal(emailCount, 1);
+    assert.deepEqual(r1.transactional_email, {
+      ok: true,
+      payment_email_sent: true,
+      celebration_email_sent: false,
+      skipped: false
+    });
 
     const r2 = await confirm(userId, intentId, {});
     assert.equal(r2.already_confirmed, true);

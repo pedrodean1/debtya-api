@@ -107,6 +107,40 @@ describe("routes/debts-extra-payment-routes", () => {
     assert.equal(res.body.data.balance, 10);
   });
 
+  it("extra-payment devuelve resumen seguro del email transaccional", async () => {
+    const app = mount(
+      makeDeps({
+        recordManualExtraDebtPayment: async () => ({
+          ok: true,
+          intent_id: "660e8400-e29b-41d4-a716-446655440000",
+          debt_id: debtId,
+          requested_amount: 50,
+          applied_amount: 40,
+          amount_clamped: true,
+          data: { id: debtId, balance: 10 },
+          transactional_email: {
+            ok: false,
+            payment_email_sent: false,
+            celebration_email_sent: false,
+            skipped: false,
+            reason: "provider_send_failed",
+            error: "provider_send_failed"
+          }
+        })
+      })
+    );
+    const res = await request(app).post(`/debts/${debtId}/extra-payment`).send({ amount: 50 });
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.transactional_email, {
+      ok: false,
+      payment_email_sent: false,
+      celebration_email_sent: false,
+      skipped: false,
+      reason: "provider_send_failed",
+      error: "provider_send_failed"
+    });
+  });
+
   it("extra-payment pasa preferred_language al handler", async () => {
     let captured;
     const app = mount(

@@ -91,6 +91,38 @@ describe("routes/payment-intents-routes", () => {
     assert.equal(res.body.amount_confirmed, 25);
   });
 
+  it("POST confirm-manual devuelve resumen seguro del email transaccional", async () => {
+    const app = mount(
+      makeDeps({
+        confirmManualPaymentIntentDirect: async () => ({
+          ok: true,
+          intent_id: intentId,
+          debt_id: "770e8400-e29b-41d4-a716-446655440000",
+          amount_confirmed: 25,
+          new_balance: 100,
+          data: { id: intentId, status: "executed" },
+          debt_apply: { ok: true, next_balance: 100 },
+          transactional_email: {
+            ok: true,
+            payment_email_sent: false,
+            celebration_email_sent: false,
+            skipped: true,
+            reason: "email_provider_not_configured"
+          }
+        })
+      })
+    );
+    const res = await request(app).post(`/payment-intents/${intentId}/confirm-manual`).send({});
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.transactional_email, {
+      ok: true,
+      payment_email_sent: false,
+      celebration_email_sent: false,
+      skipped: true,
+      reason: "email_provider_not_configured"
+    });
+  });
+
   it("POST confirm-manual propaga already_confirmed del handler", async () => {
     const app = mount(
       makeDeps({

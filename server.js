@@ -1850,15 +1850,73 @@ async function getAuthUserEmailForUser(userId) {
   }
 }
 
+const SAFE_PAYMENT_EMAIL_REASONS = new Set([
+  "invalid_intent_id",
+  "no_user_email",
+  "email_provider_not_configured",
+  "missing_deps",
+  "intent_load_failed",
+  "payment_email_already_sent",
+  "already_fully_paid_noop",
+  "provider_send_failed",
+  "unexpected_error"
+]);
+
+function summarizePaymentEmailResult(result) {
+  if (!result || typeof result !== "object") return null;
+  const reasonRaw = result.reason != null ? String(result.reason).trim().toLowerCase() : "";
+  const reason = SAFE_PAYMENT_EMAIL_REASONS.has(reasonRaw)
+    ? reasonRaw
+    : reasonRaw
+      ? "unexpected_error"
+      : null;
+  const out = {
+    ok: result.ok !== false,
+    payment_email_sent: result.payment_email === true,
+    celebration_email_sent: result.celebration === true,
+    skipped: result.skipped === true
+  };
+  if (reason) out.reason = reason;
+  if (result.payment_email_error || result.celebration_error) {
+    out.error = "provider_send_failed";
+  }
+  return out;
+}
+
+function logPaymentEmailOutcome(userId, intentId, summary) {
+  if (!summary || (summary.ok && summary.payment_email_sent && !summary.reason && !summary.error)) return;
+  try {
+    console.log(
+      "[payment-email]",
+      JSON.stringify({
+        user_id: userId,
+        intent_id: intentId,
+        ok: summary.ok,
+        payment_email_sent: summary.payment_email_sent,
+        celebration_email_sent: summary.celebration_email_sent,
+        skipped: summary.skipped,
+        reason: summary.reason || null,
+        error: summary.error || null
+      })
+    );
+  } catch (_) {}
+}
+
 async function sendPaymentRecordedEmailsSafe(userId, params) {
   const intentId = params && params.intentId != null ? String(params.intentId).trim() : "";
-  if (!intentId || !isUuid(intentId)) return;
+  if (!intentId || !isUuid(intentId)) {
+    return summarizePaymentEmailResult({
+      ok: true,
+      skipped: true,
+      reason: "invalid_intent_id"
+    });
+  }
   const email = await getAuthUserEmailForUser(userId);
   const mergeMeta = async (patch) => {
     await markIntentMetadata(intentId, userId, patch);
   };
   try {
-    await sendTransactionalPaymentCelebrationEmails({
+    const result = await sendTransactionalPaymentCelebrationEmails({
       supabaseAdmin,
       userId,
       userEmail: email,
@@ -1873,10 +1931,20 @@ async function sendPaymentRecordedEmailsSafe(userId, params) {
       mergeIntentMetadata: mergeMeta,
       appError
     });
+    const summary = summarizePaymentEmailResult(result);
+    logPaymentEmailOutcome(userId, intentId, summary);
+    return summary;
   } catch (e) {
     try {
       appError("sendPaymentRecordedEmailsSafe:", e);
     } catch (_) {}
+    const summary = summarizePaymentEmailResult({
+      ok: false,
+      skipped: false,
+      reason: "unexpected_error"
+    });
+    logPaymentEmailOutcome(userId, intentId, summary);
+    return summary;
   }
 }
 
@@ -2161,8 +2229,9 @@ async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNot
       appDebug("reconcile post pago extra:", reErr.message || String(reErr));
     }
 
+    let transactionalEmail = null;
     if (appliedOk) {
-      await sendPaymentRecordedEmailsSafe(userId, {
+      transactionalEmail = await sendPaymentRecordedEmailsSafe(userId, {
         intentId,
         amount: applied,
         debtName: debt.name,
@@ -2182,7 +2251,8 @@ async function recordManualExtraDebtPayment(userId, debtIdRaw, rawAmount, rawNot
       amount_clamped,
       data: debtUpdated,
       debt_apply: debtApply,
-      debt_marked_paid: !!debtApply.debt_marked_paid_now
+      debt_marked_paid: !!debtApply.debt_marked_paid_now,
+      transactional_email: transactionalEmail
     };
   } catch (e) {
     await rollbackIntent().catch(() => null);

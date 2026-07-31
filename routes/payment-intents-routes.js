@@ -135,6 +135,7 @@ function registerPaymentIntentRoutes(app, deps) {
         new_balance: result.new_balance,
         debt_marked_paid: result.debt_marked_paid,
         debt_apply: result.debt_apply,
+        ...(result.transactional_email ? { transactional_email: result.transactional_email } : {}),
         data: result.data
       });
     } catch (error) {
