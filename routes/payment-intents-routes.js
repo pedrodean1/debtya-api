@@ -4,6 +4,22 @@ const {
 } = require("../lib/validation");
 const { parsePreferredLanguageHintFromHttp } = require("../lib/notifications");
 
+function logManualConfirmOutcome(userId, result) {
+  try {
+    console.log(
+      "[payment-confirm-manual]",
+      JSON.stringify({
+        user_id: userId,
+        intent_id: result?.intent_id || null,
+        already_confirmed: result?.already_confirmed === true,
+        confirmation_in_progress: result?.confirmation_in_progress === true,
+        debt_apply_reason: result?.debt_apply?.reason || result?.debt_apply?.error || null,
+        transactional_email: result?.transactional_email || null
+      })
+    );
+  } catch (_) {}
+}
+
 function registerPaymentIntentRoutes(app, deps) {
   const {
     requireUser,
@@ -122,6 +138,7 @@ function registerPaymentIntentRoutes(app, deps) {
       const result = await confirmManualPaymentIntentDirect(req.user.id, intentId, {
         preferredLanguageHint: langHint
       });
+      logManualConfirmOutcome(req.user.id, result);
 
       return res.json({
         ok: true,

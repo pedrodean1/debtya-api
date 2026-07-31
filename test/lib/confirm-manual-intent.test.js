@@ -189,6 +189,12 @@ describe("lib/confirm-manual-intent", () => {
       },
       sendPaymentRecordedEmailsSafe: async () => {
         emailCount += 1;
+        supabaseAdmin._setRow({
+          metadata: {
+            ...parseMeta(supabaseAdmin._getRow().metadata),
+            payment_recorded_email_sent_at: "2020-01-01T00:00:02.000Z"
+          }
+        });
         return {
           ok: true,
           payment_email_sent: true,
@@ -218,7 +224,7 @@ describe("lib/confirm-manual-intent", () => {
     assert.equal(emailCount, 1);
   });
 
-  it("claim perdido: fila ya ejecutada con balance aplicado devuelve already_confirmed", async () => {
+  it("claim perdido: fila ya ejecutada con balance aplicado reintenta email si faltaba", async () => {
     const supabaseAdmin = createSupabaseMock();
     supabaseAdmin._setRow({
       status: "executed",
@@ -252,6 +258,12 @@ describe("lib/confirm-manual-intent", () => {
       },
       sendPaymentRecordedEmailsSafe: async () => {
         emailCount += 1;
+        return {
+          ok: true,
+          payment_email_sent: true,
+          celebration_email_sent: false,
+          skipped: false
+        };
       },
       appDebug: () => {}
     });
@@ -259,7 +271,54 @@ describe("lib/confirm-manual-intent", () => {
     const r = await confirm(userId, intentId, {});
     assert.equal(r.already_confirmed, true);
     assert.equal(applyCount, 0);
+    assert.equal(emailCount, 1);
+    assert.deepEqual(r.transactional_email, {
+      ok: true,
+      payment_email_sent: true,
+      celebration_email_sent: false,
+      skipped: false
+    });
+  });
+
+  it("fila ya ejecutada no reintenta email si metadata indica enviado", async () => {
+    const supabaseAdmin = createSupabaseMock();
+    supabaseAdmin._setRow({
+      status: "executed",
+      metadata: {
+        debt_balance_applied_at: "2020-01-01T00:00:01.000Z",
+        debt_balance_previous: 50,
+        debt_balance_next: 40,
+        payment_recorded_email_sent_at: "2020-01-01T00:00:02.000Z"
+      }
+    });
+
+    let emailCount = 0;
+    const confirm = createConfirmManualPaymentIntentHandler({
+      supabaseAdmin,
+      isUuid: (id) =>
+        typeof id === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+      getIntentAmount: (intent) => Number(intent.total_amount || intent.amount || 0),
+      getIntentMetadata: (intent) => parseMeta(intent?.metadata),
+      intentRowForDebtBalanceApply: (pre, post, amt) => ({
+        ...post,
+        debt_id: post.debt_id || pre.debt_id,
+        total_amount: amt,
+        amount: amt
+      }),
+      applyExecutedIntentToDebt: async () => {
+        throw new Error("should not apply");
+      },
+      sendPaymentRecordedEmailsSafe: async () => {
+        emailCount += 1;
+      },
+      appDebug: () => {}
+    });
+
+    const r = await confirm(userId, intentId, {});
+    assert.equal(r.already_confirmed, true);
     assert.equal(emailCount, 0);
+    assert.equal(r.transactional_email, undefined);
   });
 
   it("deuda ya pagada al confirmar manual retira intent stale sin registrar pago ni email", async () => {
