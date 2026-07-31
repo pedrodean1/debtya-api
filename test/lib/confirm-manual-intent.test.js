@@ -28,6 +28,7 @@ function createSupabaseMock() {
     metadata: {}
   };
   let claimPass = true;
+  let executionDeleted = false;
 
   function mergeRow(patch) {
     const nextMeta = {
@@ -122,7 +123,10 @@ function createSupabaseMock() {
         return {
           upsert: () => Promise.resolve({ error: null }),
           delete: () => ({
-            eq: () => Promise.resolve({ error: null })
+            eq: () => {
+              executionDeleted = true;
+              return Promise.resolve({ error: null });
+            }
           })
         };
       }
@@ -135,7 +139,8 @@ function createSupabaseMock() {
     },
     _setRow: (patch) => {
       mergeRow(patch);
-    }
+    },
+    _executionDeleted: () => executionDeleted
   };
 
   return supabaseAdmin;
@@ -242,6 +247,65 @@ describe("lib/confirm-manual-intent", () => {
     const r = await confirm(userId, intentId, {});
     assert.equal(r.already_confirmed, true);
     assert.equal(applyCount, 0);
+    assert.equal(emailCount, 0);
+  });
+
+  it("deuda ya pagada al confirmar manual retira intent stale sin registrar pago ni email", async () => {
+    const supabaseAdmin = createSupabaseMock();
+    let applyCount = 0;
+    let emailCount = 0;
+
+    const confirm = createConfirmManualPaymentIntentHandler({
+      supabaseAdmin,
+      isUuid: (id) =>
+        typeof id === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+      getIntentAmount: (intent) => Number(intent.total_amount || intent.amount || 0),
+      getIntentMetadata: (intent) => parseMeta(intent?.metadata),
+      intentRowForDebtBalanceApply: (pre, post, amt) => ({
+        ...post,
+        debt_id: post.debt_id || pre.debt_id,
+        total_amount: amt,
+        amount: amt
+      }),
+      applyExecutedIntentToDebt: async () => {
+        applyCount += 1;
+        return {
+          ok: true,
+          skipped: true,
+          reason: "deuda_ya_pagada",
+          debt_id: debtId,
+          amount: 10,
+          previous_balance: 0,
+          next_balance: 0,
+          previous_status: "paid",
+          debt_marked_paid_now: false
+        };
+      },
+      sendPaymentRecordedEmailsSafe: async () => {
+        emailCount += 1;
+      },
+      appDebug: () => {}
+    });
+
+    const r = await confirm(userId, intentId, {});
+    const row = supabaseAdmin._getRow();
+    const meta = parseMeta(row.metadata);
+
+    assert.equal(r.ok, true);
+    assert.equal(r.already_confirmed, true);
+    assert.equal(r.debt_apply.reason, "deuda_ya_pagada");
+    assert.equal(r.old_balance, 0);
+    assert.equal(r.new_balance, 0);
+    assert.equal(row.status, "skipped");
+    assert.equal(row.executed_at, null);
+    assert.equal(meta.debt_balance_apply_reason, "deuda_ya_pagada");
+    assert.equal(meta.manual_confirm_skipped_reason, "deuda_ya_pagada");
+    assert.ok(meta.manual_confirm_skipped_at);
+    assert.equal(meta.debt_balance_previous, 0);
+    assert.equal(meta.debt_balance_next, 0);
+    assert.equal(supabaseAdmin._executionDeleted(), true);
+    assert.equal(applyCount, 1);
     assert.equal(emailCount, 0);
   });
 

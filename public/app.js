@@ -3555,7 +3555,7 @@
           ? String(state.pendingManualConfirmedIntentId).trim()
           : "";
       const canClearAfterConfirm = pendingConfirmedRaw && pendingConfirmedRaw === forcedIdRaw;
-      if (canClearAfterConfirm && byId && status === "executed") {
+      if (canClearAfterConfirm && byId && isTerminalIntentStatus(status)) {
         clearManualPrioritySelection({
           confirmedIntentId: forcedIdRaw,
           clearDebtAnchorIfMatches: true
