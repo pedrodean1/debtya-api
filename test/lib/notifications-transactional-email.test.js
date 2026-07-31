@@ -125,20 +125,24 @@ describe("lib/notifications transactional copy", () => {
 
   it("ES pago registrado contiene frase clave", () => {
     const c = buildPaymentRecordedTransactionalCopy("es", 50, "Visa");
-    assert.match(c.subject, /Pago registrado/i);
+    assert.match(c.subject, /Pago registrado: Visa/i);
     assert.match(c.body, /DebtYa no mueve dinero/i);
-    assert.match(c.body, /Visa/);
+    assert.match(c.body, /Registramos tu pago.*Visa/);
+    assert.match(c.body, /Pago aplicado a: Visa/);
   });
 
   it("EN pago registrado contiene reminder", () => {
     const c = buildPaymentRecordedTransactionalCopy("en", 25.5, "Card");
-    assert.match(c.subject, /Payment recorded/i);
+    assert.match(c.subject, /Payment recorded: Card/i);
     assert.match(c.body, /DebtYa does not move money/i);
+    assert.match(c.body, /We recorded your.*payment toward Card/);
+    assert.match(c.body, /Payment applied to: Card/);
   });
 
   it("ES celebración usa ¡Felicidades!", () => {
     const c = buildDebtPaidOffTransactionalCopy("es", "Loan A");
     assert.match(c.subject, /¡Felicidades!/);
+    assert.match(c.subject, /Loan A/);
     assert.match(c.body, /Loan A/);
     assert.match(c.body, /La movimos a Deudas pagadas/);
   });
@@ -146,6 +150,7 @@ describe("lib/notifications transactional copy", () => {
   it("EN celebración usa Congrats", () => {
     const c = buildDebtPaidOffTransactionalCopy("en", "Loan B");
     assert.match(c.subject, /Congrats/);
+    assert.match(c.subject, /Loan B/);
     assert.match(c.body, /Loan B/);
     assert.match(c.body, /We moved it to Paid debts/);
   });
