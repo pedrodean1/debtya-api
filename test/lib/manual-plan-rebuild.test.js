@@ -30,17 +30,8 @@ function normalizePaymentPlan(row) {
   return { ...row };
 }
 
-/**
- * Pasos payment_intents: select abiertos; [cancel]; insert; select stray; [cancel stray]
- */
 function makeSupabaseMock({ debts, openRows, newIntentRow, strayRows = [] }) {
-  const steps = ["selectOpen"];
-  if (openRows.length) steps.push("cancelOpen");
-  steps.push("insert");
-  steps.push("straySelect");
-  if (strayRows.length) steps.push("cancelStray");
-
-  let idx = 0;
+  let didSelectOpen = false;
   return {
     from(table) {
       if (table === "debts") {
@@ -53,55 +44,33 @@ function makeSupabaseMock({ debts, openRows, newIntentRow, strayRows = [] }) {
         };
       }
       if (table === "payment_intents") {
-        const step = steps[idx++];
-        if (step === "selectOpen") {
-          return {
-            select: () => ({
-              eq: () => ({
-                in: () => Promise.resolve({ data: openRows, error: null })
-              })
-            })
-          };
-        }
-        if (step === "cancelOpen") {
-          return {
-            update: () => ({
-              in: () => ({
-                eq: () => Promise.resolve({ error: null })
-              })
-            })
-          };
-        }
-        if (step === "insert") {
-          return {
-            insert: () => ({
-              select: () => ({
-                single: () => Promise.resolve({ data: newIntentRow, error: null })
-              })
-            })
-          };
-        }
-        if (step === "straySelect") {
-          return {
-            select: () => ({
-              eq: () => ({
-                in: () => ({
+        return {
+          select: () => ({
+            eq: () => ({
+              in: () => {
+                if (!didSelectOpen) {
+                  didSelectOpen = true;
+                  return Promise.resolve({ data: openRows, error: null });
+                }
+                return {
                   neq: () => Promise.resolve({ data: strayRows, error: null })
-                })
+                };
+              }
+            })
+          }),
+          update: () => ({
+            eq: () => ({
+              eq: () => ({
+                in: () => Promise.resolve({ error: null })
               })
             })
-          };
-        }
-        if (step === "cancelStray") {
-          return {
-            update: () => ({
-              in: () => ({
-                eq: () => Promise.resolve({ error: null })
-              })
+          }),
+          insert: () => ({
+            select: () => ({
+              single: () => Promise.resolve({ data: newIntentRow, error: null })
             })
-          };
-        }
-        throw new Error(`mock payment_intents paso desconocido: ${step}`);
+          })
+        };
       }
       throw new Error(`mock tabla ${table}`);
     }

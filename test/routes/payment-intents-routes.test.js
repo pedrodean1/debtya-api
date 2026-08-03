@@ -152,7 +152,7 @@ describe("routes/payment-intents-routes", () => {
     assert.equal(res.body.ok, true);
     assert.equal(res.body.stale_payment_intents.retired_count, 1);
     assert.deepEqual(res.body.stale_payment_intents.reason_counts, { debt_paid: 1 });
-    assert.equal(res.body.data.find((x) => x.id === staleId).status, "canceled");
+    assert.equal(res.body.data.find((x) => x.id === staleId).status, "cancelled");
     assert.equal(res.body.data.find((x) => x.id === activeId).status, "pending_review");
     assert.equal(updates.length, 1);
     assert.equal(updates[0].payload.metadata.stale_intent_retired_reason, "debt_paid");

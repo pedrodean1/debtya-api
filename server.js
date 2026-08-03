@@ -34,7 +34,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-08-02-v123-stale-intent-canceled-status";
+const SERVER_VERSION = "debtya-2026-08-02-v124-payment-intent-status-compatible";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
@@ -2532,7 +2532,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
       await supabaseAdmin
         .from("payment_intents")
         .update({
-          status: "canceled",
+          status: "cancelled",
           updated_at: now,
           notes: "Sin deudas con saldo — plan manual-first"
         })
@@ -2567,7 +2567,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
       await supabaseAdmin
         .from("payment_intents")
         .update({
-          status: "canceled",
+          status: "cancelled",
           updated_at: now,
           notes: "Monto recomendado no disponible — plan manual-first"
         })
@@ -2601,7 +2601,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
     await supabaseAdmin
       .from("payment_intents")
       .update({
-        status: "canceled",
+        status: "cancelled",
         updated_at: now,
         notes: "Reemplazado por recomendacion manual-first unica"
       })
@@ -2653,7 +2653,7 @@ async function reconcileManualFirstPriorityIntent(userId) {
       await supabaseAdmin
         .from("payment_intents")
         .update({
-          status: "canceled",
+          status: "cancelled",
           updated_at: now,
           notes: "Mantenido solo intent manual-first (post-insert cleanup)"
         })

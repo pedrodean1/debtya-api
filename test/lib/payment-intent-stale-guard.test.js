@@ -12,7 +12,8 @@ function safeNumber(value, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function makeSupabaseMock({ debts, updates, debtSelects = [] }) {
+function makeSupabaseMock({ debts, updates, debtSelects = [], rejectedStatuses = [] }) {
+  const rejectedStatusSet = new Set(rejectedStatuses);
   return {
     from(table) {
       if (table === "debts") {
@@ -47,6 +48,15 @@ function makeSupabaseMock({ debts, updates, debtSelects = [] }) {
               },
               in(col, values) {
                 call.inArgs = { col, values };
+                if (payload.status && rejectedStatusSet.has(payload.status)) {
+                  return Promise.resolve({
+                    error: {
+                      code: "23514",
+                      message:
+                        'new row for relation "payment_intents" violates check constraint "payment_intents_status_check"'
+                    }
+                  });
+                }
                 return Promise.resolve({ error: null });
               }
             };
@@ -99,11 +109,42 @@ describe("lib/payment-intent-stale-guard", () => {
     assert.equal(out.retired_count, 3);
     assert.deepEqual(out.reason_counts, { debt_paid: 2, debt_zero_balance: 1 });
     assert.equal(out.intents.find((x) => x.id === "intent-active").status, "pending_review");
-    assert.equal(out.intents.find((x) => x.id === "intent-paid").status, "canceled");
-    assert.equal(out.intents.find((x) => x.id === "intent-paid-off").status, "canceled");
-    assert.equal(out.intents.find((x) => x.id === "intent-zero-current").status, "canceled");
+    assert.equal(out.intents.find((x) => x.id === "intent-paid").status, "cancelled");
+    assert.equal(out.intents.find((x) => x.id === "intent-paid-off").status, "cancelled");
+    assert.equal(out.intents.find((x) => x.id === "intent-zero-current").status, "cancelled");
     assert.equal(out.intents.find((x) => x.id === "intent-executed").status, "executed");
     assert.equal(updates.length, 3);
+    assert.equal(updates[0].payload.status, "cancelled");
     assert.equal(updates[0].payload.metadata.stale_intent_retired_at, "2026-07-31T00:00:00.000Z");
+  });
+
+  it("no falla si la base rechaza estados terminales al retirar stale intents", async () => {
+    const debts = [{ id: "debt-paid", is_active: true, status: "paid", balance: 0 }];
+    const intents = [
+      { id: "intent-paid", user_id: userId, debt_id: "debt-paid", status: "pending_review", metadata: {} }
+    ];
+    const updates = [];
+
+    const out = await retireStaleOpenPaymentIntentsForInactiveDebts({
+      userId,
+      intents,
+      supabaseAdmin: makeSupabaseMock({
+        debts,
+        updates,
+        rejectedStatuses: ["cancelled", "canceled"]
+      }),
+      safeNumber,
+      nowIso: "2026-07-31T00:00:00.000Z"
+    });
+
+    assert.equal(out.retired_count, 1);
+    assert.equal(out.status_fallback_count, 1);
+    assert.deepEqual(out.reason_counts, { debt_paid: 1 });
+    assert.equal(out.intents[0].status, "cancelled");
+    assert.equal(updates.length, 3);
+    assert.equal(updates[0].payload.status, "cancelled");
+    assert.equal(updates[1].payload.status, "canceled");
+    assert.equal(updates[2].payload.status, undefined);
+    assert.equal(updates[2].payload.metadata.payment_intent_retired_status_fallback, "metadata_only");
   });
 });
