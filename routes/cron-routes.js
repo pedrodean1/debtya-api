@@ -53,6 +53,13 @@ function registerCronRoutes(app, deps) {
       return res.json({ ok: true, server_version: SERVER_VERSION, ran_at: new Date().toISOString(), ...result });
     } catch (error) {
       if (typeof appDebug === "function") appDebug("cron cleanup-payment-intents:", error?.message || String(error));
+      console.warn(
+        "[cron/cleanup-payment-intents:error]",
+        JSON.stringify({
+          code: error?.code || null,
+          message: String(error?.message || error || "unknown").slice(0, 240)
+        })
+      );
       return jsonError(res, 500, "Error limpiando payment intents", {
         details: "payment_intent_cleanup_failed"
       });

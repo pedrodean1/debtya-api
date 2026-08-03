@@ -70,11 +70,13 @@ describe("routes/cron minimum payment auto tracking", () => {
       const debtId = "660e8400-e29b-41d4-a716-446655440000";
       const intentId = "770e8400-e29b-41d4-a716-446655440000";
       const updates = [];
+      let selectedPaymentIntentColumns = "";
       const supabaseAdmin = {
         from(table) {
           if (table === "payment_intents") {
             return {
-              select() {
+              select(columns) {
+                selectedPaymentIntentColumns = columns;
                 return {
                   in() {
                     return {
@@ -156,6 +158,8 @@ describe("routes/cron minimum payment auto tracking", () => {
       assert.equal(updates.length, 1);
       assert.equal(updates[0].status, "cancelled");
       assert.equal(updates[0].metadata.stale_intent_retired_reason, "debt_paid");
+      assert.match(selectedPaymentIntentColumns, /\bdebt_id\b/);
+      assert.doesNotMatch(selectedPaymentIntentColumns, /target_debt_id/);
       assert.equal(JSON.stringify(res.body).includes(userId), false);
       assert.equal(JSON.stringify(res.body).includes(intentId), false);
     } finally {
