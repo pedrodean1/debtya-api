@@ -1,6 +1,7 @@
 const { appendSpinwheelPaymentIntents } = require("../lib/spinwheel-payment-intents");
 const { runMinimumPaymentAutoTracking } = require("../lib/minimum-payment-tracking");
 const { runPaymentIntentCleanup } = require("../lib/payment-intent-cleanup");
+const { buildSystemDiagnostics } = require("../lib/system-diagnostics");
 
 function registerCronRoutes(app, deps) {
   const {
@@ -29,6 +30,35 @@ function registerCronRoutes(app, deps) {
     SUPABASE_SERVICE_ROLE_KEY,
     CRON_SECRET
   } = deps;
+
+  app.get("/cron/system-diagnostics", requireCronSecret, async (req, res) => {
+    try {
+      if (!supabaseAdmin) return jsonError(res, 500, "Supabase no configurado");
+      const result = await buildSystemDiagnostics({
+        supabaseAdmin,
+        safeNumber,
+        days: req.query?.days,
+        limit: req.query?.limit
+      });
+      console.log(
+        "[cron/system-diagnostics]",
+        JSON.stringify({
+          overall_status: result.overall_status,
+          alerts_count: result.alerts.length,
+          query_failures: result.query_failures.length,
+          active_debts: result.debts.active_carrying_count,
+          open_intents: result.payment_intents.open_count,
+          recent_notification_events: result.notification_events.scanned
+        })
+      );
+      return res.json({ ok: true, server_version: SERVER_VERSION, ...result });
+    } catch (error) {
+      if (typeof appDebug === "function") appDebug("cron system-diagnostics:", error?.message || String(error));
+      return jsonError(res, 500, "Error cargando diagnostico interno", {
+        details: "system_diagnostics_failed"
+      });
+    }
+  });
 
   app.post("/cron/cleanup-payment-intents", requireCronSecret, async (req, res) => {
     try {

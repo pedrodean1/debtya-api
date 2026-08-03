@@ -48,7 +48,125 @@ function makeApp(overrides = {}) {
   return app;
 }
 
+function makeDiagnosticsSupabase(rowsByTable = {}) {
+  return {
+    from(table) {
+      const rows = Array.isArray(rowsByTable[table]) ? [...rowsByTable[table]] : [];
+      const query = {
+        _rows: rows,
+        select() {
+          return this;
+        },
+        gte(column, value) {
+          this._rows = this._rows.filter((row) => {
+            const raw = row?.[column];
+            return raw && String(raw) >= String(value);
+          });
+          return this;
+        },
+        order() {
+          return this;
+        },
+        limit(n) {
+          return Promise.resolve({ data: this._rows.slice(0, Number(n) || 1000), error: null });
+        }
+      };
+      return query;
+    }
+  };
+}
+
 describe("routes/cron minimum payment auto tracking", () => {
+  it("protege /cron/system-diagnostics con x-cron-secret", async () => {
+    const prev = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "cron-diagnostics-test";
+    try {
+      const app = makeApp();
+      const res = await request(app).get("/cron/system-diagnostics");
+      assert.equal(res.status, 401);
+    } finally {
+      if (prev == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prev;
+    }
+  });
+
+  it("devuelve diagnostico interno agregado sin exponer ids ni emails", async () => {
+    const prev = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "cron-diagnostics-test";
+    try {
+      const userId = "550e8400-e29b-41d4-a716-446655440000";
+      const debtId = "660e8400-e29b-41d4-a716-446655440000";
+      const intentId = "770e8400-e29b-41d4-a716-446655440000";
+      const supabaseAdmin = makeDiagnosticsSupabase({
+        debts: [
+          { id: debtId, user_id: userId, status: "active", balance: 120, is_active: true },
+          { id: "paid-debt", user_id: userId, status: "paid", balance: 0, is_active: true }
+        ],
+        payment_intents: [
+          {
+            id: intentId,
+            user_id: userId,
+            debt_id: debtId,
+            status: "pending_review",
+            metadata: { payment_recorded_email_sent_at: "2026-08-01T00:00:00.000Z" }
+          },
+          {
+            id: "executed-intent",
+            user_id: userId,
+            debt_id: debtId,
+            status: "executed",
+            executed_at: "2026-08-01T00:00:00.000Z",
+            metadata: { debt_paid_celebration_email_sent_at: "2026-08-01T00:01:00.000Z" }
+          }
+        ],
+        notification_events: [
+          {
+            id: "event-1",
+            user_id: userId,
+            intent_id: intentId,
+            event_type: "auto_reminder",
+            channel: "email",
+            created_at: new Date().toISOString(),
+            metadata: {}
+          },
+          {
+            id: "event-2",
+            user_id: userId,
+            event_type: "minimum_payment_due",
+            channel: "email",
+            created_at: new Date().toISOString(),
+            metadata: { delivery_status: "failed", email: "person@example.com" }
+          }
+        ]
+      });
+      const app = makeApp({ supabaseAdmin });
+      const res = await request(app)
+        .get("/cron/system-diagnostics?days=14&limit=50")
+        .set("x-cron-secret", "cron-diagnostics-test");
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.ok, true);
+      assert.equal(res.body.server_version, "test-version");
+      assert.equal(res.body.lookback_days, 14);
+      assert.equal(res.body.row_limit, 50);
+      assert.equal(res.body.debts.active_carrying_count, 1);
+      assert.equal(res.body.debts.paid_or_paid_off_count, 1);
+      assert.equal(res.body.payment_intents.open_count, 1);
+      assert.equal(res.body.payment_intents.executed_count, 1);
+      assert.equal(res.body.payment_intents.payment_recorded_email_sent_count, 1);
+      assert.equal(res.body.notification_events.minimum_payment_due.failed_count, 1);
+      assert.ok(res.body.alerts.includes("recent_minimum_payment_due_email_failures"));
+      const serialized = JSON.stringify(res.body);
+      assert.equal(serialized.includes(userId), false);
+      assert.equal(serialized.includes(debtId), false);
+      assert.equal(serialized.includes(intentId), false);
+      assert.equal(serialized.includes("person@example.com"), false);
+    } finally {
+      if (prev == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prev;
+    }
+  });
+
   it("protege /cron/cleanup-payment-intents con x-cron-secret", async () => {
     const prev = process.env.CRON_SECRET;
     process.env.CRON_SECRET = "cron-cleanup-test";
