@@ -1,5 +1,6 @@
 const { appendSpinwheelPaymentIntents } = require("../lib/spinwheel-payment-intents");
 const { runMinimumPaymentAutoTracking } = require("../lib/minimum-payment-tracking");
+const { runPaymentIntentCleanup } = require("../lib/payment-intent-cleanup");
 
 function registerCronRoutes(app, deps) {
   const {
@@ -28,6 +29,35 @@ function registerCronRoutes(app, deps) {
     SUPABASE_SERVICE_ROLE_KEY,
     CRON_SECRET
   } = deps;
+
+  app.post("/cron/cleanup-payment-intents", requireCronSecret, async (req, res) => {
+    try {
+      if (!supabaseAdmin) return jsonError(res, 500, "Supabase no configurado");
+      const limit = req.body?.limit ?? req.query?.limit;
+      const result = await runPaymentIntentCleanup({
+        supabaseAdmin,
+        safeNumber,
+        limit
+      });
+      console.log(
+        "[cron/cleanup-payment-intents]",
+        JSON.stringify({
+          users_scanned: result.users_scanned || 0,
+          intents_scanned: result.intents_scanned || 0,
+          retired_count: result.retired_count || 0,
+          status_fallback_count: result.status_fallback_count || 0,
+          failures: result.failures || 0,
+          reason_counts: result.reason_counts || {}
+        })
+      );
+      return res.json({ ok: true, server_version: SERVER_VERSION, ran_at: new Date().toISOString(), ...result });
+    } catch (error) {
+      if (typeof appDebug === "function") appDebug("cron cleanup-payment-intents:", error?.message || String(error));
+      return jsonError(res, 500, "Error limpiando payment intents", {
+        details: "payment_intent_cleanup_failed"
+      });
+    }
+  });
 
   // Render Cron Job recommendation: run this in the target local evening, for example 7:00 PM.
   app.post("/cron/track-minimum-payments", requireCronSecret, async (_req, res) => {

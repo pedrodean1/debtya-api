@@ -34,7 +34,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-08-02-v124-payment-intent-status-compatible";
+const SERVER_VERSION = "debtya-2026-08-02-v125-payment-intent-hygiene";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
