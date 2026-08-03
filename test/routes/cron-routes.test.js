@@ -338,6 +338,7 @@ describe("routes/cron minimum payment auto tracking", () => {
       assert.equal(res.body.intents_scanned, 1);
       assert.equal(res.body.retired_count, 1);
       assert.deepEqual(res.body.reason_counts, { debt_paid: 1 });
+      assert.equal(res.body.admin_diagnostics_alert.reason, "admin_alert_recipients_missing");
       assert.equal(updates.length, 1);
       assert.equal(updates[0].status, "cancelled");
       assert.equal(updates[0].metadata.stale_intent_retired_reason, "debt_paid");

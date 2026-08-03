@@ -70,6 +70,45 @@ function registerCronRoutes(app, deps) {
         safeNumber,
         limit
       });
+      let adminDiagnosticsAlert = null;
+      try {
+        adminDiagnosticsAlert = await runAdminDiagnosticsAlert({
+          supabaseAdmin,
+          safeNumber,
+          sendEmailFn,
+          days: req.body?.diagnostics_days ?? req.query?.diagnostics_days,
+          limit: req.body?.diagnostics_limit ?? req.query?.diagnostics_limit ?? 1000,
+          force: false,
+          requireAuditForSend: true,
+          serverVersion: SERVER_VERSION
+        });
+        console.log(
+          "[cron/cleanup-payment-intents:admin-diagnostics-alert]",
+          JSON.stringify({
+            overall_status: adminDiagnosticsAlert.overall_status || null,
+            alerts_count: Array.isArray(adminDiagnosticsAlert.alerts) ? adminDiagnosticsAlert.alerts.length : 0,
+            skipped: !!adminDiagnosticsAlert.skipped,
+            reason: adminDiagnosticsAlert.reason || null,
+            recipients_count: adminDiagnosticsAlert.recipients_count || 0,
+            sent_count: adminDiagnosticsAlert.sent_count || 0,
+            failed_count: adminDiagnosticsAlert.failed_count || 0,
+            audit_recorded: !!adminDiagnosticsAlert.audit_recorded
+          })
+        );
+      } catch (alertError) {
+        adminDiagnosticsAlert = {
+          ok: false,
+          skipped: true,
+          reason: "admin_diagnostics_alert_failed"
+        };
+        console.warn(
+          "[cron/cleanup-payment-intents:admin-diagnostics-alert:error]",
+          JSON.stringify({
+            code: alertError?.code || null,
+            message: String(alertError?.message || alertError || "unknown").slice(0, 240)
+          })
+        );
+      }
       console.log(
         "[cron/cleanup-payment-intents]",
         JSON.stringify({
@@ -81,7 +120,13 @@ function registerCronRoutes(app, deps) {
           reason_counts: result.reason_counts || {}
         })
       );
-      return res.json({ ok: true, server_version: SERVER_VERSION, ran_at: new Date().toISOString(), ...result });
+      return res.json({
+        ok: true,
+        server_version: SERVER_VERSION,
+        ran_at: new Date().toISOString(),
+        ...result,
+        admin_diagnostics_alert: adminDiagnosticsAlert
+      });
     } catch (error) {
       if (typeof appDebug === "function") appDebug("cron cleanup-payment-intents:", error?.message || String(error));
       console.warn(

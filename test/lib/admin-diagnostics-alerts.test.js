@@ -229,6 +229,29 @@ describe("lib/admin-diagnostics-alerts", () => {
     });
   });
 
+  it("puede exigir auditoria antes de enviar para evitar spam desde cron frecuente", async () => {
+    await withEnv({ DEBTYA_ADMIN_EMAILS: "owner@example.com" }, async () => {
+      const sends = [];
+      const supabaseAdmin = makeSupabase({
+        debts: [{ id: "debt-1", status: "paid", balance: 100, is_active: true }]
+      });
+
+      const out = await runAdminDiagnosticsAlert({
+        supabaseAdmin,
+        requireAuditForSend: true,
+        sendEmailFn: async (args) => {
+          sends.push(args);
+          return { sent: true };
+        }
+      });
+
+      assert.equal(out.skipped, true);
+      assert.equal(out.reason, "admin_alert_audit_unavailable");
+      assert.equal(out.sent_count, 0);
+      assert.equal(sends.length, 0);
+    });
+  });
+
   it("respeta cooldown por fingerprint y permite force", async () => {
     await withEnv(
       {

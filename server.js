@@ -34,7 +34,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-08-03-v129-admin-diagnostics-alerts";
+const SERVER_VERSION = "debtya-2026-08-03-v130-admin-alerts-via-cleanup-cron";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
