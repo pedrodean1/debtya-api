@@ -368,7 +368,7 @@ describe("lib/confirm-manual-intent", () => {
     assert.equal(r.debt_apply.reason, "deuda_ya_pagada");
     assert.equal(r.old_balance, 0);
     assert.equal(r.new_balance, 0);
-    assert.equal(row.status, "skipped");
+    assert.equal(row.status, "canceled");
     assert.equal(row.executed_at, null);
     assert.equal(meta.debt_balance_apply_reason, "deuda_ya_pagada");
     assert.equal(meta.manual_confirm_skipped_reason, "deuda_ya_pagada");

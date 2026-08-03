@@ -99,9 +99,9 @@ describe("lib/payment-intent-stale-guard", () => {
     assert.equal(out.retired_count, 3);
     assert.deepEqual(out.reason_counts, { debt_paid: 2, debt_zero_balance: 1 });
     assert.equal(out.intents.find((x) => x.id === "intent-active").status, "pending_review");
-    assert.equal(out.intents.find((x) => x.id === "intent-paid").status, "skipped");
-    assert.equal(out.intents.find((x) => x.id === "intent-paid-off").status, "skipped");
-    assert.equal(out.intents.find((x) => x.id === "intent-zero-current").status, "skipped");
+    assert.equal(out.intents.find((x) => x.id === "intent-paid").status, "canceled");
+    assert.equal(out.intents.find((x) => x.id === "intent-paid-off").status, "canceled");
+    assert.equal(out.intents.find((x) => x.id === "intent-zero-current").status, "canceled");
     assert.equal(out.intents.find((x) => x.id === "intent-executed").status, "executed");
     assert.equal(updates.length, 3);
     assert.equal(updates[0].payload.metadata.stale_intent_retired_at, "2026-07-31T00:00:00.000Z");

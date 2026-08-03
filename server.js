@@ -34,7 +34,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-08-02-v122-stale-intent-schema-safe";
+const SERVER_VERSION = "debtya-2026-08-02-v123-stale-intent-canceled-status";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
