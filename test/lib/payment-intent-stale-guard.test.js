@@ -12,12 +12,13 @@ function safeNumber(value, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function makeSupabaseMock({ debts, updates }) {
+function makeSupabaseMock({ debts, updates, debtSelects = [] }) {
   return {
     from(table) {
       if (table === "debts") {
         return {
-          select() {
+          select(columns) {
+            debtSelects.push(columns);
             return {
               eq() {
                 return {
@@ -83,15 +84,18 @@ describe("lib/payment-intent-stale-guard", () => {
       { id: "intent-executed", user_id: userId, debt_id: "debt-paid", status: "executed", metadata: {} }
     ];
     const updates = [];
+    const debtSelects = [];
 
     const out = await retireStaleOpenPaymentIntentsForInactiveDebts({
       userId,
       intents,
-      supabaseAdmin: makeSupabaseMock({ debts, updates }),
+      supabaseAdmin: makeSupabaseMock({ debts, updates, debtSelects }),
       safeNumber,
       nowIso: "2026-07-31T00:00:00.000Z"
     });
 
+    assert.equal(debtSelects[0], "id,status,balance,is_active");
+    assert.equal(String(debtSelects[0]).includes("current_balance"), false);
     assert.equal(out.retired_count, 3);
     assert.deepEqual(out.reason_counts, { debt_paid: 2, debt_zero_balance: 1 });
     assert.equal(out.intents.find((x) => x.id === "intent-active").status, "pending_review");
