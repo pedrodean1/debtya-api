@@ -2,6 +2,7 @@ const { appendSpinwheelPaymentIntents } = require("../lib/spinwheel-payment-inte
 const { runMinimumPaymentAutoTracking } = require("../lib/minimum-payment-tracking");
 const { runPaymentIntentCleanup } = require("../lib/payment-intent-cleanup");
 const { buildSystemDiagnostics } = require("../lib/system-diagnostics");
+const { runAdminDiagnosticsAlert } = require("../lib/admin-diagnostics-alerts");
 
 function registerCronRoutes(app, deps) {
   const {
@@ -92,6 +93,47 @@ function registerCronRoutes(app, deps) {
       );
       return jsonError(res, 500, "Error limpiando payment intents", {
         details: "payment_intent_cleanup_failed"
+      });
+    }
+  });
+
+  app.post("/cron/admin-diagnostics-alerts", requireCronSecret, async (req, res) => {
+    try {
+      if (!supabaseAdmin) return jsonError(res, 500, "Supabase no configurado");
+      const result = await runAdminDiagnosticsAlert({
+        supabaseAdmin,
+        safeNumber,
+        sendEmailFn,
+        days: req.body?.days ?? req.query?.days,
+        limit: req.body?.limit ?? req.query?.limit,
+        force: req.body?.force === true || req.body?.force === "true" || req.query?.force === "1",
+        serverVersion: SERVER_VERSION
+      });
+      console.log(
+        "[cron/admin-diagnostics-alerts]",
+        JSON.stringify({
+          overall_status: result.overall_status || null,
+          alerts_count: Array.isArray(result.alerts) ? result.alerts.length : 0,
+          skipped: !!result.skipped,
+          reason: result.reason || null,
+          recipients_count: result.recipients_count || 0,
+          sent_count: result.sent_count || 0,
+          failed_count: result.failed_count || 0,
+          audit_recorded: !!result.audit_recorded
+        })
+      );
+      return res.json({ ok: true, server_version: SERVER_VERSION, ...result });
+    } catch (error) {
+      if (typeof appDebug === "function") appDebug("cron admin-diagnostics-alerts:", error?.message || String(error));
+      console.warn(
+        "[cron/admin-diagnostics-alerts:error]",
+        JSON.stringify({
+          code: error?.code || null,
+          message: String(error?.message || error || "unknown").slice(0, 240)
+        })
+      );
+      return jsonError(res, 500, "Error enviando alerta de diagnostico admin", {
+        details: "admin_diagnostics_alert_failed"
       });
     }
   });

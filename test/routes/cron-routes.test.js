@@ -180,6 +180,71 @@ describe("routes/cron minimum payment auto tracking", () => {
     }
   });
 
+  it("protege /cron/admin-diagnostics-alerts con x-cron-secret", async () => {
+    const prev = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "cron-admin-alert-test";
+    try {
+      const app = makeApp();
+      const res = await request(app).post("/cron/admin-diagnostics-alerts").send({});
+      assert.equal(res.status, 401);
+    } finally {
+      if (prev == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prev;
+    }
+  });
+
+  it("envia alerta admin desde cron cuando diagnostics esta en warning", async () => {
+    const prevSecret = process.env.CRON_SECRET;
+    const prevAdminEmails = process.env.DEBTYA_ADMIN_ALERT_EMAILS;
+    const prevAdminBaseEmails = process.env.DEBTYA_ADMIN_EMAILS;
+    const prevAuditUserId = process.env.DEBTYA_ADMIN_ALERT_AUDIT_USER_ID;
+    process.env.CRON_SECRET = "cron-admin-alert-test";
+    process.env.DEBTYA_ADMIN_ALERT_EMAILS = "owner@example.com";
+    delete process.env.DEBTYA_ADMIN_EMAILS;
+    delete process.env.DEBTYA_ADMIN_ALERT_AUDIT_USER_ID;
+    try {
+      const sends = [];
+      const supabaseAdmin = makeDiagnosticsSupabase({
+        debts: [{ id: "paid-debt", user_id: "secret-user", status: "paid", balance: 20, is_active: true }],
+        payment_intents: [],
+        notification_events: []
+      });
+      const app = makeApp({
+        supabaseAdmin,
+        sendEmailFn: async (args) => {
+          sends.push(args);
+          return { sent: true, provider: "test" };
+        }
+      });
+      const res = await request(app)
+        .post("/cron/admin-diagnostics-alerts")
+        .set("x-cron-secret", "cron-admin-alert-test")
+        .send({ limit: 50 });
+
+      assert.equal(res.status, 200);
+      assert.equal(res.body.ok, true);
+      assert.equal(res.body.server_version, "test-version");
+      assert.equal(res.body.overall_status, "warning");
+      assert.equal(res.body.reason, "admin_alert_sent");
+      assert.equal(res.body.sent_count, 1);
+      assert.equal(res.body.failed_count, 0);
+      assert.ok(res.body.alerts.includes("paid_debts_with_positive_balance"));
+      assert.equal(sends.length, 1);
+      assert.ok(sends[0].preview.email_body.includes("paid_debts_with_positive_balance"));
+      assert.equal(JSON.stringify(res.body).includes("owner@example.com"), false);
+      assert.equal(JSON.stringify(res.body).includes("secret-user"), false);
+    } finally {
+      if (prevSecret == null) delete process.env.CRON_SECRET;
+      else process.env.CRON_SECRET = prevSecret;
+      if (prevAdminEmails == null) delete process.env.DEBTYA_ADMIN_ALERT_EMAILS;
+      else process.env.DEBTYA_ADMIN_ALERT_EMAILS = prevAdminEmails;
+      if (prevAdminBaseEmails == null) delete process.env.DEBTYA_ADMIN_EMAILS;
+      else process.env.DEBTYA_ADMIN_EMAILS = prevAdminBaseEmails;
+      if (prevAuditUserId == null) delete process.env.DEBTYA_ADMIN_ALERT_AUDIT_USER_ID;
+      else process.env.DEBTYA_ADMIN_ALERT_AUDIT_USER_ID = prevAuditUserId;
+    }
+  });
+
   it("limpia intents abiertos de deudas pagadas con resumen seguro", async () => {
     const prev = process.env.CRON_SECRET;
     process.env.CRON_SECRET = "cron-cleanup-test";
