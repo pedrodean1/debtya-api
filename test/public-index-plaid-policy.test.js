@@ -43,4 +43,16 @@ describe("public debt list UI", () => {
     assert.match(html, /id="simpleNotifPhoneWrap"[^>]*hidden[^>]*aria-hidden="true"/i);
     assert.match(css, /\.ui-sms-channel-hidden\s*\{\s*display\s*:\s*none\s*!important;/i);
   });
+
+  it("exposes admin diagnostics UI without embedding cron secret", () => {
+    const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
+    const app = fs.readFileSync(path.join(__dirname, "../public/app.js"), "utf8");
+
+    assert.match(html, /id="adminDiagnosticsPanel"/i);
+    assert.match(html, /id="adminDiagnosticsBtn"[^>]*class="[^"]*hidden/i);
+    assert.match(app, /\/api\/admin\/diagnostics\?days=7&limit=1000/i);
+    assert.equal(html.includes("CRON_SECRET"), false);
+    assert.equal(app.includes("CRON_SECRET"), false);
+    assert.equal(app.includes("x-cron-secret"), false);
+  });
 });

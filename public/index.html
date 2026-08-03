@@ -414,6 +414,9 @@
             <button id="topManageBillingBtn" class="btn btn-light hidden" type="button" data-i18n="btn_manage_plan" aria-hidden="true" tabindex="-1">
               Manage plan
             </button>
+            <button id="adminDiagnosticsBtn" class="btn btn-light hidden" type="button" data-i18n="admin_diag_nav" aria-hidden="true" tabindex="-1">
+              Diagnostics
+            </button>
             <button id="logoutBtn" class="btn btn-danger" type="button" data-i18n="btn_logout">Log out</button>
           </div>
         </div>
@@ -1020,6 +1023,68 @@
             </div>
 
             <div id="intentsList" class="list list-scroll-sm"></div>
+          </section>
+
+          <section class="card hidden" id="adminDiagnosticsPanel" aria-hidden="true">
+            <div class="section-head">
+              <div>
+                <h2 data-i18n="admin_diag_title">System diagnostics</h2>
+                <p class="sub" data-i18n="admin_diag_sub">
+                  Internal aggregate health summary for debts, payment intents, and emails.
+                </p>
+              </div>
+              <div class="section-actions">
+                <button id="adminDiagnosticsRefreshBtn" class="btn btn-light btn-small" type="button" data-i18n="btn_refresh">Refresh</button>
+              </div>
+            </div>
+
+            <div class="admin-diag-status-row">
+              <span id="adminDiagnosticsOverall" class="pill gray">-</span>
+              <span id="adminDiagnosticsGenerated" class="muted">-</span>
+            </div>
+            <p id="adminDiagnosticsMessage" class="notice hidden" role="status"></p>
+
+            <div class="stats admin-diag-stats">
+              <div class="stat">
+                <div class="k" data-i18n="admin_diag_active_debts">Active debts</div>
+                <div class="v" id="adminDiagActiveDebts">-</div>
+              </div>
+              <div class="stat">
+                <div class="k" data-i18n="admin_diag_paid_debts">Paid debts</div>
+                <div class="v" id="adminDiagPaidDebts">-</div>
+              </div>
+              <div class="stat">
+                <div class="k" data-i18n="admin_diag_open_intents">Open intents</div>
+                <div class="v" id="adminDiagOpenIntents">-</div>
+              </div>
+              <div class="stat">
+                <div class="k" data-i18n="admin_diag_executed_intents">Executed intents</div>
+                <div class="v" id="adminDiagExecutedIntents">-</div>
+              </div>
+              <div class="stat">
+                <div class="k" data-i18n="admin_diag_payment_emails">Payment emails</div>
+                <div class="v" id="adminDiagPaymentRecordedEmails">-</div>
+              </div>
+              <div class="stat">
+                <div class="k" data-i18n="admin_diag_paid_emails">Debt paid emails</div>
+                <div class="v" id="adminDiagCelebrationEmails">-</div>
+              </div>
+              <div class="stat">
+                <div class="k" data-i18n="admin_diag_reminder_events">Reminder events</div>
+                <div class="v" id="adminDiagReminderEvents">-</div>
+              </div>
+              <div class="stat">
+                <div class="k" data-i18n="admin_diag_min_due_failed">Minimum due failures</div>
+                <div class="v" id="adminDiagMinDueFailed">-</div>
+              </div>
+            </div>
+
+            <div id="adminDiagnosticsAlertsWrap" class="admin-diag-alerts hidden">
+              <h3 data-i18n="admin_diag_alerts">Alerts</h3>
+              <ul id="adminDiagnosticsAlerts"></ul>
+            </div>
+
+            <pre id="adminDiagnosticsJson" class="intents-build-json admin-diag-json" aria-live="polite"></pre>
           </section>
 
           <section class="card" id="historyPanel">

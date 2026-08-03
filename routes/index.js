@@ -17,6 +17,7 @@ const { registerCronRoutes } = require("./cron-routes");
 const { registerAuthSignupRoutes } = require("./auth-signup-routes");
 const { registerManualPlanRoutes } = require("./manual-plan-routes");
 const { registerNotificationRoutes } = require("./notifications-routes");
+const { registerAdminRoutes } = require("./admin-routes");
 
 /**
  * Registra todas las rutas HTTP modulares en el orden previo al refactor.
@@ -30,6 +31,7 @@ function registerAllRoutes(app, deps) {
   registerGuideRoutes(app, deps);
   registerAiCoachRoutes(app, deps);
   registerNotificationRoutes(app, deps);
+  registerAdminRoutes(app, deps);
   registerAuthSignupRoutes(app, deps);
   registerBillingRoutes(app, deps);
   registerSupabaseRoutes(app, deps);

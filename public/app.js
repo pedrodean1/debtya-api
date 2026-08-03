@@ -386,6 +386,25 @@
         btn_activate_plan: "Create plan",
         btn_manage_plan: "Manage plan",
         btn_logout: "Log out",
+        admin_diag_nav: "Diagnostics",
+        admin_diag_title: "System diagnostics",
+        admin_diag_sub: "Internal aggregate health summary for debts, payment intents, and emails.",
+        admin_diag_generated: "Generated {date}",
+        admin_diag_active_debts: "Active debts",
+        admin_diag_paid_debts: "Paid debts",
+        admin_diag_open_intents: "Open intents",
+        admin_diag_executed_intents: "Executed intents",
+        admin_diag_payment_emails: "Payment emails",
+        admin_diag_paid_emails: "Debt paid emails",
+        admin_diag_reminder_events: "Reminder events",
+        admin_diag_min_due_failed: "Minimum due failures",
+        admin_diag_alerts: "Alerts",
+        admin_diag_status_ok: "OK",
+        admin_diag_status_warning: "Warning",
+        admin_diag_no_alerts: "No system alerts in the selected window.",
+        admin_diag_has_alerts: "Review the alerts below.",
+        admin_diag_load_error: "Could not load diagnostics.",
+        admin_diag_forbidden: "This admin screen is not enabled for this account.",
         advanced_operate_toggle: "More ? legacy payment tools",
         advanced_plan_toggle: "More plan options",
         advanced_plan_tools_sub:
@@ -1166,6 +1185,25 @@
         btn_activate_plan: "Crear plan",
         btn_manage_plan: "Administrar plan",
         btn_logout: "Salir",
+        admin_diag_nav: "Diagnostico",
+        admin_diag_title: "Diagnostico del sistema",
+        admin_diag_sub: "Resumen interno agregado de deudas, payment intents y emails.",
+        admin_diag_generated: "Generado {date}",
+        admin_diag_active_debts: "Deudas activas",
+        admin_diag_paid_debts: "Deudas pagadas",
+        admin_diag_open_intents: "Intents abiertos",
+        admin_diag_executed_intents: "Intents ejecutados",
+        admin_diag_payment_emails: "Emails de pago",
+        admin_diag_paid_emails: "Emails deuda pagada",
+        admin_diag_reminder_events: "Eventos recordatorio",
+        admin_diag_min_due_failed: "Fallos minimo pago",
+        admin_diag_alerts: "Alertas",
+        admin_diag_status_ok: "OK",
+        admin_diag_status_warning: "Alerta",
+        admin_diag_no_alerts: "No hay alertas del sistema en la ventana seleccionada.",
+        admin_diag_has_alerts: "Revisa las alertas abajo.",
+        admin_diag_load_error: "No se pudo cargar el diagnostico.",
+        admin_diag_forbidden: "Esta pantalla admin no esta activada para esta cuenta.",
         advanced_operate_toggle: "Mas ? herramientas heredadas de pagos",
         advanced_plan_toggle: "Mas opciones del plan",
         advanced_plan_tools_sub:
@@ -1890,6 +1928,7 @@
         renderAccounts();
         renderPayoffSimulation();
         renderPlan();
+        renderAdminDiagnostics();
         syncRuleModeFields();
         updateRuleModeHint();
         if (state.lastCompare) renderCompare(state.lastCompare);
@@ -2027,6 +2066,8 @@
       accounts: [],
       plaidItems: [],
       billing: null,
+      adminDiagnostics: null,
+      adminDiagnosticsAllowed: false,
       lastCompare: null,
       editingRuleId: null,
       methodConfigured: false,
@@ -5564,6 +5605,169 @@
       }
     }
 
+    function setAdminDiagnosticsVisible(visible) {
+      const panel = $("adminDiagnosticsPanel");
+      const navBtn = $("adminDiagnosticsBtn");
+      if (panel) {
+        panel.classList.toggle("hidden", !visible);
+        panel.setAttribute("aria-hidden", visible ? "false" : "true");
+      }
+      if (navBtn) {
+        navBtn.classList.toggle("hidden", !visible);
+        navBtn.setAttribute("aria-hidden", visible ? "false" : "true");
+        if (visible) navBtn.removeAttribute("tabindex");
+        else navBtn.setAttribute("tabindex", "-1");
+      }
+    }
+
+    function fmtDiagCount(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "-";
+      return new Intl.NumberFormat("en-US").format(n);
+    }
+
+    function adminDiagnosticsForbidden(err) {
+      const status = Number(err?.status || 0);
+      const raw = String(err?.details || err?.message || "").toLowerCase();
+      return status === 401 || status === 403 || raw.includes("admin_forbidden") || raw.includes("admin no autorizado");
+    }
+
+    async function fetchAdminDiagnostics() {
+      const token = await getAccessToken();
+      if (!token) {
+        const err = new Error(t("sign_in_first"));
+        err.status = 401;
+        throw err;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/diagnostics?days=7&limit=1000`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          cache: "no-store",
+          signal: controller.signal
+        });
+        const text = await res.text();
+        let json;
+        try {
+          json = text ? JSON.parse(text) : {};
+        } catch {
+          json = { ok: false, raw: text };
+        }
+        if (!res.ok || json?.ok === false) {
+          const parts = collectJsonErrorParts(json);
+          const msg = [...new Set(parts)].join(" ? ").trim() || `HTTP ${res.status}`;
+          const err = new Error(rewriteThrownApiMessage(msg));
+          err.status = res.status;
+          err.details = json?.details || null;
+          throw err;
+        }
+        return json;
+      } catch (err) {
+        if (err.name === "AbortError") {
+          throw new Error(`Timeout en /api/admin/diagnostics`);
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    function renderAdminDiagnostics() {
+      const data = state.adminDiagnostics;
+      if (!state.adminDiagnosticsAllowed || !data) {
+        setAdminDiagnosticsVisible(false);
+        return;
+      }
+      setAdminDiagnosticsVisible(true);
+
+      const status = String(data.overall_status || "unknown").toLowerCase();
+      const overall = $("adminDiagnosticsOverall");
+      if (overall) {
+        overall.className = `pill ${status === "ok" ? "green" : "orange"}`;
+        overall.textContent = status === "ok" ? t("admin_diag_status_ok") : t("admin_diag_status_warning");
+      }
+      const generated = $("adminDiagnosticsGenerated");
+      if (generated) {
+        generated.textContent = data.generated_at ? tf("admin_diag_generated", { date: fmtDate(data.generated_at) }) : "-";
+      }
+
+      const setText = (id, value) => {
+        const el = $(id);
+        if (el) el.textContent = fmtDiagCount(value);
+      };
+      setText("adminDiagActiveDebts", data.debts?.active_carrying_count);
+      setText("adminDiagPaidDebts", data.debts?.paid_or_paid_off_count);
+      setText("adminDiagOpenIntents", data.payment_intents?.open_count);
+      setText("adminDiagExecutedIntents", data.payment_intents?.executed_count);
+      setText("adminDiagPaymentRecordedEmails", data.payment_intents?.payment_recorded_email_sent_count);
+      setText("adminDiagCelebrationEmails", data.payment_intents?.debt_paid_celebration_email_sent_count);
+      setText("adminDiagReminderEvents", data.notification_events?.scanned);
+      setText("adminDiagMinDueFailed", data.notification_events?.minimum_payment_due?.failed_count);
+
+      const alerts = Array.isArray(data.alerts) ? data.alerts : [];
+      const msg = $("adminDiagnosticsMessage");
+      if (msg) {
+        msg.textContent = alerts.length ? t("admin_diag_has_alerts") : t("admin_diag_no_alerts");
+        msg.classList.remove("hidden", "success", "error", "warn");
+        msg.classList.add(alerts.length ? "warn" : "success");
+      }
+      const alertsWrap = $("adminDiagnosticsAlertsWrap");
+      const alertsList = $("adminDiagnosticsAlerts");
+      if (alertsWrap && alertsList) {
+        alertsWrap.classList.toggle("hidden", !alerts.length);
+        alertsList.innerHTML = alerts.map((alert) => `<li>${escapeHtml(alert)}</li>`).join("");
+      }
+      const out = $("adminDiagnosticsJson");
+      if (out) {
+        out.textContent = JSON.stringify(
+          {
+            server_version: data.server_version || null,
+            generated_at: data.generated_at,
+            overall_status: data.overall_status,
+            alerts: data.alerts || [],
+            query_failures: data.query_failures || [],
+            debts: data.debts || {},
+            payment_intents: data.payment_intents || {},
+            notification_events: data.notification_events || {}
+          },
+          null,
+          2
+        );
+      }
+    }
+
+    async function refreshAdminDiagnostics(options = {}) {
+      const silent = !!options.silent;
+      const btn = $("adminDiagnosticsRefreshBtn");
+      if (!silent) setLoading(btn, true, t("proc"));
+      try {
+        const data = await fetchAdminDiagnostics();
+        state.adminDiagnostics = data;
+        state.adminDiagnosticsAllowed = true;
+        renderAdminDiagnostics();
+      } catch (err) {
+        state.adminDiagnostics = null;
+        if (adminDiagnosticsForbidden(err)) {
+          state.adminDiagnosticsAllowed = false;
+          setAdminDiagnosticsVisible(false);
+          if (!silent) showMessage(globalMessage, t("admin_diag_forbidden"), "error");
+          return;
+        }
+        state.adminDiagnosticsAllowed = true;
+        setAdminDiagnosticsVisible(true);
+        const msg = $("adminDiagnosticsMessage");
+        if (msg && !silent) showMessage(msg, normalizeErrorMessage(err.message || t("admin_diag_load_error")), "error", true);
+      } finally {
+        if (!silent) setLoading(btn, false);
+      }
+    }
+
     function renderCompare(data) {
       const box = $("compareResult");
       box.innerHTML = "";
@@ -6806,6 +7010,7 @@
       } catch (e) {
         showMessage(globalMessage, normalizeErrorMessage(e.message), "error");
       }
+      void refreshAdminDiagnostics({ silent: true });
       if (debtyaLegacyBankDebugEnabled()) {
         try {
           await refreshSpinwheelPayableDiag();
@@ -7660,6 +7865,19 @@
     });
 
     $("logoutBtn").addEventListener("click", logout);
+    const adminDiagnosticsBtn = $("adminDiagnosticsBtn");
+    if (adminDiagnosticsBtn) {
+      adminDiagnosticsBtn.addEventListener("click", async () => {
+        setAdminDiagnosticsVisible(true);
+        const panel = $("adminDiagnosticsPanel");
+        if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (!state.adminDiagnostics) await refreshAdminDiagnostics({ silent: false });
+      });
+    }
+    const adminDiagnosticsRefreshBtn = $("adminDiagnosticsRefreshBtn");
+    if (adminDiagnosticsRefreshBtn) {
+      adminDiagnosticsRefreshBtn.addEventListener("click", () => void refreshAdminDiagnostics({ silent: false }));
+    }
     const refreshDebtsBtn = $("refreshDebtsBtn");
     if (refreshDebtsBtn) refreshDebtsBtn.addEventListener("click", refreshDebts);
     const spinwheelPayableDiagRefreshBtn = $("spinwheelPayableDiagRefreshBtn");
