@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-08-14-v131-v120-next-best-move-debt-free-date" />
+  <meta name="debtya-ui-rev" content="debtya-2026-08-14-v132-what-if-pay-more-simulator" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-08-14-v131-v120-next-best-move-debt-free-date">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-08-14-v132-what-if-pay-more-simulator">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -488,8 +488,15 @@
           </div>
 
           <section id="payoffSimulationCard" class="payoff-simulation-card" aria-live="polite">
-            <h3 id="simTitleLabel">Payoff simulation</h3>
-            <div class="payoff-sim-grid">
+            <div class="payoff-sim-heading">
+              <div>
+                <h3 id="simTitleLabel">What if I pay more?</h3>
+                <p class="sub payoff-sim-intro" data-i18n="sim_intro">See how an additional monthly payment could change your payoff timeline.</p>
+              </div>
+              <span id="simCurrentPlanLine" class="payoff-sim-plan-pill">Current plan</span>
+            </div>
+
+            <div class="payoff-sim-grid payoff-sim-overview">
               <div class="payoff-sim-item">
                 <div id="simTotalDebtBalanceLabel" class="k">Total debt balance</div>
                 <div id="simTotalDebtBalance" class="v">$0.00</div>
@@ -498,28 +505,67 @@
                 <div id="simTotalMinPaymentLabel" class="k">Total minimum payment</div>
                 <div id="simTotalMinimumPayment" class="v">$0.00</div>
               </div>
-              <div class="payoff-sim-item payoff-sim-item-wide">
-                <div id="simUrgentDebtByAprLabel" class="k">Highest APR debt</div>
-                <div id="simUrgentDebtByApr" class="v">No APR data yet.</div>
+            </div>
+
+            <div class="payoff-sim-controls">
+              <div class="payoff-sim-presets-wrap">
+                <div id="simExtraMonthlyLabel" class="label payoff-sim-control-label" data-i18n="sim_extra_monthly">Extra each month</div>
+                <div class="payoff-sim-presets" role="group" aria-labelledby="simExtraMonthlyLabel">
+                  <button class="payoff-sim-preset" type="button" data-sim-extra="50" aria-pressed="false">+$50</button>
+                  <button class="payoff-sim-preset" type="button" data-sim-extra="100" aria-pressed="true">+$100</button>
+                  <button class="payoff-sim-preset" type="button" data-sim-extra="250" aria-pressed="false">+$250</button>
+                </div>
               </div>
-              <div class="payoff-sim-item payoff-sim-item-wide">
-                <div id="simRecommendedStrategyLabel" class="k">Recommended strategy</div>
-                <div id="simRecommendedStrategy" class="v">Snowball</div>
-              </div>
+              <label class="payoff-sim-custom" for="simCustomExtra">
+                <span class="label payoff-sim-control-label" data-i18n="sim_custom_amount">Custom amount</span>
+                <span class="payoff-sim-input-wrap">
+                  <span aria-hidden="true">$</span>
+                  <input id="simCustomExtra" class="input" type="number" min="0" max="100000" step="25" inputmode="decimal" value="100" aria-describedby="simCustomExtraHint" />
+                </span>
+              </label>
             </div>
-            <p id="simCountsLine" class="sub" style="margin:10px 0 0;"></p>
-            <div id="payoffSavingsEstimate" class="payoff-savings-estimate">
-              <p id="simSavingsLine" class="sub payoff-savings-line" style="margin:10px 0 0;"></p>
-              <p id="simMonthsLine" class="sub payoff-savings-line" style="margin:4px 0 0;"></p>
-              <p class="sub payoff-savings-disclaimer" style="margin:8px 0 0;font-size:11px;color:var(--muted);">
-                <span id="simSavingsDisclaimerLabel">DebtYa estimates are educational and may vary.</span>
-              </p>
+
+            <p id="simCustomExtraHint" class="sub payoff-sim-control-hint" data-i18n="sim_extra_hint">This amount is added on top of your current estimated monthly payment.</p>
+            <p id="simCountsLine" class="sub payoff-sim-counts"></p>
+
+            <div class="payoff-sim-results" aria-label="Strategy comparison">
+              <section class="payoff-sim-result" id="simAvalancheResult">
+                <div class="payoff-sim-result-head">
+                  <h4 data-i18n="strategy_avalanche">Avalanche</h4>
+                  <span id="simAvalancheBadge" class="payoff-sim-result-badge hidden" data-i18n="sim_lower_interest">Lower interest</span>
+                </div>
+                <div class="payoff-sim-date-label" data-i18n="sim_debt_free_date">Debt-free date</div>
+                <div id="simAvalancheDate" class="payoff-sim-date">-</div>
+                <div class="payoff-sim-metrics">
+                  <div><span data-i18n="sim_time_saved">Time saved</span><strong id="simAvalancheMonths">-</strong></div>
+                  <div><span data-i18n="sim_interest_saved">Interest saved</span><strong id="simAvalancheInterest">-</strong></div>
+                  <div><span data-i18n="sim_monthly_payment">Monthly payment</span><strong id="simAvalanchePayment">-</strong></div>
+                </div>
+              </section>
+
+              <section class="payoff-sim-result" id="simSnowballResult">
+                <div class="payoff-sim-result-head">
+                  <h4 data-i18n="strategy_snowball">Snowball</h4>
+                  <span id="simSnowballBadge" class="payoff-sim-result-badge hidden" data-i18n="sim_lower_interest">Lower interest</span>
+                </div>
+                <div class="payoff-sim-date-label" data-i18n="sim_debt_free_date">Debt-free date</div>
+                <div id="simSnowballDate" class="payoff-sim-date">-</div>
+                <div class="payoff-sim-metrics">
+                  <div><span data-i18n="sim_time_saved">Time saved</span><strong id="simSnowballMonths">-</strong></div>
+                  <div><span data-i18n="sim_interest_saved">Interest saved</span><strong id="simSnowballInterest">-</strong></div>
+                  <div><span data-i18n="sim_monthly_payment">Monthly payment</span><strong id="simSnowballPayment">-</strong></div>
+                </div>
+              </section>
             </div>
-            <p id="simManualFirstNoteLabel" class="sub" style="margin:10px 0 0;">This is a simulation only. DebtYa does not move money or execute payments—you pay your lender yourself.</p>
-            <div class="payoff-sim-help">
-              <p id="simAvalancheHelpHtml" style="margin:0 0 4px;"><strong>Avalanche:</strong> pay the highest APR first to reduce interest.</p>
-              <p id="simSnowballHelpHtml" style="margin:0;"><strong>Snowball:</strong> pay the lowest balance first to close accounts faster.</p>
-            </div>
+
+            <p id="simCompareSummary" class="payoff-sim-compare-summary"></p>
+            <p id="simSavingsDisclaimerLabel" class="sub payoff-savings-disclaimer">DebtYa estimates are educational and may vary.</p>
+            <p id="simManualFirstNoteLabel" class="sub payoff-sim-manual-note">This is a simulation only. DebtYa does not move money or execute payments—you pay your lender yourself.</p>
+            <details class="payoff-sim-help">
+              <summary data-i18n="sim_strategy_help">How the strategies differ</summary>
+              <p id="simAvalancheHelpHtml"><strong>Avalanche:</strong> pay the highest APR first to reduce interest.</p>
+              <p id="simSnowballHelpHtml"><strong>Snowball:</strong> pay the lowest balance first to close accounts faster.</p>
+            </details>
           </section>
 
           <div id="promoCompWrap" class="hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(15,23,42,0.08);">
@@ -1362,7 +1408,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-08-14-v131-v120-next-best-move-debt-free-date"></script>
+  <script src="/app.js?v=debtya-2026-08-14-v132-what-if-pay-more-simulator"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
