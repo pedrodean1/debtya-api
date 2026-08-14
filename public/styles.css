@@ -758,7 +758,7 @@
 
     .stats{
       display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
+      grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
       gap:12px;
       margin-top:18px;
     }
@@ -786,6 +786,11 @@
       font-size:24px;
       font-weight:800;
       line-height:1.1;
+      overflow-wrap:anywhere;
+    }
+
+    .stat-debt-free .v{
+      font-size:20px;
     }
 
     .pill{

@@ -420,6 +420,30 @@
           "Create or update your plan, then open the dashboard to see your recommended next payment.",
         dashboard_next_pay_line: "Pay {amount} to {debt} today",
         dashboard_debt_fallback: "this debt",
+        dashboard_next_debt_free_line: "Estimated debt-free date: {date} ({months}).",
+        dashboard_next_debt_free_unavailable:
+          "Add a monthly amount and minimum payments for a sharper debt-free estimate.",
+        dashboard_next_month_now: "now",
+        dashboard_next_month_one: "~1 month",
+        dashboard_next_month_many: "~{months} months",
+        dashboard_next_month_capped: "{months}+ months",
+        dashboard_next_balance_after: "Estimated balance after this payment: {amount}.",
+        dashboard_next_impact_both:
+          "This move may save ~{interest} and shorten the plan by ~{months}.",
+        dashboard_next_impact_interest:
+          "This move may save ~{interest} in future interest.",
+        dashboard_next_impact_months_one:
+          "This move may shorten the plan by ~1 month.",
+        dashboard_next_impact_months_many:
+          "This move may shorten the plan by ~{months} months.",
+        dashboard_next_priority_target:
+          "Why this debt: you selected it as the current target.",
+        dashboard_next_priority_avalanche_apr:
+          "Why this debt: Avalanche targets the highest APR first ({apr}% APR).",
+        dashboard_next_priority_avalanche:
+          "Why this debt: Avalanche targets the highest APR first.",
+        dashboard_next_priority_snowball:
+          "Why this debt: Snowball targets the smallest balance first.",
         dashboard_next_interest_saved: "You save ~{amount} in interest this month",
         dashboard_next_interest_na: "Add APR on this debt for a sharper interest estimate.",
         dashboard_next_accel: "This speeds up your path out of debt.",
@@ -465,6 +489,9 @@
         btn_intents_build: "Build payments",
         intents_build_response_label: "Last build response (JSON)",
         stat_total_debt: "Total debt",
+        stat_debt_free_date: "Debt-free date",
+        stat_debt_free_done: "Done",
+        stat_debt_free_set_plan: "Set plan",
         stat_active_debts: "Active debts",
         stat_pending_intents: "Payments waiting for confirmation",
         stat_executed_intents: "Payments completed",
@@ -1219,6 +1246,30 @@
           "Crea o actualiza tu plan y luego abre el panel principal para ver tu proximo pago recomendado.",
         dashboard_next_pay_line: "Paga {amount} a {debt} hoy",
         dashboard_debt_fallback: "esta deuda",
+        dashboard_next_debt_free_line: "Fecha estimada libre de deudas: {date} ({months}).",
+        dashboard_next_debt_free_unavailable:
+          "Agrega monto mensual y pagos minimos para estimar mejor la fecha libre de deudas.",
+        dashboard_next_month_now: "ahora",
+        dashboard_next_month_one: "~1 mes",
+        dashboard_next_month_many: "~{months} meses",
+        dashboard_next_month_capped: "{months}+ meses",
+        dashboard_next_balance_after: "Saldo estimado despues de este pago: {amount}.",
+        dashboard_next_impact_both:
+          "Este movimiento podria ahorrar ~{interest} y acortar el plan ~{months}.",
+        dashboard_next_impact_interest:
+          "Este movimiento podria ahorrar ~{interest} en intereses futuros.",
+        dashboard_next_impact_months_one:
+          "Este movimiento podria acortar el plan ~1 mes.",
+        dashboard_next_impact_months_many:
+          "Este movimiento podria acortar el plan ~{months} meses.",
+        dashboard_next_priority_target:
+          "Por que esta deuda: la elegiste como objetivo actual.",
+        dashboard_next_priority_avalanche_apr:
+          "Por que esta deuda: Avalancha prioriza el APR mas alto ({apr}% APR).",
+        dashboard_next_priority_avalanche:
+          "Por que esta deuda: Avalancha prioriza el APR mas alto.",
+        dashboard_next_priority_snowball:
+          "Por que esta deuda: Bola de nieve prioriza el saldo mas bajo.",
         dashboard_next_interest_saved: "Ahorras ~{amount} en intereses este mes",
         dashboard_next_interest_na: "A\u00F1ade el APR en esta deuda para estimar mejor los intereses.",
         dashboard_next_accel: "Esto acelera tu salida de deuda.",
@@ -1265,6 +1316,9 @@
         btn_intents_build: "Construir pagos",
         intents_build_response_label: "Ultima respuesta del servidor (JSON)",
         stat_total_debt: "Deuda total",
+        stat_debt_free_date: "Fecha libre",
+        stat_debt_free_done: "Sin deuda",
+        stat_debt_free_set_plan: "Define plan",
         stat_active_debts: "Deudas activas",
         stat_pending_intents: "Pagos pendientes de confirmar",
         stat_executed_intents: "Pagos realizados",
@@ -3877,16 +3931,30 @@
           debtLabel = t("dashboard_debt_fallback");
         }
         primaryEl.textContent = tf("dashboard_next_pay_line", { amount, debt: debtLabel });
-        secondaryEl.textContent = t("dashboard_next_pay_outside_app");
-        secondaryEl.classList.remove("hidden");
         const did = String(intent.debt_id || "").trim();
         const debtRow = did ? debts.find((d) => String(d.id) === did) : null;
-        const savings = approximateMonthlyInterestSavedByPayment(intent, debtRow);
+        const projectionDetails = buildDashboardNextMoveProjectionDetails(
+          debts,
+          debtRow,
+          intent,
+          payAmt
+        );
+        secondaryEl.textContent = [t("dashboard_next_pay_outside_app"), projectionDetails.debtFreeLine]
+          .filter(Boolean)
+          .join(" ");
+        secondaryEl.classList.remove("hidden");
         if (tertiaryEl) {
-          tertiaryEl.textContent =
+          const savings = approximateMonthlyInterestSavedByPayment(intent, debtRow);
+          const fallbackImpact =
             savings !== null
               ? tf("dashboard_next_interest_saved", { amount: fmtMoney(savings) })
               : t("dashboard_next_interest_na");
+          tertiaryEl.textContent = [
+            projectionDetails.priorityLine,
+            projectionDetails.impactLine || projectionDetails.balanceAfterLine || fallbackImpact
+          ]
+            .filter(Boolean)
+            .join(" ");
           tertiaryEl.classList.remove("hidden");
         }
         const paidBtn = $("dashboardNextStepPaidBtn");
@@ -3982,21 +4050,13 @@
               const payTone = confirmRes && confirmRes.confirmation_in_progress ? "warn" : "success";
               showMessage(globalMessage, payMsg, payTone);
               clearManualPriorityStateFull();
-              await refreshDebts();
-              await refreshIntents();
-              await refreshTrace();
-              renderStats();
-              renderDashboardNextStep();
-              updateNextActionGuide();
+              await refreshAfterManualPaymentConfirmation({
+                rebuildNextMove: !(confirmRes && confirmRes.confirmation_in_progress)
+              });
             } catch (e) {
               if (isAlreadyExecutedConfirmError(e) && confirmedIntentId) {
                 clearManualPriorityStateFull();
-                await refreshDebts();
-                await refreshIntents();
-                await refreshTrace();
-                renderStats();
-                renderDashboardNextStep();
-                updateNextActionGuide();
+                await refreshAfterManualPaymentConfirmation({ rebuildNextMove: true });
                 showMessage(globalMessage, t("manual_pay_already_done"), "success");
               } else {
                 showMessage(globalMessage, normalizeErrorMessage(e.message || t("manual_pay_err")), "error");
@@ -4051,8 +4111,15 @@
         intentTargetsActiveDebtForDashboard(x, { allowUnknownDebt: true })
       ).length;
       const executed = state.intents.filter(x => String(x.status || "").toLowerCase() === "executed").length;
+      const debtFreeProjection = estimateDebtFreeProjectionForDashboard(
+        activeDebts,
+        state.plan || {},
+        state.plan?.strategy || "avalanche"
+      );
 
       $("statDebtTotal").textContent = fmtMoney(totalDebt);
+      const statDebtFreeDate = $("statDebtFreeDate");
+      if (statDebtFreeDate) statDebtFreeDate.textContent = formatStatDebtFreeProjection(debtFreeProjection);
       $("statDebtCount").textContent = String(activeDebts.length);
       $("statPendingIntents").textContent = String(pending);
       $("statExecutedIntents").textContent = String(executed);
@@ -4119,6 +4186,281 @@
       return s || orig;
     }
 
+    const PAYOFF_MAX_MONTHS_UI = 600;
+    const PAYOFF_EPS_UI = 0.02;
+
+    function roundPayoffMoney(n) {
+      const x = Number(n);
+      if (!Number.isFinite(x)) return 0;
+      return Math.round((x + Number.EPSILON) * 100) / 100;
+    }
+
+    function inferProjectionMinimumPayment(balance, rawMinimum) {
+      const stated = roundPayoffMoney(toNum(rawMinimum));
+      if (stated > 0) return Math.min(stated, balance);
+      if (!(balance > PAYOFF_EPS_UI)) return 0;
+      return Math.min(balance, Math.max(25, roundPayoffMoney(balance * 0.02)));
+    }
+
+    function normalizeDebtForProjection(row) {
+      if (!row || !isDebtActiveForDashboard(row)) return null;
+      const id = row.id != null ? String(row.id).trim() : "";
+      if (!id) return null;
+      const balance = Math.max(0, roundPayoffMoney(debtBalanceForDashboard(row)));
+      if (!(balance > PAYOFF_EPS_UI)) return null;
+      const aprRaw = parseAprValue(row);
+      const apr = aprRaw !== null && Number.isFinite(aprRaw) && aprRaw > 0 ? aprRaw : 0;
+      return {
+        id,
+        name: cleanVisibleDebtName(row.name) || String(id).slice(0, 8),
+        balance,
+        apr,
+        minimum_payment: inferProjectionMinimumPayment(balance, row.minimum_payment ?? row.min_payment)
+      };
+    }
+
+    function sortProjectionTargets(items, strategy) {
+      const arr = items.filter((d) => d.balance > PAYOFF_EPS_UI);
+      if (strategy === "snowball") {
+        arr.sort((a, b) => a.balance - b.balance || b.apr - a.apr || String(a.id).localeCompare(String(b.id)));
+      } else {
+        arr.sort((a, b) => b.apr - a.apr || b.balance - a.balance || String(a.id).localeCompare(String(b.id)));
+      }
+      return arr;
+    }
+
+    function planPaymentInputsForProjection(plan, projectionDebts) {
+      const minimumsSum = roundPayoffMoney(
+        (projectionDebts || []).reduce((sum, d) => sum + Math.min(d.minimum_payment, d.balance), 0)
+      );
+      const monthly = Math.max(
+        0,
+        toNum(plan?.monthly_budget ?? plan?.monthly_budget_default ?? 0)
+      );
+      const extra = Math.max(0, toNum(plan?.extra_payment_default ?? 0));
+      const entered = roundPayoffMoney(monthly + extra);
+      const totalMonthlyPayment =
+        entered > PAYOFF_EPS_UI ? Math.max(entered, minimumsSum) : minimumsSum;
+      return {
+        minimumsSum,
+        totalMonthlyPayment: roundPayoffMoney(totalMonthlyPayment)
+      };
+    }
+
+    function estimateDebtFreeProjectionForDashboard(debtRows, plan, strategyRaw) {
+      const projectionDebts = (Array.isArray(debtRows) ? debtRows : [])
+        .map((d) => normalizeDebtForProjection(d))
+        .filter(Boolean);
+      if (!projectionDebts.length) {
+        return {
+          ok: true,
+          paidOff: true,
+          months: 0,
+          monthsCapped: false,
+          totalInterest: 0,
+          totalPaid: 0,
+          totalMonthlyPayment: 0,
+          minimumsSum: 0
+        };
+      }
+
+      const strategy = String(strategyRaw || plan?.strategy || "avalanche").toLowerCase() === "snowball"
+        ? "snowball"
+        : "avalanche";
+      const inputs = planPaymentInputsForProjection(plan || {}, projectionDebts);
+      if (!(inputs.minimumsSum > PAYOFF_EPS_UI) || !(inputs.totalMonthlyPayment > PAYOFF_EPS_UI)) {
+        return {
+          ok: false,
+          reason: "missing_payment_amount",
+          paidOff: false,
+          months: null,
+          monthsCapped: false,
+          totalInterest: null,
+          totalPaid: null,
+          totalMonthlyPayment: inputs.totalMonthlyPayment,
+          minimumsSum: inputs.minimumsSum
+        };
+      }
+
+      const items = projectionDebts.map((d) => ({ ...d }));
+      let month = 0;
+      let totalInterest = 0;
+      let totalPaid = 0;
+
+      while (items.some((d) => d.balance > PAYOFF_EPS_UI) && month < PAYOFF_MAX_MONTHS_UI) {
+        month += 1;
+
+        for (const d of items) {
+          if (d.balance <= PAYOFF_EPS_UI) continue;
+          const interest = roundPayoffMoney((d.balance * d.apr) / 100 / 12);
+          totalInterest = roundPayoffMoney(totalInterest + interest);
+          d.balance = roundPayoffMoney(d.balance + interest);
+        }
+
+        let pool = roundPayoffMoney(inputs.totalMonthlyPayment);
+        const active = items.filter((d) => d.balance > PAYOFF_EPS_UI);
+        active.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+        for (const d of active) {
+          if (pool <= PAYOFF_EPS_UI) break;
+          const pay = Math.min(d.minimum_payment, d.balance, pool);
+          d.balance = roundPayoffMoney(Math.max(0, d.balance - pay));
+          pool = roundPayoffMoney(pool - pay);
+          totalPaid = roundPayoffMoney(totalPaid + pay);
+        }
+
+        while (pool > PAYOFF_EPS_UI) {
+          const targets = sortProjectionTargets(items, strategy);
+          const target = targets[0];
+          if (!target) break;
+          const pay = Math.min(target.balance, pool);
+          target.balance = roundPayoffMoney(Math.max(0, target.balance - pay));
+          pool = roundPayoffMoney(pool - pay);
+          totalPaid = roundPayoffMoney(totalPaid + pay);
+        }
+      }
+
+      const monthsCapped = items.some((d) => d.balance > PAYOFF_EPS_UI);
+      return {
+        ok: true,
+        paidOff: false,
+        months: month,
+        monthsCapped,
+        totalInterest: roundPayoffMoney(totalInterest),
+        totalPaid: roundPayoffMoney(totalPaid),
+        totalMonthlyPayment: inputs.totalMonthlyPayment,
+        minimumsSum: inputs.minimumsSum
+      };
+    }
+
+    function formatDebtFreeDateFromMonths(months, options = {}) {
+      const n = Number(months);
+      if (!Number.isFinite(n) || n <= 0) return t("stat_debt_free_done");
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(1);
+      d.setMonth(d.getMonth() + Math.round(n));
+      const locale = uiLang === "es" ? "es-US" : "en-US";
+      return new Intl.DateTimeFormat(locale, {
+        month: options.short === true ? "short" : "long",
+        year: "numeric"
+      }).format(d);
+    }
+
+    function formatPayoffMonthsEstimate(months, capped) {
+      if (capped) {
+        return tf("dashboard_next_month_capped", { months: PAYOFF_MAX_MONTHS_UI });
+      }
+      const n = Math.max(0, Math.round(Number(months) || 0));
+      if (n <= 0) return t("dashboard_next_month_now");
+      if (n === 1) return t("dashboard_next_month_one");
+      return tf("dashboard_next_month_many", { months: n });
+    }
+
+    function formatStatDebtFreeProjection(projection) {
+      if (projection?.paidOff) return t("stat_debt_free_done");
+      if (!projection || projection.ok !== true || projection.months == null) {
+        return t("stat_debt_free_set_plan");
+      }
+      if (projection.monthsCapped) {
+        return tf("dashboard_next_month_capped", { months: PAYOFF_MAX_MONTHS_UI });
+      }
+      return formatDebtFreeDateFromMonths(projection.months, { short: true });
+    }
+
+    function cloneDebtRowsWithPaymentApplied(debtRows, debtId, amount) {
+      const did = debtId != null ? String(debtId).trim() : "";
+      const pay = Math.max(0, toNum(amount));
+      return (Array.isArray(debtRows) ? debtRows : []).map((d) => {
+        if (!d || String(d.id || "").trim() !== did) return d;
+        const nextBalance = roundPayoffMoney(Math.max(0, debtBalanceForDashboard(d) - pay));
+        return { ...d, balance: nextBalance, current_balance: nextBalance };
+      });
+    }
+
+    function formatAprForDisplay(apr) {
+      const n = Number(apr);
+      if (!Number.isFinite(n)) return "";
+      return n.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+    }
+
+    function buildDashboardPriorityReason(debt, plan, strategyRaw) {
+      if (!debt) return "";
+      const targetId = plan?.payment_target_debt_id != null ? String(plan.payment_target_debt_id).trim() : "";
+      if (targetId && String(debt.id || "").trim() === targetId) {
+        return t("dashboard_next_priority_target");
+      }
+      const strategy = String(strategyRaw || plan?.strategy || "avalanche").toLowerCase() === "snowball"
+        ? "snowball"
+        : "avalanche";
+      if (strategy === "snowball") return t("dashboard_next_priority_snowball");
+      const apr = parseAprValue(debt);
+      if (apr !== null && Number.isFinite(apr) && apr > 0) {
+        return tf("dashboard_next_priority_avalanche_apr", { apr: formatAprForDisplay(apr) });
+      }
+      return t("dashboard_next_priority_avalanche");
+    }
+
+    function buildDashboardNextMoveProjectionDetails(debts, debtRow, intent, payAmt) {
+      const strategy = String(intent?.strategy || state.plan?.strategy || "avalanche").toLowerCase() === "snowball"
+        ? "snowball"
+        : "avalanche";
+      const before = estimateDebtFreeProjectionForDashboard(debts, state.plan || {}, strategy);
+      const did = String(intent?.debt_id || "").trim();
+      const afterDebts = cloneDebtRowsWithPaymentApplied(debts, did, payAmt);
+      const after = estimateDebtFreeProjectionForDashboard(afterDebts, state.plan || {}, strategy);
+      const out = {
+        debtFreeLine: "",
+        balanceAfterLine: "",
+        priorityLine: buildDashboardPriorityReason(debtRow, state.plan || {}, strategy),
+        impactLine: ""
+      };
+
+      if (after && after.ok === true && after.months != null) {
+        out.debtFreeLine = tf("dashboard_next_debt_free_line", {
+          date: after.monthsCapped
+            ? tf("dashboard_next_month_capped", { months: PAYOFF_MAX_MONTHS_UI })
+            : formatDebtFreeDateFromMonths(after.months),
+          months: formatPayoffMonthsEstimate(after.months, after.monthsCapped)
+        });
+      } else {
+        out.debtFreeLine = t("dashboard_next_debt_free_unavailable");
+      }
+
+      if (debtRow) {
+        const nextBalance = Math.max(0, debtBalanceForDashboard(debtRow) - Math.max(0, toNum(payAmt)));
+        out.balanceAfterLine = tf("dashboard_next_balance_after", {
+          amount: fmtMoney(nextBalance)
+        });
+      }
+
+      if (before && after && before.ok === true && after.ok === true) {
+        const interestSaved = roundPayoffMoney(toNum(before.totalInterest) - toNum(after.totalInterest));
+        const monthsSaved =
+          !before.monthsCapped && !after.monthsCapped
+            ? Math.max(0, Math.round(toNum(before.months) - toNum(after.months)))
+            : 0;
+        const hasInterest = interestSaved >= 0.5;
+        const hasMonths = monthsSaved >= 1;
+        if (hasInterest && hasMonths) {
+          out.impactLine = tf("dashboard_next_impact_both", {
+            interest: fmtMoney(interestSaved),
+            months: formatPayoffMonthsEstimate(monthsSaved, false)
+          });
+        } else if (hasInterest) {
+          out.impactLine = tf("dashboard_next_impact_interest", {
+            interest: fmtMoney(interestSaved)
+          });
+        } else if (hasMonths) {
+          out.impactLine =
+            monthsSaved === 1
+              ? t("dashboard_next_impact_months_one")
+              : tf("dashboard_next_impact_months_many", { months: monthsSaved });
+        }
+      }
+
+      return out;
+    }
+
     function renderPayoffSimulation() {
       const totalEl = $("simTotalDebtBalance");
       const minEl = $("simTotalMinimumPayment");
@@ -4131,7 +4473,14 @@
 
       const debts = (Array.isArray(state.debts) ? state.debts : []).filter((d) => isDebtActiveForDashboard(d));
       const totalDebtBalance = debts.reduce((sum, d) => sum + debtBalanceForDashboard(d), 0);
-      const totalMinimumPayment = debts.reduce((sum, d) => sum + toNum(d.minimum_payment), 0);
+      const strategyKey = String(state.plan?.strategy || "avalanche").toLowerCase() === "snowball"
+        ? "snowball"
+        : "avalanche";
+      const projection = estimateDebtFreeProjectionForDashboard(debts, state.plan || {}, strategyKey);
+      const totalMinimumPayment =
+        projection && Number.isFinite(Number(projection.minimumsSum))
+          ? Number(projection.minimumsSum)
+          : debts.reduce((sum, d) => sum + toNum(d.minimum_payment), 0);
       const activeDebts = debts.length;
 
       let urgentDebt = null;
@@ -4144,10 +4493,9 @@
         }
       });
 
-      const strategy = urgentDebt ? "Avalanche" : "Snowball";
       totalEl.textContent = fmtMoney(totalDebtBalance);
       minEl.textContent = fmtMoney(totalMinimumPayment);
-      strategyEl.textContent = strategy;
+      strategyEl.textContent = t(strategyKey === "snowball" ? "strategy_snowball" : "strategy_avalanche");
       countsEl.textContent = `${t("sim_counts_active_label")}: ${activeDebts}`;
 
       if (urgentDebt) {
@@ -4158,27 +4506,24 @@
         urgentEl.textContent = t("sim_no_apr_data");
       }
 
-      const aprValues = debts
-        .map((d) => parseAprValue(d))
-        .filter((a) => a !== null && Number.isFinite(a) && a > 0);
-      const avgApr = aprValues.length ? aprValues.reduce((s, a) => s + a, 0) / aprValues.length : 0;
-      const annualInterestApprox = totalDebtBalance * (avgApr / 100);
-      const savingsEstimate = annualInterestApprox * 0.25;
       const savingsLineEl = $("simSavingsLine");
       const monthsLineEl = $("simMonthsLine");
       if (savingsLineEl && monthsLineEl) {
-        savingsLineEl.textContent = tf("sim_savings_line", { amount: fmtMoney(savingsEstimate) });
-        let reducedMonths = 1;
-        if (savingsEstimate > 0 && totalMinimumPayment > 0) {
-          reducedMonths = Math.round(savingsEstimate / Math.max(totalMinimumPayment * 0.25, 20));
-          reducedMonths = Math.max(1, Math.min(48, reducedMonths));
-        } else if (savingsEstimate > 0) {
-          reducedMonths = Math.max(1, Math.min(36, Math.round(Math.sqrt(totalDebtBalance + 1) / 15)));
+        if (projection && projection.ok === true && projection.months != null) {
+          savingsLineEl.textContent = tf("dashboard_next_debt_free_line", {
+            date: projection.monthsCapped
+              ? tf("dashboard_next_month_capped", { months: PAYOFF_MAX_MONTHS_UI })
+              : formatDebtFreeDateFromMonths(projection.months),
+            months: formatPayoffMonthsEstimate(projection.months, projection.monthsCapped)
+          });
+          monthsLineEl.textContent = `${t("months_lbl")}: ${formatPayoffMonthsEstimate(
+            projection.months,
+            projection.monthsCapped
+          )}`;
+        } else {
+          savingsLineEl.textContent = t("dashboard_next_debt_free_unavailable");
+          monthsLineEl.textContent = "";
         }
-        monthsLineEl.textContent =
-          reducedMonths === 1
-            ? t("sim_months_reduced_one")
-            : tf("sim_months_reduced_many", { months: reducedMonths });
       }
     }
 
@@ -6317,6 +6662,24 @@
       renderDashboardNextStep();
       updateNextActionGuide();
       return buildRes;
+    }
+
+    async function refreshAfterManualPaymentConfirmation(options = {}) {
+      await refreshDebts();
+      if (options.rebuildNextMove === false) {
+        await refreshIntents();
+      } else {
+        try {
+          await rebuildManualPlanAndRefresh({ withRefreshPlan: true });
+        } catch (e) {
+          recordPlanBuildFailure(e);
+          await refreshIntents();
+        }
+      }
+      await refreshTrace();
+      renderStats();
+      renderDashboardNextStep();
+      updateNextActionGuide();
     }
 
     async function refreshIntents() {

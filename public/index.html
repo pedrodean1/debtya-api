@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-07-31-v121-stale-intent-guard" />
+  <meta name="debtya-ui-rev" content="debtya-2026-08-14-v131-v120-next-best-move-debt-free-date" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-07-31-v121-stale-intent-guard">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-08-14-v131-v120-next-best-move-debt-free-date">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -468,6 +468,10 @@
             <div class="stat">
               <div class="k" data-i18n="stat_total_debt">Total debt</div>
               <div id="statDebtTotal" class="v">$0.00</div>
+            </div>
+            <div class="stat stat-debt-free">
+              <div class="k" data-i18n="stat_debt_free_date">Debt-free date</div>
+              <div id="statDebtFreeDate" class="v">-</div>
             </div>
             <div class="stat">
               <div class="k" data-i18n="stat_active_debts">Active debts</div>
@@ -1358,7 +1362,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-07-31-v121-stale-intent-guard"></script>
+  <script src="/app.js?v=debtya-2026-08-14-v131-v120-next-best-move-debt-free-date"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
