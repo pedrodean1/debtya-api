@@ -598,7 +598,31 @@
         sw_connect_err_verify: "That code did not work. Request a new code and try again.",
         sw_connect_err_unexpected_link: "The link step returned an unexpected status. Try again or contact support.",
         sw_connect_unavailable: "Debt lookup is not available right now. Please try again later.",
-        sim_title: "Payoff simulation",
+        sim_title: "What if I pay more?",
+        sim_intro: "See how an additional monthly payment could change your payoff timeline.",
+        sim_extra_monthly: "Extra each month",
+        sim_custom_amount: "Custom amount",
+        sim_extra_hint: "This amount is added on top of your current estimated monthly payment.",
+        sim_current_plan_line: "Current plan: {amount}/month",
+        sim_debt_free_date: "Debt-free date",
+        sim_time_saved: "Time saved",
+        sim_interest_saved: "Interest saved",
+        sim_monthly_payment: "Monthly payment",
+        sim_lower_interest: "Lower interest",
+        sim_strategy_compare: "Strategy comparison",
+        sim_strategy_help: "How the strategies differ",
+        sim_month_none: "Same payoff month",
+        sim_month_one_sooner: "1 month sooner",
+        sim_month_many_sooner: "{months} months sooner",
+        sim_projection_improved: "Payoff estimate improved",
+        sim_projection_capped: "More than {months} months",
+        sim_no_active_debts: "Add an active debt to run the simulator.",
+        sim_added_payment_none: "Choose an extra amount to see the impact.",
+        sim_compare_avalanche: "Avalanche could save about {amount} more in interest with this payment.",
+        sim_compare_snowball: "Snowball could save about {amount} more in interest with this payment.",
+        sim_compare_same: "Both strategies have a similar estimated result with this payment.",
+        sim_counts_dynamic: "{count} active debts | Adding {amount}/month",
+        sim_value_unavailable: "Not available",
         sim_total_debt_balance: "Total debt balance",
         sim_total_min_payment: "Total minimum payment",
         sim_urgent_debt_by_apr: "Highest APR debt",
@@ -1426,7 +1450,31 @@
         sw_connect_err_verify: "Ese codigo no funciono. Pide uno nuevo e intentalo.",
         sw_connect_err_unexpected_link: "El enlace devolvio un estado inesperado. Reintenta o contacta soporte.",
         sw_connect_unavailable: "La busqueda de deudas no esta disponible ahora. Intentalo mas tarde.",
-        sim_title: "Simulaci\u00F3n de salida de deuda",
+        sim_title: "\u00BFQu\u00E9 pasa si pago m\u00E1s?",
+        sim_intro: "Mira c\u00F3mo un pago mensual adicional podr\u00EDa cambiar tu fecha libre de deudas.",
+        sim_extra_monthly: "Extra cada mes",
+        sim_custom_amount: "Cantidad personalizada",
+        sim_extra_hint: "Esta cantidad se suma al pago mensual estimado de tu plan actual.",
+        sim_current_plan_line: "Plan actual: {amount}/mes",
+        sim_debt_free_date: "Fecha libre de deudas",
+        sim_time_saved: "Tiempo adelantado",
+        sim_interest_saved: "Intereses ahorrados",
+        sim_monthly_payment: "Pago mensual",
+        sim_lower_interest: "Menos intereses",
+        sim_strategy_compare: "Comparaci\u00F3n de estrategias",
+        sim_strategy_help: "Diferencia entre las estrategias",
+        sim_month_none: "Mismo mes de salida",
+        sim_month_one_sooner: "1 mes antes",
+        sim_month_many_sooner: "{months} meses antes",
+        sim_projection_improved: "La proyecci\u00F3n mejora",
+        sim_projection_capped: "M\u00E1s de {months} meses",
+        sim_no_active_debts: "Agrega una deuda activa para usar el simulador.",
+        sim_added_payment_none: "Elige una cantidad extra para ver el impacto.",
+        sim_compare_avalanche: "Avalanche podr\u00EDa ahorrar cerca de {amount} m\u00E1s en intereses con este pago.",
+        sim_compare_snowball: "Bola de nieve podr\u00EDa ahorrar cerca de {amount} m\u00E1s en intereses con este pago.",
+        sim_compare_same: "Ambas estrategias tienen un resultado estimado parecido con este pago.",
+        sim_counts_dynamic: "{count} deudas activas | Sumando {amount}/mes",
+        sim_value_unavailable: "No disponible",
         sim_total_debt_balance: "Saldo total de deuda",
         sim_total_min_payment: "Pago m\u00EDnimo total",
         sim_urgent_debt_by_apr: "Deuda m\u00E1s urgente por APR",
@@ -1851,7 +1899,7 @@
 
     const SIM_UI_FALLBACK = {
       en: {
-        sim_title: "Payoff simulation",
+        sim_title: "What if I pay more?",
         sim_total_debt_balance: "Total debt balance",
         sim_total_min_payment: "Total minimum payment",
         sim_urgent_debt_by_apr: "Highest APR debt",
@@ -1865,7 +1913,7 @@
           "<strong>Snowball:</strong> pay the lowest balance first to close accounts faster."
       },
       es: {
-        sim_title: "Simulaci\u00F3n de salida de deuda",
+        sim_title: "\u00BFQu\u00E9 pasa si pago m\u00E1s?",
         sim_total_debt_balance: "Saldo total de deuda",
         sim_total_min_payment: "Pago m\u00EDnimo total",
         sim_urgent_debt_by_apr: "Deuda m\u00E1s urgente por APR",
@@ -2123,6 +2171,7 @@
       adminDiagnostics: null,
       adminDiagnosticsAllowed: false,
       lastCompare: null,
+      payoffSimulatorExtraMonthly: 100,
       editingRuleId: null,
       methodConfigured: false,
       methodEntities: [],
@@ -4461,69 +4510,170 @@
       return out;
     }
 
+    function normalizePayoffSimulatorExtra(value) {
+      return Math.min(100000, Math.max(0, roundPayoffMoney(toNum(value))));
+    }
+
+    function buildPayMoreProjection(debts, plan, strategy, additionalMonthly) {
+      const baseline = estimateDebtFreeProjectionForDashboard(debts, plan || {}, strategy);
+      const additional = normalizePayoffSimulatorExtra(additionalMonthly);
+      if (!baseline || baseline.ok !== true || baseline.months == null) {
+        return { ok: false, baseline, scenario: null, additional, monthsSaved: null, interestSaved: null };
+      }
+
+      const scenarioMonthlyPayment = roundPayoffMoney(
+        Math.max(0, toNum(baseline.totalMonthlyPayment)) + additional
+      );
+      const scenarioPlan = {
+        ...(plan || {}),
+        strategy,
+        monthly_budget: scenarioMonthlyPayment,
+        monthly_budget_default: scenarioMonthlyPayment,
+        extra_payment_default: 0
+      };
+      const scenario = estimateDebtFreeProjectionForDashboard(debts, scenarioPlan, strategy);
+      if (!scenario || scenario.ok !== true || scenario.months == null) {
+        return { ok: false, baseline, scenario, additional, monthsSaved: null, interestSaved: null };
+      }
+
+      const monthsSaved =
+        !baseline.monthsCapped && !scenario.monthsCapped
+          ? Math.max(0, Math.round(toNum(baseline.months) - toNum(scenario.months)))
+          : null;
+      const interestSaved =
+        !baseline.monthsCapped && !scenario.monthsCapped
+          ? Math.max(
+              0,
+              roundPayoffMoney(toNum(baseline.totalInterest) - toNum(scenario.totalInterest))
+            )
+          : null;
+      return { ok: true, baseline, scenario, additional, monthsSaved, interestSaved };
+    }
+
+    function formatPayMoreDate(projection) {
+      if (!projection || projection.ok !== true || projection.months == null) {
+        return t("sim_value_unavailable");
+      }
+      if (projection.paidOff || Number(projection.months) <= 0) return t("stat_debt_free_done");
+      if (projection.monthsCapped) {
+        return tf("sim_projection_capped", { months: PAYOFF_MAX_MONTHS_UI });
+      }
+      return formatDebtFreeDateFromMonths(projection.months, { short: true });
+    }
+
+    function formatPayMoreTimeSaved(result) {
+      if (!result || result.ok !== true) return t("sim_value_unavailable");
+      if (result.baseline?.monthsCapped && !result.scenario?.monthsCapped) {
+        return t("sim_projection_improved");
+      }
+      if (result.monthsSaved == null) return t("sim_value_unavailable");
+      if (result.monthsSaved <= 0) return t("sim_month_none");
+      if (result.monthsSaved === 1) return t("sim_month_one_sooner");
+      return tf("sim_month_many_sooner", { months: result.monthsSaved });
+    }
+
+    function renderPayMoreStrategy(prefix, result) {
+      const dateEl = $(`sim${prefix}Date`);
+      const monthsEl = $(`sim${prefix}Months`);
+      const interestEl = $(`sim${prefix}Interest`);
+      const paymentEl = $(`sim${prefix}Payment`);
+      if (!dateEl || !monthsEl || !interestEl || !paymentEl) return;
+
+      if (!result || result.ok !== true) {
+        const unavailable = t("sim_value_unavailable");
+        dateEl.textContent = unavailable;
+        monthsEl.textContent = unavailable;
+        interestEl.textContent = unavailable;
+        paymentEl.textContent = unavailable;
+        return;
+      }
+
+      dateEl.textContent = formatPayMoreDate(result.scenario);
+      monthsEl.textContent = formatPayMoreTimeSaved(result);
+      interestEl.textContent =
+        result.interestSaved == null ? t("sim_value_unavailable") : fmtMoney(result.interestSaved);
+      paymentEl.textContent = fmtMoney(result.scenario.totalMonthlyPayment);
+    }
+
     function renderPayoffSimulation() {
       const totalEl = $("simTotalDebtBalance");
       const minEl = $("simTotalMinimumPayment");
-      const urgentEl = $("simUrgentDebtByApr");
-      const strategyEl = $("simRecommendedStrategy");
       const countsEl = $("simCountsLine");
-      if (!totalEl || !minEl || !urgentEl || !strategyEl || !countsEl) return;
+      const currentPlanEl = $("simCurrentPlanLine");
+      const compareEl = $("simCompareSummary");
+      if (!totalEl || !minEl || !countsEl || !currentPlanEl || !compareEl) return;
 
       applyPayoffSimulationCardI18n();
 
       const debts = (Array.isArray(state.debts) ? state.debts : []).filter((d) => isDebtActiveForDashboard(d));
       const totalDebtBalance = debts.reduce((sum, d) => sum + debtBalanceForDashboard(d), 0);
-      const strategyKey = String(state.plan?.strategy || "avalanche").toLowerCase() === "snowball"
-        ? "snowball"
-        : "avalanche";
-      const projection = estimateDebtFreeProjectionForDashboard(debts, state.plan || {}, strategyKey);
-      const totalMinimumPayment =
-        projection && Number.isFinite(Number(projection.minimumsSum))
-          ? Number(projection.minimumsSum)
-          : debts.reduce((sum, d) => sum + toNum(d.minimum_payment), 0);
-      const activeDebts = debts.length;
+      const additional = normalizePayoffSimulatorExtra(state.payoffSimulatorExtraMonthly);
+      state.payoffSimulatorExtraMonthly = additional;
 
-      let urgentDebt = null;
-      let urgentApr = -1;
-      debts.forEach((debt) => {
-        const apr = parseAprValue(debt);
-        if (apr !== null && apr > urgentApr) {
-          urgentApr = apr;
-          urgentDebt = debt;
-        }
-      });
+      const avalanche = buildPayMoreProjection(debts, state.plan || {}, "avalanche", additional);
+      const snowball = buildPayMoreProjection(debts, state.plan || {}, "snowball", additional);
+      const baseline = avalanche.baseline || snowball.baseline;
+      const resultsEl = document.querySelector(".payoff-sim-results");
+      if (resultsEl) resultsEl.setAttribute("aria-label", t("sim_strategy_compare"));
+      const totalMinimumPayment =
+        baseline && Number.isFinite(Number(baseline.minimumsSum))
+          ? Number(baseline.minimumsSum)
+          : debts.reduce((sum, d) => sum + toNum(d.minimum_payment), 0);
 
       totalEl.textContent = fmtMoney(totalDebtBalance);
       minEl.textContent = fmtMoney(totalMinimumPayment);
-      strategyEl.textContent = t(strategyKey === "snowball" ? "strategy_snowball" : "strategy_avalanche");
-      countsEl.textContent = `${t("sim_counts_active_label")}: ${activeDebts}`;
+      currentPlanEl.textContent = tf("sim_current_plan_line", {
+        amount: fmtMoney(baseline?.totalMonthlyPayment || 0)
+      });
+      countsEl.textContent = tf("sim_counts_dynamic", {
+        count: debts.length,
+        amount: fmtMoney(additional)
+      });
 
-      if (urgentDebt) {
-        const debtName =
-          cleanVisibleDebtName(urgentDebt.name) || String(urgentDebt.id || "").trim() || t("sim_unnamed_debt");
-        urgentEl.textContent = `${debtName} (${urgentApr.toFixed(2)}% APR)`;
-      } else {
-        urgentEl.textContent = t("sim_no_apr_data");
+      document.querySelectorAll(".payoff-sim-preset[data-sim-extra]").forEach((button) => {
+        const amount = normalizePayoffSimulatorExtra(button.getAttribute("data-sim-extra"));
+        button.setAttribute("aria-pressed", Math.abs(amount - additional) < 0.01 ? "true" : "false");
+      });
+      const customInput = $("simCustomExtra");
+      if (customInput && document.activeElement !== customInput) customInput.value = String(additional);
+
+      renderPayMoreStrategy("Avalanche", avalanche);
+      renderPayMoreStrategy("Snowball", snowball);
+
+      const avalancheBadge = $("simAvalancheBadge");
+      const snowballBadge = $("simSnowballBadge");
+      if (avalancheBadge) avalancheBadge.classList.add("hidden");
+      if (snowballBadge) snowballBadge.classList.add("hidden");
+
+      if (!debts.length) {
+        compareEl.textContent = t("sim_no_active_debts");
+        return;
+      }
+      if (additional <= PAYOFF_EPS_UI) {
+        compareEl.textContent = t("sim_added_payment_none");
+        return;
+      }
+      if (avalanche.ok !== true || snowball.ok !== true) {
+        compareEl.textContent = t("dashboard_next_debt_free_unavailable");
+        return;
       }
 
-      const savingsLineEl = $("simSavingsLine");
-      const monthsLineEl = $("simMonthsLine");
-      if (savingsLineEl && monthsLineEl) {
-        if (projection && projection.ok === true && projection.months != null) {
-          savingsLineEl.textContent = tf("dashboard_next_debt_free_line", {
-            date: projection.monthsCapped
-              ? tf("dashboard_next_month_capped", { months: PAYOFF_MAX_MONTHS_UI })
-              : formatDebtFreeDateFromMonths(projection.months),
-            months: formatPayoffMonthsEstimate(projection.months, projection.monthsCapped)
-          });
-          monthsLineEl.textContent = `${t("months_lbl")}: ${formatPayoffMonthsEstimate(
-            projection.months,
-            projection.monthsCapped
-          )}`;
-        } else {
-          savingsLineEl.textContent = t("dashboard_next_debt_free_unavailable");
-          monthsLineEl.textContent = "";
-        }
+      const comparable = !avalanche.scenario.monthsCapped && !snowball.scenario.monthsCapped;
+      const interestDifference = roundPayoffMoney(
+        toNum(snowball.scenario.totalInterest) - toNum(avalanche.scenario.totalInterest)
+      );
+      if (comparable && interestDifference >= 0.5) {
+        if (avalancheBadge) avalancheBadge.classList.remove("hidden");
+        compareEl.textContent = tf("sim_compare_avalanche", {
+          amount: fmtMoney(interestDifference)
+        });
+      } else if (comparable && interestDifference <= -0.5) {
+        if (snowballBadge) snowballBadge.classList.remove("hidden");
+        compareEl.textContent = tf("sim_compare_snowball", {
+          amount: fmtMoney(Math.abs(interestDifference))
+        });
+      } else {
+        compareEl.textContent = t("sim_compare_same");
       }
     }
 
@@ -8266,6 +8416,28 @@
         } finally {
           setLoading(refreshPlanBtn, false);
         }
+      });
+    }
+    document.querySelectorAll(".payoff-sim-preset[data-sim-extra]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const amount = normalizePayoffSimulatorExtra(button.getAttribute("data-sim-extra"));
+        state.payoffSimulatorExtraMonthly = amount;
+        const customInput = $("simCustomExtra");
+        if (customInput) customInput.value = String(amount);
+        renderPayoffSimulation();
+      });
+    });
+    const simCustomExtraEl = $("simCustomExtra");
+    if (simCustomExtraEl) {
+      simCustomExtraEl.addEventListener("input", () => {
+        state.payoffSimulatorExtraMonthly = normalizePayoffSimulatorExtra(simCustomExtraEl.value);
+        renderPayoffSimulation();
+      });
+      simCustomExtraEl.addEventListener("change", () => {
+        const amount = normalizePayoffSimulatorExtra(simCustomExtraEl.value);
+        state.payoffSimulatorExtraMonthly = amount;
+        simCustomExtraEl.value = String(amount);
+        renderPayoffSimulation();
       });
     }
     let persistPlanStrategyTimer = null;
