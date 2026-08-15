@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v134-intuitive-score";
+const SW_CACHE = "debtya-static-v135-clear-plan-state-password-visibility";
 const STATIC_ASSETS = [
   "/",
   "/index.html",

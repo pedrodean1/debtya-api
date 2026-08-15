@@ -639,31 +639,29 @@
         sim_months_reduced_many: "Estimated time reduced: ~{months} months",
         sim_counts_active_label: "Active debts",
         sim_counts_line_placeholder: "Active debts: 0",
-        score_title: "DebtYa Score",
-        score_dynamic_badge: "Updates automatically",
-        score_factor_data: "Information ready",
+        score_title: "Your plan status",
+        score_dynamic_badge: "Updates when your plan changes",
+        score_factor_data: "Complete information",
         score_factor_interest: "Cost of your debt",
-        score_factor_payment: "Strength of your payment",
+        score_factor_payment: "Your monthly payment",
         score_factor_outlook: "Time remaining",
-        score_factors_label: "DebtYa Score factors",
+        score_factors_label: "Key plan details",
         score_status_debt_free: "Debt free",
-        score_status_strong: "Strong plan",
+        score_status_strong: "Solid plan",
         score_status_on_track: "On track",
-        score_status_building: "Building momentum",
-        score_status_needs_attention: "Needs attention",
+        score_status_building: "Needs improvement",
+        score_status_needs_attention: "Review your plan",
         score_summary_debt_free: "No active debt is currently included in your plan.",
         score_summary_ready:
           "{count} active debts | Weighted APR: {apr}% | Payoff estimate: {months}",
         score_summary_missing_apr:
           "{count} active debts | Add missing APRs for more precision | Payoff estimate: {months}",
-        score_potential_gain:
-          "With {amount} extra per month, your score could rise to {score} (+{gain}).",
         score_meaning_debt_free: "You have no active debt in the plan. This is the goal.",
-        score_meaning_data: "This score is provisional because some APRs or minimum payments are missing.",
-        score_meaning_interest: "Your plan is moving forward, but interest is taking too much of each payment.",
-        score_meaning_payment: "Your payments cover the debt, but they are still too close to the minimums.",
-        score_meaning_outlook: "Your plan works, but becoming debt-free still takes a long time.",
-        score_meaning_strong: "Your information is complete, your payment is solid, and your payoff timeline is healthy.",
+        score_meaning_data: "Some APRs or minimum payments are missing, so the payoff estimate is not reliable yet.",
+        score_meaning_interest: "Interest is your main obstacle: it is taking too much of each payment.",
+        score_meaning_payment: "Your current payment is too close to the minimums to reduce debt quickly.",
+        score_meaning_outlook: "At your current payment, becoming debt-free will still take a long time.",
+        score_meaning_strong: "Your payment is reducing debt at a solid pace and your plan information is complete.",
         score_data_value: "{complete} of {count} complete",
         score_data_debt_free: "No active debts",
         score_interest_value: "{apr}% APR | {level}",
@@ -682,21 +680,24 @@
         score_payment_strong_extra: "Strong extra",
         score_outlook_debt_free: "Debt free",
         score_impact_both:
-          "DebtYa Score: {score}. Paying {amount} more per month could make you debt-free {time} and save about {interest} in interest.",
+          "Paying {amount} more per month could make you debt-free {time} and save about {interest} in interest.",
         score_impact_months:
-          "DebtYa Score: {score}. Paying {amount} more per month could make you debt-free {time}.",
+          "Paying {amount} more per month could make you debt-free {time}.",
         score_impact_interest:
-          "DebtYa Score: {score}. Paying {amount} more per month could save about {interest} in interest.",
-        score_impact_score:
-          "Paying {amount} more per month could raise your DebtYa Score to {score}.",
+          "Paying {amount} more per month could save about {interest} in interest.",
         score_see_50_impact: "See +$50 impact",
+        score_priority_now: "Priority now",
         score_action_debt_free: "Keep completed balances updated so your plan stays accurate.",
         score_action_data: "Complete the APR and minimum payment for every active debt.",
         score_action_interest: "Direct extra money to the highest-APR debt to reduce interest pressure.",
         score_action_payment: "A monthly payment above the minimums can strengthen your plan.",
         score_action_outlook: "Use the simulator to test an extra monthly amount and shorten the payoff timeline.",
         score_action_strong: "Keep balances and completed payments updated to preserve this strong plan.",
-        score_disclaimer: "DebtYa Score is a planning indicator, not a credit score.",
+        score_disclaimer: "Estimate based on the balances, APRs, and payments you entered.",
+        password_show_short: "Show",
+        password_hide_short: "Hide",
+        password_show: "Show password",
+        password_hide: "Hide password",
         intent_reason_high_apr: "High priority due to high APR ({apr}%)",
         intent_reason_low_balance: "Low balance; could be paid off sooner",
         intent_reason_plan: "Recommended payment from your plan",
@@ -1549,31 +1550,29 @@
         sim_months_reduced_many: "Tiempo estimado reducido: ~{months} meses",
         sim_counts_active_label: "Deudas activas",
         sim_counts_line_placeholder: "Deudas activas: 0",
-        score_title: "DebtYa Score",
-        score_dynamic_badge: "Se actualiza automáticamente",
-        score_factor_data: "Datos listos",
+        score_title: "Estado de tu plan",
+        score_dynamic_badge: "Se actualiza cuando cambia tu plan",
+        score_factor_data: "Datos completos",
         score_factor_interest: "Costo de tu deuda",
-        score_factor_payment: "Fuerza de tu pago",
+        score_factor_payment: "Tu pago mensual",
         score_factor_outlook: "Tiempo restante",
-        score_factors_label: "Factores de DebtYa Score",
+        score_factors_label: "Datos clave de tu plan",
         score_status_debt_free: "Libre de deudas",
-        score_status_strong: "Plan fuerte",
+        score_status_strong: "Plan sólido",
         score_status_on_track: "Vas por buen camino",
-        score_status_building: "Creando impulso",
-        score_status_needs_attention: "Necesita atención",
+        score_status_building: "Hay que mejorarlo",
+        score_status_needs_attention: "Revisa tu plan",
         score_summary_debt_free: "No hay deudas activas incluidas actualmente en tu plan.",
         score_summary_ready:
           "{count} deudas activas | APR ponderado: {apr}% | Salida estimada: {months}",
         score_summary_missing_apr:
           "{count} deudas activas | Agrega los APR faltantes para mayor precisión | Salida estimada: {months}",
-        score_potential_gain:
-          "Con {amount} extra al mes, tu score podría subir a {score} (+{gain}).",
         score_meaning_debt_free: "No tienes deudas activas en el plan. Esta es la meta.",
-        score_meaning_data: "Este puntaje es provisional porque faltan algunos APR o pagos mínimos.",
-        score_meaning_interest: "Tu plan avanza, pero los intereses consumen demasiado de cada pago.",
-        score_meaning_payment: "Tus pagos cubren la deuda, pero todavía están muy cerca de los mínimos.",
-        score_meaning_outlook: "Tu plan funciona, pero todavía falta bastante tiempo para quedar libre de deudas.",
-        score_meaning_strong: "Tus datos están completos, tu pago es sólido y el tiempo restante es saludable.",
+        score_meaning_data: "Faltan algunos APR o pagos mínimos, así que la fecha estimada todavía no es confiable.",
+        score_meaning_interest: "Los intereses son tu principal obstáculo: consumen demasiado de cada pago.",
+        score_meaning_payment: "Tu pago actual está demasiado cerca de los mínimos para reducir la deuda rápido.",
+        score_meaning_outlook: "Con tu pago actual, todavía tardarás bastante en quedar libre de deudas.",
+        score_meaning_strong: "Tu pago reduce la deuda a buen ritmo y los datos del plan están completos.",
         score_data_value: "{complete} de {count} completas",
         score_data_debt_free: "Sin deudas activas",
         score_interest_value: "{apr}% APR | {level}",
@@ -1592,21 +1591,24 @@
         score_payment_strong_extra: "Extra fuerte",
         score_outlook_debt_free: "Libre de deudas",
         score_impact_both:
-          "DebtYa Score: {score}. Pagar {amount} más al mes podría dejarte libre de deudas {time} y ahorrar cerca de {interest} en intereses.",
+          "Pagar {amount} más al mes podría dejarte libre de deudas {time} y ahorrar cerca de {interest} en intereses.",
         score_impact_months:
-          "DebtYa Score: {score}. Pagar {amount} más al mes podría dejarte libre de deudas {time}.",
+          "Pagar {amount} más al mes podría dejarte libre de deudas {time}.",
         score_impact_interest:
-          "DebtYa Score: {score}. Pagar {amount} más al mes podría ahorrar cerca de {interest} en intereses.",
-        score_impact_score:
-          "Pagar {amount} más al mes podría subir tu DebtYa Score a {score}.",
+          "Pagar {amount} más al mes podría ahorrar cerca de {interest} en intereses.",
         score_see_50_impact: "Ver impacto de +$50",
+        score_priority_now: "Prioridad ahora",
         score_action_debt_free: "Mantén actualizados los saldos completados para conservar un plan preciso.",
         score_action_data: "Completa el APR y el pago mínimo de cada deuda activa.",
         score_action_interest: "Dirige el dinero extra a la deuda con mayor APR para reducir la presión de intereses.",
         score_action_payment: "Un pago mensual por encima de los mínimos puede fortalecer tu plan.",
         score_action_outlook: "Usa el simulador para probar una cantidad extra y acortar el tiempo de pago.",
         score_action_strong: "Mantén actualizados los saldos y pagos completados para conservar este plan fuerte.",
-        score_disclaimer: "DebtYa Score es un indicador del plan, no un puntaje de crédito.",
+        score_disclaimer: "Estimación basada en los balances, APR y pagos que registraste.",
+        password_show_short: "Ver",
+        password_hide_short: "Ocultar",
+        password_show: "Mostrar contraseña",
+        password_hide: "Ocultar contraseña",
         intent_reason_high_apr: "Alta prioridad por APR alto ({apr}%)",
         intent_reason_low_balance: "Balance bajo; se puede eliminar rapido",
         intent_reason_plan: "Pago recomendado segun tu plan",
@@ -2112,6 +2114,7 @@
           el.setAttribute("aria-label", txt);
         }
       });
+      syncPasswordVisibilityButtons();
       const helpFabEl = $("helpFab");
       if (helpFabEl) helpFabEl.setAttribute("aria-label", t("help_fab_aria"));
     }
@@ -2329,8 +2332,7 @@
     const authMessage = $("authMessage");
     const globalMessage = $("globalMessage");
 
-    wireAuthPasswordMaskBehavior(authPassword, $("authPasswordConfirm"));
-    wireAuthPasswordMaskBehavior($("pwRecoveryNew"), $("pwRecoveryConfirm"));
+    wirePasswordVisibilityToggles();
 
     function showPasswordRecoveryPanel() {
       const panel = $("passwordRecoveryPanel");
@@ -2342,6 +2344,7 @@
       appView.classList.add("hidden");
       const line = $("pwRecoveryEmailLine");
       if (line) line.textContent = state.user?.email || "";
+      resetPasswordVisibility(["pwRecoveryNew", "pwRecoveryConfirm"]);
       try {
         const path = window.location.pathname || "/";
         const search = window.location.search || "";
@@ -2355,6 +2358,7 @@
       const block = $("authNormalBlock");
       if (panel) panel.classList.add("hidden");
       if (block) block.classList.remove("hidden");
+      clearPasswordFields(["pwRecoveryNew", "pwRecoveryConfirm"]);
     }
 
     function removeDisconnectFallbackFab() {
@@ -2378,6 +2382,7 @@
       state.loginVerificationPending = false;
       state.loginVerificationEmail = null;
       state.mode = mode;
+      clearPasswordFields(["authPassword", "authPasswordConfirm"]);
       updateAuthModeUI();
       landingView.classList.add("hidden");
       authView.classList.remove("hidden");
@@ -2385,6 +2390,12 @@
     }
 
     function showApp() {
+      clearPasswordFields([
+        "authPassword",
+        "authPasswordConfirm",
+        "pwRecoveryNew",
+        "pwRecoveryConfirm"
+      ]);
       landingView.classList.add("hidden");
       authView.classList.add("hidden");
       appView.classList.remove("hidden");
@@ -2971,23 +2982,50 @@
       }
     }
 
-    /** Sin m?scara cuando el campo est? vac?o; al escribir pasa a type=password (m?scara solo con contenido). */
-    function wireAuthPasswordMaskBehavior(pwEl, confirmEl) {
-      const wire = (el) => {
-        if (!el) return;
-        const syncType = () => {
-          if (el.value.length > 0) el.type = "password";
-          else el.type = "text";
-        };
-        el.addEventListener("focus", syncType);
-        el.addEventListener("input", syncType);
-        el.addEventListener("blur", () => {
-          if (!el.value) el.type = "text";
+    function syncPasswordVisibilityButtons() {
+      document.querySelectorAll(".password-visibility-toggle[data-password-target]").forEach((button) => {
+        const input = $(button.getAttribute("data-password-target"));
+        if (!input) return;
+        const visible = input.type === "text";
+        const label = button.querySelector("[data-password-toggle-label]");
+        if (label) label.textContent = t(visible ? "password_hide_short" : "password_show_short");
+        const accessibleLabel = t(visible ? "password_hide" : "password_show");
+        button.setAttribute("aria-label", accessibleLabel);
+        button.setAttribute("title", accessibleLabel);
+        button.setAttribute("aria-pressed", visible ? "true" : "false");
+      });
+    }
+
+    function resetPasswordVisibility(targetIds) {
+      (Array.isArray(targetIds) ? targetIds : []).forEach((id) => {
+        const input = $(id);
+        if (input) input.type = "password";
+      });
+      syncPasswordVisibilityButtons();
+    }
+
+    function clearPasswordFields(targetIds) {
+      (Array.isArray(targetIds) ? targetIds : []).forEach((id) => {
+        const input = $(id);
+        if (!input) return;
+        input.value = "";
+        input.type = "password";
+      });
+      syncPasswordVisibilityButtons();
+    }
+
+    function wirePasswordVisibilityToggles() {
+      document.querySelectorAll(".password-visibility-toggle[data-password-target]").forEach((button) => {
+        const input = $(button.getAttribute("data-password-target"));
+        if (!input) return;
+        input.type = "password";
+        button.addEventListener("click", () => {
+          input.type = input.type === "password" ? "text" : "password";
+          syncPasswordVisibilityButtons();
+          input.focus();
         });
-        el.type = el.value ? "password" : "text";
-      };
-      wire(pwEl);
-      wire(confirmEl);
+      });
+      syncPasswordVisibilityButtons();
     }
 
     function setBankExchangeFlag() {
@@ -4700,55 +4738,44 @@
       return "score_payment_strong_extra";
     }
 
-    function formatDebtYaScoreImpact(projectionResult, scoreResult) {
+    function formatDebtYaScoreImpact(projectionResult) {
       if (!projectionResult || projectionResult.ok !== true) return "";
       const hasMonths = Number(projectionResult.monthsSaved) >= 1;
       const hasInterest = Number(projectionResult.interestSaved) >= 0.5;
-      const hasScore = Number(scoreResult?.gain) > 0;
-      if (!hasMonths && !hasInterest && !hasScore) return "";
+      if (!hasMonths && !hasInterest) return "";
 
       const vars = {
-        amount: fmtMoney(scoreResult?.additional || projectionResult.additional || 50),
-        score: scoreResult?.potential?.score ?? scoreResult?.current?.score ?? "--",
+        amount: fmtMoney(projectionResult.additional || 50),
         time: formatPayMoreTimeSaved(projectionResult),
         interest: fmtMoney(projectionResult.interestSaved || 0)
       };
       if (hasMonths && hasInterest) return tf("score_impact_both", vars);
       if (hasMonths) return tf("score_impact_months", vars);
-      if (hasInterest) return tf("score_impact_interest", vars);
-      return tf("score_impact_score", vars);
+      return tf("score_impact_interest", vars);
     }
 
-    function setDebtYaScoreFactorUi(name, points, labelKey, displayValue) {
-      const value = clampDebtYaScorePoints(points);
+    function setDebtPlanFactUi(name, labelKey, displayValue) {
       const pointsEl = $(`debtScore${name}Points`);
-      const barEl = $(`debtScore${name}Bar`);
       if (pointsEl) pointsEl.textContent = displayValue;
-      if (!barEl) return;
-      barEl.setAttribute("aria-label", `${t(labelKey)}: ${displayValue}`);
-      barEl.setAttribute("aria-valuenow", String(value));
-      const fill = barEl.querySelector("span");
-      if (fill) fill.style.width = `${(value / 25) * 100}%`;
+      const factorEl = pointsEl?.closest?.(".debt-score-factor");
+      if (factorEl) factorEl.setAttribute("aria-label", `${t(labelKey)}: ${displayValue}`);
     }
 
     function renderDebtYaScore() {
       const panel = $("debtYaScorePanel");
-      const valueEl = $("debtYaScoreValue");
       const statusEl = $("debtYaScoreStatus");
       const summaryEl = $("debtYaScoreSummary");
       const potentialEl = $("debtYaScorePotential");
       const actionEl = $("debtYaScoreAction");
       const simulateBtn = $("debtYaScoreSimulateBtn");
-      if (!panel || !valueEl || !statusEl || !summaryEl || !potentialEl || !actionEl) return;
+      if (!panel || !statusEl || !summaryEl || !potentialEl || !actionEl) return;
 
       const debts = (Array.isArray(state.debts) ? state.debts : []).filter((debt) =>
         isDebtActiveForDashboard(debt)
       );
       const strategy = state.plan?.strategy || "avalanche";
-      const result = buildDebtYaScoreWithExtra(debts, state.plan || {}, strategy, 50);
-      const score = result.current;
+      const score = buildDebtYaScore(debts, state.plan || {}, strategy);
       panel.setAttribute("data-score-band", score.band);
-      valueEl.textContent = String(score.score);
       statusEl.textContent = t(score.statusKey);
       const factorsEl = panel.querySelector(".debt-score-factors");
       if (factorsEl) factorsEl.setAttribute("aria-label", t("score_factors_label"));
@@ -4780,10 +4807,10 @@
         ? formatPayoffMonthsEstimate(score.projection.months, score.projection.monthsCapped === true)
         : t("sim_value_unavailable");
 
-      setDebtYaScoreFactorUi("Data", score.factors.data, "score_factor_data", dataValue);
-      setDebtYaScoreFactorUi("Interest", score.factors.interest, "score_factor_interest", interestValue);
-      setDebtYaScoreFactorUi("Payment", score.factors.payment, "score_factor_payment", paymentValue);
-      setDebtYaScoreFactorUi("Outlook", score.factors.outlook, "score_factor_outlook", outlookValue);
+      setDebtPlanFactUi("Data", "score_factor_data", dataValue);
+      setDebtPlanFactUi("Interest", "score_factor_interest", interestValue);
+      setDebtPlanFactUi("Payment", "score_factor_payment", paymentValue);
+      setDebtPlanFactUi("Outlook", "score_factor_outlook", outlookValue);
 
       if (!debts.length) {
         summaryEl.textContent = t("score_meaning_debt_free");
@@ -4796,7 +4823,7 @@
 
       if (simulateBtn) simulateBtn.classList.remove("hidden");
       const payoffImpact = buildPayMoreProjection(debts, state.plan || {}, strategy, 50);
-      const impactText = formatDebtYaScoreImpact(payoffImpact, result);
+      const impactText = formatDebtYaScoreImpact(payoffImpact);
       if (impactText) {
         potentialEl.textContent = impactText;
         potentialEl.classList.remove("hidden");
