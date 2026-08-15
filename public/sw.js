@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v135-clear-plan-state-password-visibility";
+const SW_CACHE = "debtya-static-v136-dashboard-focus";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
