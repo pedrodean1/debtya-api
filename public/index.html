@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-08-14-v132-what-if-pay-more-simulator" />
+  <meta name="debtya-ui-rev" content="debtya-2026-08-15-v133-debtya-score" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-08-14-v132-what-if-pay-more-simulator">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-08-15-v133-debtya-score">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -486,6 +486,70 @@
               <div id="statExecutedIntents" class="v">0</div>
             </div>
           </div>
+
+          <section id="debtYaScorePanel" class="debt-score-panel" aria-labelledby="debtYaScoreTitle">
+            <div class="debt-score-summary">
+              <div class="debt-score-number-wrap">
+                <span id="debtYaScoreTitle" class="debt-score-kicker" data-i18n="score_title">DebtYa Score</span>
+                <div class="debt-score-number-line" aria-live="polite">
+                  <strong id="debtYaScoreValue">--</strong>
+                  <span>/100</span>
+                </div>
+              </div>
+              <div class="debt-score-copy">
+                <div class="debt-score-status-row">
+                  <span id="debtYaScoreStatus" class="debt-score-status">--</span>
+                  <span data-i18n="score_dynamic_badge" class="debt-score-dynamic-badge">Updates automatically</span>
+                </div>
+                <p id="debtYaScoreSummary" class="debt-score-summary-text"></p>
+                <p id="debtYaScorePotential" class="debt-score-potential hidden"></p>
+              </div>
+            </div>
+
+            <div class="debt-score-factors" aria-label="DebtYa Score factors">
+              <div class="debt-score-factor debt-score-factor-data">
+                <div class="debt-score-factor-head">
+                  <span data-i18n="score_factor_data">Debt data</span>
+                  <strong id="debtScoreDataPoints">0/25</strong>
+                </div>
+                <div id="debtScoreDataBar" class="debt-score-track" role="progressbar" aria-valuemin="0" aria-valuemax="25" aria-valuenow="0">
+                  <span></span>
+                </div>
+              </div>
+              <div class="debt-score-factor debt-score-factor-interest">
+                <div class="debt-score-factor-head">
+                  <span data-i18n="score_factor_interest">Interest pressure</span>
+                  <strong id="debtScoreInterestPoints">0/25</strong>
+                </div>
+                <div id="debtScoreInterestBar" class="debt-score-track" role="progressbar" aria-valuemin="0" aria-valuemax="25" aria-valuenow="0">
+                  <span></span>
+                </div>
+              </div>
+              <div class="debt-score-factor debt-score-factor-payment">
+                <div class="debt-score-factor-head">
+                  <span data-i18n="score_factor_payment">Monthly payment</span>
+                  <strong id="debtScorePaymentPoints">0/25</strong>
+                </div>
+                <div id="debtScorePaymentBar" class="debt-score-track" role="progressbar" aria-valuemin="0" aria-valuemax="25" aria-valuenow="0">
+                  <span></span>
+                </div>
+              </div>
+              <div class="debt-score-factor debt-score-factor-outlook">
+                <div class="debt-score-factor-head">
+                  <span data-i18n="score_factor_outlook">Payoff outlook</span>
+                  <strong id="debtScoreOutlookPoints">0/25</strong>
+                </div>
+                <div id="debtScoreOutlookBar" class="debt-score-track" role="progressbar" aria-valuemin="0" aria-valuemax="25" aria-valuenow="0">
+                  <span></span>
+                </div>
+              </div>
+            </div>
+
+            <p id="debtYaScoreAction" class="debt-score-action"></p>
+            <p class="debt-score-disclaimer" data-i18n="score_disclaimer">
+              DebtYa Score is a planning indicator, not a credit score.
+            </p>
+          </section>
 
           <section id="payoffSimulationCard" class="payoff-simulation-card" aria-live="polite">
             <div class="payoff-sim-heading">
@@ -1408,7 +1472,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-08-14-v132-what-if-pay-more-simulator"></script>
+  <script src="/app.js?v=debtya-2026-08-15-v133-debtya-score"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

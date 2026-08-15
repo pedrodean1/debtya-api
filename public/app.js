@@ -639,6 +639,32 @@
         sim_months_reduced_many: "Estimated time reduced: ~{months} months",
         sim_counts_active_label: "Active debts",
         sim_counts_line_placeholder: "Active debts: 0",
+        score_title: "DebtYa Score",
+        score_dynamic_badge: "Updates automatically",
+        score_factor_data: "Debt data",
+        score_factor_interest: "Interest pressure",
+        score_factor_payment: "Monthly payment",
+        score_factor_outlook: "Payoff outlook",
+        score_factors_label: "DebtYa Score factors",
+        score_status_debt_free: "Debt free",
+        score_status_strong: "Strong plan",
+        score_status_on_track: "On track",
+        score_status_building: "Building momentum",
+        score_status_needs_attention: "Needs attention",
+        score_summary_debt_free: "No active debt is currently included in your plan.",
+        score_summary_ready:
+          "{count} active debts | Weighted APR: {apr}% | Payoff estimate: {months}",
+        score_summary_missing_apr:
+          "{count} active debts | Add missing APRs for more precision | Payoff estimate: {months}",
+        score_potential_gain:
+          "With {amount} extra per month, your score could rise to {score} (+{gain}).",
+        score_action_debt_free: "Keep completed balances updated so your plan stays accurate.",
+        score_action_data: "Complete the APR and minimum payment for every active debt.",
+        score_action_interest: "Direct extra money to the highest-APR debt to reduce interest pressure.",
+        score_action_payment: "A monthly payment above the minimums can strengthen your plan.",
+        score_action_outlook: "Use the simulator to test an extra monthly amount and shorten the payoff timeline.",
+        score_action_strong: "Keep balances and completed payments updated to preserve this strong plan.",
+        score_disclaimer: "DebtYa Score is a planning indicator, not a credit score.",
         intent_reason_high_apr: "High priority due to high APR ({apr}%)",
         intent_reason_low_balance: "Low balance; could be paid off sooner",
         intent_reason_plan: "Recommended payment from your plan",
@@ -1491,6 +1517,32 @@
         sim_months_reduced_many: "Tiempo estimado reducido: ~{months} meses",
         sim_counts_active_label: "Deudas activas",
         sim_counts_line_placeholder: "Deudas activas: 0",
+        score_title: "DebtYa Score",
+        score_dynamic_badge: "Se actualiza automáticamente",
+        score_factor_data: "Datos de deudas",
+        score_factor_interest: "Presión de intereses",
+        score_factor_payment: "Pago mensual",
+        score_factor_outlook: "Horizonte de pago",
+        score_factors_label: "Factores de DebtYa Score",
+        score_status_debt_free: "Libre de deudas",
+        score_status_strong: "Plan fuerte",
+        score_status_on_track: "Vas por buen camino",
+        score_status_building: "Creando impulso",
+        score_status_needs_attention: "Necesita atención",
+        score_summary_debt_free: "No hay deudas activas incluidas actualmente en tu plan.",
+        score_summary_ready:
+          "{count} deudas activas | APR ponderado: {apr}% | Salida estimada: {months}",
+        score_summary_missing_apr:
+          "{count} deudas activas | Agrega los APR faltantes para mayor precisión | Salida estimada: {months}",
+        score_potential_gain:
+          "Con {amount} extra al mes, tu score podría subir a {score} (+{gain}).",
+        score_action_debt_free: "Mantén actualizados los saldos completados para conservar un plan preciso.",
+        score_action_data: "Completa el APR y el pago mínimo de cada deuda activa.",
+        score_action_interest: "Dirige el dinero extra a la deuda con mayor APR para reducir la presión de intereses.",
+        score_action_payment: "Un pago mensual por encima de los mínimos puede fortalecer tu plan.",
+        score_action_outlook: "Usa el simulador para probar una cantidad extra y acortar el tiempo de pago.",
+        score_action_strong: "Mantén actualizados los saldos y pagos completados para conservar este plan fuerte.",
+        score_disclaimer: "DebtYa Score es un indicador del plan, no un puntaje de crédito.",
         intent_reason_high_apr: "Alta prioridad por APR alto ({apr}%)",
         intent_reason_low_balance: "Balance bajo; se puede eliminar rapido",
         intent_reason_plan: "Pago recomendado segun tu plan",
@@ -2028,6 +2080,7 @@
         renderIntents();
         renderTrace();
         renderAccounts();
+        renderDebtYaScore();
         renderPayoffSimulation();
         renderPlan();
         renderAdminDiagnostics();
@@ -4172,6 +4225,7 @@
       $("statDebtCount").textContent = String(activeDebts.length);
       $("statPendingIntents").textContent = String(pending);
       $("statExecutedIntents").textContent = String(executed);
+      renderDebtYaScore();
       renderPayoffSimulation();
       renderDashboardNextStep();
     }
@@ -4379,6 +4433,257 @@
         totalMonthlyPayment: inputs.totalMonthlyPayment,
         minimumsSum: inputs.minimumsSum
       };
+    }
+
+    function clampDebtYaScorePoints(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return 0;
+      return Math.max(0, Math.min(25, Math.round(number)));
+    }
+
+    function scoreDebtDataCompleteness(debts) {
+      const rows = Array.isArray(debts) ? debts : [];
+      if (!rows.length) return 25;
+      let aprCount = 0;
+      let minimumCount = 0;
+      rows.forEach((debt) => {
+        const apr = parseAprValue(debt);
+        if (apr !== null && Number.isFinite(apr) && apr >= 0) aprCount += 1;
+        const minimum = Number(debt?.minimum_payment ?? debt?.min_payment);
+        if (Number.isFinite(minimum) && minimum > 0) minimumCount += 1;
+      });
+      return clampDebtYaScorePoints(
+        (aprCount / rows.length) * 12.5 + (minimumCount / rows.length) * 12.5
+      );
+    }
+
+    function calculateWeightedAprForScore(debts) {
+      const rows = Array.isArray(debts) ? debts : [];
+      let weightedApr = 0;
+      let knownBalance = 0;
+      let aprCount = 0;
+      rows.forEach((debt) => {
+        const apr = parseAprValue(debt);
+        if (apr === null || !Number.isFinite(apr) || apr < 0) return;
+        const balance = Math.max(0, debtBalanceForDashboard(debt));
+        aprCount += 1;
+        weightedApr += apr * balance;
+        knownBalance += balance;
+      });
+      return {
+        aprCount,
+        weightedApr: knownBalance > PAYOFF_EPS_UI ? weightedApr / knownBalance : null
+      };
+    }
+
+    function scoreInterestPressure(weightedApr) {
+      if (weightedApr === null || weightedApr === undefined || !Number.isFinite(Number(weightedApr))) {
+        return 12;
+      }
+      const apr = Math.max(0, Number(weightedApr));
+      if (apr <= 5) return 25;
+      return clampDebtYaScorePoints(25 - ((apr - 5) / 30) * 25);
+    }
+
+    function scoreMonthlyPaymentStrength(debts, projection) {
+      const rows = Array.isArray(debts) ? debts : [];
+      if (!rows.length) return 25;
+      if (!projection || projection.ok !== true) return 0;
+      const minimums = Math.max(0, toNum(projection.minimumsSum));
+      const payment = Math.max(0, toNum(projection.totalMonthlyPayment));
+      if (!(minimums > PAYOFF_EPS_UI) || !(payment > PAYOFF_EPS_UI)) return 0;
+
+      const monthlyInterest = rows.reduce((sum, debt) => {
+        const apr = parseAprValue(debt);
+        if (apr === null || !Number.isFinite(apr) || apr <= 0) return sum;
+        return sum + (Math.max(0, debtBalanceForDashboard(debt)) * apr) / 100 / 12;
+      }, 0);
+      if (monthlyInterest >= payment - PAYOFF_EPS_UI) return 0;
+      if (monthlyInterest > 0 && payment < monthlyInterest * 1.1) return 4;
+
+      const extraRatio = Math.max(0, payment - minimums) / Math.max(1, minimums);
+      return clampDebtYaScorePoints(12 + Math.min(13, (extraRatio / 0.5) * 13));
+    }
+
+    function scorePayoffOutlook(projection) {
+      if (!projection || projection.ok !== true || projection.months == null) return 0;
+      if (projection.paidOff || Number(projection.months) <= 0) return 25;
+      if (projection.monthsCapped) return 0;
+      const months = Math.max(0, Number(projection.months));
+      if (months <= 12) return 25;
+      if (months <= 24) return clampDebtYaScorePoints(25 - ((months - 12) / 12) * 3);
+      if (months <= 36) return clampDebtYaScorePoints(22 - ((months - 24) / 12) * 3);
+      if (months <= 60) return clampDebtYaScorePoints(19 - ((months - 36) / 24) * 5);
+      if (months <= 120) return clampDebtYaScorePoints(14 - ((months - 60) / 60) * 6);
+      if (months <= 240) return clampDebtYaScorePoints(8 - ((months - 120) / 120) * 5);
+      return 1;
+    }
+
+    function buildDebtYaScore(debtRows, plan, strategyRaw) {
+      const debts = (Array.isArray(debtRows) ? debtRows : []).filter((debt) =>
+        isDebtActiveForDashboard(debt)
+      );
+      if (!debts.length) {
+        return {
+          score: 100,
+          band: "strong",
+          statusKey: "score_status_debt_free",
+          factors: { data: 25, interest: 25, payment: 25, outlook: 25 },
+          weightedApr: null,
+          aprCount: 0,
+          projection: estimateDebtFreeProjectionForDashboard([], plan || {}, strategyRaw)
+        };
+      }
+
+      const strategy = String(strategyRaw || plan?.strategy || "avalanche").toLowerCase() === "snowball"
+        ? "snowball"
+        : "avalanche";
+      const projection = estimateDebtFreeProjectionForDashboard(debts, plan || {}, strategy);
+      const aprData = calculateWeightedAprForScore(debts);
+      const factors = {
+        data: scoreDebtDataCompleteness(debts),
+        interest: scoreInterestPressure(aprData.weightedApr),
+        payment: scoreMonthlyPaymentStrength(debts, projection),
+        outlook: scorePayoffOutlook(projection)
+      };
+      const score = Math.max(
+        0,
+        Math.min(100, Math.round(Object.values(factors).reduce((sum, value) => sum + value, 0)))
+      );
+      let band = "needs-attention";
+      let statusKey = "score_status_needs_attention";
+      if (score >= 85) {
+        band = "strong";
+        statusKey = "score_status_strong";
+      } else if (score >= 70) {
+        band = "on-track";
+        statusKey = "score_status_on_track";
+      } else if (score >= 50) {
+        band = "building";
+        statusKey = "score_status_building";
+      }
+      return {
+        score,
+        band,
+        statusKey,
+        factors,
+        weightedApr: aprData.weightedApr,
+        aprCount: aprData.aprCount,
+        projection
+      };
+    }
+
+    function buildDebtYaScoreWithExtra(debtRows, plan, strategyRaw, additionalMonthly) {
+      const current = buildDebtYaScore(debtRows, plan || {}, strategyRaw);
+      const additional = Math.max(0, roundPayoffMoney(toNum(additionalMonthly)));
+      if (!current.projection || current.projection.ok !== true || !(additional > 0)) {
+        return { current, potential: current, gain: 0, additional };
+      }
+      const monthlyPayment = roundPayoffMoney(
+        Math.max(0, toNum(current.projection.totalMonthlyPayment)) + additional
+      );
+      const potentialPlan = {
+        ...(plan || {}),
+        monthly_budget: monthlyPayment,
+        monthly_budget_default: monthlyPayment,
+        extra_payment_default: 0
+      };
+      const potential = buildDebtYaScore(debtRows, potentialPlan, strategyRaw);
+      return {
+        current,
+        potential,
+        gain: Math.max(0, potential.score - current.score),
+        additional
+      };
+    }
+
+    function setDebtYaScoreFactorUi(name, points, labelKey) {
+      const value = clampDebtYaScorePoints(points);
+      const pointsEl = $(`debtScore${name}Points`);
+      const barEl = $(`debtScore${name}Bar`);
+      if (pointsEl) pointsEl.textContent = `${value}/25`;
+      if (!barEl) return;
+      barEl.setAttribute("aria-label", t(labelKey));
+      barEl.setAttribute("aria-valuenow", String(value));
+      const fill = barEl.querySelector("span");
+      if (fill) fill.style.width = `${(value / 25) * 100}%`;
+    }
+
+    function renderDebtYaScore() {
+      const panel = $("debtYaScorePanel");
+      const valueEl = $("debtYaScoreValue");
+      const statusEl = $("debtYaScoreStatus");
+      const summaryEl = $("debtYaScoreSummary");
+      const potentialEl = $("debtYaScorePotential");
+      const actionEl = $("debtYaScoreAction");
+      if (!panel || !valueEl || !statusEl || !summaryEl || !potentialEl || !actionEl) return;
+
+      const debts = (Array.isArray(state.debts) ? state.debts : []).filter((debt) =>
+        isDebtActiveForDashboard(debt)
+      );
+      const strategy = state.plan?.strategy || "avalanche";
+      const result = buildDebtYaScoreWithExtra(debts, state.plan || {}, strategy, 50);
+      const score = result.current;
+      panel.setAttribute("data-score-band", score.band);
+      valueEl.textContent = String(score.score);
+      statusEl.textContent = t(score.statusKey);
+      const factorsEl = panel.querySelector(".debt-score-factors");
+      if (factorsEl) factorsEl.setAttribute("aria-label", t("score_factors_label"));
+
+      setDebtYaScoreFactorUi("Data", score.factors.data, "score_factor_data");
+      setDebtYaScoreFactorUi("Interest", score.factors.interest, "score_factor_interest");
+      setDebtYaScoreFactorUi("Payment", score.factors.payment, "score_factor_payment");
+      setDebtYaScoreFactorUi("Outlook", score.factors.outlook, "score_factor_outlook");
+
+      if (!debts.length) {
+        summaryEl.textContent = t("score_summary_debt_free");
+        actionEl.textContent = t("score_action_debt_free");
+        potentialEl.textContent = "";
+        potentialEl.classList.add("hidden");
+        return;
+      }
+
+      const months = formatPayoffMonthsEstimate(
+        score.projection?.months,
+        score.projection?.monthsCapped === true
+      );
+      if (score.aprCount < debts.length || score.weightedApr === null) {
+        summaryEl.textContent = tf("score_summary_missing_apr", {
+          count: debts.length,
+          months
+        });
+      } else {
+        summaryEl.textContent = tf("score_summary_ready", {
+          count: debts.length,
+          apr: formatAprForDisplay(score.weightedApr),
+          months
+        });
+      }
+
+      if (result.gain > 0) {
+        potentialEl.textContent = tf("score_potential_gain", {
+          amount: fmtMoney(result.additional),
+          score: result.potential.score,
+          gain: result.gain
+        });
+        potentialEl.classList.remove("hidden");
+      } else {
+        potentialEl.textContent = "";
+        potentialEl.classList.add("hidden");
+      }
+
+      const factorOrder = ["data", "interest", "payment", "outlook"];
+      const lowestFactor = factorOrder.reduce(
+        (lowest, key) => (score.factors[key] < score.factors[lowest] ? key : lowest),
+        factorOrder[0]
+      );
+      const actionKey = {
+        data: "score_action_data",
+        interest: "score_action_interest",
+        payment: "score_action_payment",
+        outlook: "score_action_outlook"
+      }[lowestFactor];
+      actionEl.textContent = t(score.score >= 95 ? "score_action_strong" : actionKey);
     }
 
     function formatDebtFreeDateFromMonths(months, options = {}) {
