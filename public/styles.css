@@ -429,7 +429,7 @@
     .debt-score-panel[data-score-band="strong"]{border-left-color:#15803d}
     .debt-score-summary{
       display:grid;
-      grid-template-columns:minmax(130px,160px) minmax(0,1fr);
+      grid-template-columns:minmax(210px,280px) minmax(0,1fr);
       gap:16px;
       align-items:center;
     }
@@ -448,36 +448,25 @@
       font-weight:800;
       line-height:1.3;
     }
-    .debt-score-number-line{
-      display:flex;
-      align-items:baseline;
-      gap:4px;
-      min-height:48px;
-      white-space:nowrap;
-    }
-    .debt-score-number-line strong{
+    .debt-plan-state-value{
+      display:block;
+      margin-top:6px;
       color:var(--text);
-      font-size:40px;
+      font-size:24px;
       font-weight:850;
-      line-height:1.1;
+      line-height:1.2;
+      overflow-wrap:anywhere;
     }
-    .debt-score-number-line span{
-      color:var(--muted);
-      font-size:13px;
-      font-weight:800;
-    }
+    .debt-score-panel[data-score-band="needs-attention"] .debt-plan-state-value{color:#b91c1c}
+    .debt-score-panel[data-score-band="building"] .debt-plan-state-value{color:#a16207}
+    .debt-score-panel[data-score-band="on-track"] .debt-plan-state-value{color:#0f766e}
+    .debt-score-panel[data-score-band="strong"] .debt-plan-state-value{color:#15803d}
     .debt-score-copy{min-width:0}
     .debt-score-status-row{
       display:flex;
       align-items:center;
       gap:8px;
       flex-wrap:wrap;
-    }
-    .debt-score-status{
-      color:var(--text);
-      font-size:16px;
-      font-weight:850;
-      line-height:1.3;
     }
     .debt-score-dynamic-badge{
       border:1px solid #b7c7d9;
@@ -509,12 +498,16 @@
       padding-top:12px;
       border-top:1px solid var(--line);
     }
-    .debt-score-factor{min-width:0}
+    .debt-score-factor{
+      min-width:0;
+      padding-left:10px;
+      border-left:1px solid var(--line);
+    }
+    .debt-score-factor:first-child{padding-left:0;border-left:0}
     .debt-score-factor-head{
       display:flex;
       flex-direction:column;
       gap:3px;
-      min-height:48px;
       color:var(--muted);
       font-size:10px;
       font-weight:750;
@@ -527,23 +520,6 @@
       line-height:1.35;
       overflow-wrap:anywhere;
     }
-    .debt-score-track{
-      width:100%;
-      height:8px;
-      overflow:hidden;
-      border-radius:4px;
-      background:#e5e7eb;
-    }
-    .debt-score-track span{
-      display:block;
-      width:0;
-      height:100%;
-      background:#64748b;
-    }
-    .debt-score-factor-data .debt-score-track span{background:#0f766e}
-    .debt-score-factor-interest .debt-score-track span{background:#d97706}
-    .debt-score-factor-payment .debt-score-track span{background:#2563eb}
-    .debt-score-factor-outlook .debt-score-track span{background:#15803d}
     .debt-score-next-row{
       display:flex;
       align-items:stretch;
@@ -562,6 +538,15 @@
       font-weight:750;
       line-height:1.45;
     }
+    .debt-score-action-label{
+      display:block;
+      margin-bottom:2px;
+      color:#2563eb;
+      font-size:10px;
+      font-weight:850;
+      text-transform:uppercase;
+    }
+    .debt-score-action p{margin:0}
     .debt-score-next-row .btn{
       flex:0 0 auto;
       align-self:stretch;
@@ -585,7 +570,12 @@
         border-bottom:1px solid var(--line);
       }
       .debt-score-factors{grid-template-columns:1fr}
-      .debt-score-factor-head{min-height:0}
+      .debt-score-factor{
+        padding:9px 0 0;
+        border-left:0;
+        border-top:1px solid var(--line);
+      }
+      .debt-score-factor:first-child{padding-top:0;border-top:0}
       .debt-score-next-row{flex-direction:column}
       .debt-score-next-row .btn{width:100%}
     }
@@ -1139,6 +1129,34 @@
     .input:focus,.select:focus{
       border-color:#b9d0ff;
       box-shadow:0 0 0 3px rgba(31,111,255,.10);
+    }
+
+    .password-input-wrap{
+      position:relative;
+      width:100%;
+    }
+    .password-input-wrap .input{padding-right:82px}
+    .password-visibility-toggle{
+      position:absolute;
+      top:1px;
+      right:1px;
+      bottom:1px;
+      min-width:74px;
+      border:0;
+      border-left:1px solid var(--line);
+      border-radius:0 10px 10px 0;
+      background:#f8fafc;
+      color:#29425f;
+      padding:0 10px;
+      font:inherit;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .password-visibility-toggle:hover{background:#eef3f8}
+    .password-visibility-toggle:focus-visible{
+      outline:2px solid #2563eb;
+      outline-offset:1px;
     }
 
     .stats{
