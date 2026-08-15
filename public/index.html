@@ -39,7 +39,7 @@
     name="debtya-supabase-anon"
     content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNweWJlamx0c2d6Znhsd3pvYmtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzg3MDAsImV4cCI6MjA4NzcxNDcwMH0.gNcD19qAbc4fO0HnE7fK3yFLBq2NWlcyBq8LnokbmOs"
   />
-  <meta name="debtya-ui-rev" content="debtya-2026-08-15-v135-clear-plan-state-password-visibility" />
+  <meta name="debtya-ui-rev" content="debtya-2026-08-15-v136-dashboard-focus" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="DebtYa" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -60,7 +60,7 @@
     })();
   </script>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/styles.css?v=debtya-2026-08-15-v135-clear-plan-state-password-visibility">
+  <link rel="stylesheet" href="/styles.css?v=debtya-2026-08-15-v136-dashboard-focus">
 </head>
 <body>
   <div id="debtyaUiRevBadge" class="ui-rev-fixed" role="status" aria-live="polite"></div>
@@ -506,62 +506,6 @@
               <div id="statExecutedIntents" class="v">0</div>
             </div>
           </div>
-
-          <section id="debtYaScorePanel" class="debt-score-panel" aria-labelledby="debtYaScoreTitle">
-            <div class="debt-score-summary">
-              <div class="debt-score-number-wrap">
-                <span id="debtYaScoreTitle" class="debt-score-kicker" data-i18n="score_title">Your plan status</span>
-                <strong id="debtYaScoreStatus" class="debt-plan-state-value" aria-live="polite">--</strong>
-              </div>
-              <div class="debt-score-copy">
-                <div class="debt-score-status-row">
-                  <span data-i18n="score_dynamic_badge" class="debt-score-dynamic-badge">Updates when your plan changes</span>
-                </div>
-                <p id="debtYaScoreSummary" class="debt-score-summary-text"></p>
-                <p id="debtYaScorePotential" class="debt-score-potential hidden"></p>
-              </div>
-            </div>
-
-            <div class="debt-score-factors" aria-label="Key plan details">
-              <div class="debt-score-factor debt-score-factor-data">
-                <div class="debt-score-factor-head">
-                  <span data-i18n="score_factor_data">Complete information</span>
-                  <strong id="debtScoreDataPoints">--</strong>
-                </div>
-              </div>
-              <div class="debt-score-factor debt-score-factor-interest">
-                <div class="debt-score-factor-head">
-                  <span data-i18n="score_factor_interest">Cost of your debt</span>
-                  <strong id="debtScoreInterestPoints">--</strong>
-                </div>
-              </div>
-              <div class="debt-score-factor debt-score-factor-payment">
-                <div class="debt-score-factor-head">
-                  <span data-i18n="score_factor_payment">Your monthly payment</span>
-                  <strong id="debtScorePaymentPoints">--</strong>
-                </div>
-              </div>
-              <div class="debt-score-factor debt-score-factor-outlook">
-                <div class="debt-score-factor-head">
-                  <span data-i18n="score_factor_outlook">Time remaining</span>
-                  <strong id="debtScoreOutlookPoints">--</strong>
-                </div>
-              </div>
-            </div>
-
-            <div class="debt-score-next-row">
-              <div class="debt-score-action">
-                <span class="debt-score-action-label" data-i18n="score_priority_now">Priority now</span>
-                <p id="debtYaScoreAction"></p>
-              </div>
-              <button id="debtYaScoreSimulateBtn" class="btn btn-light btn-small" type="button" data-i18n="score_see_50_impact">
-                See +$50 impact
-              </button>
-            </div>
-            <p class="debt-score-disclaimer" data-i18n="score_disclaimer">
-              Estimate based on the balances, APRs, and payments you entered.
-            </p>
-          </section>
 
           <section id="payoffSimulationCard" class="payoff-simulation-card" aria-live="polite">
             <div class="payoff-sim-heading">
@@ -1484,7 +1428,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=debtya-2026-08-15-v135-clear-plan-state-password-visibility"></script>
+  <script src="/app.js?v=debtya-2026-08-15-v136-dashboard-focus"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {
