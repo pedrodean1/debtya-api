@@ -146,26 +146,29 @@ test("V133 es local y no cambia APIs, almacenamiento ni integraciones", () => {
   assert.equal(scoreSource.includes("plaid"), false);
 });
 
-test("V133 publica el score, los cuatro factores y el aviso de credito", () => {
+test("V135 publica el estado del plan sin mostrar un puntaje arbitrario", () => {
   for (const id of [
-    "debtYaScoreValue",
     "debtYaScoreStatus",
-    "debtScoreDataBar",
-    "debtScoreInterestBar",
-    "debtScorePaymentBar",
-    "debtScoreOutlookBar",
+    "debtScoreDataPoints",
+    "debtScoreInterestPoints",
+    "debtScorePaymentPoints",
+    "debtScoreOutlookPoints",
     "debtYaScoreAction"
   ]) {
     assert.match(indexSource, new RegExp(`id="${id}"`));
   }
-  assert.match(indexSource, /DebtYa Score is a planning indicator, not a credit score\./);
+  assert.doesNotMatch(indexSource, /id="debtYaScoreValue"/);
+  assert.doesNotMatch(indexSource, />\/100</);
+  assert.doesNotMatch(indexSource, /id="debtScore(?:Data|Interest|Payment|Outlook)Bar"/);
+  assert.match(indexSource, /data-i18n="score_title">Your plan status</);
+  assert.match(indexSource, /Estimate based on the balances, APRs, and payments you entered\./);
 });
 
-test("V134 reemplaza los puntos internos por valores comprensibles", () => {
+test("V135 muestra datos financieros comprensibles", () => {
   assert.doesNotMatch(indexSource, />0\/25</);
-  assert.match(indexSource, /data-i18n="score_factor_data">Information ready</);
+  assert.match(indexSource, /data-i18n="score_factor_data">Complete information</);
   assert.match(indexSource, /data-i18n="score_factor_interest">Cost of your debt</);
-  assert.match(indexSource, /data-i18n="score_factor_payment">Strength of your payment</);
+  assert.match(indexSource, /data-i18n="score_factor_payment">Your monthly payment</);
   assert.match(indexSource, /data-i18n="score_factor_outlook">Time remaining</);
   assert.match(appSource, /score_data_value: "\{complete\} of \{count\} complete"/);
   assert.match(appSource, /score_payment_minimums: "Minimums only"/);
@@ -173,7 +176,7 @@ test("V134 reemplaza los puntos internos por valores comprensibles", () => {
   assert.match(appSource, /score_outlook_debt_free: "Debt free"/);
 });
 
-test("V134 explica el factor limitante y muestra impacto financiero concreto", () => {
+test("V135 explica el factor limitante y solo promete impacto financiero concreto", () => {
   for (const key of [
     "score_meaning_data",
     "score_meaning_interest",
@@ -186,9 +189,12 @@ test("V134 explica el factor limitante y muestra impacto financiero concreto", (
   assert.match(appSource, /buildPayMoreProjection\(debts, state\.plan \|\| \{\}, strategy, 50\)/);
   assert.match(appSource, /interestSaved/);
   assert.match(appSource, /monthsSaved/);
+  assert.doesNotMatch(appSource, /DebtYa Score: \{score\}/);
+  assert.doesNotMatch(appSource, /score_impact_score/);
+  assert.match(appSource, /if \(!hasMonths && !hasInterest\) return "";/);
 });
 
-test("V134 abre el simulador con 50 dolares desde el score", () => {
+test("V135 abre el simulador con 50 dolares desde el estado del plan", () => {
   assert.match(indexSource, /id="debtYaScoreSimulateBtn"/);
   assert.match(indexSource, /data-i18n="score_see_50_impact"/);
   assert.match(appSource, /state\.payoffSimulatorExtraMonthly = 50;/);
