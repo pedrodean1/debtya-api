@@ -512,10 +512,9 @@
     .debt-score-factor{min-width:0}
     .debt-score-factor-head{
       display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:8px;
-      min-height:30px;
+      flex-direction:column;
+      gap:3px;
+      min-height:48px;
       color:var(--muted);
       font-size:10px;
       font-weight:750;
@@ -523,9 +522,10 @@
     }
     .debt-score-factor-head span{overflow-wrap:anywhere}
     .debt-score-factor-head strong{
-      flex:0 0 auto;
       color:var(--text);
       font-size:11px;
+      line-height:1.35;
+      overflow-wrap:anywhere;
     }
     .debt-score-track{
       width:100%;
@@ -544,8 +544,16 @@
     .debt-score-factor-interest .debt-score-track span{background:#d97706}
     .debt-score-factor-payment .debt-score-track span{background:#2563eb}
     .debt-score-factor-outlook .debt-score-track span{background:#15803d}
+    .debt-score-next-row{
+      display:flex;
+      align-items:stretch;
+      gap:8px;
+      margin-top:13px;
+    }
     .debt-score-action{
-      margin:13px 0 0;
+      flex:1 1 auto;
+      min-width:0;
+      margin:0;
       padding:9px 10px;
       border-left:3px solid #2563eb;
       background:#f4f7fb;
@@ -553,6 +561,11 @@
       font-size:12px;
       font-weight:750;
       line-height:1.45;
+    }
+    .debt-score-next-row .btn{
+      flex:0 0 auto;
+      align-self:stretch;
+      white-space:nowrap;
     }
     .debt-score-disclaimer{
       margin:8px 0 0;
@@ -573,6 +586,8 @@
       }
       .debt-score-factors{grid-template-columns:1fr}
       .debt-score-factor-head{min-height:0}
+      .debt-score-next-row{flex-direction:column}
+      .debt-score-next-row .btn{width:100%}
     }
 
     .payoff-simulation-card{

@@ -160,3 +160,37 @@ test("V133 publica el score, los cuatro factores y el aviso de credito", () => {
   }
   assert.match(indexSource, /DebtYa Score is a planning indicator, not a credit score\./);
 });
+
+test("V134 reemplaza los puntos internos por valores comprensibles", () => {
+  assert.doesNotMatch(indexSource, />0\/25</);
+  assert.match(indexSource, /data-i18n="score_factor_data">Information ready</);
+  assert.match(indexSource, /data-i18n="score_factor_interest">Cost of your debt</);
+  assert.match(indexSource, /data-i18n="score_factor_payment">Strength of your payment</);
+  assert.match(indexSource, /data-i18n="score_factor_outlook">Time remaining</);
+  assert.match(appSource, /score_data_value: "\{complete\} of \{count\} complete"/);
+  assert.match(appSource, /score_payment_minimums: "Minimums only"/);
+  assert.match(appSource, /score_interest_debt_free: "No interest"/);
+  assert.match(appSource, /score_outlook_debt_free: "Debt free"/);
+});
+
+test("V134 explica el factor limitante y muestra impacto financiero concreto", () => {
+  for (const key of [
+    "score_meaning_data",
+    "score_meaning_interest",
+    "score_meaning_payment",
+    "score_meaning_outlook",
+    "score_impact_both"
+  ]) {
+    assert.match(appSource, new RegExp(`${key}:`));
+  }
+  assert.match(appSource, /buildPayMoreProjection\(debts, state\.plan \|\| \{\}, strategy, 50\)/);
+  assert.match(appSource, /interestSaved/);
+  assert.match(appSource, /monthsSaved/);
+});
+
+test("V134 abre el simulador con 50 dolares desde el score", () => {
+  assert.match(indexSource, /id="debtYaScoreSimulateBtn"/);
+  assert.match(indexSource, /data-i18n="score_see_50_impact"/);
+  assert.match(appSource, /state\.payoffSimulatorExtraMonthly = 50;/);
+  assert.match(appSource, /\$\("payoffSimulationCard"\)\?\.scrollIntoView/);
+});

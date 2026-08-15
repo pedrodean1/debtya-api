@@ -34,7 +34,7 @@ const app = express();
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 
-const SERVER_VERSION = "debtya-2026-08-15-v133-debtya-score";
+const SERVER_VERSION = "debtya-2026-08-15-v134-intuitive-score";
 
 const DEBUG_STRIPE = false;
 const DEBUG_APP = false;
