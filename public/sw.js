@@ -1,4 +1,4 @@
-const SW_CACHE = "debtya-static-v132-what-if-pay-more-simulator";
+const SW_CACHE = "debtya-static-v133-debtya-score";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
